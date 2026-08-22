@@ -16,3 +16,14 @@
 export type { SourceSpan, TextEdit } from './types/span.js';
 export type { RegionKind, WrappableRegion } from './types/region.js';
 export type { WrapConfig } from './types/config.js';
+export type { DocDialectId } from './types/doc-dialect.js';
+export type { SyntaxNode, Tree, Point } from './types/tree-sitter-types.js';
+export type {
+  LanguageDescriptor,
+  LanguageAdapter,
+  QuoteSpec,
+  PrefixSpec,
+  RawFormSpec,
+  EscapeSpec,
+  EmitContext,
+} from './types/adapter.js';
