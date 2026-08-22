@@ -27,3 +27,4 @@ export type {
   EscapeSpec,
   EmitContext,
 } from './types/adapter.js';
+export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';
