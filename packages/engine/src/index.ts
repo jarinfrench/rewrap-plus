@@ -28,3 +28,4 @@ export type {
   EmitContext,
 } from './types/adapter.js';
 export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';
+export type { Atom, Block, DocMeta, LogicalDocument } from './types/document.js';
