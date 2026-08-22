@@ -1,0 +1,15 @@
+{
+  "name": "@rewrap-plus/engine",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Pure wrapping engine for Rewrap+: parsing, region discovery, reflow, and emit. Must never depend on vscode.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

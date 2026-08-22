@@ -1,0 +1,19 @@
+{
+  "name": "rewrap-plus",
+  "displayName": "Rewrap+",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Rewraps comments, docstrings, and string literals to a configured column limit, preserving formatted structure and emitting language-valid concatenation.",
+  "publisher": "jarinfrench",
+  "license": "MIT",
+  "main": "dist/extension.js",
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@rewrap-plus/engine": "*"
+  },
+  "devDependencies": {}
+}

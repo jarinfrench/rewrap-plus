@@ -1,0 +1,17 @@
+{
+  "name": "rewrap-plus-monorepo",
+  "private": true,
+  "description": "Monorepo for Rewrap+: a wrapping engine and its VSCode extension glue.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
