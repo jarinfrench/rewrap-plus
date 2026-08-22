@@ -1,0 +1,6 @@
+dist/
+out/
+coverage/
+*.vsix
+node_modules/
+packages/engine/grammars/
