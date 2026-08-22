@@ -14,3 +14,4 @@
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */
 export type { SourceSpan, TextEdit } from './types/span.js';
+export type { RegionKind, WrappableRegion } from './types/region.js';
