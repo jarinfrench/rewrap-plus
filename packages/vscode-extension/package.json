@@ -9,7 +9,7 @@
   "main": "dist/extension.js",
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "test": "vitest run",
+    "test": "echo \"vscode-extension: no automated tests yet (integration tests land in Phase 7)\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
