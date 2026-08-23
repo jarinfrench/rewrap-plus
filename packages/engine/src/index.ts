@@ -13,6 +13,12 @@
  * driver that turns a parsed tree into `WrappableRegion`s, plus the
  * Python adapter (`./languages/python/`) that exercises it end to end.
  *
+ * Phase 4 adds `splitBlocks`: the shared, language-agnostic segmenter that
+ * turns dissolved region text into a `Block[]` — paragraphs and blank
+ * lines in this commit, with list items and verbatim regions (fenced
+ * code, doctests, tables, `::`-triggered literal blocks, indented blocks)
+ * following later in the same phase.
+ *
  * The reflow pipeline itself starts in Phase 5.
  *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
@@ -46,3 +52,5 @@ export { sliceSpanText } from './discovery/slice-span.js';
 export { visualIndentColumn } from './discovery/visual-indent-column.js';
 export { pythonAdapter } from './languages/python/adapter.js';
 export { pythonDescriptor } from './languages/python/descriptor.js';
+export { splitBlocks } from './segmentation/split-blocks.js';
+export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
