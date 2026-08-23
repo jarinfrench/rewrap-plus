@@ -14,8 +14,8 @@ beforeAll(async () => {
   parser.setLanguage(language);
 });
 
-describe('pythonAdapter (skeleton)', () => {
-  it('discovers comments and string literals using the driver default kinds', () => {
+describe('pythonAdapter', () => {
+  it('discovers comments as lineComment and ordinary strings as stringLiteral', () => {
     const source = '# a comment\nx = "hello"\n';
     const tree = parser.parse(source)!;
 
@@ -24,14 +24,21 @@ describe('pythonAdapter (skeleton)', () => {
     expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'stringLiteral']);
   });
 
-  it('does not yet distinguish a docstring from an ordinary string literal', () => {
-    // This is the skeleton's known limitation, not a bug: `classify` is
-    // added in the next commit specifically to fix this.
+  it('classifies a module docstring as docstring, not stringLiteral', () => {
     const source = '"""A module docstring."""\n';
     const tree = parser.parse(source)!;
 
     const [region] = discoverRegions(pythonAdapter, tree, source, 'python');
 
-    expect(region!.kind).toBe('stringLiteral');
+    expect(region!.kind).toBe('docstring');
+  });
+
+  it('classifies a function docstring alongside an ordinary string in the same file', () => {
+    const source = 'def f():\n    """Docstring."""\n    return "not a docstring"\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+
+    expect(regions.map((r) => r.kind)).toEqual(['docstring', 'stringLiteral']);
   });
 });

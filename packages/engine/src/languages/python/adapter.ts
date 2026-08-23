@@ -1,18 +1,54 @@
 import type { LanguageAdapter } from '../../types/adapter.js';
+import type { RegionKind } from '../../types/region.js';
+import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { pythonDescriptor } from './descriptor.js';
+import { isAttributeDocstringPosition, isDocstringPosition } from './docstring-position.js';
+
+/**
+ * Python's `classify` override.
+ *
+ * Handles both node types the descriptor's queries ever hand it —
+ * `discoverRegions` calls this uniformly for comment and string captures
+ * alike (see its own doc comment on why), so this can't only know about
+ * strings:
+ *
+ * - `comment` nodes are always `'lineComment'`. Python has no block
+ *   comments or a separate doc-comment marker (docstrings *are* Python's
+ *   documentation comments, and they're strings, not comments — see
+ *   below), so there's no distinction to make here.
+ * - `string` nodes are `'docstring'` if `isDocstringPosition` or
+ *   `isAttributeDocstringPosition` says so, else the driver's own default
+ *   would already be right, but this still names it explicitly rather
+ *   than returning `undefined`/falling through — a hook that's defined at
+ *   all is expected to handle every node type its queries can produce.
+ *
+ * Never returns `null`: nothing this adapter's queries capture should be
+ * excluded from discovery outright at this phase. (`isSafeToWrap`, added
+ * later in this phase, is where "found but shouldn't be wrapped" belongs
+ * — that's a distinct question from "found at all".)
+ */
+function classify(node: SyntaxNode): RegionKind | null {
+  if (node.type === 'comment') {
+    return 'lineComment';
+  }
+  if (node.type === 'string') {
+    return isDocstringPosition(node) || isAttributeDocstringPosition(node)
+      ? 'docstring'
+      : 'stringLiteral';
+  }
+  // Defensive: `pythonDescriptor.queries` only ever captures `comment` and
+  // `string` nodes. Reaching here would mean a query was broadened
+  // without updating this function to match.
+  return null;
+}
 
 /**
  * Python's `LanguageAdapter`.
  *
- * Still a skeleton as of this commit: `descriptor` alone is enough for
- * `discoverRegions` (`../../discovery/discover-regions.ts`) to find every
- * comment and string literal in a Python file, using the driver's default
- * classification (`'lineComment'` / `'stringLiteral'`) for all of them.
- * What's missing — and lands over the rest of this phase — is everything
- * that makes those defaults too coarse for Python specifically:
+ * `classify` (above) tells a docstring apart from an ordinary string
+ * literal by its syntactic position. Still missing, landing later in this
+ * phase:
  *
- * - `classify`: telling a docstring apart from an ordinary string literal
- *   by its syntactic position (next commit).
  * - concatenation-run grouping: merging adjacent string literals into one
  *   multi-part region (`descriptor.queries.concatenations`, plus the
  *   generic grouping this adds to the discovery driver).
@@ -30,4 +66,5 @@ import { pythonDescriptor } from './descriptor.js';
  */
 export const pythonAdapter: LanguageAdapter = {
   descriptor: pythonDescriptor,
+  classify,
 };
