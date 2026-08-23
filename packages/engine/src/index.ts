@@ -9,9 +9,11 @@
  * VSCode's UTF-16 positions. Phase 2 adds the parser layer:
  * `ParserManager` (lazy, cached `web-tree-sitter` grammar loading) and
  * `parseWithErrors`/`ParseResult` (error and missing-node detection built
- * on it).
+ * on it). Phase 3 adds `discoverRegions`: the generic, descriptor-driven
+ * driver that turns a parsed tree into `WrappableRegion`s, plus the
+ * Python adapter (`./languages/python/`) that exercises it end to end.
  *
- * Region discovery and the reflow pipeline itself start in Phase 3.
+ * The reflow pipeline itself starts in Phase 5.
  *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */
@@ -38,3 +40,7 @@ export type { ParserManagerOptions } from './parser/parser-manager.js';
 export { parseWithErrors } from './parser/parse-result.js';
 export type { ParseResult } from './parser/parse-result.js';
 export { spanFromNode } from './parser/span-from-node.js';
+export { discoverRegions } from './discovery/discover-regions.js';
+export type { DiscoverRegionsOptions } from './discovery/discover-regions.js';
+export { sliceSpanText } from './discovery/slice-span.js';
+export { visualIndentColumn } from './discovery/visual-indent-column.js';
