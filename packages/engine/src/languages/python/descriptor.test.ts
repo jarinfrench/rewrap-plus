@@ -20,6 +20,7 @@ describe('pythonDescriptor', () => {
   it('declares queries that compile against the vendored grammar', () => {
     expect(() => new Query(language, pythonDescriptor.queries.comments)).not.toThrow();
     expect(() => new Query(language, pythonDescriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, pythonDescriptor.queries.concatenations!)).not.toThrow();
   });
 
   it('has no block-comment form — Python has none', () => {

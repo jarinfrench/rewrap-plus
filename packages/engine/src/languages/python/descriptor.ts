@@ -21,6 +21,28 @@ export const pythonDescriptor: LanguageDescriptor = {
   queries: {
     comments: '(comment) @comment',
     strings: '(string) @string',
+
+    // Two concatenation shapes, distinguished by capture name — the
+    // generic contract `discoverRegions` (`../../discovery/discover-regions.ts`)
+    // expects of *any* descriptor providing `queries.concatenations`:
+    //
+    // - `@concat.implicit`: a container node whose direct named children
+    //   are themselves matched by `queries.strings` — juxtaposition with
+    //   no operator, e.g. Python's `"a" "b" "c"` (one `concatenated_string`
+    //   node wrapping three `string` children).
+    // - `@concat.operator`: a binary-operator node exposing `left` and
+    //   `right` fields, to be walked recursively — e.g. Python's
+    //   `"a" + "b" + "c"` (nested `binary_operator` nodes, left-
+    //   associative). The driver bails on (does not merge) a chain where
+    //   recursing bottoms out at something that's neither a captured
+    //   string leaf nor another `@concat.operator` node — `"a" + name`
+    //   must never be treated as one wrappable unit.
+    //
+    // Restricting the operator pattern to `operator: "+"` is what excludes
+    // Python's other binary operators (`%`, `-`, ...) from ever being
+    // considered a concatenation chain in the first place.
+    concatenations:
+      '(concatenated_string) @concat.implicit\n(binary_operator operator: "+") @concat.operator',
   },
 
   comments: {

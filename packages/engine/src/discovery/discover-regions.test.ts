@@ -166,4 +166,94 @@ describe('discoverRegions', () => {
 
     expect(discoverRegions(adapter, tree, source, 'python')).toEqual([]);
   });
+
+  it('does not group concatenation runs when the descriptor has no concatenations query', () => {
+    const source = 'x = "a" "b" "c"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: minimalDescriptor() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(3);
+    expect(regions.every((r) => r.parts.length === 1)).toBe(true);
+  });
+});
+
+describe('discoverRegions — concatenation grouping', () => {
+  function descriptorWithConcatenations(): LanguageDescriptor {
+    return {
+      ...minimalDescriptor(),
+      queries: {
+        comments: '(comment) @comment',
+        strings: '(string) @string',
+        concatenations:
+          '(concatenated_string) @concat.implicit\n(binary_operator operator: "+") @concat.operator',
+      },
+    };
+  }
+
+  it('merges an implicit adjacency run into one multi-part region', () => {
+    const source = 'x = "a" "b" "c"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: descriptorWithConcatenations() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.parts).toHaveLength(3);
+    expect(regions[0]!.rawText).toBe('"a" "b" "c"');
+    expect(regions[0]!.span.startByte).toBe(regions[0]!.parts[0]!.startByte);
+    expect(regions[0]!.span.endByte).toBe(regions[0]!.parts[2]!.endByte);
+  });
+
+  it('merges a left-associative + chain into one multi-part region, in source order', () => {
+    const source = 'x = "a" + "b" + "c"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: descriptorWithConcatenations() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.rawText).toBe('"a" + "b" + "c"');
+    expect(regions[0]!.parts).toHaveLength(3);
+    expect(regions[0]!.parts.map((p) => p.startByte)).toEqual(
+      [...regions[0]!.parts].map((p) => p.startByte).sort((a, b) => a - b),
+    );
+  });
+
+  it('does not merge a + chain with a non-literal operand, leaving the literals standalone', () => {
+    const source = 'x = "a" + name + "b"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: descriptorWithConcatenations() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(2);
+    expect(regions.every((r) => r.parts.length === 1)).toBe(true);
+    expect(regions.map((r) => r.rawText)).toEqual(['"a"', '"b"']);
+  });
+
+  it('leaves an unrelated solo string as its own single-part region', () => {
+    const source = 'x = "a" "b"\ny = "solo"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: descriptorWithConcatenations() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(2);
+    const solo = regions.find((r) => r.rawText === '"solo"');
+    expect(solo?.parts).toHaveLength(1);
+  });
+
+  it('handles multiple independent concatenation runs in one file', () => {
+    const source = 'x = "a" "b"\ny = "c" + "d" + "e"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: descriptorWithConcatenations() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(2);
+    expect(regions[0]!.parts).toHaveLength(2);
+    expect(regions[1]!.parts).toHaveLength(3);
+  });
 });
