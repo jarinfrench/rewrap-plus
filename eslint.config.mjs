@@ -5,7 +5,17 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/out/**', '**/*.vsix', '**/coverage/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/out/**',
+      '**/*.vsix',
+      '**/coverage/**',
+      '**/node_modules/**',
+      // Throwaway spike scripts (see docs/parsing.md) — not part of the
+      // build, not shipped, and not written against this repo's
+      // TypeScript/no-Node-globals conventions.
+      'docs/spikes/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
