@@ -6,10 +6,10 @@
  * region model, wrap configuration, the language adapter interface and
  * registry, and the logical document/block model — plus `PositionMapper`,
  * the one place that converts between tree-sitter's UTF-8 byte offsets and
- * VSCode's UTF-16 positions.
+ * VSCode's UTF-16 positions. Phase 2 adds the parser layer, starting with
+ * `ParserManager` (lazy, cached `web-tree-sitter` grammar loading).
  *
- * The parser layer, region discovery, and the reflow pipeline itself are
- * added starting in Phase 2.
+ * Region discovery and the reflow pipeline itself start in Phase 3.
  *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */
@@ -31,3 +31,5 @@ export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';
 export type { Atom, Block, DocMeta, LogicalDocument } from './types/document.js';
 export { PositionMapper } from './types/position-mapper.js';
 export type { Position } from './types/position-mapper.js';
+export { ParserManager } from './parser/parser-manager.js';
+export type { ParserManagerOptions } from './parser/parser-manager.js';

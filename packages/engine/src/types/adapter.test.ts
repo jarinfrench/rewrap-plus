@@ -1,5 +1,37 @@
-import { describe, expect, it } from 'vitest';
+import { Parser, Language } from 'web-tree-sitter';
+import { beforeAll, describe, expect, it } from 'vitest';
 import type { LanguageAdapter, LanguageDescriptor } from './adapter.js';
+import type { SyntaxNode } from './tree-sitter-types.js';
+
+// `classify`'s `node` parameter is a real `web-tree-sitter` `Node` (see
+// `./tree-sitter-types.ts` — Phase 2 replaced the Phase 1 placeholder
+// shape with a re-export of the genuine type). `Node` is a class with
+// many required members (`id`, `tree`, `typeId`, getters, ...), so a
+// hand-written object literal can no longer stand in for one the way it
+// could against the Phase 1 placeholder interface. Parsing a one-line
+// snippet with the vendored grammar to obtain a real node is only a
+// little more setup and tests the hook against what it will actually
+// receive in practice.
+// Relative to the process's cwd, which Vitest sets to this package's root
+// (`packages/engine`) — same convention as every other grammar-loading
+// test in this package (see `parser/parser-manager.test.ts`). Avoids
+// `node:url`/`import.meta.url`, which this package's tests don't type
+// against (no `@types/node` dependency — see `position-mapper.test.ts`).
+const grammarPath = 'grammars/tree-sitter-python.wasm';
+let stringNode: SyntaxNode;
+
+beforeAll(async () => {
+  await Parser.init();
+  const language = await Language.load(grammarPath);
+  const parser = new Parser();
+  parser.setLanguage(language);
+  const tree = parser.parse('"x"');
+  const found = tree?.rootNode.descendantsOfType('string')[0];
+  if (!found) {
+    throw new Error('test setup: expected a `string` node parsing `"x"`');
+  }
+  stringNode = found;
+});
 
 function minimalDescriptor(overrides: Partial<LanguageDescriptor> = {}): LanguageDescriptor {
   return {
@@ -65,20 +97,6 @@ describe('LanguageAdapter', () => {
       classify: (node) => (node.type === 'string' ? 'docstring' : null),
     };
 
-    expect(
-      adapter.classify?.(
-        {
-          type: 'string',
-          startIndex: 0,
-          endIndex: 3,
-          startPosition: { row: 0, column: 0 },
-          endPosition: { row: 0, column: 3 },
-          parent: null,
-          children: [],
-          text: '"x"',
-        },
-        '"x"',
-      ),
-    ).toBe('docstring');
+    expect(adapter.classify?.(stringNode, '"x"')).toBe('docstring');
   });
 });

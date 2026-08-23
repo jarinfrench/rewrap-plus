@@ -1,37 +1,22 @@
 /**
- * Minimal structural stand-ins for the pieces of `web-tree-sitter`'s public
- * API that the Phase 1 type vocabulary needs to reference — specifically,
- * `LanguageAdapter`'s `classify` and `emitContext` hooks (see `./adapter.ts`).
+ * Re-exports of the pieces of `web-tree-sitter`'s public API that the rest
+ * of this package needs to reference — `LanguageAdapter`'s `classify` and
+ * `emitContext` hooks (`./adapter.ts`), the parser layer (`../parser/`),
+ * and everything downstream of it.
  *
- * `web-tree-sitter` is not yet a dependency of this package: that lands in
- * Phase 2 ("engine: add web-tree-sitter dependency and grammar loading
- * spike"). Defining these shapes locally keeps Phase 1 free of the parser
- * dependency while still letting the adapter interface talk about nodes and
- * trees now, ahead of a parser existing to produce them.
+ * This file used to define minimal structural stand-ins for these shapes
+ * (Phase 1, "placeholder `SyntaxNode`/`Tree` types standing in for
+ * `web-tree-sitter` until Phase 2"), written before `web-tree-sitter` was
+ * a dependency of this package. Phase 2 adds that dependency (see
+ * `docs/parsing.md`), so this file now re-exports the real types instead
+ * of shadowing them — as planned, nothing outside this file needed to
+ * change for the swap.
  *
- * Phase 2 replaces this file's exports with re-exports of the real
- * `web-tree-sitter` types (`import type { SyntaxNode, Tree } from
- * 'web-tree-sitter'`); nothing outside this file should need to change
- * when that happens, since every other module imports these names from
- * here rather than from `web-tree-sitter` directly.
+ * `SyntaxNode` is kept as this package's name for what `web-tree-sitter`
+ * calls `Node`, since `Node` alone reads ambiguously in a codebase that
+ * also deals in document-tree types elsewhere (`Block`, `LogicalDocument`).
+ * Everything in this package should import `SyntaxNode` and `Tree` from
+ * here, not from `web-tree-sitter` directly, so a future rename or a
+ * second parser backend only touches this one file.
  */
-
-export interface Point {
-  readonly row: number;
-  readonly column: number;
-}
-
-export interface SyntaxNode {
-  readonly type: string;
-  readonly startIndex: number;
-  readonly endIndex: number;
-  readonly startPosition: Point;
-  readonly endPosition: Point;
-  readonly parent: SyntaxNode | null;
-  readonly children: readonly SyntaxNode[];
-  readonly text: string;
-}
-
-export interface Tree {
-  readonly rootNode: SyntaxNode;
-}
+export type { Node as SyntaxNode, Tree, Point } from 'web-tree-sitter';
