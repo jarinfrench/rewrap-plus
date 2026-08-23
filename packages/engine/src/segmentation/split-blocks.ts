@@ -1,5 +1,6 @@
 import type { Atom, Block } from '../types/document.js';
 import { atomizeWords } from './atomize-words.js';
+import { isListContinuation, matchListMarker } from './list-item.js';
 import { toLines } from './to-lines.js';
 
 /**
@@ -30,15 +31,22 @@ export interface SplitBlocksOptions {
  * comments in Phase 6), since only the caller knows the region's
  * `indentColumn` and detected dialect.
  *
- * This commit handles only the two simplest block kinds, per the plan:
- * blank lines separate paragraphs, and within a paragraph every line
+ * Blank lines separate paragraphs, and within a paragraph every line
  * break is soft — content from consecutive non-blank lines is merged
  * into one continuous atom stream, free to be reflowed without regard to
- * where the *original* line breaks fell. List items and verbatim regions
- * (fenced code, doctests, tables, `::`-triggered literal blocks, and
- * indented blocks under `preserveIndentedBlocks`) are recognized as their
- * own block kinds starting with the next two commits in this phase —
- * until then, every non-blank line is treated as ordinary paragraph text.
+ * where the *original* line breaks fell.
+ *
+ * This commit adds list items (`./list-item.ts`): a line matching the
+ * bullet/ordered-marker grammar starts a `listItem` block instead of
+ * being folded into the surrounding paragraph, and its continuation
+ * lines (indented further than the marker, per `isListContinuation`) are
+ * merged into that same item's atom stream the same soft way a
+ * paragraph's lines are. Verbatim regions (fenced code, doctests, tables,
+ * `::`-triggered literal blocks, and indented blocks under
+ * `preserveIndentedBlocks`) are recognized as their own block kind
+ * starting with the next commit in this phase — until then, any
+ * non-blank, non-list-marker line is treated as ordinary paragraph text,
+ * including lines that will eventually be classified as verbatim.
  *
  * A run of blank source lines becomes one `blank` `Block` per line, not
  * one collapsed block for the whole run: `Block`'s `blank` variant carries
@@ -49,6 +57,7 @@ export interface SplitBlocksOptions {
 export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Block[] {
   void options; // consumed once verbatim detection lands later in this phase
 
+  const lines = toLines(text);
   const blocks: Block[] = [];
   let paragraphAtoms: Atom[] = [];
 
@@ -59,13 +68,37 @@ export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Blo
     }
   };
 
-  for (const line of toLines(text)) {
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+
     if (line.trim() === '') {
       flushParagraph();
       blocks.push({ type: 'blank' });
+      i++;
       continue;
     }
+
+    const item = matchListMarker(line);
+    if (item) {
+      flushParagraph();
+      const atoms = atomizeWords(item.rest);
+      i++;
+      while (i < lines.length && isListContinuation(lines[i]!, item)) {
+        atoms.push(...atomizeWords(lines[i]!));
+        i++;
+      }
+      blocks.push({
+        type: 'listItem',
+        marker: item.marker,
+        hangingIndent: item.hangingIndent,
+        atoms,
+      });
+      continue;
+    }
+
     paragraphAtoms.push(...atomizeWords(line));
+    i++;
   }
   flushParagraph();
 
