@@ -44,3 +44,5 @@ export { discoverRegions } from './discovery/discover-regions.js';
 export type { DiscoverRegionsOptions } from './discovery/discover-regions.js';
 export { sliceSpanText } from './discovery/slice-span.js';
 export { visualIndentColumn } from './discovery/visual-indent-column.js';
+export { pythonAdapter } from './languages/python/adapter.js';
+export { pythonDescriptor } from './languages/python/descriptor.js';
