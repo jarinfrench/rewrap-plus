@@ -6,8 +6,10 @@
  * region model, wrap configuration, the language adapter interface and
  * registry, and the logical document/block model — plus `PositionMapper`,
  * the one place that converts between tree-sitter's UTF-8 byte offsets and
- * VSCode's UTF-16 positions. Phase 2 adds the parser layer, starting with
- * `ParserManager` (lazy, cached `web-tree-sitter` grammar loading).
+ * VSCode's UTF-16 positions. Phase 2 adds the parser layer:
+ * `ParserManager` (lazy, cached `web-tree-sitter` grammar loading) and
+ * `parseWithErrors`/`ParseResult` (error and missing-node detection built
+ * on it).
  *
  * Region discovery and the reflow pipeline itself start in Phase 3.
  *
@@ -33,3 +35,6 @@ export { PositionMapper } from './types/position-mapper.js';
 export type { Position } from './types/position-mapper.js';
 export { ParserManager } from './parser/parser-manager.js';
 export type { ParserManagerOptions } from './parser/parser-manager.js';
+export { parseWithErrors } from './parser/parse-result.js';
+export type { ParseResult } from './parser/parse-result.js';
+export { spanFromNode } from './parser/span-from-node.js';
