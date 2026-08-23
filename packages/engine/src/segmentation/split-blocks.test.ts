@@ -110,11 +110,91 @@ describe('splitBlocks — list items', () => {
   });
 
   it('does not treat ordinary indented prose as a list', () => {
-    // No marker at all — this is still just a paragraph line for now;
-    // "indented, non-marker text" only becomes verbatim once the next
-    // commit in this phase (indented-block detection) lands.
+    // No marker at all, and preserveIndentedBlocks is off by default —
+    // this stays a paragraph. See "splitBlocks — verbatim regions"
+    // below for the preserveIndentedBlocks-on behavior.
     const blocks = splitBlocks('Some text.\n    More indented text, no marker.');
     expect(blocks).toHaveLength(1);
     expect(blocks[0]!.type).toBe('paragraph');
+  });
+});
+
+describe('splitBlocks — verbatim regions', () => {
+  it('treats a fenced code block as verbatim', () => {
+    const blocks = splitBlocks('Before.\n\n```\ncode line\n```\n\nAfter.');
+    expect(blocks.map((b) => b.type)).toEqual([
+      'paragraph',
+      'blank',
+      'verbatim',
+      'blank',
+      'paragraph',
+    ]);
+    const fence = blocks[2] as Extract<Block, { type: 'verbatim' }>;
+    expect(fence.lines).toEqual(['```', 'code line', '```']);
+  });
+
+  it('treats a doctest block as verbatim', () => {
+    const blocks = splitBlocks('>>> 1 + 1\n2\n\nExplanatory text.');
+    expect(blocks.map((b) => b.type)).toEqual(['verbatim', 'blank', 'paragraph']);
+    const doctest = blocks[0] as Extract<Block, { type: 'verbatim' }>;
+    expect(doctest.lines).toEqual(['>>> 1 + 1', '2']);
+  });
+
+  it('treats a markdown table as verbatim', () => {
+    const blocks = splitBlocks('| A | B |\n|---|---|\n| 1 | 2 |');
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.type).toBe('verbatim');
+  });
+
+  it('treats a fenced block as verbatim even if it looks like a list', () => {
+    // Bias toward verbatim: fence detection runs before list detection.
+    const blocks = splitBlocks('```\n- not actually a list item\n```');
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.type).toBe('verbatim');
+  });
+
+  it('starts a reST literal block after a paragraph ending in "::"', () => {
+    const blocks = splitBlocks('Example::\n\n    indented literal\n    block content.\n\nAfter.');
+    expect(blocks.map((b) => b.type)).toEqual([
+      'paragraph',
+      'blank',
+      'verbatim',
+      'blank',
+      'paragraph',
+    ]);
+    const literal = blocks[2] as Extract<Block, { type: 'verbatim' }>;
+    expect(literal.lines).toEqual(['    indented literal', '    block content.']);
+  });
+
+  it('does not start a literal block when "::" is not followed by indentation', () => {
+    const blocks = splitBlocks('Example::\n\nNot indented, so not a literal block.');
+    expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'paragraph']);
+  });
+
+  it('does not treat "::" as a trigger without a following blank line', () => {
+    const blocks = splitBlocks('Example::\n    still just a paragraph continuation');
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.type).toBe('paragraph');
+  });
+
+  it('leaves indented lines as ordinary paragraph text when preserveIndentedBlocks is off', () => {
+    const blocks = splitBlocks('Some text.\n    More indented text, no marker.');
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.type).toBe('paragraph');
+  });
+
+  it('treats indented lines as verbatim when preserveIndentedBlocks is on', () => {
+    const blocks = splitBlocks('Some text.\n    Indented, no marker.', {
+      preserveIndentedBlocks: true,
+    });
+    expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'verbatim']);
+    const verbatim = blocks[1] as Extract<Block, { type: 'verbatim' }>;
+    expect(verbatim.lines).toEqual(['    Indented, no marker.']);
+  });
+
+  it('still prefers list-item detection over preserveIndentedBlocks', () => {
+    const blocks = splitBlocks('- An item.', { preserveIndentedBlocks: true });
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.type).toBe('listItem');
   });
 });

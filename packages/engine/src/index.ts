@@ -15,9 +15,9 @@
  *
  * Phase 4 adds `splitBlocks`: the shared, language-agnostic segmenter that
  * turns dissolved region text into a `Block[]` — paragraphs and blank
- * lines in this commit, with list items and verbatim regions (fenced
- * code, doctests, tables, `::`-triggered literal blocks, indented blocks)
- * following later in the same phase.
+ * lines, list items with hanging indents, and verbatim regions (fenced
+ * code, doctests, Markdown tables, reST `::`-triggered literal blocks,
+ * and indented blocks under `preserveIndentedBlocks`).
  *
  * The reflow pipeline itself starts in Phase 5.
  *
