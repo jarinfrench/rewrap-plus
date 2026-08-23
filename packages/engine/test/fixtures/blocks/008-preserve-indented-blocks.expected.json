@@ -1,0 +1,57 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "Ordinary",
+        "width": 8,
+        "breakBefore": false
+      },
+      {
+        "text": "paragraph",
+        "width": 9,
+        "breakBefore": false
+      },
+      {
+        "text": "text.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "verbatim",
+    "lines": ["    This block is indented but has no special", "    marker of its own."]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "Back",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "to",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "ordinary",
+        "width": 8,
+        "breakBefore": false
+      },
+      {
+        "text": "text.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  }
+]

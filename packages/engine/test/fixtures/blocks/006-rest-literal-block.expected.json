@@ -1,0 +1,77 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "Here",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "is",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "an",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "example::",
+        "width": 9,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "verbatim",
+    "lines": ["    def f(x):", "        return x + 1"]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "The",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "literal",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "block",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "above",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "is",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "preserved",
+        "width": 9,
+        "breakBefore": false
+      },
+      {
+        "text": "verbatim.",
+        "width": 9,
+        "breakBefore": false
+      }
+    ]
+  }
+]

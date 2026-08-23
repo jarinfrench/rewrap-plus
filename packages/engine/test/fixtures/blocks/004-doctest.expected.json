@@ -1,0 +1,67 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "Example",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "usage:",
+        "width": 6,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "verbatim",
+    "lines": [">>> f(1)", "2", ">>> f(2)", "3"]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "The",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "doctest",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "above",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "must",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "never",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "be",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "reflowed.",
+        "width": 9,
+        "breakBefore": false
+      }
+    ]
+  }
+]

@@ -1,0 +1,10 @@
+This is the first paragraph. It has
+two lines that should merge into one
+continuous stream of atoms.
+
+This is a second paragraph, separated
+from the first by a single blank line.
+
+
+A third paragraph follows two blank
+lines instead of one.

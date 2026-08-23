@@ -1,0 +1,8 @@
+A comparison table follows.
+
+| Name | Value |
+|------|-------|
+| a    | 1     |
+| b    | 2     |
+
+That's the end of the table.

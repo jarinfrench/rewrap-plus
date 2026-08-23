@@ -1,0 +1,23 @@
+Summary paragraph that introduces the
+rest of the document.
+
+- A bullet point.
+- Another bullet point
+  with a continuation line.
+
+Example::
+
+    literal_block(True)
+
+```python
+fenced_code_block()
+```
+
+>>> f(1)
+2
+
+| A | B |
+|---|---|
+| 1 | 2 |
+
+Closing paragraph.

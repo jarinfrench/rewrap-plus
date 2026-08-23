@@ -1,0 +1,222 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "Some",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "items",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "to",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "consider:",
+        "width": 9,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "listItem",
+    "marker": "-",
+    "hangingIndent": 2,
+    "atoms": [
+      {
+        "text": "First",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "bullet",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "item.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "listItem",
+    "marker": "-",
+    "hangingIndent": 2,
+    "atoms": [
+      {
+        "text": "Second",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "bullet",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "item",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "that",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "continues",
+        "width": 9,
+        "breakBefore": false
+      },
+      {
+        "text": "onto",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "a",
+        "width": 1,
+        "breakBefore": false
+      },
+      {
+        "text": "second",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "line.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "listItem",
+    "marker": "-",
+    "hangingIndent": 2,
+    "atoms": [
+      {
+        "text": "Third",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "item.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "listItem",
+    "marker": "-",
+    "hangingIndent": 4,
+    "atoms": [
+      {
+        "text": "Nested",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "item",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "under",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "the",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "third.",
+        "width": 6,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "listItem",
+    "marker": "1.",
+    "hangingIndent": 3,
+    "atoms": [
+      {
+        "text": "First",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "ordered",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "item.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "listItem",
+    "marker": "2.",
+    "hangingIndent": 3,
+    "atoms": [
+      {
+        "text": "Second",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "ordered",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "item.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "listItem",
+    "marker": "3.",
+    "hangingIndent": 3,
+    "atoms": [
+      {
+        "text": "Third",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "ordered",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "item.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  }
+]

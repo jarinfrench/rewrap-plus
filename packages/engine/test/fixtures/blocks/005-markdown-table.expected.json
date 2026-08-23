@@ -1,0 +1,72 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "A",
+        "width": 1,
+        "breakBefore": false
+      },
+      {
+        "text": "comparison",
+        "width": 10,
+        "breakBefore": false
+      },
+      {
+        "text": "table",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "follows.",
+        "width": 8,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "verbatim",
+    "lines": ["| Name | Value |", "|------|-------|", "| a    | 1     |", "| b    | 2     |"]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "That's",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "the",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "end",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "of",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "the",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "table.",
+        "width": 6,
+        "breakBefore": false
+      }
+    ]
+  }
+]

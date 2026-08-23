@@ -8,3 +8,12 @@ declare module '*.py?raw' {
   const content: string;
   export default content;
 }
+
+// Phase 4's block-splitter fixtures are plain `.txt` files (not Python),
+// per the plan ("Fixture directory `packages/engine/test/fixtures/blocks/`
+// — input `.txt`, expected block JSON.") — same rationale as the `.py?raw`
+// declaration above, just a different source extension.
+declare module '*.txt?raw' {
+  const content: string;
+  export default content;
+}

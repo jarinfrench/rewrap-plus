@@ -1,0 +1,236 @@
+[
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "This",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "is",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "the",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "first",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "paragraph.",
+        "width": 10,
+        "breakBefore": false
+      },
+      {
+        "text": "It",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "has",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "two",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "lines",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "that",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "should",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "merge",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "into",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "one",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "continuous",
+        "width": 10,
+        "breakBefore": false
+      },
+      {
+        "text": "stream",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "of",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "atoms.",
+        "width": 6,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "This",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "is",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "a",
+        "width": 1,
+        "breakBefore": false
+      },
+      {
+        "text": "second",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "paragraph,",
+        "width": 10,
+        "breakBefore": false
+      },
+      {
+        "text": "separated",
+        "width": 9,
+        "breakBefore": false
+      },
+      {
+        "text": "from",
+        "width": 4,
+        "breakBefore": false
+      },
+      {
+        "text": "the",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "first",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "by",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "a",
+        "width": 1,
+        "breakBefore": false
+      },
+      {
+        "text": "single",
+        "width": 6,
+        "breakBefore": false
+      },
+      {
+        "text": "blank",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "line.",
+        "width": 5,
+        "breakBefore": false
+      }
+    ]
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "blank"
+  },
+  {
+    "type": "paragraph",
+    "atoms": [
+      {
+        "text": "A",
+        "width": 1,
+        "breakBefore": false
+      },
+      {
+        "text": "third",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "paragraph",
+        "width": 9,
+        "breakBefore": false
+      },
+      {
+        "text": "follows",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "two",
+        "width": 3,
+        "breakBefore": false
+      },
+      {
+        "text": "blank",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "lines",
+        "width": 5,
+        "breakBefore": false
+      },
+      {
+        "text": "instead",
+        "width": 7,
+        "breakBefore": false
+      },
+      {
+        "text": "of",
+        "width": 2,
+        "breakBefore": false
+      },
+      {
+        "text": "one.",
+        "width": 4,
+        "breakBefore": false
+      }
+    ]
+  }
+]

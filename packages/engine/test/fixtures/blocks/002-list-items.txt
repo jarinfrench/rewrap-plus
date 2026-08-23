@@ -1,0 +1,11 @@
+Some items to consider:
+
+- First bullet item.
+- Second bullet item
+  that continues onto a second line.
+- Third item.
+  - Nested item under the third.
+
+1. First ordered item.
+2. Second ordered item.
+3. Third ordered item.

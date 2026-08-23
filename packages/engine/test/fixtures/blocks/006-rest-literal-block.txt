@@ -1,0 +1,6 @@
+Here is an example::
+
+    def f(x):
+        return x + 1
+
+The literal block above is preserved verbatim.

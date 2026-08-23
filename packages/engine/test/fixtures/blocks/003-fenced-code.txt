@@ -1,0 +1,8 @@
+Here is an example:
+
+```python
+def f(x):
+    return x + 1
+```
+
+That's the whole function.

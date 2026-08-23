@@ -1,0 +1,6 @@
+Ordinary paragraph text.
+
+    This block is indented but has no special
+    marker of its own.
+
+Back to ordinary text.
