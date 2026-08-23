@@ -79,3 +79,67 @@ describe('pythonAdapter', () => {
     expect(regions[0]!.parts).toHaveLength(1);
   });
 });
+
+describe('pythonAdapter.isSafeToWrap', () => {
+  function discoverOne(source: string) {
+    const tree = parser.parse(source)!;
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    if (regions.length !== 1) {
+      throw new Error(`test setup: expected exactly one region, got ${regions.length}`);
+    }
+    return { region: regions[0]!, source };
+  }
+
+  it('is safe for an ordinary unprefixed string', () => {
+    const { region, source } = discoverOne('x = "hello world"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+
+  it('is safe for a docstring', () => {
+    const { region, source } = discoverOne('"""A docstring."""\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+
+  it('is safe for an f-string', () => {
+    const { region, source } = discoverOne('x = f"hello {name}"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+
+  it('is unsafe for a raw string', () => {
+    const { region, source } = discoverOne('x = r"raw\\d+"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is unsafe for a byte string', () => {
+    const { region, source } = discoverOne('x = b"bytes"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is unsafe for a raw-bytes string regardless of prefix letter order', () => {
+    const { region, source } = discoverOne('x = br"bytes"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is safe for a same-prefix concatenation run', () => {
+    const { region, source } = discoverOne('x = f"a" f"b"\n');
+    expect(region.parts).toHaveLength(2);
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+
+  it('is unsafe for a mixed-prefix concatenation run, even with neither prefix individually unsafe', () => {
+    const { region, source } = discoverOne('x = f"a" "b"\n');
+    expect(region.parts).toHaveLength(2);
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is unsafe for a concatenation run mixing a raw part with a plain part', () => {
+    const { region, source } = discoverOne('x = r"a" "b"\n');
+    expect(region.parts).toHaveLength(2);
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is safe for a comment region regardless of its text', () => {
+    const { region, source } = discoverOne('# looks like r"raw" but is a comment\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+});
