@@ -1,0 +1,29 @@
+[
+  {
+    "kind": "docstring",
+    "startRow": 1,
+    "startColumn": 4,
+    "endRow": 1,
+    "endColumn": 35,
+    "partCount": 1,
+    "rawText": "\"\"\"Outer function docstring.\"\"\""
+  },
+  {
+    "kind": "docstring",
+    "startRow": 4,
+    "startColumn": 8,
+    "endRow": 4,
+    "endColumn": 39,
+    "partCount": 1,
+    "rawText": "\"\"\"Inner function docstring.\"\"\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 5,
+    "startColumn": 15,
+    "endRow": 5,
+    "endColumn": 32,
+    "partCount": 1,
+    "rawText": "\"not a docstring\""
+  }
+]

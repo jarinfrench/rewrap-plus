@@ -1,0 +1,47 @@
+[
+  {
+    "kind": "stringLiteral",
+    "startRow": 0,
+    "startColumn": 9,
+    "endRow": 0,
+    "endColumn": 14,
+    "partCount": 1,
+    "rawText": "\"ada\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 0,
+    "startColumn": 16,
+    "endRow": 0,
+    "endColumn": 23,
+    "partCount": 1,
+    "rawText": "\"grace\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 0,
+    "startColumn": 25,
+    "endRow": 0,
+    "endColumn": 35,
+    "partCount": 1,
+    "rawText": "\"margaret\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 2,
+    "startColumn": 10,
+    "endRow": 2,
+    "endColumn": 21,
+    "partCount": 1,
+    "rawText": "f\"item-{n}\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 4,
+    "startColumn": 13,
+    "endRow": 4,
+    "endColumn": 19,
+    "partCount": 1,
+    "rawText": "\"seen\""
+  }
+]

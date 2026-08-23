@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "stringLiteral",
+    "startRow": 0,
+    "startColumn": 11,
+    "endRow": 0,
+    "endColumn": 36,
+    "partCount": 3,
+    "rawText": "\"Hello, \" + \"world\" + \"!\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 2,
+    "startColumn": 7,
+    "endRow": 2,
+    "endColumn": 12,
+    "partCount": 1,
+    "rawText": "\"Ada\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 3,
+    "startColumn": 8,
+    "endRow": 3,
+    "endColumn": 17,
+    "partCount": 1,
+    "rawText": "\"Hello, \""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 3,
+    "startColumn": 27,
+    "endRow": 3,
+    "endColumn": 30,
+    "partCount": 1,
+    "rawText": "\"!\""
+  }
+]

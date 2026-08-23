@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "lineComment",
+    "startRow": 0,
+    "startColumn": 0,
+    "endRow": 0,
+    "endColumn": 21,
+    "partCount": 1,
+    "rawText": "#!/usr/bin/env python"
+  },
+  {
+    "kind": "lineComment",
+    "startRow": 1,
+    "startColumn": 0,
+    "endRow": 1,
+    "endColumn": 23,
+    "partCount": 1,
+    "rawText": "# -*- coding: utf-8 -*-"
+  },
+  {
+    "kind": "docstring",
+    "startRow": 2,
+    "startColumn": 0,
+    "endRow": 2,
+    "endColumn": 71,
+    "partCount": 1,
+    "rawText": "\"\"\"A module docstring, preceded by a shebang and coding declaration.\"\"\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 5,
+    "startColumn": 10,
+    "endRow": 5,
+    "endColumn": 17,
+    "partCount": 1,
+    "rawText": "\"1.0.0\""
+  }
+]

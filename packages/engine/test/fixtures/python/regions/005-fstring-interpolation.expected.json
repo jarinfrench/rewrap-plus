@@ -1,0 +1,11 @@
+[
+  {
+    "kind": "stringLiteral",
+    "startRow": 1,
+    "startColumn": 11,
+    "endRow": 1,
+    "endColumn": 43,
+    "partCount": 1,
+    "rawText": "f\"Hello, {name!r:>10}! Welcome.\""
+  }
+]

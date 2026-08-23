@@ -1,0 +1,11 @@
+[
+  {
+    "kind": "stringLiteral",
+    "startRow": 2,
+    "startColumn": 21,
+    "endRow": 2,
+    "endColumn": 37,
+    "partCount": 1,
+    "rawText": "r\"^\\d{3}-\\d{4}$\""
+  }
+]

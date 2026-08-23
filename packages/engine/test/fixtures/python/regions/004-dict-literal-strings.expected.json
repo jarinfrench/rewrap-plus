@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "stringLiteral",
+    "startRow": 1,
+    "startColumn": 4,
+    "endRow": 1,
+    "endColumn": 10,
+    "partCount": 1,
+    "rawText": "\"host\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 1,
+    "startColumn": 12,
+    "endRow": 1,
+    "endColumn": 23,
+    "partCount": 1,
+    "rawText": "\"localhost\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 2,
+    "startColumn": 4,
+    "endRow": 2,
+    "endColumn": 10,
+    "partCount": 1,
+    "rawText": "\"port\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 2,
+    "startColumn": 12,
+    "endRow": 2,
+    "endColumn": 18,
+    "partCount": 1,
+    "rawText": "\"5432\""
+  }
+]

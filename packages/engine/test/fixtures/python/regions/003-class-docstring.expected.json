@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "docstring",
+    "startRow": 1,
+    "startColumn": 4,
+    "endRow": 1,
+    "endColumn": 37,
+    "partCount": 1,
+    "rawText": "\"\"\"Class docstring for Widget.\"\"\""
+  },
+  {
+    "kind": "stringLiteral",
+    "startRow": 3,
+    "startColumn": 20,
+    "endRow": 3,
+    "endColumn": 26,
+    "partCount": 1,
+    "rawText": "\"blue\""
+  },
+  {
+    "kind": "docstring",
+    "startRow": 4,
+    "startColumn": 4,
+    "endRow": 4,
+    "endColumn": 33,
+    "partCount": 1,
+    "rawText": "\"\"\"Docs for DEFAULT_COLOR.\"\"\""
+  },
+  {
+    "kind": "docstring",
+    "startRow": 7,
+    "startColumn": 8,
+    "endRow": 7,
+    "endColumn": 42,
+    "partCount": 1,
+    "rawText": "\"\"\"Method docstring for render.\"\"\""
+  }
+]

@@ -1,0 +1,4 @@
+CONFIG = {
+    "host": "localhost",
+    "port": "5432",
+}
