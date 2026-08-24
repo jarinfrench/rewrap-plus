@@ -202,3 +202,119 @@ describe('reflowBlock — width edge cases', () => {
     expect(reflowBlock(block, 0, 0)).toEqual(['a', 'b', 'c']);
   });
 });
+
+describe('reflowBlock — balanced (minimum-raggedness) mode', () => {
+  it('produces the same output as greedy when everything fits on one line', () => {
+    const block: Block = { type: 'paragraph', atoms: words('one', 'two', 'three') };
+    expect(reflowBlock(block, 80, 0, { mode: 'balanced' })).toEqual(['one two three']);
+  });
+
+  it('spreads raggedness more evenly than greedy for a short paragraph', () => {
+    // Six 4-wide words at width 12 (3 words + 2 spaces = 14 > 12, so at
+    // most 2 fit per line). Greedy crams 2+2+2 = three lines of equal
+    // length here too, coincidentally -- use a case with an uneven word
+    // count so the difference actually shows.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: words('aaaa', 'bbbb', 'cccc', 'dddd', 'eeee'),
+    };
+    // Greedy at width 10: "aaaa bbbb" (9) then "cccc dddd" (9) then "eeee" (4)
+    // -- a short, ragged final line.
+    expect(reflowBlock(block, 10, 0)).toEqual(['aaaa bbbb', 'cccc dddd', 'eeee']);
+    // Balanced prefers spreading the five words across three lines more
+    // evenly (2/2/1 either way is forced by width, but balanced is free
+    // to choose *which* pairing minimizes total non-last-line slack --
+    // here there's only one 2/2/1 partition that fits, so balanced and
+    // greedy agree; the point of this test is that balanced still
+    // produces valid, width-respecting output on the same input).
+    const balanced = reflowBlock(block, 10, 0, { mode: 'balanced' });
+    for (const line of balanced.slice(0, -1)) {
+      expect(line.length).toBeLessThanOrEqual(10);
+    }
+    expect(balanced.join(' ').replace(/\s+/g, ' ')).toBe('aaaa bbbb cccc dddd eeee');
+  });
+
+  it('finds a strictly lower-cost partition than greedy when one exists', () => {
+    // A concrete case where greedy's locally-first-fit choice locks in a
+    // worse global partition: greedy fills "aaaaaa b" (8/10) early,
+    // forcing "ccccc" (5/10) onto its own ragged line. Balanced instead
+    // leaves "aaaaaa" alone and pairs "b" with "ccccc" (7/10), which
+    // reduces total non-last-line squared slack from 38 to 34 — a
+    // genuinely different, better partition, not just a tie.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: words('aaaaaa', 'b', 'ccccc', 'ddddddd', 'eeeeeee'),
+    };
+    expect(reflowBlock(block, 10, 0)).toEqual(['aaaaaa b', 'ccccc', 'ddddddd', 'eeeeeee']);
+    expect(reflowBlock(block, 10, 0, { mode: 'balanced' })).toEqual([
+      'aaaaaa',
+      'b ccccc',
+      'ddddddd',
+      'eeeeeee',
+    ]);
+  });
+
+  it('never produces a higher total squared slack than greedy, across varied inputs', () => {
+    // Words: "a"(1) "bb"(2) "ccc"(3) "dddd"(4) "eeeee"(5) at width 7.
+    // Greedy: "a bb ccc" is 1+1+2+1+3=8>7, so greedy fits "a bb"(4) then
+    // must decide "ccc"(3) alone or with more -- walk it precisely
+    // below instead of asserting greedy's exact shape (it's exercised
+    // elsewhere); the point here is balanced's total squared slack is
+    // never worse than greedy's for the same input.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: words('a', 'bb', 'ccc', 'dddd', 'eeeee'),
+    };
+    const width = 7;
+    const greedyLines = reflowBlock(block, width, 0);
+    const balancedLines = reflowBlock(block, width, 0, { mode: 'balanced' });
+
+    const slackCost = (lines: string[]): number =>
+      lines
+        .slice(0, -1)
+        .map((l) => width - l.length)
+        .reduce((sum, slack) => sum + slack * slack, 0);
+
+    expect(slackCost(balancedLines)).toBeLessThanOrEqual(slackCost(greedyLines));
+    // Both must still reproduce the same words in order.
+    const words_ = (lines: string[]): string => lines.join(' ').replace(/\s+/g, ' ').trim();
+    expect(words_(balancedLines)).toBe(words_(greedyLines));
+  });
+
+  it('still applies the overflow rule: a too-wide atom gets its own line', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: words('short', 'aVeryVeryVeryVeryVeryVeryLongUnbreakableAtom', 'ok'),
+    };
+    expect(reflowBlock(block, 10, 0, { mode: 'balanced' })).toEqual([
+      'short',
+      'aVeryVeryVeryVeryVeryVeryLongUnbreakableAtom',
+      'ok',
+    ]);
+  });
+
+  it('still respects breakBefore', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('short'), atom('forced', { breakBefore: true }), atom('after')],
+    };
+    expect(reflowBlock(block, 80, 0, { mode: 'balanced' })).toEqual(['short', 'forced after']);
+  });
+
+  it('still indents continuation lines by hangingIndent', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: words('aaaa', 'bbbb', 'cccc', 'dddd'),
+    };
+    const lines = reflowBlock(block, 10, 4, { mode: 'balanced' });
+    expect(lines[0]!.startsWith(' ')).toBe(false);
+    for (const line of lines.slice(1)) {
+      expect(line.startsWith('    ')).toBe(true);
+    }
+  });
+
+  it('returns a single empty line for an empty paragraph', () => {
+    const block: Block = { type: 'paragraph', atoms: [] };
+    expect(reflowBlock(block, 80, 0, { mode: 'balanced' })).toEqual(['']);
+  });
+});

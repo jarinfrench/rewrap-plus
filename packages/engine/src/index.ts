@@ -56,3 +56,4 @@ export { splitBlocks } from './segmentation/split-blocks.js';
 export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
 export { displayWidth } from './segmentation/display-width.js';
 export { reflowBlock } from './reflow/reflow-block.js';
+export type { ReflowOptions } from './reflow/reflow-block.js';
