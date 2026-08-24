@@ -30,10 +30,82 @@ describe('atomizeWords', () => {
     }
   });
 
-  it('uses UTF-16 code-unit length as a provisional width', () => {
-    // Real display width (East Asian Wide = 2 columns) lands in Phase 5;
-    // this just documents today's stand-in so a future change is a
+  it('uses character-count width as a provisional stand-in', () => {
+    // Real display width (East Asian Wide = 2 columns, combining marks =
+    // 0) lands in the next Phase 5 commit ("add display width
+    // calculation"); this documents today's stand-in so that change is a
     // deliberate diff here, not a silent behavior shift.
     expect(atomizeWords('日本語')).toEqual([{ text: '日本語', width: 3, breakBefore: false }]);
+  });
+
+  it('keeps a brace placeholder whole as a single atom', () => {
+    expect(atomizeWords('Total: {count} items').map((a) => a.text)).toEqual([
+      'Total:',
+      '{count}',
+      'items',
+    ]);
+  });
+
+  it('does not split an f-string interpolation at its internal whitespace', () => {
+    const atoms = atomizeWords('Result: {a + b} done');
+    expect(atoms.map((a) => a.text)).toEqual(['Result:', '{a + b}', 'done']);
+  });
+
+  it('does not split an inline code span at its internal whitespace', () => {
+    const atoms = atomizeWords('run `git commit -m msg` first');
+    expect(atoms.map((a) => a.text)).toEqual(['run', '`git commit -m msg`', 'first']);
+  });
+
+  it('does not split a reST role at its internal whitespace', () => {
+    const atoms = atomizeWords('see :func:`do the thing` now');
+    expect(atoms.map((a) => a.text)).toEqual(['see', ':func:`do the thing`', 'now']);
+  });
+
+  it('never splits inside an escape sequence, even mid-word', () => {
+    // "a\tb" (backslash-t, not a real tab) has no internal whitespace of
+    // its own to preserve, but the escape sequence still becomes its own
+    // atom — glued flush to its neighbors — so later phases can reason
+    // about it as a distinct unit rather than opaque substring text.
+    const atoms = atomizeWords('a\\tb c');
+    expect(atoms.map((a) => [a.text, a.glue])).toEqual([
+      ['a', undefined],
+      ['\\t', 'none'],
+      ['b', 'none'],
+      ['c', undefined],
+    ]);
+  });
+
+  it('keeps a whole URL as one atom with no special handling needed', () => {
+    expect(atomizeWords('see https://example.com/a/b now').map((a) => a.text)).toEqual([
+      'see',
+      'https://example.com/a/b',
+      'now',
+    ]);
+  });
+
+  it('tags an atom glued flush to its predecessor with glue: none', () => {
+    const atoms = atomizeWords('{name}, welcome!');
+    expect(atoms).toEqual([
+      { text: '{name}', width: 6, breakBefore: false },
+      { text: ',', width: 1, breakBefore: false, glue: 'none' },
+      { text: 'welcome!', width: 8, breakBefore: false },
+    ]);
+  });
+
+  it('does not tag glue: none when a space separates atoms', () => {
+    const atoms = atomizeWords('{name} , welcome');
+    for (const atom of atoms) {
+      expect(atom.glue).toBeUndefined();
+    }
+  });
+
+  it('handles a run made of several adjacent unbreakable spans', () => {
+    // "Value:" + "{x}" glued, with no space anywhere in the run.
+    const atoms = atomizeWords('Value:{x}.');
+    expect(atoms.map((a) => [a.text, a.glue])).toEqual([
+      ['Value:', undefined],
+      ['{x}', 'none'],
+      ['.', 'none'],
+    ]);
   });
 });

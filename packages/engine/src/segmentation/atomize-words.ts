@@ -1,30 +1,88 @@
 import type { Atom } from '../types/document.js';
+import { findUnbreakableSpans } from './unbreakable-spans.js';
 
 /**
- * Split a line of text into whitespace-delimited `Atom`s.
+ * Split a line of text into `Atom`s, honoring unbreakable units (Phase 5,
+ * "add atom segmentation with unbreakable unit support").
  *
- * This is a deliberately provisional word splitter, not the real thing —
- * `Atom` is defined in Phase 1 only because `Block` needs to reference its
- * shape (see `../types/document.ts`), and the actual segmentation rules
- * ("never split inside an escape sequence, format placeholder, f-string
- * interpolation, URL, path, or inline code span") are Phase 5's job
- * ("add atom segmentation with unbreakable unit support"). Phase 5 also
- * replaces `width: text.length` below with real display-width
- * calculation (East Asian Wide/Fullwidth as 2 columns, combining marks as
- * 0) — see that phase's "add display width calculation" commit.
+ * Atoms are whitespace-delimited words *except* that these are never
+ * split internally, even where they contain whitespace of their own
+ * (`./unbreakable-spans.ts`):
  *
- * Block splitting (this phase) only needs *some* faithful, round-trippable
- * atom stream to populate `Block.paragraph`/`.listItem`/`.fieldEntry`'s
- * `atoms` field with — plain whitespace splitting is sufficient for that,
- * and correct for the common case (plain ASCII prose) besides.
+ * - escape sequences (`\n`, `\t`, `\\`, `\x41`, `\u1234`, `\U0001F600`,
+ *   `\N{NAME}`)
+ * - format placeholders (`{}`, `{0}`, `{name!r:>10}`, `%s`, `%(key)d`)
+ * - f-string interpolations (`{expr}`, including nested braces)
+ * - inline code spans (`` `x` ``) and reST roles (`` :func:`x` ``)
  *
- * Every atom's `glue` is left `undefined`, meaning "join to the previous
- * atom with a space" — the ordinary case for word-splitting. Phase 5
- * introduces `'none'` for atoms that must sit flush against their
- * neighbor (e.g. a placeholder immediately followed by punctuation);
- * nothing in this phase's splitting needs it.
+ * URLs and filesystem paths need no special handling here: they contain
+ * no whitespace by construction, so a maximal non-whitespace run already
+ * keeps one whole.
+ *
+ * A word run that starts with, but isn't wholly consumed by, an
+ * unbreakable span (e.g. `{x}.` — the placeholder followed immediately
+ * by a period, no space between) is split into two atoms at the span's
+ * boundary, and the later atom is tagged `glue: 'none'` rather than left
+ * `undefined` ("join with a space") — reflow and re-emission must
+ * reproduce the original absence of whitespace there, not insert one.
+ *
+ * Getting the "never split inside" rule wrong produces *invalid strings*
+ * later (a torn f-string interpolation, a mangled escape), not just an
+ * ugly wrap — see Phase 5's atom-segmentation commit note in the
+ * implementation plan.
  */
 export function atomizeWords(line: string): Atom[] {
-  const words = line.match(/\S+/g) ?? [];
-  return words.map((text) => ({ text, width: text.length, breakBefore: false }));
+  const unbreakable = findUnbreakableSpans(line);
+  const atoms: Atom[] = [];
+  const n = line.length;
+  let i = 0;
+  let unbreakableIndex = 0;
+  let prevEnd = -1; // end index (exclusive) of the previously emitted atom
+
+  const isWhitespace = (ch: string): boolean => ch === ' ' || ch === '\t';
+
+  while (i < n) {
+    while (i < n && isWhitespace(line[i]!)) {
+      i++;
+    }
+    if (i >= n) {
+      break;
+    }
+
+    while (unbreakableIndex < unbreakable.length && unbreakable[unbreakableIndex]!.end <= i) {
+      unbreakableIndex++;
+    }
+    const nextSpan = unbreakable[unbreakableIndex];
+
+    let end: number;
+    if (nextSpan && nextSpan.start === i) {
+      // This atom *is* the unbreakable span: take it whole, whitespace
+      // and all.
+      end = nextSpan.end;
+      unbreakableIndex++;
+    } else {
+      // Ordinary run: consume non-whitespace characters up to the next
+      // whitespace, but stop early if an unbreakable span begins first —
+      // that span becomes its own atom on the next iteration, glued to
+      // this one (no whitespace separated them in the source).
+      const stopAt = nextSpan ? nextSpan.start : n;
+      end = i;
+      while (end < stopAt && !isWhitespace(line[end]!)) {
+        end++;
+      }
+    }
+
+    const gluedToPrevious = prevEnd === i;
+    const text = line.slice(i, end);
+    atoms.push({
+      text,
+      width: text.length, // real display width lands in the next Phase 5 commit
+      breakBefore: false,
+      ...(gluedToPrevious ? { glue: 'none' as const } : {}),
+    });
+    prevEnd = end;
+    i = end;
+  }
+
+  return atoms;
 }
