@@ -54,3 +54,4 @@ export { pythonAdapter } from './languages/python/adapter.js';
 export { pythonDescriptor } from './languages/python/descriptor.js';
 export { splitBlocks } from './segmentation/split-blocks.js';
 export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
+export { displayWidth } from './segmentation/display-width.js';

@@ -1,4 +1,5 @@
 import type { Atom } from '../types/document.js';
+import { displayWidth } from './display-width.js';
 import { findUnbreakableSpans } from './unbreakable-spans.js';
 
 /**
@@ -30,6 +31,10 @@ import { findUnbreakableSpans } from './unbreakable-spans.js';
  * later (a torn f-string interpolation, a mangled escape), not just an
  * ugly wrap — see Phase 5's atom-segmentation commit note in the
  * implementation plan.
+ *
+ * `width` is real display width (`./display-width.ts`): East Asian
+ * Wide/Fullwidth characters count as 2 columns, combining marks as 0 —
+ * not `text.length`, which over- or under-counts for exactly that text.
  */
 export function atomizeWords(line: string): Atom[] {
   const unbreakable = findUnbreakableSpans(line);
@@ -76,7 +81,7 @@ export function atomizeWords(line: string): Atom[] {
     const text = line.slice(i, end);
     atoms.push({
       text,
-      width: text.length, // real display width lands in the next Phase 5 commit
+      width: displayWidth(text),
       breakBefore: false,
       ...(gluedToPrevious ? { glue: 'none' as const } : {}),
     });

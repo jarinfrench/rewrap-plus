@@ -30,12 +30,10 @@ describe('atomizeWords', () => {
     }
   });
 
-  it('uses character-count width as a provisional stand-in', () => {
-    // Real display width (East Asian Wide = 2 columns, combining marks =
-    // 0) lands in the next Phase 5 commit ("add display width
-    // calculation"); this documents today's stand-in so that change is a
-    // deliberate diff here, not a silent behavior shift.
-    expect(atomizeWords('日本語')).toEqual([{ text: '日本語', width: 3, breakBefore: false }]);
+  it('uses real display width, not character count, for CJK text', () => {
+    // East Asian Wide characters count as 2 columns each (./display-width.ts)
+    // — 3 characters, 6 columns, not 3.
+    expect(atomizeWords('日本語')).toEqual([{ text: '日本語', width: 6, breakBefore: false }]);
   });
 
   it('keeps a brace placeholder whole as a single atom', () => {
