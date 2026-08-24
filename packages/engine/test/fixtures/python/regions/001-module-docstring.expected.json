@@ -3,19 +3,10 @@
     "kind": "lineComment",
     "startRow": 0,
     "startColumn": 0,
-    "endRow": 0,
-    "endColumn": 21,
-    "partCount": 1,
-    "rawText": "#!/usr/bin/env python"
-  },
-  {
-    "kind": "lineComment",
-    "startRow": 1,
-    "startColumn": 0,
     "endRow": 1,
     "endColumn": 23,
-    "partCount": 1,
-    "rawText": "# -*- coding: utf-8 -*-"
+    "partCount": 2,
+    "rawText": "#!/usr/bin/env python\n# -*- coding: utf-8 -*-"
   },
   {
     "kind": "docstring",

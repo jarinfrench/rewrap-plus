@@ -64,6 +64,8 @@ export { sliceSpanText } from './discovery/slice-span.js';
 export { visualIndentColumn } from './discovery/visual-indent-column.js';
 export { pythonAdapter } from './languages/python/adapter.js';
 export { pythonDescriptor } from './languages/python/descriptor.js';
+export { dissolveLineComments } from './languages/python/line-comment-dissolve.js';
+export type { DissolvedLineComments } from './languages/python/line-comment-dissolve.js';
 export { splitBlocks } from './segmentation/split-blocks.js';
 export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
 export { displayWidth } from './segmentation/display-width.js';

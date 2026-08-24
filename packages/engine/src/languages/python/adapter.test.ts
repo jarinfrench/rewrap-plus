@@ -143,3 +143,79 @@ describe('pythonAdapter.isSafeToWrap', () => {
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
   });
 });
+
+describe('pythonAdapter groupRegions — line comment merging', () => {
+  it('merges consecutive same-indent line comments into one multi-part region', () => {
+    const source = '# first line\n# second line\n# third line\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.kind).toBe('lineComment');
+    expect(regions[0]!.parts).toHaveLength(3);
+    expect(regions[0]!.span.startRow).toBe(0);
+    expect(regions[0]!.span.endRow).toBe(2);
+  });
+
+  it('does not merge comments separated by a non-comment line', () => {
+    const source = '# first block\nx = 1\n# second block\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    const comments = regions.filter((r) => r.kind === 'lineComment');
+
+    expect(comments).toHaveLength(2);
+    expect(comments[0]!.parts).toHaveLength(1);
+    expect(comments[1]!.parts).toHaveLength(1);
+  });
+
+  it('does not merge comments at different indent columns', () => {
+    const source = '# outer\nif True:\n    # inner\n    pass\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    const comments = regions.filter((r) => r.kind === 'lineComment');
+
+    expect(comments).toHaveLength(2);
+    expect(comments.every((r) => r.parts.length === 1)).toBe(true);
+  });
+
+  it('does not merge a trailing comment with an unrelated standalone comment below it', () => {
+    const source = 'x = 1  # trailing\n# standalone, different column\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    const comments = regions.filter((r) => r.kind === 'lineComment');
+
+    expect(comments).toHaveLength(2);
+  });
+
+  it('leaves a lone comment ungrouped (single-part, unchanged)', () => {
+    const source = '# only comment\nx = 1\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    const [comment] = regions.filter((r) => r.kind === 'lineComment');
+
+    expect(comment!.parts).toHaveLength(1);
+  });
+
+  it('merges three consecutive blank-comment-separated lines but stops at a blank source line', () => {
+    // A run of bare "#" separator lines is still "consecutive `#`
+    // comments at the same indent" from groupRegions's perspective —
+    // dissolve (not grouping) is what turns their empty content into a
+    // paragraph-separating `blank` block. A genuinely blank *source*
+    // line, by contrast, has no comment node at all and breaks the row
+    // adjacency the merge requires.
+    const source = '# para one\n#\n# para two\n\n# unrelated\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(pythonAdapter, tree, source, 'python');
+    const comments = regions.filter((r) => r.kind === 'lineComment');
+
+    expect(comments).toHaveLength(2);
+    expect(comments[0]!.parts).toHaveLength(3);
+    expect(comments[1]!.parts).toHaveLength(1);
+  });
+});
