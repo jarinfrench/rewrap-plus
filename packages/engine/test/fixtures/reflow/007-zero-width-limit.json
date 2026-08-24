@@ -1,0 +1,5 @@
+{
+  "availableWidth": 0,
+  "hangingIndent": 0,
+  "expected": ["alpha", "bravo", "charlie"]
+}

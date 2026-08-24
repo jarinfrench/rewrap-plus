@@ -1,0 +1,7 @@
+{
+  "availableWidth": 20,
+  "hangingIndent": 0,
+  "expected": [
+    "https://example.com/a/very/long/path/that/definitely/exceeds/any/reasonable/column/limit"
+  ]
+}

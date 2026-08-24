@@ -1,0 +1,18 @@
+{
+  "availableWidth": 40,
+  "hangingIndent": 36,
+  "expected": [
+    "Alpha bravo charlie delta echo foxtrot",
+    "                                    golf",
+    "                                    hotel",
+    "                                    indigo",
+    "                                    juliet",
+    "                                    kilo",
+    "                                    lima",
+    "                                    mike",
+    "                                    november",
+    "                                    oscar",
+    "                                    papa",
+    "                                    quebec."
+  ]
+}

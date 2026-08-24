@@ -1,0 +1,1 @@
+See the docs at https://example.com/a/very/long/path/that/definitely/exceeds/any/reasonable/column/limit for details.

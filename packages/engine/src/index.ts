@@ -19,7 +19,19 @@
  * code, doctests, Markdown tables, reST `::`-triggered literal blocks,
  * and indented blocks under `preserveIndentedBlocks`).
  *
- * The reflow pipeline itself starts in Phase 5.
+ * Phase 5 completes the reflow pipeline's engine-side half:
+ * `displayWidth` (East Asian Wide/Fullwidth and combining-character-aware
+ * column counting, replacing the earlier phases' `text.length` stand-in)
+ * and the unbreakable-unit-aware atom segmentation it feeds
+ * (`atomizeWords`, internal — escape sequences, format placeholders,
+ * f-string interpolations, inline code spans, and reST roles are never
+ * split, even at their own internal whitespace); and `reflowBlock`, the
+ * line-breaking algorithm itself, in both a `'greedy'` first-fit mode
+ * (the default) and an optional `'balanced'` minimum-raggedness mode.
+ * `reflowBlock` reflows atoms only — dissolve and emit, which turn a
+ * `WrappableRegion`'s raw text into blocks and back into re-escaped,
+ * re-delimited source text, are Phase 6 (comments) and Phase 8/9
+ * (docstrings and strings) respectively.
  *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */
