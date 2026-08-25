@@ -8,8 +8,8 @@ import type { SourceSpan, TextEdit } from '../../types/span.js';
 import type { WrappableRegion } from '../../types/region.js';
 import { pythonAdapter } from './adapter.js';
 import { pythonDescriptor } from './descriptor.js';
-import { dissolveLineComments } from './line-comment-dissolve.js';
-import { emitLineComments } from './line-comment-emit.js';
+import { dissolveLineComments } from '../../comments/dissolve-line-comments.js';
+import { emitLineComments } from '../../comments/emit-line-comments.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a

@@ -45,6 +45,19 @@ describe('pythonDescriptor', () => {
     expect(matches('# just a regular comment')).toBe(false);
   });
 
+  it('flags statement/definition keywords and decorators as code-like', () => {
+    const pattern = pythonDescriptor.comments.codeLikeKeywords;
+    expect(pattern).toBeDefined();
+    const matches = (text: string): boolean => pattern!.test(text);
+
+    expect(matches('def f(x):')).toBe(true);
+    expect(matches('class Foo:')).toBe(true);
+    expect(matches('import os')).toBe(true);
+    expect(matches('@deprecated')).toBe(true);
+    expect(matches('return x + 1')).toBe(true);
+    expect(matches('This is an ordinary sentence.')).toBe(false);
+  });
+
   it('declares canonical, lowercase prefix forms only', () => {
     const prefixes = pythonDescriptor.strings.prefixes.map((p) => p.prefix);
 

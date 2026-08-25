@@ -72,6 +72,23 @@ export const pythonDescriptor: LanguageDescriptor = {
       /^#\s*pragma\b/i,
       /^#\s*fmt:\s*(on|off)\b/i, // Black's own directive (Phase 9 honors these too)
     ],
+
+    // Statement/definition keywords, decorators, and shebangs enough on
+    // their own to call a dissolved comment line code-like (Phase 6's
+    // commented-out-code detection, `../../comments/looks-like-code.ts`)
+    // without needing the punctuation-density signal too. Anchored to
+    // the start of the (already-trimmed) line: these are keywords Python
+    // only ever uses in statement-leading position, so a false positive
+    // would require a prose sentence that happens to start the same way
+    // (rare enough, and the same failure mode a real linter accepts).
+    //
+    // Originally hardcoded inside the (Python-only) dissolve
+    // implementation; moved here in Phase 6b once the JavaScript canary
+    // adapter confirmed the *pattern* was the only Python-specific part
+    // of that logic — see `../../comments/looks-like-code.ts`'s own doc
+    // comment and `docs/adapters.md`.
+    codeLikeKeywords:
+      /^(def |class |import |from |return\b|if |elif |else\s*:|for |while |with |try\s*:|except|finally\s*:|raise |yield |lambda |async |await |assert |global |nonlocal |del |pass\s*$|break\s*$|continue\s*$|@\w|#!)/,
   },
 
   strings: {

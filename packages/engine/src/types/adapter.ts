@@ -108,6 +108,25 @@ export interface LanguageDescriptor {
      * different line can change program behavior.
      */
     readonly neverReflow: readonly RegExp[];
+    /**
+     * Pattern matching a leading keyword/decorator/shebang strong enough,
+     * on its own, to call a dissolved comment line code-like rather than
+     * prose — e.g. Python's `def `/`class `/`import `/... . Anchored to
+     * the start of an already-trimmed line by convention, though the
+     * pattern itself is free to express that however it needs to.
+     *
+     * Optional: a language that doesn't set this still gets the
+     * engine's shared punctuation-density signal (`../comments/looks-like-code.ts`)
+     * on its own — weaker without a keyword list, but never absent
+     * outright, so a language can start pure-data and add this later
+     * without an engine change. Found to matter in Phase 6b: an earlier
+     * version of this heuristic hardcoded Python's own keyword list
+     * directly inside dissolve, which the JavaScript canary adapter
+     * would have needed to either duplicate or fork — exactly the kind
+     * of Python-specific assumption baked into shared code that the
+     * canary exists to catch (see `docs/adapters.md`).
+     */
+    readonly codeLikeKeywords?: RegExp;
   };
 
   readonly strings: {
