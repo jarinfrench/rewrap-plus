@@ -17,6 +17,7 @@ import type {
 } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 import { getEngine, getParserManager } from '../engine-host.js';
 import { resolveWrapConfigForDocument, type ResolvedWrapConfig } from '../config/resolve-wrap-config.js';
+import { reportWrapOutcome } from '../report-wrap-outcome.js';
 
 export interface WrapOutcome {
   readonly result: WrapResult;
@@ -49,7 +50,9 @@ export async function computeWrapResult(
     parserManager,
   );
 
-  return { result, resolvedConfig };
+  const outcome: WrapOutcome = { result, resolvedConfig };
+  reportWrapOutcome(document, outcome);
+  return outcome;
 }
 
 function toVSCodeTextEdit(edit: EngineTextEdit): vscode.TextEdit {

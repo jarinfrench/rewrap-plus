@@ -12,8 +12,11 @@ import { registerWrapAtCursorCommand } from './commands/wrap-at-cursor.js';
 import { registerWrapSelectionCommand } from './commands/wrap-selection.js';
 import { registerWrapDocumentCommand } from './commands/wrap-document.js';
 import { createRangeFormattingProvider } from './range-formatting-provider.js';
+import { getOutputChannel } from './output-channel.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  context.subscriptions.push(getOutputChannel());
+
   const languages = await getSupportedLanguages();
 
   // `"editorLangId in rewrapPlusSupportedLanguages"` (package.json's
