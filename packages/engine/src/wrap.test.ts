@@ -118,12 +118,23 @@ describe('wrapRegions', () => {
     expect(result.skipped[0]!.reason).toMatch(/wrapComments/);
   });
 
-  it('skips a docstring region with a reason naming the missing implementation', async () => {
-    const source = '"""A module docstring that is not wrapped by this phase."""\n';
+  it('wraps a docstring region (Phase 8) rather than skipping it', async () => {
+    const source = '"""A module docstring that is too long to fit on one line."""\n';
+    const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
+    expect(result.skipped).toEqual([]);
+    expect(result.edits).toHaveLength(1);
+    const wrapped = applyTextEdits(source, result.edits);
+    for (const line of wrapped.split('\n')) {
+      expect(line.length).toBeLessThanOrEqual(40);
+    }
+  });
+
+  it('still skips a stringLiteral region with a reason naming the missing implementation', async () => {
+    const source = 'x = "a plain string literal, not a docstring, well over the column limit"\n';
     const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
     expect(result.edits).toEqual([]);
     expect(result.skipped).toHaveLength(1);
-    expect(result.skipped[0]!.region.kind).toBe('docstring');
+    expect(result.skipped[0]!.region.kind).toBe('stringLiteral');
     expect(result.skipped[0]!.reason).toMatch(/not implemented/);
   });
 

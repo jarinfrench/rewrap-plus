@@ -5,6 +5,7 @@ import { sliceSpanText } from '../../discovery/slice-span.js';
 import { pythonDescriptor } from './descriptor.js';
 import { isAttributeDocstringPosition, isDocstringPosition } from './docstring-position.js';
 import { classifyPrefix, extractPrefix } from './prefix.js';
+import { wrapDocstring } from './wrap-docstring.js';
 
 /**
  * Python's `classify` override.
@@ -218,11 +219,15 @@ function mergeLineCommentRun(run: readonly WrappableRegion[]): WrappableRegion {
  * off `descriptor.queries.concatenations` (see that commit's message for
  * the full reasoning). `emitContext` isn't implemented yet; that's Phase
  * 9's job, once paren-insertion for bare multi-part literals is a real
- * question to answer.
+ * question to answer. `wrapDocstring` (Phase 8) is Python's whole
+ * dissolve→segment→reflow→emit pipeline for `'docstring'` regions — see
+ * `./wrap-docstring.ts` and that hook's own doc comment on
+ * `../../types/adapter.ts` for why it's one hook rather than several.
  */
 export const pythonAdapter: LanguageAdapter = {
   descriptor: pythonDescriptor,
   classify,
   groupRegions,
   isSafeToWrap,
+  wrapDocstring,
 };

@@ -61,11 +61,18 @@ export interface WrapResult {
  * `dissolveBlockComments`/`emitBlockComments`, specifically so the
  * JavaScript canary's `/** * /` form has something real to exercise
  * through this same entry point rather than being vacuously skipped.
- * Every other kind (`'docstring'`, `'stringLiteral'`, `'docComment'`) is
- * still reported as skipped with a reason naming the missing phase,
- * rather than silently ignored or (worse) crashing. This is a
- * *region-kind* limitation, not a language limitation, and stays true
- * regardless of which adapter is passed in — Python has no block
+ * `'docstring'` regions are wrapped too, as of Phase 8, but *not*
+ * through a generic dissolve/emit pair the way the two comment kinds
+ * are: docstring syntax is inherently language-specific (see
+ * `LanguageAdapter.wrapDocstring`'s own doc comment on
+ * `./types/adapter.js`), so this dispatches to the adapter's own
+ * `wrapDocstring` hook instead — `undefined` for an adapter that
+ * doesn't support docstrings at all, same "skip with a reason" outcome
+ * as every other not-yet-implemented kind. `'stringLiteral'` and
+ * `'docComment'` are still reported as skipped with a reason naming the
+ * missing phase, rather than silently ignored or (worse) crashing. This
+ * is a *region-kind* limitation, not a language limitation, and stays
+ * true regardless of which adapter is passed in — Python has no block
  * comments to exercise that path itself, but the dispatch here doesn't
  * care which descriptor is driving it.
  *
@@ -113,7 +120,11 @@ export async function wrapRegions(
       continue;
     }
 
-    if (region.kind !== 'lineComment' && region.kind !== 'blockComment') {
+    if (
+      region.kind !== 'lineComment' &&
+      region.kind !== 'blockComment' &&
+      !(region.kind === 'docstring' && adapter.wrapDocstring)
+    ) {
       skipped.push({
         region,
         reason: `wrapping for region kind '${region.kind}' is not implemented until a later phase`,
@@ -122,6 +133,12 @@ export async function wrapRegions(
     }
 
     if (!cfg.wrapComments) {
+      // Docstrings share this gate rather than getting a separate config
+      // key: they're Python's own form of documentation comment (Phase
+      // 3's own framing — "docstrings get rich treatment," as opposed to
+      // an arbitrary string), and `WrapConfig` has no dedicated
+      // `wrapDocstrings` field for the extension's settings schema to
+      // expose one through.
       skipped.push({ region, reason: 'comment wrapping disabled (wrapComments is false)' });
       continue;
     }
@@ -130,7 +147,9 @@ export async function wrapRegions(
     const emitted =
       region.kind === 'lineComment'
         ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
-        : emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit, reflowOptions);
+        : region.kind === 'blockComment'
+          ? emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
+          : adapter.wrapDocstring!(region, source, cfg);
 
     // `emitLineComments`/`emitBlockComments` always join their own
     // output lines with a bare `\n` (see each function's own doc

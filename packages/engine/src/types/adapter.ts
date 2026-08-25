@@ -1,4 +1,5 @@
 import type { RegionKind, WrappableRegion } from './region.js';
+import type { WrapConfig } from './config.js';
 import type { DocDialectId } from './doc-dialect.js';
 import type { SyntaxNode, Tree } from './tree-sitter-types.js';
 
@@ -192,4 +193,28 @@ export interface LanguageAdapter {
    * grouping already exists and parentheses must be added.
    */
   emitContext?(region: WrappableRegion, tree: Tree): EmitContext;
+
+  /**
+   * Dissolve, dialect-segment, reflow, and emit one `'docstring'` region,
+   * returning its replacement source text — or `undefined` if this
+   * adapter doesn't support docstrings at all (the default: most
+   * languages have no string-literal-as-documentation convention to
+   * support).
+   *
+   * Deliberately a whole-pipeline hook rather than several smaller ones
+   * (unlike `classify`/`groupRegions`/`isSafeToWrap`, each a narrow
+   * override of one default behavior): a docstring's own delimiter
+   * syntax (Python's triple-quoted string literal) is inherently
+   * language-specific in a way line/block comment syntax isn't — see
+   * `../languages/python/dissolve-docstring.ts`'s own doc comment for
+   * why this can't be expressed as descriptor data the same way
+   * `comments.line`/`comments.block` are, and so can't be dispatched
+   * generically from `../wrap.ts` the way `'lineComment'`/`'blockComment'`
+   * regions are. `RegionKind`'s separate `'docComment'` variant is
+   * reserved for a *different*, more comment-shaped documentation
+   * convention (JSDoc, Doxygen) that a future adapter is expected to
+   * dispatch through the existing block-comment machinery instead, once
+   * it exists.
+   */
+  wrapDocstring?(region: WrappableRegion, source: string, cfg: WrapConfig): string;
 }
