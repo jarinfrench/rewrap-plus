@@ -131,7 +131,7 @@
     "test": "vitest run",
     "pretest:integration": "tsc -p tsconfig.test.json",
     "test:integration": "node ./out-test/runTest.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "@rewrap-plus/engine": "*"
