@@ -49,6 +49,7 @@ import * as path from 'node:path';
 // needed, unlike deriving the same type from `typeof import(...)`'s
 // runtime-namespace shape would require.
 import type { ParserManager } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
+import type { AdapterRegistry } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 
 type EngineModule = typeof import('@rewrap-plus/engine', { with: { 'resolution-mode': 'import' } });
 
@@ -66,15 +67,26 @@ export function getEngine(): Promise<EngineModule> {
 }
 
 /**
- * Resolve the directory `ParserManager` should load grammar `.wasm` files
- * from, by locating `@rewrap-plus/engine`'s own package root.
+ * Resolve the directory `ParserManager` should resolve grammar `.wasm`
+ * paths against, by locating `@rewrap-plus/engine`'s own package root.
+ *
+ * This is the engine package's *root* directory, not `<root>/grammars`:
+ * every `LanguageDescriptor.grammarWasm` value (e.g. Python's
+ * `'grammars/tree-sitter-python.wasm'`) already embeds the `grammars/`
+ * segment itself — `ParserManager.joinWasmPath` just concatenates
+ * `wasmDir` and `grammarWasm` — so appending `'grammars'` here too would
+ * double it up. Caught by the first real end-to-end run of a wrap
+ * command in a live VSCode host (`ENOENT ... grammars\grammars\
+ * tree-sitter-python.wasm`) — the unit/integration test layers below
+ * this call all stub or bypass grammar loading, so this specific path
+ * arithmetic had never actually been exercised until then.
  *
  * `require.resolve('@rewrap-plus/engine/package.json')` rather than
  * resolving via the package's `"main"` entry (`dist/src/index.js`): a
  * `package.json` is guaranteed to exist at the package root regardless of
  * internal build layout, so this doesn't quietly break if `dist/`'s
- * shape ever changes (it already did once — see the sibling commit
- * fixing engine's own `main`/`types` fields, the first real cross-package
+ * shape ever changes (it already did once — see the commit fixing
+ * engine's own `main`/`types` fields, the first real cross-package
  * consumer of the built artifact catching a path that nothing had
  * exercised before). No `"exports"` field restricts engine's subpaths
  * today, so this subpath resolves under Node's default rules. Unlike the
@@ -93,13 +105,13 @@ export function getEngine(): Promise<EngineModule> {
  */
 function resolveWasmDir(): string {
   const engineManifest = require.resolve('@rewrap-plus/engine/package.json');
-  return path.join(path.dirname(engineManifest), 'grammars');
+  return path.dirname(engineManifest);
 }
 
-let parserManagerPromise: Promise<ParserManager> | undefined;
+let registryPromise: Promise<AdapterRegistry> | undefined;
 
 /**
- * Lazily create (once) and return the process-wide `ParserManager`.
+ * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
  * v1 language scope is Python only (decision of record) — only
  * `pythonAdapter` is registered. The engine's `javascriptAdapter` exists
@@ -107,10 +119,43 @@ let parserManagerPromise: Promise<ParserManager> | undefined;
  * generalizes (see `docs/adapters.md`); it has no docstring/string
  * support and was never meant to be user-facing until Phase 12b builds a
  * real JS/TS adapter. Registering it here would make
- * `registry.supportedLanguages()` — what command handlers check against
- * to gray themselves out in unsupported files — advertise JS support
- * that doesn't actually exist yet.
+ * `getSupportedLanguages()` — what command handlers, and the
+ * `rewrapPlusSupportedLanguages` context key `extension.ts` sets at
+ * activation, use to gray themselves out in unsupported files —
+ * advertise JS support that doesn't actually exist yet.
+ *
+ * Split out from `getParserManager()` (which used to build this
+ * directly) so `getSupportedLanguages()` below doesn't have to go
+ * through a full `ParserManager` — grammar loading — just to answer "is
+ * this language registered", which `AdapterRegistry.supportedLanguages()`
+ * alone already answers without touching any WASM.
  */
+function getRegistry(): Promise<AdapterRegistry> {
+  const existing = registryPromise;
+  if (existing) {
+    return existing;
+  }
+  const created = createRegistry();
+  registryPromise = created;
+  return created;
+}
+
+async function createRegistry(): Promise<AdapterRegistry> {
+  const engine = await getEngine();
+  const registry = new engine.AdapterRegistry();
+  registry.register(engine.pythonAdapter);
+  return registry;
+}
+
+/** Every VSCode languageId (and alias) a registered adapter supports — see `getRegistry()`'s doc comment for v1's Python-only scope. */
+export async function getSupportedLanguages(): Promise<readonly string[]> {
+  const registry = await getRegistry();
+  return registry.supportedLanguages();
+}
+
+let parserManagerPromise: Promise<ParserManager> | undefined;
+
+/** Lazily create (once) and return the process-wide `ParserManager`, sharing `getRegistry()`'s registry. */
 export function getParserManager(): Promise<ParserManager> {
   const existing = parserManagerPromise;
   if (existing) {
@@ -122,14 +167,13 @@ export function getParserManager(): Promise<ParserManager> {
 }
 
 async function createParserManager(): Promise<ParserManager> {
-  const engine = await getEngine();
-  const registry = new engine.AdapterRegistry();
-  registry.register(engine.pythonAdapter);
+  const [engine, registry] = await Promise.all([getEngine(), getRegistry()]);
   return engine.ParserManager.create({ wasmDir: resolveWasmDir(), registry });
 }
 
-/** Test-only hook to force a fresh engine import and `ParserManager` on the next call. */
+/** Test-only hook to force a fresh engine import, registry, and `ParserManager` on the next call. */
 export function resetEngineHostForTests(): void {
   enginePromise = undefined;
+  registryPromise = undefined;
   parserManagerPromise = undefined;
 }

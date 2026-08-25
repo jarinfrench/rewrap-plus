@@ -1,22 +1,33 @@
 /**
  * Rewrap+ VSCode extension entry point.
  *
- * Phase 0 left this empty. Phase 7 wires up real activation: eagerly
- * warm the engine host (`./engine-host.ts`) so the first wrap command a
- * user runs doesn't pay the grammar-load latency inline, though nothing
- * here blocks on that warm-up completing — `getParserManager()` is
- * awaited again, cheaply, by whichever command actually runs.
- *
- * Commands, configuration, and the range-formatting provider are added
- * in later Phase 7 commits; this commit is deliberately just the
- * manifest plus this warm-up, so activation itself can be verified
- * working before anything is registered against it.
+ * Phase 0 left this empty. Phase 7 wires up real activation: warm the
+ * engine host (`./engine-host.ts`), register commands, and set the
+ * `rewrapPlusSupportedLanguages` context key every command/keybinding
+ * `when` clause gates on.
  */
-import type * as vscode from 'vscode';
-import { getParserManager } from './engine-host.js';
+import * as vscode from 'vscode';
+import { getSupportedLanguages } from './engine-host.js';
+import { registerWrapAtCursorCommand } from './commands/wrap-at-cursor.js';
 
-export function activate(_context: vscode.ExtensionContext): void {
-  void getParserManager();
+/**
+ * `"editorLangId in rewrapPlusSupportedLanguages"` (package.json's
+ * command/keybinding `when` clauses) is VSCode's native array-membership
+ * `when`-clause syntax — set once, here, to the real registered-language
+ * list rather than a hardcoded `"editorLangId == python"`, so a future
+ * language addition (Phase 12b) needs no change to this file or to any
+ * `when` clause: the plan's own "adding a language touches no extension
+ * code, only the registry" promise, extended to command visibility.
+ */
+async function setSupportedLanguagesContext(): Promise<void> {
+  const languages = await getSupportedLanguages();
+  await vscode.commands.executeCommand('setContext', 'rewrapPlusSupportedLanguages', languages);
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+  void setSupportedLanguagesContext();
+
+  registerWrapAtCursorCommand(context);
 }
 
 export function deactivate(): void {}

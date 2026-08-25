@@ -13,6 +13,21 @@
   "main": "./dist/extension.js",
   "activationEvents": [],
   "contributes": {
+    "commands": [
+      {
+        "command": "rewrapPlus.wrapAtCursor",
+        "title": "Wrap at Cursor",
+        "category": "Rewrap+"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "rewrapPlus.wrapAtCursor",
+        "key": "alt+q",
+        "mac": "cmd+alt+q",
+        "when": "editorTextFocus && editorLangId in rewrapPlusSupportedLanguages"
+      }
+    ],
     "configuration": {
       "title": "Rewrap+",
       "properties": {
