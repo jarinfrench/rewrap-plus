@@ -35,7 +35,8 @@
  * punctuation-density math here is what makes this genuinely
  * language-agnostic — exactly the kind of leaked assumption the
  * conformance kit and canary exist to surface before Phase 7 (see
- * `docs/adapters.md`, "code-like heuristic coupled to Python keywords").
+ * `docs/adapters.md`, "Commented-out-code detection hardcoded Python's
+ * keyword list").
  */
 
 /**

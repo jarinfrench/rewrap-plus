@@ -139,25 +139,34 @@ export function runAdapterConformance(
           expect(hasErrors).toBe(false);
         });
 
-        /** "No line exceeds the limit except a lone unbreakable atom" */
-        it('produces no reflowed comment line over the limit, except a lone unbreakable atom', async () => {
+        /**
+         * "No line exceeds the limit except a lone unbreakable atom"
+         *
+         * Scoped to `result.edits[*].newText` — exactly the text
+         * `wrapRegions` produced — rather than every line of the
+         * reassembled file. Scanning the whole file would also catch
+         * untouched original code lines that happen to be long for
+         * reasons that have nothing to do with wrapping (a legitimately
+         * over-limit line the source already had, outside any wrapped
+         * region), which this invariant was never meant to constrain.
+         */
+        it('produces no reflowed line over the limit, except a lone unbreakable atom', async () => {
           const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
-          const wrapped = applyTextEdits(source, result.edits);
-          const marker = descriptor.comments.line?.marker;
 
-          for (const line of wrapped.split(/\r?\n/)) {
-            if (marker === undefined || !line.trimStart().startsWith(marker)) {
-              continue; // only this kit's own concern: reflowed comment lines
+          for (const edit of result.edits) {
+            for (const line of edit.newText.split(/\r?\n/)) {
+              if (line.length <= fixtures.columnLimit) {
+                continue;
+              }
+              const stripped = stripKnownCommentDecoration(line, descriptor);
+              if (stripped === null) {
+                continue; // a bare delimiter-only line (e.g. block open/close alone) — never content, never the concern here
+              }
+              // Legitimate only if the line is a single unbreakable
+              // token after its decoration — assert there's no interior
+              // space beyond the decoration's own separating space.
+              expect(stripped).not.toMatch(/ /);
             }
-            if (line.length <= fixtures.columnLimit) {
-              continue;
-            }
-            // Legitimate only if the line is a single unbreakable token
-            // after its marker — assert there's no interior space
-            // beyond the marker's own separating space.
-            const markerPattern = new RegExp(`^\\s*${escapeRegExp(marker)}\\s?`);
-            const afterMarker = line.replace(markerPattern, '');
-            expect(afterMarker).not.toMatch(/ /);
           }
         });
 
@@ -203,6 +212,45 @@ export function runAdapterConformance(
   });
 }
 
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/**
+ * Strip whatever comment decoration `descriptor` says a wrapped line
+ * should carry — the line-comment marker, or a block comment's
+ * continuation prefix — leaving just the content the reflow algorithm
+ * actually chose to place there. Returns `null` for a line that's
+ * nothing but a bare delimiter (a block comment's open or close line
+ * alone), which is never itself "content" and so never the concern of
+ * the over-limit check this feeds.
+ *
+ * Tries the line-comment marker first, then the block continuation
+ * prefix, then the block open/close delimiters — whichever the
+ * descriptor actually declares. A line matching none of them (shouldn't
+ * happen for anything `wrapRegions` itself produces, but this is
+ * defensive rather than assumed) is returned as-is, whitespace-trimmed,
+ * so the check still has *something* meaningful to assert against
+ * rather than silently skipping.
+ */
+function stripKnownCommentDecoration(line: string, descriptor: LanguageAdapter['descriptor']): string | null {
+  const trimmedStart = line.replace(/^\s*/, '');
+
+  const marker = descriptor.comments.line?.marker;
+  if (marker !== undefined && trimmedStart.startsWith(marker)) {
+    const rest = trimmedStart.slice(marker.length);
+    return rest.startsWith(' ') ? rest.slice(1) : rest;
+  }
+
+  const block = descriptor.comments.block;
+  if (block) {
+    if (trimmedStart === block.open || trimmedStart === block.close) {
+      return null; // bare delimiter line — no content to check
+    }
+    if (block.continuationPrefix && trimmedStart.startsWith(block.continuationPrefix)) {
+      const rest = trimmedStart.slice(block.continuationPrefix.length);
+      return rest.startsWith(' ') ? rest.slice(1) : rest;
+    }
+    if (trimmedStart.startsWith(block.open)) {
+      return trimmedStart.slice(block.open.length).trim();
+    }
+  }
+
+  return trimmedStart;
 }
