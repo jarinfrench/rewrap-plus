@@ -5,6 +5,7 @@ import type { SourceSpan } from '../types/span.js';
 import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
 import { PositionMapper } from '../types/position-mapper.js';
 import { spanFromNode } from '../parser/span-from-node.js';
+import { normalizeRawText } from './normalize-raw-text.js';
 import { visualIndentColumn } from './visual-indent-column.js';
 
 export interface DiscoverRegionsOptions {
@@ -86,7 +87,7 @@ export function discoverRegions(
   const lines = source.split('\n');
   const { descriptor } = adapter;
 
-  const spanOf = (node: SyntaxNode): SourceSpan => spanFromNode(node, mapper);
+  const spanOf = (node: SyntaxNode): SourceSpan => trimTrailingCR(spanFromNode(node, mapper), node);
   const indentColumnOf = (span: SourceSpan): number =>
     visualIndentColumn(lines[span.startRow] ?? '', span.startColumn, tabSize);
 
@@ -96,7 +97,7 @@ export function discoverRegions(
       kind,
       span,
       parts: [span],
-      rawText: node.text,
+      rawText: normalizeRawText(node.text),
       indentColumn: indentColumnOf(span),
       languageId,
     };
@@ -117,7 +118,7 @@ export function discoverRegions(
       kind: 'stringLiteral',
       span,
       parts: leaves.map(spanOf),
-      rawText: containerNode.text,
+      rawText: normalizeRawText(containerNode.text),
       indentColumn: indentColumnOf(span),
       languageId,
     };
@@ -275,6 +276,40 @@ function captureNodesByName(tree: Tree, querySource: string): Map<string, Syntax
   } finally {
     query.delete();
   }
+}
+
+/**
+ * Shrink `span` by one column/byte if `node.text` ends in a lone
+ * trailing `\r` — confirmed by direct grammar probing
+ * (`docs/adapters.md`, "CRLF handling") to happen for Python `comment`
+ * nodes on a CRLF-terminated line: the node's own extent runs to
+ * end-of-line, which sits *before* the `\n` (not part of the node) but
+ * *after* the `\r` (which is). No other node shape in this grammar ends
+ * this way — a string literal's span always terminates at its own
+ * closing delimiter, never at end-of-line — so this only ever fires for
+ * the case it's meant to fix.
+ *
+ * Without this, `WrappableRegion.span`/`.parts` would include that `\r`
+ * as real, editable content: `sliceSpanText` would return it as part of
+ * a comment line's text, and any `TextEdit` built from the span would
+ * consume the file's own line-ending byte along with it — exactly the
+ * kind of contamination `rawText`'s own normalization
+ * (`./normalize-raw-text.ts`) sidesteps by never being treated as an
+ * editing source in the first place. A `WrappableRegion`'s `span`
+ * *is* used as an editing source (`wrapRegions` slices and replaces it
+ * directly), so it needs the real fix, not just a display-layer one.
+ *
+ * `\r` is a single ASCII character — one UTF-16 code unit, one UTF-8
+ * byte — so adjusting `endColumn`/`endByte` by exactly `1` is exact
+ * without re-deriving anything through `PositionMapper`. `endRow` never
+ * changes: a lone trailing `\r` never advances a row on its own (only
+ * `\n` does, and `\n` is never part of `node.text` here).
+ */
+function trimTrailingCR(span: SourceSpan, node: SyntaxNode): SourceSpan {
+  if (!node.text.endsWith('\r')) {
+    return span;
+  }
+  return { ...span, endColumn: span.endColumn - 1, endByte: span.endByte - 1 };
 }
 
 function sortByPosition(regions: readonly WrappableRegion[]): WrappableRegion[] {

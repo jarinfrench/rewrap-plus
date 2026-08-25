@@ -36,8 +36,15 @@ export interface WrappableRegion {
   readonly parts: readonly SourceSpan[];
 
   /**
-   * The region's source text, unmodified — still carrying its original
-   * syntax (quotes, comment markers, escapes, concatenation operators).
+   * The region's source text — still carrying its original syntax
+   * (quotes, comment markers, escapes, concatenation operators), except
+   * for one normalization: every line ending is collapsed to a bare
+   * `\n`, regardless of what the source file actually uses (see
+   * `../discovery/normalize-raw-text.ts` for why a CRLF source needs
+   * this at all). Display/debugging use only — nothing treats this as
+   * an editing source; `wrapRegions` always re-slices fresh text from
+   * `source` for anything that becomes an actual `TextEdit`, precisely
+   * so this field's own normalization never has to be undone.
    */
   readonly rawText: string;
 
