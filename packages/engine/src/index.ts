@@ -70,6 +70,7 @@ export { emitLineComments } from './languages/python/line-comment-emit.js';
 export { wrapRegions } from './languages/python/wrap.js';
 export type { WrapResult, SkippedRegion } from './languages/python/wrap.js';
 export { applyTextEdits } from './apply-edits.js';
+export { detectLineEnding, applyLineEnding } from './detect-line-ending.js';
 export { splitBlocks } from './segmentation/split-blocks.js';
 export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
 export { displayWidth } from './segmentation/display-width.js';

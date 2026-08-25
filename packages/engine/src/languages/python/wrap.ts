@@ -2,6 +2,7 @@ import type { ParserManager } from '../../parser/parser-manager.js';
 import { parseWithErrors } from '../../parser/parse-result.js';
 import { discoverRegions } from '../../discovery/discover-regions.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
+import { applyLineEnding, detectLineEnding } from '../../detect-line-ending.js';
 import type { WrapConfig } from '../../types/config.js';
 import type { SourceSpan, TextEdit } from '../../types/span.js';
 import type { WrappableRegion } from '../../types/region.js';
@@ -85,6 +86,7 @@ export async function wrapRegions(
 
   const parser = await parserManager.parserFor(languageId);
   const { tree, errorSpans } = parseWithErrors(parser, source);
+  const lineEnding = detectLineEnding(source);
 
   const allRegions = discoverRegions(pythonAdapter, tree, source, languageId, {
     tabSize: cfg.tabSize,
@@ -118,12 +120,19 @@ export async function wrapRegions(
 
     const dissolved = dissolveLineComments(region, source, pythonDescriptor);
     const marker = pythonDescriptor.comments.line?.marker ?? '#';
-    const newText = emitLineComments(
+    const emitted = emitLineComments(
       dissolved.document,
       cfg.columnLimit,
       marker,
       dissolved.spaceAfterMarker,
     );
+    // `emitLineComments` always joins its own output lines with a bare
+    // `\n` (see that function's doc comment) — rewritten here to match
+    // the source file's own convention, since this is where the result
+    // actually becomes editable text (`detect-line-ending.ts`'s own doc
+    // comment explains why this substitution belongs at this layer
+    // rather than inside emit itself).
+    const newText = applyLineEnding(emitted, lineEnding);
 
     if (newText === sliceSpanText(source, region.span)) {
       continue; // already correctly wrapped — no edit needed

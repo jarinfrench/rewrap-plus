@@ -119,7 +119,7 @@ describe('Python comment wrapping — end-to-end gold fixtures', () => {
     for (const fixture of reflowed) {
       const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
       const actual = applyTextEdits(fixture.input, result.edits);
-      for (const line of actual.split('\n')) {
+      for (const line of actual.split(/\r?\n/)) {
         if (!line.trimStart().startsWith('#')) {
           continue; // only comment lines are this phase's concern
         }
