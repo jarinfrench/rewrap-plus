@@ -23,6 +23,11 @@
         "command": "rewrapPlus.wrapSelection",
         "title": "Wrap Selection",
         "category": "Rewrap+"
+      },
+      {
+        "command": "rewrapPlus.wrapDocument",
+        "title": "Wrap Document",
+        "category": "Rewrap+"
       }
     ],
     "keybindings": [

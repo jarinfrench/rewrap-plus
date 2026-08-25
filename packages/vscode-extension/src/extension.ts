@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { getSupportedLanguages } from './engine-host.js';
 import { registerWrapAtCursorCommand } from './commands/wrap-at-cursor.js';
 import { registerWrapSelectionCommand } from './commands/wrap-selection.js';
+import { registerWrapDocumentCommand } from './commands/wrap-document.js';
 import { createRangeFormattingProvider } from './range-formatting-provider.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -27,6 +28,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   registerWrapAtCursorCommand(context);
   registerWrapSelectionCommand(context);
+  registerWrapDocumentCommand(context);
 
   const selector: vscode.DocumentSelector = languages.map((language) => ({ language }));
   context.subscriptions.push(
