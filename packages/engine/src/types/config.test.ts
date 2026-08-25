@@ -11,6 +11,7 @@ describe('WrapConfig', () => {
       stringPolicy: 'prose',
       docDialect: 'auto',
       preserveIndentedBlocks: true,
+      balancedWrapping: false,
     };
 
     expect(config.columnLimit).toBe(88);
@@ -37,6 +38,7 @@ describe('WrapConfig', () => {
           stringPolicy,
           docDialect,
           preserveIndentedBlocks: false,
+          balancedWrapping: false,
           concatStyle: 'plusOperator',
         };
 

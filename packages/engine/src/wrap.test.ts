@@ -20,6 +20,7 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
     stringPolicy: 'off',
     docDialect: 'plain',
     preserveIndentedBlocks: false,
+    balancedWrapping: false,
     ...overrides,
   };
 }
@@ -62,6 +63,31 @@ describe('wrapRegions', () => {
         expect(line.length).toBeLessThanOrEqual(20);
       }
     }
+  });
+
+  it('threads balancedWrapping through to the reflow algorithm', async () => {
+    // Same word set as reflow-block.test.ts's "finds a strictly
+    // lower-cost partition than greedy when one exists" — a case known
+    // to produce genuinely different line breaks between the two modes
+    // (not just a tie), reused here so this test is checking that
+    // WrapConfig.balancedWrapping actually reaches reflowBlock through
+    // wrapRegions -> emitLineComments, not re-deriving its own
+    // differing example.
+    const source = '# aaaaaa b ccccc ddddddd eeeeeee\nx = 1\n';
+    const cfg = config({ columnLimit: 12 }); // '# ' overhead (2) + width 10, matching that test's width
+
+    const greedy = await wrapRegions(source, 'python', 'all', cfg, parserManager);
+    const balanced = await wrapRegions(
+      source,
+      'python',
+      'all',
+      { ...cfg, balancedWrapping: true },
+      parserManager,
+    );
+
+    expect(greedy.edits).toHaveLength(1);
+    expect(balanced.edits).toHaveLength(1);
+    expect(greedy.edits[0]!.newText).not.toBe(balanced.edits[0]!.newText);
   });
 
   it('produces no edit for a comment already correctly wrapped at the configured width', async () => {

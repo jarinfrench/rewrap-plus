@@ -12,6 +12,95 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": [],
+  "contributes": {
+    "configuration": {
+      "title": "Rewrap+",
+      "properties": {
+        "rewrapPlus.enable": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Global kill switch for Rewrap+. Turn this off to disable every wrap command and the range-formatting provider without hunting down each individual `#rewrapPlus.wrapComments#`/`#rewrapPlus.wrapStrings#`-style setting — the one to reach for when debugging a save pipeline with several formatters in it."
+        },
+        "rewrapPlus.columnLimit": {
+          "type": ["number", "null"],
+          "default": null,
+          "scope": "resource",
+          "markdownDescription": "Column to wrap at. `null` (the default) falls through to `#editor.rulers#` (language-scoped, then global), then `.editorconfig`'s `max_line_length`, then a built-in default of 80 — see the README's precedence table for the full chain. Supports a language-scoped override, e.g. `\"[python]\": { \"rewrapPlus.columnLimit\": 79 }`."
+        },
+        "rewrapPlus.rulerIndex": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "scope": "resource",
+          "markdownDescription": "Which entry of `#editor.rulers#` to use as the column limit when `#rewrapPlus.columnLimit#` is `null` and more than one ruler is configured. Out of range falls back to the first ruler."
+        },
+        "rewrapPlus.wrapComments": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Wrap line and block comments."
+        },
+        "rewrapPlus.wrapStrings": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Wrap eligible string literals, subject to `#rewrapPlus.stringPolicy#`. **Not yet implemented** — string wrapping is a later phase of this project; this setting has no effect yet and is exposed now only so its schema and default are in place ahead of that work."
+        },
+        "rewrapPlus.stringPolicy": {
+          "type": "string",
+          "enum": ["off", "prose", "all"],
+          "enumDescriptions": [
+            "Never wrap strings, regardless of rewrapPlus.wrapStrings.",
+            "Wrap only strings that score as prose-like under the heuristic (paths, URLs, regexes, dict keys, and similar are left alone). The conservative default.",
+            "Wrap every eligible string, ignoring the prose heuristic."
+          ],
+          "default": "prose",
+          "scope": "resource",
+          "markdownDescription": "How aggressively to wrap string literals once string wrapping is implemented. See `#rewrapPlus.wrapStrings#`."
+        },
+        "rewrapPlus.docDialect": {
+          "type": "string",
+          "enum": ["auto", "google", "numpy", "sphinx", "plain"],
+          "enumDescriptions": [
+            "Detect the dialect per docstring.",
+            "Google-style (Args:/Returns:/Raises: sections).",
+            "NumPy-style (Parameters + ---------- underline).",
+            "Sphinx/reST field lists (:param x:/:returns:).",
+            "Plain paragraph reflow only, no section structure."
+          ],
+          "default": "auto",
+          "scope": "resource",
+          "markdownDescription": "Documentation dialect to assume for docstrings and doc comments. **Not yet implemented** — docstring dialect handling is a later phase of this project."
+        },
+        "rewrapPlus.preserveIndentedBlocks": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Treat an already-indented block inside a comment or docstring (beyond a paragraph's first line) as verbatim rather than reflowing it — an aligned example or ASCII diagram is exactly what a wrong reflow guess mangles."
+        },
+        "rewrapPlus.respectEditorConfig": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Consult `.editorconfig`'s `max_line_length` as a precedence tier for `#rewrapPlus.columnLimit#` resolution. Parsed directly by this extension, independent of whether the separate EditorConfig extension is installed."
+        },
+        "rewrapPlus.balancedWrapping": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "markdownDescription": "Use minimum-raggedness (balanced) line breaking instead of the default greedy first-fit. Often visibly nicer for short comments/docstrings, at the cost of more computation."
+        },
+        "rewrapPlus.stringWrapInclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["**"],
+          "scope": "resource",
+          "markdownDescription": "Glob patterns scoping *string-literal* wrapping to specific paths, once implemented — lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. Does not affect comment wrapping. **Not yet implemented** — see `#rewrapPlus.wrapStrings#`."
+        }
+      }
+    }
+  },
   "scripts": {
     "build": "tsc -b tsconfig.json",
     "test": "vitest run",

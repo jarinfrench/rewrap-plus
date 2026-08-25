@@ -41,6 +41,19 @@ export interface WrapConfig {
   readonly preserveIndentedBlocks: boolean;
 
   /**
+   * Use `reflowBlock`'s `'balanced'` (minimum-raggedness) line-breaking
+   * mode instead of the `'greedy'` default — see `ReflowOptions.mode`
+   * (`../reflow/reflow-block.ts`) for what the two modes actually do.
+   * `false` (greedy) by default: greedy is the more predictable, more
+   * widely-expected default, and costs less to compute. This field was
+   * anticipated by Phase 5 ("behind `WrapConfig.balancedWrapping`,
+   * wired in Phase 7") but not actually added to the interface until
+   * Phase 7 needed it for real — see `../wrap.ts` for where it's
+   * threaded through to `emitLineComments`/`emitBlockComments`.
+   */
+  readonly balancedWrapping: boolean;
+
+  /**
    * Adapter-specific override, e.g. forcing a particular concatenation
    * style. Opaque to the engine core; interpreted by the active language
    * adapter, if it recognizes it.

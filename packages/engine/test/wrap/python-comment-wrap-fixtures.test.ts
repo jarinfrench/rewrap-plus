@@ -82,6 +82,7 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
     stringPolicy: 'off',
     docDialect: 'plain',
     preserveIndentedBlocks: false,
+    balancedWrapping: false,
     ...overrides,
   };
 }

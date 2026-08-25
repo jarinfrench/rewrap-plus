@@ -7,6 +7,7 @@ import type { LanguageDescriptor } from './types/adapter.js';
 import type { WrapConfig } from './types/config.js';
 import type { SourceSpan, TextEdit } from './types/span.js';
 import type { WrappableRegion } from './types/region.js';
+import type { ReflowOptions } from './reflow/reflow-block.js';
 import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
@@ -125,10 +126,11 @@ export async function wrapRegions(
       continue;
     }
 
+    const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
     const emitted =
       region.kind === 'lineComment'
-        ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit)
-        : emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit);
+        ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
+        : emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit, reflowOptions);
 
     // `emitLineComments`/`emitBlockComments` always join their own
     // output lines with a bare `\n` (see each function's own doc
@@ -168,10 +170,17 @@ function emitWrappedLineComment(
   source: string,
   descriptor: LanguageDescriptor,
   columnLimit: number,
+  reflowOptions: ReflowOptions,
 ): string {
   const dissolved = dissolveLineComments(region, source, descriptor);
   const marker = descriptor.comments.line?.marker ?? '#';
-  return emitLineComments(dissolved.document, columnLimit, marker, dissolved.spaceAfterMarker);
+  return emitLineComments(
+    dissolved.document,
+    columnLimit,
+    marker,
+    dissolved.spaceAfterMarker,
+    reflowOptions,
+  );
 }
 
 /**
@@ -189,7 +198,8 @@ function emitWrappedBlockComment(
   source: string,
   descriptor: LanguageDescriptor,
   columnLimit: number,
+  reflowOptions: ReflowOptions,
 ): string {
   const document = dissolveBlockComments(region, source, descriptor);
-  return emitBlockComments(document, columnLimit, descriptor);
+  return emitBlockComments(document, columnLimit, descriptor, reflowOptions);
 }

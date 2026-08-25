@@ -28,26 +28,29 @@
  * promise instead of repeating this reasoning per call site.
  *
  * Type-only usages of the engine's exports (`WrapConfig`, `SourceSpan`,
- * ...) are unaffected by any of this — `import type` is erased entirely
- * and never becomes a `require`/`import` at runtime, so ordinary
- * `import type { ... } from '@rewrap-plus/engine'` is fine anywhere in
- * this package.
+ * ...) are unaffected by the require()-vs-import() problem above —
+ * `import type` is erased entirely and never becomes a `require`/`import`
+ * at runtime either way. They do hit a narrower, separate version of the
+ * same underlying ESM/CJS friction, though: `tsc` also requires an
+ * explicit `with { 'resolution-mode': 'import' }` attribute on a
+ * type-only named import of an ESM module from a CJS file (TS1541/1542) —
+ * see the `ParserManager` import below for the straightforward form, and
+ * `../config/resolve-wrap-config.ts` for another example.
  */
 import * as path from 'node:path';
+// `with { 'resolution-mode': 'import' }` rather than a bare `import
+// type { ParserManager } from '@rewrap-plus/engine'`: a type-only
+// named import of this ESM-only package from this CJS file needs that
+// explicit resolution-mode attribute (TS1541/1542) — see the runtime
+// `import()` note below for the fuller ESM/CJS boundary explanation.
+// Using the class name itself as a type (not `InstanceType<...>`) gives
+// the instance type directly, sidestepping `ParserManager`'s private
+// constructor entirely — no `InstanceType`/`ReturnType` unwrapping
+// needed, unlike deriving the same type from `typeof import(...)`'s
+// runtime-namespace shape would require.
+import type { ParserManager } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 
 type EngineModule = typeof import('@rewrap-plus/engine', { with: { 'resolution-mode': 'import' } });
-
-/**
- * `Awaited<ReturnType<EngineModule['ParserManager']['create']>>` rather
- * than `InstanceType<EngineModule['ParserManager']>`: `ParserManager`
- * has a private constructor (by design — construction only happens
- * through its async `create` factory), which `InstanceType` rejects
- * ("cannot assign a 'private' constructor type to a 'public' constructor
- * type"). Reading the type off `create`'s own return value sidesteps
- * that; it's also just as accurate, since `create` is the only way this
- * package ever actually gets a `ParserManager`.
- */
-type ParserManager = Awaited<ReturnType<EngineModule['ParserManager']['create']>>;
 
 let enginePromise: Promise<EngineModule> | undefined;
 

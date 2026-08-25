@@ -55,6 +55,7 @@ const CONFIG: Omit<WrapConfig, 'columnLimit'> = {
   stringPolicy: 'off',
   docDialect: 'plain',
   preserveIndentedBlocks: false,
+  balancedWrapping: false,
 };
 
 /**
