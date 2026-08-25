@@ -24,8 +24,21 @@ const CRLF_SOURCE =
 
 const LF_SOURCE = CRLF_SOURCE.replace(/\r\n/g, '\n');
 
+/**
+ * A second source pair, this time exercising Phase 8's `'docstring'`
+ * region kind — `wrapDocstring` (`../../src/languages/python/wrap-docstring.ts`)
+ * had no conformance coverage at all until this addition, since neither
+ * source above contains a docstring.
+ */
+const DOCSTRING_CRLF_SOURCE =
+  'def compute_total(prices):\r\n' +
+  '    """Compute the running total across every price in the given list of prices."""\r\n' +
+  '    return sum(prices)\r\n';
+
+const DOCSTRING_LF_SOURCE = DOCSTRING_CRLF_SOURCE.replace(/\r\n/g, '\n');
+
 runAdapterConformance(pythonAdapter, {
   wasmDir: '.',
   columnLimit: 40,
-  sources: [CRLF_SOURCE, LF_SOURCE],
+  sources: [CRLF_SOURCE, LF_SOURCE, DOCSTRING_CRLF_SOURCE, DOCSTRING_LF_SOURCE],
 });
