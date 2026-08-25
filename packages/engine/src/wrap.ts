@@ -3,11 +3,14 @@ import { parseWithErrors } from './parser/parse-result.js';
 import { discoverRegions } from './discovery/discover-regions.js';
 import { sliceSpanText } from './discovery/slice-span.js';
 import { applyLineEnding, detectLineEnding } from './detect-line-ending.js';
+import type { LanguageDescriptor } from './types/adapter.js';
 import type { WrapConfig } from './types/config.js';
 import type { SourceSpan, TextEdit } from './types/span.js';
 import type { WrappableRegion } from './types/region.js';
 import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
+import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
+import { emitBlockComments } from './comments/emit-block-comments.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a
@@ -52,15 +55,18 @@ export interface WrapResult {
  *
  * ## What's still region-kind-limited, and why that's unrelated
  *
- * Only `'lineComment'` regions are actually wrapped — every other kind
- * (`'blockComment'`, `'docstring'`, `'stringLiteral'`, `'docComment'`)
- * is reported as skipped with a reason naming the missing phase, rather
- * than silently ignored or (worse) crashing. This is a *region-kind*
- * limitation, not a language limitation, and stays true regardless of
- * which adapter is passed in — Python has no block comments to exercise
- * that path yet either, and the JavaScript canary (comments only, no
- * strings or docstrings) doesn't change what's implemented here, only
- * which descriptor drives the line-comment path it does exercise.
+ * `'lineComment'` and `'blockComment'` regions are wrapped —
+ * `'blockComment'` added later in Phase 6b alongside
+ * `dissolveBlockComments`/`emitBlockComments`, specifically so the
+ * JavaScript canary's `/** * /` form has something real to exercise
+ * through this same entry point rather than being vacuously skipped.
+ * Every other kind (`'docstring'`, `'stringLiteral'`, `'docComment'`) is
+ * still reported as skipped with a reason naming the missing phase,
+ * rather than silently ignored or (worse) crashing. This is a
+ * *region-kind* limitation, not a language limitation, and stays true
+ * regardless of which adapter is passed in — Python has no block
+ * comments to exercise that path itself, but the dispatch here doesn't
+ * care which descriptor is driving it.
  *
  * Every candidate region is checked against `errorSpans` before anything
  * else: a region overlapping a parse error is skipped outright ("skip
@@ -106,7 +112,7 @@ export async function wrapRegions(
       continue;
     }
 
-    if (region.kind !== 'lineComment') {
+    if (region.kind !== 'lineComment' && region.kind !== 'blockComment') {
       skipped.push({
         region,
         reason: `wrapping for region kind '${region.kind}' is not implemented until a later phase`,
@@ -119,20 +125,18 @@ export async function wrapRegions(
       continue;
     }
 
-    const dissolved = dissolveLineComments(region, source, descriptor);
-    const marker = descriptor.comments.line?.marker ?? '#';
-    const emitted = emitLineComments(
-      dissolved.document,
-      cfg.columnLimit,
-      marker,
-      dissolved.spaceAfterMarker,
-    );
-    // `emitLineComments` always joins its own output lines with a bare
-    // `\n` (see that function's doc comment) — rewritten here to match
-    // the source file's own convention, since this is where the result
-    // actually becomes editable text (`./detect-line-ending.ts`'s own
-    // doc comment explains why this substitution belongs at this layer
-    // rather than inside emit itself).
+    const emitted =
+      region.kind === 'lineComment'
+        ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit)
+        : emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit);
+
+    // `emitLineComments`/`emitBlockComments` always join their own
+    // output lines with a bare `\n` (see each function's own doc
+    // comment) — rewritten here to match the source file's own
+    // convention, since this is where the result actually becomes
+    // editable text (`./detect-line-ending.ts`'s own doc comment
+    // explains why this substitution belongs at this layer rather than
+    // inside emit itself).
     const newText = applyLineEnding(emitted, lineEnding);
 
     if (newText === sliceSpanText(source, region.span)) {
@@ -151,4 +155,41 @@ function spansOverlap(a: SourceSpan, b: SourceSpan): boolean {
 
 function overlapsAny(span: SourceSpan, targets: readonly SourceSpan[]): boolean {
   return targets.some((target) => spansOverlap(span, target));
+}
+
+/**
+ * Dissolve, reflow, and emit one `'lineComment'` region, returning the
+ * bare-`\n`-joined replacement text `emitLineComments` always produces
+ * (see that function's own doc comment) — line-ending matching happens
+ * once, centrally, back in `wrapRegions`.
+ */
+function emitWrappedLineComment(
+  region: WrappableRegion,
+  source: string,
+  descriptor: LanguageDescriptor,
+  columnLimit: number,
+): string {
+  const dissolved = dissolveLineComments(region, source, descriptor);
+  const marker = descriptor.comments.line?.marker ?? '#';
+  return emitLineComments(dissolved.document, columnLimit, marker, dissolved.spaceAfterMarker);
+}
+
+/**
+ * Dissolve, reflow, and emit one `'blockComment'` region — the
+ * `'blockComment'` counterpart to `emitWrappedLineComment` above,
+ * introduced in Phase 6b alongside `dissolveBlockComments`/
+ * `emitBlockComments` themselves. A region only ever classifies as
+ * `'blockComment'` when the descriptor that discovered it declares
+ * `comments.block` (see `dissolveBlockComments`'s own throw for the
+ * contract this relies on), so no adapter-agnostic fallback is needed
+ * here beyond what those two functions already provide.
+ */
+function emitWrappedBlockComment(
+  region: WrappableRegion,
+  source: string,
+  descriptor: LanguageDescriptor,
+  columnLimit: number,
+): string {
+  const document = dissolveBlockComments(region, source, descriptor);
+  return emitBlockComments(document, columnLimit, descriptor);
 }
