@@ -1,0 +1,208 @@
+import { Query } from 'web-tree-sitter';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { AdapterRegistry, validateDescriptor } from '../adapter-registry.js';
+import { ParserManager } from '../parser/parser-manager.js';
+import { parseWithErrors } from '../parser/parse-result.js';
+import { applyTextEdits } from '../apply-edits.js';
+import { detectLineEnding } from '../detect-line-ending.js';
+import type { LanguageAdapter } from '../types/adapter.js';
+import type { WrapConfig } from '../types/config.js';
+import { wrapRegions } from '../wrap.js';
+
+/**
+ * Fixtures a single `runAdapterConformance` call needs from the adapter
+ * it's checking.
+ *
+ * Deliberately narrow — every field here is *source text*, not
+ * hand-built engine types, matching this package's established
+ * fixture-driven convention (Phase 6's own gold-fixture tests never
+ * hand-build `WrappableRegion`s either). Adding a language is meant to
+ * mean "write a descriptor plus fixtures," and fixtures here means
+ * exactly that: files, not code.
+ */
+export interface ConformanceFixtures {
+  /**
+   * Base directory `LanguageDescriptor.grammarWasm` paths resolve
+   * against — see `ParserManagerOptions.wasmDir`'s own doc comment. In
+   * this package's own tests this is `'.'`, matching every other
+   * grammar-loading test (`ParserManager` resolves against Vitest's
+   * cwd, the package root).
+   */
+  readonly wasmDir: string;
+
+  /** Column limit every wrap-based check in this suite wraps at. */
+  readonly columnLimit: number;
+
+  /**
+   * One or more realistic source snippets, each containing at least one
+   * line-comment block that overflows `columnLimit` and so actually
+   * needs wrapping. Every wrap-based invariant (idempotency, re-parse
+   * cleanliness, line-length, line-ending preservation) runs once per
+   * entry — a conformance failure names which source it was found in.
+   *
+   * Deliberately plural: a single snippet can't exercise both a CRLF
+   * and an LF source's line-ending preservation in one pass, and a
+   * conformance kit that only ever proved itself against one shape of
+   * input would be a weaker gate than the plan asks for.
+   */
+  readonly sources: readonly string[];
+}
+
+const CONFIG: Omit<WrapConfig, 'columnLimit'> = {
+  tabSize: 4,
+  wrapComments: true,
+  wrapStrings: false,
+  stringPolicy: 'off',
+  docDialect: 'plain',
+  preserveIndentedBlocks: false,
+};
+
+/**
+ * A parameterized `describe` block every `LanguageAdapter` must pass,
+ * asserting the language-independent invariants Phase 6b exists to
+ * pin down before Phase 7 hardens around whatever one adapter (Python)
+ * happens to do. Call this once per adapter, inside an ordinary Vitest
+ * test file — it registers its own `describe`/`it` blocks, the same
+ * pattern this package already uses for fixture-driven suites (e.g.
+ * `test/wrap/python-comment-wrap-fixtures.test.ts`), just parameterized
+ * over an adapter instead of hardcoded to Python's.
+ *
+ * This is the deliverable that makes new languages cheap (Phase 11's
+ * own framing): adding a language means writing a descriptor plus
+ * fixtures and calling this one function, not designing a test strategy
+ * from scratch.
+ *
+ * Every invariant below traces directly to a bullet in the Phase 6b
+ * plan text; each `it` block's own doc comment cites which one.
+ */
+export function runAdapterConformance(
+  adapter: LanguageAdapter,
+  fixtures: ConformanceFixtures,
+): void {
+  const { descriptor } = adapter;
+  const cfg: WrapConfig = { ...CONFIG, columnLimit: fixtures.columnLimit };
+
+  describe(`adapter conformance: ${descriptor.id}`, () => {
+    let parserManager: ParserManager;
+
+    beforeAll(async () => {
+      const registry = new AdapterRegistry();
+      registry.register(adapter);
+      parserManager = await ParserManager.create({ wasmDir: fixtures.wasmDir, registry });
+    });
+
+    /** "Descriptor validates" */
+    it('descriptor passes structural validation', () => {
+      expect(() => validateDescriptor(descriptor)).not.toThrow();
+    });
+
+    /** "All tree-sitter queries compile against the grammar" */
+    it('every declared query compiles against the grammar', async () => {
+      const parser = await parserManager.parserFor(descriptor.id);
+      const language = parser.language;
+      expect(language).not.toBeNull();
+
+      expect(() => new Query(language!, descriptor.queries.comments).delete()).not.toThrow();
+      expect(() => new Query(language!, descriptor.queries.strings).delete()).not.toThrow();
+      if (descriptor.queries.concatenations) {
+        expect(() => new Query(language!, descriptor.queries.concatenations!).delete()).not.toThrow();
+      }
+    });
+
+    describe.each(fixtures.sources.map((source, index) => [index, source] as const))(
+      'source fixture #%i',
+      (_index, source) => {
+        /**
+         * "Wrapping is idempotent across all of the adapter's fixtures"
+         * and, in the same pass, "already-wrapped input is
+         * byte-identical" — re-wrapping the *result* of a first wrap
+         * must produce no further edits, which is exactly what both of
+         * those invariants require: a first wrap may legitimately
+         * change the file, but its own output must already be a fixed
+         * point.
+         */
+        it('is idempotent: wrapping the wrapped output produces no further edits', async () => {
+          const first = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, first.edits);
+
+          const second = await wrapRegions(wrapped, descriptor.id, 'all', cfg, parserManager);
+          expect(second.edits).toEqual([]);
+        });
+
+        /** "Output re-parses with zero error nodes" */
+        it('wrapped output re-parses with zero error nodes', async () => {
+          const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, result.edits);
+
+          const parser = await parserManager.parserFor(descriptor.id);
+          const { hasErrors } = parseWithErrors(parser, wrapped);
+          expect(hasErrors).toBe(false);
+        });
+
+        /** "No line exceeds the limit except a lone unbreakable atom" */
+        it('produces no reflowed comment line over the limit, except a lone unbreakable atom', async () => {
+          const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, result.edits);
+          const marker = descriptor.comments.line?.marker;
+
+          for (const line of wrapped.split(/\r?\n/)) {
+            if (marker === undefined || !line.trimStart().startsWith(marker)) {
+              continue; // only this kit's own concern: reflowed comment lines
+            }
+            if (line.length <= fixtures.columnLimit) {
+              continue;
+            }
+            // Legitimate only if the line is a single unbreakable token
+            // after its marker — assert there's no interior space
+            // beyond the marker's own separating space.
+            const markerPattern = new RegExp(`^\\s*${escapeRegExp(marker)}\\s?`);
+            const afterMarker = line.replace(markerPattern, '');
+            expect(afterMarker).not.toMatch(/ /);
+          }
+        });
+
+        /**
+         * "Line endings, trailing whitespace, and file-final newline
+         * preserved"
+         */
+        it("preserves the source's line-ending convention", async () => {
+          const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, result.edits);
+
+          expect(detectLineEnding(wrapped)).toBe(detectLineEnding(source));
+          if (detectLineEnding(source) === '\r\n') {
+            // Every line break in the output is part of a `\r\n` pair —
+            // no bare `\n` snuck in from an emit path that forgot to
+            // match source convention (`docs/adapters.md`, "CRLF
+            // handling", is the concrete bug this guards against).
+            expect(wrapped).not.toMatch(/[^\r]\n/);
+          } else {
+            expect(wrapped).not.toContain('\r');
+          }
+        });
+
+        it('never introduces trailing whitespace on a changed line', async () => {
+          const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, result.edits);
+
+          for (const line of wrapped.split(/\r?\n/)) {
+            expect(line).not.toMatch(/[ \t]$/);
+          }
+        });
+
+        it('preserves whether the source ends in a trailing newline', async () => {
+          const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
+          const wrapped = applyTextEdits(source, result.edits);
+
+          const sourceEndsWithNewline = /\r?\n$/.test(source);
+          const wrappedEndsWithNewline = /\r?\n$/.test(wrapped);
+          expect(wrappedEndsWithNewline).toBe(sourceEndsWithNewline);
+        });
+      },
+    );
+  });
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

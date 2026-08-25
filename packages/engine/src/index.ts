@@ -70,6 +70,8 @@ export { emitLineComments } from './comments/emit-line-comments.js';
 export { looksLikeCommentedOutCode } from './comments/looks-like-code.js';
 export { wrapRegions } from './wrap.js';
 export type { WrapResult, SkippedRegion } from './wrap.js';
+export { runAdapterConformance } from './conformance/run-adapter-conformance.js';
+export type { ConformanceFixtures } from './conformance/run-adapter-conformance.js';
 export { applyTextEdits } from './apply-edits.js';
 export { detectLineEnding, applyLineEnding } from './detect-line-ending.js';
 export { splitBlocks } from './segmentation/split-blocks.js';
