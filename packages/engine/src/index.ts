@@ -33,6 +33,21 @@
  * re-delimited source text, are Phase 6 (comments) and Phase 8/9
  * (docstrings and strings) respectively.
  *
+ * Phase 6 adds the first end-to-end wrap path: `dissolveLineComments`/
+ * `emitLineComments` (`./comments/`) and `wrapRegions` (`./wrap.js`), the
+ * entry point that ties parsing, discovery, dissolve, reflow, and emit
+ * into `TextEdit`s.
+ *
+ * Phase 6b generalizes what Phase 6 shipped Python-only and proves it
+ * holds for a second adapter before Phase 7 hardens around a one-adapter
+ * sample size: `wrapRegions` and the comment dissolve/emit functions
+ * moved to this engine-level, adapter-driven shape; `dissolveBlockComments`/
+ * `emitBlockComments` add the block-comment path Python never exercised;
+ * `runAdapterConformance` (`./conformance/`) is the parameterized
+ * invariant suite every adapter must pass; and `javascriptAdapter`
+ * (`./languages/javascript/`) is the canary that suite runs against
+ * alongside Python. See `docs/adapters.md` for what that canary found.
+ *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */
 export type { SourceSpan, TextEdit } from './types/span.js';
@@ -64,6 +79,8 @@ export { sliceSpanText } from './discovery/slice-span.js';
 export { visualIndentColumn } from './discovery/visual-indent-column.js';
 export { pythonAdapter } from './languages/python/adapter.js';
 export { pythonDescriptor } from './languages/python/descriptor.js';
+export { javascriptAdapter } from './languages/javascript/adapter.js';
+export { javascriptDescriptor } from './languages/javascript/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';

@@ -47,3 +47,30 @@ of `docs/parsing.md` for how this was confirmed).
    query that no longer compiles; region-discovery tests, added in
    Phase 3, are what catch a node *name* changing under a query that still
    compiles).
+
+## `tree-sitter-javascript.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-javascript`](https://www.npmjs.com/package/tree-sitter-javascript) |
+| Package version | `0.25.0` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-javascript |
+| Upstream commit | `44c892e0be055ac465d5eeddae6d3e194424e7de` |
+| npm tarball shasum | `2e336b8f128e6e85401eb67667dfd87cfcf153e8` |
+| npm tarball integrity | `sha512-1fCbmzAskZkxcZzN41sFZ2br2iqTYP3tKls1b/HKGNPQUVOpsUxpmGxdN/wMqAk3jYZnYBR1dd/y/0avMeU7dw==` |
+| Vendored file sha256 | `5fb488d0cabb4775a594bab85682de5ad6ce83c0d6ac997a9f82dd084d571240` |
+| Grammar ABI version | `15` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for Phase 6b's canary JavaScript adapter
+(`../src/languages/javascript/`) — confirming this repeats the same
+"prebuilt or build-it-yourself?" question `docs/parsing.md` answered for
+Python, and it repeats the same answer: `0.25.0` publishes a prebuilt
+`tree-sitter-javascript.wasm` at its package root, same as
+`tree-sitter-python` did. No build pipeline needed here either. This is
+itself a useful finding on its own terms — see `docs/parsing.md`'s
+"consequence for later phases" note, which flagged this as something to
+re-check per grammar rather than assume.
+
+Regenerating/updating follows the identical steps above, substituting
+`tree-sitter-javascript` for `tree-sitter-python` throughout.
