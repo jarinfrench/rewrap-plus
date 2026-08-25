@@ -58,6 +58,18 @@ describe('emitLineComments — marker and spacing', () => {
     const document = doc([{ type: 'verbatim', lines: ['# noqa: E501'] }]);
     expect(emitLineComments(document, 80, '#', true)).toBe('# noqa: E501');
   });
+
+  it('restores a listItem block’s bullet marker rather than dropping it', () => {
+    const document = doc([
+      {
+        type: 'listItem',
+        marker: '-',
+        hangingIndent: 2,
+        atoms: [{ text: 'one', width: 3, breakBefore: false }],
+      },
+    ]);
+    expect(emitLineComments(document, 80, '#', true)).toBe('# - one');
+  });
 });
 
 describe('emitLineComments — indentation', () => {

@@ -21,6 +21,34 @@ export interface ReflowOptions {
    * greedy is the more predictable, more widely-expected default.
    */
   readonly mode?: 'greedy' | 'balanced';
+
+  /**
+   * Extra columns the *first* line alone gives up, on top of
+   * `availableWidth` — for a caller that's about to prepend marker text
+   * to that line after the fact (`../reflow/decorate-block.ts`'s
+   * `decorateFirstLine`, for a `listItem`'s bullet or a `fieldEntry`'s
+   * label) and needs `reflowBlock` to leave room for it. Defaults to
+   * `0`, matching every block type that never gets such a prefix
+   * (`paragraph`, `blank`, `verbatim`, `sectionHeader`) — for those,
+   * this option simply isn't set by any caller.
+   *
+   * Deliberately a *separate* knob from `hangingIndent`, not folded into
+   * it: `hangingIndent` alone is a general-purpose "indent every line
+   * after the first" primitive with its own callers and tests that have
+   * nothing to do with marker restoration (see `./reflow-block.test.ts`'s
+   * own hanging-indent cases, which pass it for a bare `paragraph` block
+   * with no marker involved at all) — conflating the two would make
+   * `hangingIndent` on its own reserve first-line space unconditionally,
+   * silently breaking every one of those unrelated, legitimate uses. The
+   * marker-restoring callers (`../comments/emit-line-comments.ts`,
+   * `../comments/emit-block-comments.ts`, `../docs/dialect.ts`'s
+   * `reflowDocBlocks`) pass `hangingIndent`'s own value here too, since
+   * for `listItem`/`fieldEntry` specifically the two happen to coincide
+   * (the marker occupies exactly the same width as the continuation
+   * indent) — but that's a property of *those* callers, not something
+   * `reflowBlock` should assume generally.
+   */
+  readonly firstLineReserve?: number;
 }
 
 /**
@@ -56,7 +84,7 @@ export interface ReflowOptions {
  * do its job.
  *
  * `hangingIndent` is spent from the *same* `availableWidth` budget that
- * the first line uses in full — continuation lines get
+ * the first line uses in full by default — continuation lines get
  * `availableWidth - hangingIndent` columns for content, plus
  * `hangingIndent` literal leading spaces, for the same total column
  * budget the caller resolved (`columnLimit - indentColumn`, in the
@@ -65,6 +93,12 @@ export interface ReflowOptions {
  * value to pass, since Phase 8 dialects may want alignment that differs
  * from the raw marker width (e.g. aligning under a parameter name rather
  * than under the bullet).
+ *
+ * The first line's own budget is `availableWidth -
+ * options.firstLineReserve` (default reserve `0`, so full
+ * `availableWidth` unless a caller opts in) — see `ReflowOptions.firstLineReserve`'s
+ * own doc comment for why this is a separate knob from `hangingIndent`
+ * rather than folded into it.
  *
  * **Overflow rule** (the plan's decision #5): an atom wider than its
  * line's available width is placed alone on that line and allowed to
@@ -78,6 +112,7 @@ export function reflowBlock(
   hangingIndent: number,
   options: ReflowOptions = {},
 ): string[] {
+  const firstLineReserve = options.firstLineReserve ?? 0;
   switch (block.type) {
     case 'blank':
       return [''];
@@ -89,8 +124,8 @@ export function reflowBlock(
     case 'listItem':
     case 'fieldEntry':
       return options.mode === 'balanced'
-        ? balancedFill(block.atoms, availableWidth, hangingIndent)
-        : greedyFill(block.atoms, availableWidth, hangingIndent);
+        ? balancedFill(block.atoms, availableWidth, hangingIndent, firstLineReserve)
+        : greedyFill(block.atoms, availableWidth, hangingIndent, firstLineReserve);
   }
 }
 
@@ -105,6 +140,7 @@ function greedyFill(
   atoms: readonly Atom[],
   availableWidth: number,
   hangingIndent: number,
+  firstLineReserve: number,
 ): string[] {
   if (atoms.length === 0) {
     return [''];
@@ -115,7 +151,8 @@ function greedyFill(
   let currentWidth = 0;
   let isFirstLine = true;
 
-  const budget = (): number => (isFirstLine ? availableWidth : availableWidth - hangingIndent);
+  const budget = (): number =>
+    isFirstLine ? availableWidth - firstLineReserve : availableWidth - hangingIndent;
 
   const flush = (): void => {
     const indent = isFirstLine ? '' : ' '.repeat(hangingIndent);
@@ -168,12 +205,13 @@ function greedyFill(
  * `dp[i]` is the minimum achievable cost for laying out `atoms[i..n)`
  * as a run of lines starting fresh at `i`; `choice[i]` records the `j`
  * (exclusive end) of the best first line from `i`. Only line `0` (the
- * one starting at atom index `0`) is special-cased to the full
- * `availableWidth` budget — *every* other line, wherever it starts, is
- * a continuation line at `availableWidth - hangingIndent`, since only
- * the block's very first line is ever not a continuation. That
- * collapses what would otherwise be a line-*number*-dependent budget
- * into a line-*start-index*-dependent one, which is all the DP needs.
+ * one starting at atom index `0`) is special-cased to the
+ * `availableWidth - firstLineReserve` budget — *every* other line,
+ * wherever it starts, is a continuation line at `availableWidth -
+ * hangingIndent`, since only the block's very first line is ever not a
+ * continuation. That collapses what would otherwise be a
+ * line-*number*-dependent budget into a line-*start-index*-dependent
+ * one, which is all the DP needs.
  *
  * Constraints mirrored from `greedyFill`, so both modes obey the same
  * invariants:
@@ -198,6 +236,7 @@ function balancedFill(
   atoms: readonly Atom[],
   availableWidth: number,
   hangingIndent: number,
+  firstLineReserve: number,
 ): string[] {
   const n = atoms.length;
   if (n === 0) {
@@ -205,7 +244,7 @@ function balancedFill(
   }
 
   const budgetFor = (lineStart: number): number =>
-    lineStart === 0 ? availableWidth : availableWidth - hangingIndent;
+    lineStart === 0 ? availableWidth - firstLineReserve : availableWidth - hangingIndent;
 
   const dp: number[] = new Array(n + 1).fill(Number.POSITIVE_INFINITY);
   const choice: number[] = new Array(n).fill(-1);

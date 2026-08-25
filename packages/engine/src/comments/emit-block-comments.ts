@@ -1,5 +1,6 @@
 import type { LanguageDescriptor } from '../types/adapter.js';
 import type { LogicalDocument } from '../types/document.js';
+import { decorateFirstLine } from '../reflow/decorate-block.js';
 import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
 
 /**
@@ -70,7 +71,16 @@ export function emitBlockComments(
   for (const docBlock of document.blocks) {
     const hangingIndent =
       docBlock.type === 'listItem' || docBlock.type === 'fieldEntry' ? docBlock.hangingIndent : 0;
-    contentLines.push(...reflowBlock(docBlock, availableWidth, hangingIndent, options));
+    // `firstLineReserve` matches `hangingIndent`: `decorateFirstLine`
+    // prepends exactly `hangingIndent` columns of marker text to line 1,
+    // so `reflowBlock` needs to reserve that same width — see
+    // `ReflowOptions.firstLineReserve`'s own doc comment.
+    contentLines.push(
+      ...decorateFirstLine(
+        docBlock,
+        reflowBlock(docBlock, availableWidth, hangingIndent, { ...options, firstLineReserve: hangingIndent }),
+      ),
+    );
   }
 
   const singleLine = tryEmitSingleLine(contentLines, block, indentColumn, columnLimit);

@@ -115,6 +115,21 @@ describe('emitBlockComments', () => {
     }
   });
 
+  it('restores a listItem block’s bullet marker rather than dropping it', () => {
+    const doc: LogicalDocument = {
+      blocks: [
+        {
+          type: 'listItem',
+          marker: '-',
+          hangingIndent: 2,
+          atoms: [{ text: 'one', width: 3, breakBefore: false }],
+        },
+      ],
+      meta: { indentColumn: 0 },
+    };
+    expect(emitBlockComments(doc, 40, JSDOC_DESCRIPTOR)).toBe('/** - one */');
+  });
+
   it('never leaves trailing whitespace after a bare continuation marker on a blank paragraph-separator line', () => {
     const doc: LogicalDocument = {
       blocks: [

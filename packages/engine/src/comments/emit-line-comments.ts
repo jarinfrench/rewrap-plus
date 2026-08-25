@@ -1,4 +1,5 @@
 import type { LogicalDocument } from '../types/document.js';
+import { decorateFirstLine } from '../reflow/decorate-block.js';
 import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
 
 /**
@@ -26,8 +27,12 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * passed through to `reflowBlock` as-is: that's a *content-internal*
  * alignment (continuation text lining up under a bullet or field label),
  * layered on top of the marker/indent overhead already subtracted from
- * `availableWidth`, not a substitute for it.
+ * `availableWidth`, not a substitute for it. `reflowBlock` itself never
+ * writes the bullet/label text back in (see its own doc comment) — that's
+ * `../reflow/decorate-block.ts`'s `decorateFirstLine`, applied here to
+ * every block's own reflowed lines before the comment marker is added.
  *
+
  * ## Marker placement
  *
  * `reflowBlock` is called for every block, `'verbatim'` included — for a
@@ -67,7 +72,14 @@ export function emitLineComments(
   for (const block of document.blocks) {
     const hangingIndent =
       block.type === 'listItem' || block.type === 'fieldEntry' ? block.hangingIndent : 0;
-    const reflowed = reflowBlock(block, availableWidth, hangingIndent, options);
+    // `firstLineReserve` matches `hangingIndent`: `decorateFirstLine`
+    // (below) prepends exactly `hangingIndent` columns of marker text to
+    // line 1, so `reflowBlock` needs to reserve that same width — see
+    // `ReflowOptions.firstLineReserve`'s own doc comment.
+    const reflowed = decorateFirstLine(
+      block,
+      reflowBlock(block, availableWidth, hangingIndent, { ...options, firstLineReserve: hangingIndent }),
+    );
 
     for (const line of reflowed) {
       const indentPrefix = spellOutIndent(isFirstLineOverall, indentColumn);
