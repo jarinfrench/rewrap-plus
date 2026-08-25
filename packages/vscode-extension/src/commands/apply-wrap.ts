@@ -15,7 +15,7 @@ import type {
   TextEdit as EngineTextEdit,
   WrapResult,
 } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
-import { getEngine, getParserManager } from '../engine-host.js';
+import { getEngine, getParserManager, getSupportedLanguages } from '../engine-host.js';
 import { resolveWrapConfigForDocument, type ResolvedWrapConfig } from '../config/resolve-wrap-config.js';
 import { reportWrapOutcome } from '../report-wrap-outcome.js';
 
@@ -26,10 +26,26 @@ export interface WrapOutcome {
 
 /**
  * Run `wrapRegions` for `document` against `targets`. Returns `undefined`
- * when `rewrapPlus.enable` is `false` — the one check every command needs
+ * when `rewrapPlus.enable` is `false` (the one check every command needs
  * to make before doing anything else, per the plan's framing of `enable`
  * as the setting reached for when debugging a save pipeline with several
- * formatters in it.
+ * formatters in it), or when `document.languageId` isn't a registered
+ * language.
+ *
+ * That second check matters because the `"editorLangId in
+ * rewrapPlusSupportedLanguages"` `when` clauses gating keybindings/menu
+ * entries (`../extension.ts`) only stop *those* invocation paths — the
+ * Command Palette's own filtering aside, nothing stops a command from
+ * being invoked directly via `vscode.commands.executeCommand` on an
+ * unsupported-language document, and `wrapRegions` itself throws loudly
+ * for an unregistered language by design (`ParserManager.adapterFor`'s
+ * own "fail loudly... rather than a confusing null downstream" policy —
+ * correct for a caller bug, but a command handler letting that throw
+ * escape as an unhandled rejection is a real one, surfacing to the user
+ * as an error toast for what should just be a silent no-op. Caught by
+ * running a wrap command against a plaintext file in a live VSCode host
+ * during commit 9's own verification pass — exactly the class of gap
+ * that check exists to prevent.
  */
 export async function computeWrapResult(
   document: vscode.TextDocument,
@@ -37,6 +53,11 @@ export async function computeWrapResult(
 ): Promise<WrapOutcome | undefined> {
   const resolvedConfig = resolveWrapConfigForDocument(document);
   if (!resolvedConfig.enable) {
+    return undefined;
+  }
+
+  const supportedLanguages = await getSupportedLanguages();
+  if (!supportedLanguages.includes(document.languageId)) {
     return undefined;
   }
 

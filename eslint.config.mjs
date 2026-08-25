@@ -8,6 +8,16 @@ export default tseslint.config(
     ignores: [
       '**/dist/**',
       '**/out/**',
+      // Compiled output of packages/vscode-extension's
+      // @vscode/test-electron integration suite (tsconfig.test.json) —
+      // plain CommonJS `require`/`exports` and Mocha's `describe`/`it`
+      // globals, neither of which this config's TypeScript/no-Node-
+      // globals rules are meant to apply to; the *source* under
+      // test/integration/ is linted normally.
+      '**/out-test/**',
+      // @vscode/test-electron's downloaded VSCode instance + extension
+      // sandbox, created by running the integration suite locally.
+      '**/.vscode-test/**',
       '**/*.vsix',
       '**/coverage/**',
       '**/node_modules/**',

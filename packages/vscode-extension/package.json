@@ -129,14 +129,19 @@
   "scripts": {
     "build": "tsc -b tsconfig.json",
     "test": "vitest run",
+    "pretest:integration": "tsc -p tsconfig.test.json",
+    "test:integration": "node ./out-test/runTest.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@rewrap-plus/engine": "*"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
     "@types/vscode": "^1.120.0",
+    "@vscode/test-electron": "^3.1.0",
+    "mocha": "^11.8.0",
     "vitest": "^4.1.11"
   }
 }
