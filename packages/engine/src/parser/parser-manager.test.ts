@@ -121,4 +121,33 @@ describe('ParserManager', () => {
 
     expect(loadSpy).toHaveBeenCalledTimes(2);
   });
+
+  describe('adapterFor', () => {
+    it('resolves the registered adapter for a language, without touching the grammar cache', async () => {
+      const loadSpy = vi.spyOn(Language, 'load');
+      const registry = new AdapterRegistry();
+      const adapter = makeAdapter();
+      registry.register(adapter);
+      const manager = await ParserManager.create({ wasmDir: engineRoot, registry });
+
+      expect(manager.adapterFor('python')).toBe(adapter);
+      expect(loadSpy).not.toHaveBeenCalled();
+    });
+
+    it('resolves through an alias, same as parserFor', async () => {
+      const registry = new AdapterRegistry();
+      const adapter = makeAdapter({ id: 'python', aliases: ['python3'] });
+      registry.register(adapter);
+      const manager = await ParserManager.create({ wasmDir: engineRoot, registry });
+
+      expect(manager.adapterFor('python3')).toBe(adapter);
+    });
+
+    it('throws, naming the language, when no adapter is registered for it', async () => {
+      const registry = new AdapterRegistry();
+      const manager = await ParserManager.create({ wasmDir: engineRoot, registry });
+
+      expect(() => manager.adapterFor('cobol')).toThrow(/'cobol'/);
+    });
+  });
 });

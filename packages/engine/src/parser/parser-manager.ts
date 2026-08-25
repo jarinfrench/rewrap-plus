@@ -1,5 +1,6 @@
 import { Parser, Language } from 'web-tree-sitter';
 import type { AdapterRegistry } from '../adapter-registry.js';
+import type { LanguageAdapter } from '../types/adapter.js';
 
 export interface ParserManagerOptions {
   /**
@@ -64,6 +65,34 @@ export class ParserManager {
   }
 
   /**
+   * Resolve `languageId` to its registered `LanguageAdapter`, without
+   * touching the grammar cache at all — the counterpart to `parserFor`
+   * for callers that need the adapter itself (its descriptor, its
+   * `classify`/`groupRegions`/`isSafeToWrap` hooks) rather than a ready
+   * `Parser`. Added in Phase 6b alongside the generalized, engine-level
+   * `wrapRegions` (`../wrap.js`), which needs exactly this: given a
+   * `languageId` and this same `ParserManager`, resolve *both* "which
+   * adapter" and "a parser for it" through the one registry a caller
+   * already constructed, rather than requiring a second, separate
+   * `AdapterRegistry` parameter that could in principle disagree with
+   * the one `parserFor` uses.
+   *
+   * Same throw-loudly policy as `parserFor` (and `AdapterRegistry.register`
+   * before it): an unresolvable `languageId` is a caller bug, not
+   * something to paper over with `undefined`.
+   */
+  adapterFor(languageId: string): LanguageAdapter {
+    const adapter = this.registry.resolve(languageId);
+    if (!adapter) {
+      throw new Error(
+        `ParserManager: no adapter registered for language '${languageId}' ` +
+          `(known languages: ${this.registry.supportedLanguages().join(', ') || '(none)'})`,
+      );
+    }
+    return adapter;
+  }
+
+  /**
    * Resolve `languageId` to its registered adapter, load (or reuse) its
    * grammar, and return a `Parser` already configured with it — ready to
    * call `.parse(source)` immediately.
@@ -73,14 +102,7 @@ export class ParserManager {
    * offending id rather than surfacing as a confusing null downstream.
    */
   async parserFor(languageId: string): Promise<Parser> {
-    const adapter = this.registry.resolve(languageId);
-    if (!adapter) {
-      throw new Error(
-        `ParserManager: no adapter registered for language '${languageId}' ` +
-          `(known languages: ${this.registry.supportedLanguages().join(', ') || '(none)'})`,
-      );
-    }
-
+    const adapter = this.adapterFor(languageId);
     const language = await this.languageFor(adapter.descriptor.id, adapter.descriptor.grammarWasm);
     const parser = new Parser();
     parser.setLanguage(language);

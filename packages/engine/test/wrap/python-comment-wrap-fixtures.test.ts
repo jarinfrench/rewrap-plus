@@ -4,7 +4,7 @@ import { applyTextEdits } from '../../src/apply-edits.js';
 import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
 import { pythonAdapter } from '../../src/languages/python/adapter.js';
-import { wrapRegions } from '../../src/languages/python/wrap.js';
+import { wrapRegions } from '../../src/wrap.js';
 
 import trailingCommentIn from '../fixtures/python/comments/001-trailing-comment-after-code.in.py?raw';
 import trailingCommentOut from '../fixtures/python/comments/001-trailing-comment-after-code.out.py?raw';

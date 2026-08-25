@@ -1,15 +1,13 @@
-import type { ParserManager } from '../../parser/parser-manager.js';
-import { parseWithErrors } from '../../parser/parse-result.js';
-import { discoverRegions } from '../../discovery/discover-regions.js';
-import { sliceSpanText } from '../../discovery/slice-span.js';
-import { applyLineEnding, detectLineEnding } from '../../detect-line-ending.js';
-import type { WrapConfig } from '../../types/config.js';
-import type { SourceSpan, TextEdit } from '../../types/span.js';
-import type { WrappableRegion } from '../../types/region.js';
-import { pythonAdapter } from './adapter.js';
-import { pythonDescriptor } from './descriptor.js';
-import { dissolveLineComments } from '../../comments/dissolve-line-comments.js';
-import { emitLineComments } from '../../comments/emit-line-comments.js';
+import type { ParserManager } from './parser/parser-manager.js';
+import { parseWithErrors } from './parser/parse-result.js';
+import { discoverRegions } from './discovery/discover-regions.js';
+import { sliceSpanText } from './discovery/slice-span.js';
+import { applyLineEnding, detectLineEnding } from './detect-line-ending.js';
+import type { WrapConfig } from './types/config.js';
+import type { SourceSpan, TextEdit } from './types/span.js';
+import type { WrappableRegion } from './types/region.js';
+import { dissolveLineComments } from './comments/dissolve-line-comments.js';
+import { emitLineComments } from './comments/emit-line-comments.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a
@@ -31,31 +29,38 @@ export interface WrapResult {
 }
 
 /**
- * Dissolve, reflow, and emit every wrappable `'lineComment'` region in
- * `source` that falls within `targets` (or every region, for `'all'`),
- * producing the `TextEdit`s needed to apply the wrap plus a reason for
- * every region left untouched.
+ * Dissolve, reflow, and emit every wrappable region in `source` that
+ * falls within `targets` (or every region, for `'all'`), producing the
+ * `TextEdit`s needed to apply the wrap plus a reason for every region
+ * left untouched.
  *
- * Scoped to Python only for this phase — hence living under
- * `languages/python/` and validating `languageId` against
- * `pythonDescriptor.id` rather than dispatching through an
- * `AdapterRegistry` the way a real multi-language entry point eventually
- * will. Generalizing this into an engine-level, adapter-driven dispatch
- * across every wrappable `RegionKind` is exactly the kind of question
- * Phase 6b's canary JavaScript adapter and conformance kit exist to
- * settle *before* it hardens around Python-only assumptions — see that
- * phase's hard gate. Doing that generalization now, with only one
- * adapter and only one region kind (comments) implemented, would be
- * designing the abstraction from a sample size of one.
+ * ## Generalized in Phase 6b
  *
- * Only `'lineComment'` regions are actually wrapped this phase, matching
- * the plan's own stated scope ("Python comment wrapping works end-to-end
- * in the engine, no VSCode yet"): `'docstring'`/`'stringLiteral'`/
- * `'docComment'` regions are reported as skipped with a reason naming
- * the missing phase, rather than silently ignored or (worse) crashing —
- * a caller iterating `skipped` sees exactly what's not implemented yet
- * instead of wondering why a docstring in the target range produced no
- * edit.
+ * Phase 6 shipped this hardcoded to Python — living under
+ * `languages/python/wrap.ts`, validating `languageId` against
+ * `pythonDescriptor.id` directly, and importing `pythonAdapter` by name.
+ * That function's own doc comment named the generalization done here as
+ * exactly the question Phase 6b's canary and conformance kit exist to
+ * settle before Phase 7 hardens around a Python-only assumption. With a
+ * second adapter (the JavaScript canary) actually needing to call this,
+ * the answer turned out to be straightforward: resolve the adapter from
+ * `parserManager` — which already holds the `AdapterRegistry` a caller
+ * constructed — via its new `adapterFor` method, the same way
+ * `parserFor` already resolves a `Parser` from the identical registry
+ * lookup. No second registry parameter, no adapter-name imports here at
+ * all.
+ *
+ * ## What's still region-kind-limited, and why that's unrelated
+ *
+ * Only `'lineComment'` regions are actually wrapped — every other kind
+ * (`'blockComment'`, `'docstring'`, `'stringLiteral'`, `'docComment'`)
+ * is reported as skipped with a reason naming the missing phase, rather
+ * than silently ignored or (worse) crashing. This is a *region-kind*
+ * limitation, not a language limitation, and stays true regardless of
+ * which adapter is passed in — Python has no block comments to exercise
+ * that path yet either, and the JavaScript canary (comments only, no
+ * strings or docstrings) doesn't change what's implemented here, only
+ * which descriptor drives the line-comment path it does exercise.
  *
  * Every candidate region is checked against `errorSpans` before anything
  * else: a region overlapping a parse error is skipped outright ("skip
@@ -68,7 +73,7 @@ export interface WrapResult {
  * included as a no-op replacement — checked against a fresh
  * `sliceSpanText(source, region.span)`, not `region.rawText`, since a
  * merged multi-line comment region's `rawText` is only an approximation
- * of the true source slice (see `./adapter.ts`'s `mergeLineCommentRun`).
+ * of the true source slice (see the Python adapter's `mergeLineCommentRun`).
  */
 export async function wrapRegions(
   source: string,
@@ -77,18 +82,14 @@ export async function wrapRegions(
   cfg: WrapConfig,
   parserManager: ParserManager,
 ): Promise<WrapResult> {
-  if (languageId !== pythonDescriptor.id) {
-    throw new Error(
-      `wrapRegions (python): unsupported language '${languageId}' — this phase only ` +
-        `supports '${pythonDescriptor.id}'; multi-language dispatch is deferred to Phase 6b/7.`,
-    );
-  }
+  const adapter = parserManager.adapterFor(languageId);
+  const { descriptor } = adapter;
 
   const parser = await parserManager.parserFor(languageId);
   const { tree, errorSpans } = parseWithErrors(parser, source);
   const lineEnding = detectLineEnding(source);
 
-  const allRegions = discoverRegions(pythonAdapter, tree, source, languageId, {
+  const allRegions = discoverRegions(adapter, tree, source, languageId, {
     tabSize: cfg.tabSize,
   });
   const candidates =
@@ -118,8 +119,8 @@ export async function wrapRegions(
       continue;
     }
 
-    const dissolved = dissolveLineComments(region, source, pythonDescriptor);
-    const marker = pythonDescriptor.comments.line?.marker ?? '#';
+    const dissolved = dissolveLineComments(region, source, descriptor);
+    const marker = descriptor.comments.line?.marker ?? '#';
     const emitted = emitLineComments(
       dissolved.document,
       cfg.columnLimit,
@@ -129,8 +130,8 @@ export async function wrapRegions(
     // `emitLineComments` always joins its own output lines with a bare
     // `\n` (see that function's doc comment) — rewritten here to match
     // the source file's own convention, since this is where the result
-    // actually becomes editable text (`detect-line-ending.ts`'s own doc
-    // comment explains why this substitution belongs at this layer
+    // actually becomes editable text (`./detect-line-ending.ts`'s own
+    // doc comment explains why this substitution belongs at this layer
     // rather than inside emit itself).
     const newText = applyLineEnding(emitted, lineEnding);
 
