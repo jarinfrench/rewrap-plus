@@ -6,14 +6,22 @@
   "description": "Rewraps comments, docstrings, and string literals to a configured column limit, preserving formatted structure and emitting language-valid concatenation.",
   "publisher": "jarinfrench",
   "license": "MIT",
-  "main": "dist/extension.js",
+  "categories": ["Formatters"],
+  "engines": {
+    "vscode": "^1.122.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [],
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "test": "echo \"vscode-extension: no automated tests yet (integration tests land in Phase 7)\"",
+    "test": "echo \"vscode-extension: no unit tests yet\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@rewrap-plus/engine": "*"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/vscode": "^1.120.0"
+  }
 }
