@@ -86,6 +86,26 @@ export async function applyWrapEdits(
 }
 
 /**
+ * `computeWrapResult` followed by `applyWrapEdits`, for the two commands
+ * (wrap-at-cursor, wrap-selection) that both compute *and* apply in one
+ * step — unlike the range-formatting provider (commit 6), which must
+ * return its edits for VSCode to apply itself rather than applying them
+ * directly. Returns `undefined` in exactly the cases `computeWrapResult`
+ * does (`rewrapPlus.enable` is `false`).
+ */
+export async function computeAndApplyWrap(
+  document: vscode.TextDocument,
+  targets: readonly SourceSpan[] | 'all',
+): Promise<WrapOutcome | undefined> {
+  const outcome = await computeWrapResult(document, targets);
+  if (!outcome) {
+    return undefined;
+  }
+  await applyWrapEdits(document, outcome.result.edits);
+  return outcome;
+}
+
+/**
  * Turn a `vscode.Range` into the byte-offset `SourceSpan` `wrapRegions`
  * needs, via `mapper` (a fresh `engine.PositionMapper` built from the
  * same document text the caller is about to call `wrapRegions` with).

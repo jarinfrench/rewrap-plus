@@ -18,6 +18,11 @@
         "command": "rewrapPlus.wrapAtCursor",
         "title": "Wrap at Cursor",
         "category": "Rewrap+"
+      },
+      {
+        "command": "rewrapPlus.wrapSelection",
+        "title": "Wrap Selection",
+        "category": "Rewrap+"
       }
     ],
     "keybindings": [

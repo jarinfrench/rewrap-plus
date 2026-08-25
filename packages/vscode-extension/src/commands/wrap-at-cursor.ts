@@ -7,7 +7,7 @@
  */
 import * as vscode from 'vscode';
 import { getEngine } from '../engine-host.js';
-import { applyWrapEdits, computeWrapResult, rangeTargetSpan } from './apply-wrap.js';
+import { computeAndApplyWrap, rangeTargetSpan } from './apply-wrap.js';
 
 export const WRAP_AT_CURSOR_COMMAND = 'rewrapPlus.wrapAtCursor';
 
@@ -32,9 +32,5 @@ async function wrapAtCursor(): Promise<void> {
     rangeTargetSpan(mapper, document, new vscode.Range(selection.active, selection.active)),
   );
 
-  const outcome = await computeWrapResult(document, targets);
-  if (!outcome) {
-    return; // rewrapPlus.enable is false
-  }
-  await applyWrapEdits(document, outcome.result.edits);
+  await computeAndApplyWrap(document, targets);
 }
