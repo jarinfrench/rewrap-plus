@@ -25,6 +25,8 @@ describe('WrapConfig', () => {
       'google',
       'numpy',
       'sphinx',
+      'jsdoc',
+      'doxygen',
       'plain',
     ];
 

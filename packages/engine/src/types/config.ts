@@ -32,7 +32,7 @@ export interface WrapConfig {
    * the named dialects force that dialect's parsing/emission regardless of
    * detection.
    */
-  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain';
+  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';
 
   /**
    * Treat already-indented blocks (beyond a paragraph's first line) as

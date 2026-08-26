@@ -36,3 +36,10 @@ declare module '*.tsx?raw' {
   const content: string;
   export default content;
 }
+
+// Phase 12c's C++ fixtures — same rationale as the `.py?raw` declaration
+// above.
+declare module '*.cpp?raw' {
+  const content: string;
+  export default content;
+}
