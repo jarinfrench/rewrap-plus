@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "new-adapter": "node scripts/new-adapter.mjs"
   },
   "engines": {
     "node": ">=20"
