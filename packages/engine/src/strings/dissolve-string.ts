@@ -1,5 +1,5 @@
-import type { WrappableRegion } from '../../types/region.js';
-import { sliceSpanText } from '../../discovery/slice-span.js';
+import type { WrappableRegion } from '../types/region.js';
+import { sliceSpanText } from '../discovery/slice-span.js';
 
 /**
  * One part's own prefix/quote/body, recovered from its exact source text.
@@ -67,6 +67,20 @@ function parsePart(raw: string): StringPartInfo {
  * Dissolve a `'stringLiteral'` `WrappableRegion` — an ordinary string or a
  * concatenation run of them — into its merged logical text plus the
  * quote/prefix metadata `./emit-string.ts` needs to re-quote it.
+ *
+ * ## Promoted out of `languages/python/` in Phase 12b
+ *
+ * Written for Python (Phase 9) but never actually Python-specific in its
+ * *implementation* — every operation here works off a part's own raw text
+ * via `PREFIX_AND_QUOTE`, a regex general enough to match a zero-length,
+ * letters-only prefix before a single- or double-quote delimiter, which is
+ * exactly JavaScript/TypeScript's shape too (no prefix at all — the empty
+ * match — and no triple-quote form to special-case around). Phase 12b's
+ * TypeScript adapter needed the identical logic verbatim, which is the same
+ * "promote once a second real consumer needs it" call Phase 6b already
+ * made for `comments/dissolve-line-comments.ts`/`emit-line-comments.ts` (see
+ * `docs/adapters.md`) — not a new abstraction invented speculatively, but
+ * the same one this project has already used twice.
  *
  * ## Deliberately no real unescaping
  *

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { WrappableRegion } from '../../types/region.js';
+import type { WrappableRegion } from '../types/region.js';
 import { dissolveString } from './dissolve-string.js';
 
 function part(startColumn: number, endColumn: number) {

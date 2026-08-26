@@ -3,9 +3,8 @@ import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode, Tree } from '../../types/tree-sitter-types.js';
 import { nodeAtSpan } from '../../parser/node-at-span.js';
+import type { ConcatenationStyle } from '../../strings/emit-string.js';
 import { pythonDescriptor } from './descriptor.js';
-
-export type ConcatenationStyle = 'implicit' | 'operator';
 
 /**
  * Python's emit-time context for a `'stringLiteral'` region: whether

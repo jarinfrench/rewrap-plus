@@ -9,7 +9,7 @@ import { classifyPrefix, extractPrefix } from './prefix.js';
 import { wrapDocstring } from './wrap-docstring.js';
 import { emitContext } from './emit-context.js';
 import { wrapString } from './wrap-string.js';
-import { dissolveString } from './dissolve-string.js';
+import { dissolveString } from '../../strings/dissolve-string.js';
 
 /**
  * Python's `isProseEligible` override: `false` for a `'stringLiteral'`

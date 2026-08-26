@@ -66,4 +66,17 @@ describe('scanDirectives', () => {
     const scan = scanDirectives(source);
     expect(scan.isIgnoredAt(1)).toBe(true);
   });
+
+  it('recognizes a directive under a non-default comment marker (e.g. JS/TS "//")', () => {
+    const source = ['// rewrap: off', 'const y = 2;', '// rewrap: on'].join('\n');
+    const scan = scanDirectives(source, '//');
+    expect(scan.isDisabledAt(1)).toBe(true);
+    expect(scan.isDisabledAt(2)).toBe(false);
+  });
+
+  it('does not recognize a "#" directive when scanning under a "//" marker', () => {
+    const source = ['# rewrap: off', 'const y = 2;'].join('\n');
+    const scan = scanDirectives(source, '//');
+    expect(scan.isDisabledAt(1)).toBe(false);
+  });
 });

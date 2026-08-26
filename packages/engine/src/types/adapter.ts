@@ -223,7 +223,7 @@ export interface LanguageAdapter {
    * couldn't match through the surrounding quote characters — while the
    * same text with its quotes stripped correctly scored as not-prose.
    * Python's implementation returns `dissolveString`'s own logical text
-   * (`../languages/python/dissolve-string.ts`) for exactly this reason.
+   * (`../strings/dissolve-string.ts`) for exactly this reason.
    */
   proseText?(region: WrappableRegion, source: string): string;
 

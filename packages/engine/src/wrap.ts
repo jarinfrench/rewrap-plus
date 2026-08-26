@@ -154,7 +154,7 @@ export async function wrapRegions(
       ? allRegions
       : allRegions.filter((region) => overlapsAny(region.span, targets));
 
-  const directives = scanDirectives(source);
+  const directives = scanDirectives(source, descriptor.comments.line?.marker);
   const edits: TextEdit[] = [];
   const skipped: SkippedRegion[] = [];
 

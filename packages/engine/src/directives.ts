@@ -10,23 +10,37 @@
  * anything to override.
  */
 export interface DirectiveScan {
-  /** Is `row` inside a `# rewrap: off` / `# fmt: off` .. `on` range? */
+  /** Is `row` inside a directive `off` .. `on` range? */
   isDisabledAt(row: number): boolean;
-  /** Was `row` immediately preceded (or trailed) by `# rewrap: ignore`? */
+  /** Was `row` immediately preceded (or trailed) by a `rewrap: ignore` directive? */
   isIgnoredAt(row: number): boolean;
-  /** Was `row` immediately preceded (or trailed) by `# rewrap: force`? */
+  /** Was `row` immediately preceded (or trailed) by a `rewrap: force` directive? */
   isForcedAt(row: number): boolean;
 }
 
 /**
- * Matches a directive comment anywhere on a line — `rewrap` or `fmt`,
- * `off`/`on`/`ignore`/`force`. `fmt` only ever means `off`/`on` in real
- * usage (Black has no `fmt: ignore`/`fmt: force`); this pattern matches
- * all four actions for either family and `scanDirectives` below simply
- * never produces an ignore/force entry for `fmt`, rather than needing a
- * second, narrower pattern.
+ * Build the pattern matching a directive comment anywhere on a line —
+ * `rewrap` or `fmt`, `off`/`on`/`ignore`/`force` — for a given line-comment
+ * `marker`. `fmt` only ever means `off`/`on` in real usage (Black has no
+ * `fmt: ignore`/`fmt: force`); this pattern matches all four actions for
+ * either family and `scanDirectives` below simply never produces an
+ * ignore/force entry for `fmt`, rather than needing a second, narrower
+ * pattern.
+ *
+ * `marker` is regex-escaped before being spliced in — Phase 12b found this
+ * hardcoded to a literal `#` (Python's own marker) despite this module's
+ * own doc comment already framing directive support as "engine-level and
+ * region-kind-agnostic," which would have silently meant `// rewrap: off`
+ * never worked for the first real non-Python adapter. Documented in
+ * `docs/adapters.md` alongside Phase 6b's own leaked-assumption writeups —
+ * the same shape of bug (a Python-only literal baked into ostensibly
+ * generic code), just found a phase later since nothing before Phase 12b
+ * exercised a second real `comments.line.marker` value through this path.
  */
-const DIRECTIVE_PATTERN = /#\s*(rewrap|fmt)\s*:\s*(off|on|ignore|force)\b/i;
+function buildDirectivePattern(marker: string): RegExp {
+  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`${escaped}\\s*(rewrap|fmt)\\s*:\\s*(off|on|ignore|force)\\b`, 'i');
+}
 
 /**
  * Scan `source` once for every directive comment, producing row-indexed
@@ -57,8 +71,13 @@ const DIRECTIVE_PATTERN = /#\s*(rewrap|fmt)\s*:\s*(off|on|ignore|force)\b/i;
  * same convention `# noqa`/`# type: ignore` already rely on) rather than
  * an attempt to resolve "which region did the user mean" as a general
  * matching problem.
+ *
+ * `commentMarker` (default `'#'`, Python's own — every existing caller
+ * predates this parameter) is the line-comment marker a directive is
+ * expected to follow, e.g. `'//'` for JavaScript/TypeScript.
  */
-export function scanDirectives(source: string): DirectiveScan {
+export function scanDirectives(source: string, commentMarker = '#'): DirectiveScan {
+  const directivePattern = buildDirectivePattern(commentMarker);
   const lines = source.split('\n');
   const offRanges: Array<{ start: number; end: number }> = [];
   const ignoredRows = new Set<number>();
@@ -68,7 +87,7 @@ export function scanDirectives(source: string): DirectiveScan {
 
   for (let row = 0; row < lines.length; row++) {
     const line = lines[row]!;
-    const match = DIRECTIVE_PATTERN.exec(line);
+    const match = directivePattern.exec(line);
     if (!match) {
       continue;
     }

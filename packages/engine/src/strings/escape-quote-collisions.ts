@@ -1,4 +1,4 @@
-import { findUnbreakableSpans } from '../../segmentation/unbreakable-spans.js';
+import { findUnbreakableSpans } from '../segmentation/unbreakable-spans.js';
 
 /**
  * Make `text` safe to re-quote uniformly with `quoteChar`, by escaping

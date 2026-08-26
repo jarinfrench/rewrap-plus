@@ -1,12 +1,40 @@
-import { atomizeWords } from '../../segmentation/atomize-words.js';
-import { reflowBlock, type ReflowOptions } from '../../reflow/reflow-block.js';
-import type { ConcatenationStyle } from './emit-context.js';
+import { atomizeWords } from '../segmentation/atomize-words.js';
+import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
+
+/**
+ * Which concatenation syntax a `'stringLiteral'` split emits with:
+ * juxtaposition with no operator (Python's default, `"a" "b"`) or an
+ * explicit operator between parts (Python's `+`-style, and the only style
+ * JavaScript/TypeScript's descriptor declares — see
+ * `../languages/typescript/emit-context.ts`).
+ *
+ * Promoted here (from Python's own `languages/python/emit-context.ts`) in
+ * Phase 12b alongside `emitString`/`dissolveString`/`escapeQuoteCollisions`
+ * — this type is `emitString`'s own vocabulary (its `style` parameter),
+ * not something specific to how any one adapter's `emitContext` hook
+ * happens to resolve it, so it belongs with the function that actually
+ * consumes it rather than with one adapter's implementation of the hook
+ * that produces it.
+ */
+export type ConcatenationStyle = 'implicit' | 'operator';
 
 /**
  * Re-apply quote delimiters, prefix, and (when needed) grouping syntax to
  * dissolved-and-reflowed string content, producing the region's
  * replacement source text — the `'stringLiteral'` counterpart to
- * `./emit-docstring.ts`.
+ * `../languages/python/emit-docstring.ts`.
+ *
+ * ## Promoted out of `languages/python/` in Phase 12b
+ *
+ * Nothing in this function's own logic is Python-specific — every
+ * Python-only concern (paren insertion, dict-key detection, prefix
+ * casing) lives in `needsParens`/`prefix`'s *callers*, not here. Phase
+ * 12b's TypeScript adapter needed this exact function (with
+ * `needsParens` always `false` and `style` always `'operator'` — JS/TS
+ * concatenation never requires its own grouping), the same "promote once
+ * a second real consumer needs it" call already made twice before for
+ * `comments/dissolve-line-comments.ts`/`emit-line-comments.ts` (Phase 6b)
+ * and `./dissolve-string.ts` (this same phase) — see `docs/adapters.md`.
  *
  * ## Why every physical line pays its own quote overhead
  *

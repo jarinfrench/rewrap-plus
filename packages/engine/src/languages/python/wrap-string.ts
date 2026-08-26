@@ -3,10 +3,10 @@ import type { WrappableRegion } from '../../types/region.js';
 import type { Tree } from '../../types/tree-sitter-types.js';
 import type { ReflowOptions } from '../../reflow/reflow-block.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
-import { dissolveString } from './dissolve-string.js';
-import { escapeQuoteCollisions } from './escape-quote-collisions.js';
+import { dissolveString } from '../../strings/dissolve-string.js';
+import { escapeQuoteCollisions } from '../../strings/escape-quote-collisions.js';
 import { emitContext } from './emit-context.js';
-import { emitString } from './emit-string.js';
+import { emitString } from '../../strings/emit-string.js';
 
 /**
  * Python's `LanguageAdapter.wrapString` implementation: dissolve
