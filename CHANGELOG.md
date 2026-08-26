@@ -6,10 +6,9 @@ project doesn't otherwise follow Semantic Versioning strictly pre-1.0.
 
 ## [Unreleased]
 
-The v1 feature set — everything through Phase 11
-(`docs/implementation-plan.md`) — not yet tagged. Phase 11's own CI
-packaging job (`.github/workflows/ci.yml`) attaches a built `.vsix` to
-the GitHub Release for whichever tag eventually ships this.
+Not yet tagged. The CI packaging job (`.github/workflows/ci.yml`)
+attaches a built `.vsix` to the GitHub Release for whichever tag
+eventually ships this.
 
 ### Added
 
@@ -40,8 +39,8 @@ the GitHub Release for whichever tag eventually ships this.
   as `.wrapSelection`, so "Format Selection" works, plus a
   `DocumentFormattingEditProvider` for "Format Document" and native
   `editor.formatOnSave`/`editor.defaultFormatter` composition.
-- **Format on save** (`rewrapPlus.formatOnSave`, Phase 12a, default
-  `false`): wraps the whole document immediately before every save via
+- **Format on save** (`rewrapPlus.formatOnSave`, default `false`): wraps
+  the whole document immediately before every save via
   its own `onWillSaveTextDocument` hook, independent of
   `editor.defaultFormatter` so it never contends with Black/Prettier/etc.
   for that slot. Never delays a save — a slow wrap or a parse failure is
@@ -72,8 +71,8 @@ the GitHub Release for whichever tag eventually ships this.
 - **Packaging**: esbuild bundling to a single `dist/extension.js`,
   `vsce`-based `.vsix` packaging, and a CI job that builds and attaches
   the `.vsix` to a GitHub Release on a version-tag push.
-- **JavaScript, TypeScript, and TSX support** (Phase 12b), extending the
-  Phase 6b comments-only JavaScript canary into full adapters: `//` and
+- **JavaScript, TypeScript, and TSX support**, extending the original
+  comments-only JavaScript canary into full adapters: `//` and
   `/**...*/` (JSDoc) comment wrapping, string-literal wrapping with
   `+`-operator concatenation (no grouping/parens ever required, unlike
   Python's implicit-adjacency form), and a new JSDoc documentation
@@ -83,24 +82,34 @@ the GitHub Release for whichever tag eventually ships this.
   existing three. TSX registers as its own adapter (a genuinely separate
   tree-sitter grammar from plain TypeScript, not an alias); `.jsx` files
   are supported via `javascript`'s own alias.
-- **C++ support** (Phase 12c), a full adapter from its first commit
-  (unlike JavaScript's canary-then-real path): `//`/`///`/`/* */`/`/** */`
-  comment discovery (only `//` and `/**...*/` are wrapped — see Known
-  limitations), bare-adjacency string-literal concatenation (`"foo "
-  "bar"`, never requiring inserted grouping — C++ has no valid `+`
-  string concatenation at all, unlike every other adapter), and a new
-  Doxygen documentation dialect (`\param`/`@param`, `\return`/`@return`,
-  `\brief`, ... — either prefix accepted per tag) detected per doc
-  comment. `rewrapPlus.docDialect` gains a `doxygen` option. Raw strings
+- **C++ support**, a full adapter from its first commit (unlike
+  JavaScript's canary-then-real path): `//`/`///`/`/* */`/`/** */`
+  comment discovery — every form is wrapped, including a plain `/* */`
+  block comment and Doxygen's `///` repeated-marker style — bare-adjacency
+  string-literal concatenation (`"foo " "bar"`, never requiring inserted
+  grouping — C++ has no valid `+` string concatenation at all, unlike
+  every other adapter), and a new Doxygen documentation dialect
+  (`\param`/`@param`, `\return`/`@return`, `\brief`, ... — either prefix
+  accepted per tag) detected per doc comment, including for `///`.
+  `rewrapPlus.docDialect` gains a `doxygen` option. Raw strings
   (`R"(...)"`), wide/UTF-prefixed strings (`L`/`u`/`U`/`u8`), and
   `#define` macro bodies are all handled correctly without any wrap
-  engine changes — see `docs/adapters.md`'s Phase 12c section for why.
+  engine changes — see `docs/adapters.md`'s C++ section for why.
+- **Plain (non-doc-marked) block comments** — `/* ... */` in
+  JavaScript/TypeScript/TSX, in addition to C++ above — now wrap through
+  a distinct `comments.plainBlock` delimiter, separate from the JSDoc/
+  Doxygen-marked `/** ... */` form the engine already supported. Doxygen's
+  `///` repeated-marker doc comments (C++ only) wrap through the same
+  per-line machinery a line comment uses, segmented through the `doxygen`
+  dialect exactly like the `/** ... */` form — see `docs/adapters.md`'s
+  C++ section for the engine design this needed (a `groupRegions`
+  adjacency merge shared with Python's own line-comment grouping, plus a
+  second dissolve/emit path for the repeated-marker delimiter shape).
 
-- **CLI and pre-commit support** (Phase 12d): `packages/cli`, a new
+- **CLI and pre-commit support**: `packages/cli`, a new
   `@rewrap-plus/cli` package (bin name `rewrap-plus`) consuming
-  `packages/engine` completely unchanged — no engine changes were needed,
-  confirming the plan's own acceptance criterion for this phase
-  (`docs/adapters.md`'s Phase 12d section). Detects language from file
+  `packages/engine` completely unchanged — no engine changes were needed
+  (`docs/adapters.md`'s CLI section). Detects language from file
   extension, walks directory arguments (skipping `node_modules`,
   dot-directories, `dist`, `out`, `coverage` by default), and wraps every
   file in place. `--check` reports what would change and exits non-zero
@@ -117,12 +126,7 @@ the GitHub Release for whichever tag eventually ships this.
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
-  Python defers triple-quoted non-docstring strings; a plain
-  single-star `/* ... */` block comment (no JSDoc/Doxygen marker) is
-  discovered but not wrapped, for JavaScript/TypeScript/TSX/C++.
-- C++'s `///`-style triple-slash Doxygen comments are discovered but not
-  wrapped — a genuinely different delimiter shape (no single open/close
-  pair) from the supported `/** ... */` form; use the latter instead.
+  Python defers triple-quoted non-docstring strings.
 - C++ raw string literals (`R"(...)"`) are never wrapped — excluded from
   discovery entirely, since they parse as a separate grammar node the
   wrap engine never queries for.
@@ -134,6 +138,4 @@ the GitHub Release for whichever tag eventually ships this.
   directory list, and doesn't follow symlinked directories during a
   recursive walk.
 - Markdown/LaTeX/plain-text support, a plain-C adapter, and
-  Marketplace/OpenVSX publishing are not yet implemented — see
-  `docs/implementation-plan.md`'s Phase 12 roadmap (12e; 12a, 12b, 12c,
-  and 12d are now done).
+  Marketplace/OpenVSX publishing are not yet implemented.

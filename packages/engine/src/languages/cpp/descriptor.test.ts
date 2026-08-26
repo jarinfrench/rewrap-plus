@@ -21,8 +21,12 @@ describe('cppDescriptor', () => {
     expect(() => new Query(language, cppDescriptor.queries.concatenations!)).not.toThrow();
   });
 
-  it('declares the doxygen dialect (falling back to plain) for doc comments', () => {
-    expect(cppDescriptor.comments.doc).toEqual({ markers: ['/**'], dialects: ['doxygen', 'plain'] });
+  it('declares the doxygen dialect (falling back to plain) for both doc-comment forms', () => {
+    expect(cppDescriptor.comments.doc).toEqual({
+      markers: ['/**', '///'],
+      dialects: ['doxygen', 'plain'],
+      repeatedMarker: '///',
+    });
   });
 
   it('declares implicit (bare-adjacency) concatenation with no grouping requirement', () => {

@@ -10,13 +10,22 @@ import doxygenIn from '../fixtures/cpp/doc-comments/001-doxygen-param-return.in.
 import doxygenOut from '../fixtures/cpp/doc-comments/001-doxygen-param-return.out.cpp?raw';
 import plainIn from '../fixtures/cpp/doc-comments/002-plain-narrative.in.cpp?raw';
 import plainOut from '../fixtures/cpp/doc-comments/002-plain-narrative.out.cpp?raw';
+import tripleSlashIn from '../fixtures/cpp/doc-comments/003-triple-slash-param-return.in.cpp?raw';
+import tripleSlashOut from '../fixtures/cpp/doc-comments/003-triple-slash-param-return.out.cpp?raw';
 
 /**
- * Phase 12c's gold fixtures for `'docComment'` regions — the Doxygen
- * dialect (`../../src/docs/doxygen.ts`) applied through the existing
- * generic `wrapDocComment` (`../../src/comments/wrap-doc-comment.ts`),
- * end to end via `wrapRegions`. Mirrors this package's established
- * fixture-driven convention (`./javascript-doc-comment-wrap-fixtures.test.ts`).
+ * Gold fixtures for `'docComment'` regions — the Doxygen dialect
+ * (`../../src/docs/doxygen.ts`) applied through `wrapDocComment`
+ * (`../../src/comments/wrap-doc-comment.ts`), end to end via
+ * `wrapRegions`. Mirrors this package's established fixture-driven
+ * convention (`./javascript-doc-comment-wrap-fixtures.test.ts`).
+ *
+ * 003 covers Doxygen's `///` repeated-marker form specifically —
+ * `wrapDocComment` dissolves/emits it through the same per-line
+ * machinery a `'lineComment'` region uses (`comments.doc.repeatedMarker`),
+ * not `emitBlockComments`'s open/close pair the way 001/002 do, so it's
+ * exercising a genuinely different code path even though it produces the
+ * same tag-aware Doxygen wrapping.
  */
 const COLUMN_LIMIT = 60;
 
@@ -29,6 +38,7 @@ interface Fixture {
 const fixtures: readonly Fixture[] = [
   { name: '001-doxygen-param-return', input: doxygenIn, expected: doxygenOut },
   { name: '002-plain-narrative', input: plainIn, expected: plainOut },
+  { name: '003-triple-slash-param-return', input: tripleSlashIn, expected: tripleSlashOut },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -69,6 +79,17 @@ describe('C++ docComment (Doxygen) wrapping — end-to-end gold fixtures', () =>
 
   it('falls back to plain paragraph reflow when no tag is present', () => {
     expect(plainOut).not.toMatch(/\\param|\\return|@param|@return/);
+  });
+
+  it('wraps a /// doc comment through the repeated-marker path, with every line prefixed', () => {
+    expect(tripleSlashOut).toMatch(/\\param name/);
+    expect(tripleSlashOut).toMatch(/\\return/);
+    for (const line of tripleSlashOut.split(/\r?\n/).filter((line) => line.length > 0)) {
+      if (line.startsWith('const char')) {
+        continue; // the declaration line, not part of the comment
+      }
+      expect(line.startsWith('///')).toBe(true);
+    }
   });
 
   it('produces no line over the column limit for any fixture', async () => {

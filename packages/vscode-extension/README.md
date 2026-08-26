@@ -16,9 +16,12 @@ and `docs/adapters.md`), and more languages are on the roadmap.
 
 - **Comments.** Python line comments (`#`), grouped by contiguous
   same-indent blocks; JavaScript/TypeScript/TSX/C++ `//` line comments and
-  `/**...*/` doc-shaped block comments (JSDoc for JS/TS/TSX, Doxygen for
-  C++). Directive comments (`# noqa`, `# type:`, `# pylint:`,
-  `// eslint-disable`, `// @ts-expect-error`, `// NOLINT`,
+  both block-comment forms — a plain `/* ... */` comment and the JSDoc/
+  Doxygen-marked `/** ... */` one, each through its own distinct
+  delimiter. C++ additionally wraps Doxygen's `///` repeated-marker doc
+  comments, grouped across contiguous same-indent lines the same way
+  Python's `#` comments are. Directive comments (`# noqa`, `# type:`,
+  `# pylint:`, `// eslint-disable`, `// @ts-expect-error`, `// NOLINT`,
   `// clang-format on/off`, shebangs, encoding declarations) and anything
   that looks like commented-out code are left untouched rather than
   reflowed.
@@ -29,7 +32,8 @@ and `docs/adapters.md`), and more languages are on the roadmap.
   - **Sphinx/reST** — `:param x:` / `:returns:` / `:rtype:` field lists. (Python)
   - **JSDoc** — `@param` / `@returns` / `@throws` tags. (JavaScript/TypeScript/TSX)
   - **Doxygen** — `\param` / `@param`, `\return` / `@return`, `\brief`,
-    and other tags, either prefix accepted per tag. (C++)
+    and other tags, either prefix accepted per tag; both `/** ... */` and
+    `///` forms. (C++)
   - **Plain** — paragraph reflow only, no section structure.
 
   Dialect is detected **per docstring/comment**, not per file — mixed
@@ -159,13 +163,6 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
 - **Template literals** (`` `...` ``) in JavaScript/TypeScript/TSX —
   deferred the same way Python's own triple-quoted non-docstring strings
   are, given `${}` interpolation and significant internal whitespace.
-- **A plain single-star `/* ... */` block comment** (no `/**` marker) in
-  JavaScript/TypeScript/TSX/C++ — discovered but not wrapped; only the
-  JSDoc/Doxygen form is, today.
-- **`///`-style triple-slash comments** in C++ — a genuinely different
-  Doxygen convention (no single open/close delimiter pair) from the
-  supported `/** ... */` form; use the latter for anything beyond a
-  one-line comment.
 - **Anything inside a C++ `#define` macro body** — never reflowed, since
   the parser itself treats a macro's body as opaque, unparsed text.
 - **Any region overlapping a parse error** — skipped with a reason

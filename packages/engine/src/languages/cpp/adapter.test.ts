@@ -26,18 +26,36 @@ describe('cppAdapter', () => {
     expect(region!.kind).toBe('docComment');
   });
 
-  it('excludes a plain single-star /* */ comment from discovery entirely', () => {
+  it('discovers a plain single-star /* */ comment as a blockComment', () => {
     const source = '/* plain block comment */\nint x = 1;\n';
     const tree = parser.parse(source)!;
-    const regions = discoverRegions(cppAdapter, tree, source, 'cpp');
-    expect(regions).toEqual([]);
+    const [region] = discoverRegions(cppAdapter, tree, source, 'cpp');
+    expect(region!.kind).toBe('blockComment');
   });
 
-  it('excludes a /// doxygen-style comment from discovery entirely (deliberate scope limit)', () => {
+  it('discovers a /// doxygen-style comment as a docComment', () => {
     const source = '/// a triple-slash doc comment\nint x = 1;\n';
     const tree = parser.parse(source)!;
+    const [region] = discoverRegions(cppAdapter, tree, source, 'cpp');
+    expect(region!.kind).toBe('docComment');
+  });
+
+  it('groups consecutive /// lines at the same indent into one multi-part region', () => {
+    const source = '/// Brief.\n/// More detail.\nvoid f();\n';
+    const tree = parser.parse(source)!;
     const regions = discoverRegions(cppAdapter, tree, source, 'cpp');
-    expect(regions).toEqual([]);
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.kind).toBe('docComment');
+    expect(regions[0]!.parts).toHaveLength(2);
+  });
+
+  it('does not merge a /// doc comment with an adjacent /** */ one', () => {
+    const source = '/// triple-slash\n/** double-star */\nvoid f();\n';
+    const tree = parser.parse(source)!;
+    const regions = discoverRegions(cppAdapter, tree, source, 'cpp');
+    expect(regions).toHaveLength(2);
+    expect(regions.every((region) => region.kind === 'docComment')).toBe(true);
+    expect(regions.every((region) => region.parts.length === 1)).toBe(true);
   });
 
   it('groups an adjacent (implicit) string concatenation into one multi-part region', () => {

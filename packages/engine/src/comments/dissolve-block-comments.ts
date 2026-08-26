@@ -12,9 +12,9 @@ import { splitBlocks, type SplitBlocksOptions } from '../segmentation/split-bloc
  * marker per line.
  *
  * Nothing here is Python-specific (Python has no block comments to
- * exercise this at all — it's introduced in Phase 6b specifically so
- * the JavaScript canary, C++, and every future C-family adapter don't
- * hit this as their first engine gap). Unlike `dissolveLineComments`,
+ * exercise this at all — this exists specifically so the JavaScript
+ * canary, C++, and every future C-family adapter don't hit this as
+ * their first engine gap). Unlike `dissolveLineComments`,
  * there's no `groupRegions` merging step to worry about: a block
  * comment's delimiters make it naturally one region with a single
  * `span` covering the whole thing, whatever its shape:
@@ -50,7 +50,7 @@ export function dissolveBlockComments(
   descriptor: LanguageDescriptor,
   options: SplitBlocksOptions = {},
 ): LogicalDocument {
-  const text = dissolveBlockCommentText(region, source, descriptor);
+  const text = dissolveBlockCommentText(region, source, descriptor, descriptor.comments.plainBlock);
   return { blocks: splitBlocks(text, options), meta: { indentColumn: region.indentColumn } };
 }
 
@@ -60,23 +60,31 @@ export function dissolveBlockComments(
  * everything `dissolveBlockComments` above does, short of the final
  * `splitBlocks` call.
  *
- * Split out in Phase 12b for `../comments/wrap-doc-comment.ts`, which
- * needs this exact same delimiter-stripping (a `'docComment'` region uses
- * the identical `comments.block` open/close/continuationPrefix syntax a
- * plain `'blockComment'` does — JSDoc's `/** ... * /` is not a different
- * delimiter shape, just different *content*) but must segment the result
- * through a `DocDialect`'s own `segment` (tag-aware, e.g. `@param`/
- * `@returns` grouping) instead of the generic paragraph-only `splitBlocks`
- * this function calls. A pure extraction — `dissolveBlockComments`'s own
- * behavior for `'blockComment'` regions is unchanged, still exercised by
- * this file's own tests.
+ * Shared by `../comments/wrap-doc-comment.ts`, which needs this exact same
+ * delimiter-stripping for a block-shaped `'docComment'` region (JSDoc's
+ * `/** ... * /` is not a different delimiter shape from a plain block
+ * comment, just different *content*) but must segment the result through a
+ * `DocDialect`'s own `segment` (tag-aware, e.g. `@param`/`@returns`
+ * grouping) instead of the generic paragraph-only `splitBlocks` this
+ * function calls.
+ *
+ * `blockOverride`, when passed, is used instead of `descriptor.comments.block`
+ * — `dissolveBlockComments` below passes `descriptor.comments.plainBlock`
+ * so a `'blockComment'` region (a plain `/* ... * /`, no doc marker) can use
+ * a distinct open delimiter from the `'docComment'` region kind sharing this
+ * same function, when a language declares one (see `plainBlock`'s own doc
+ * comment on `../types/adapter.ts`). Omitted (the default), this falls back
+ * to `descriptor.comments.block` exactly as before — `wrap-doc-comment.ts`'s
+ * own call site never passes an override, since a `'docComment'` region
+ * always uses `comments.block`.
  */
 export function dissolveBlockCommentText(
   region: WrappableRegion,
   source: string,
   descriptor: LanguageDescriptor,
+  blockOverride?: LanguageDescriptor['comments']['block'],
 ): string {
-  const block = descriptor.comments.block;
+  const block = blockOverride ?? descriptor.comments.block;
   if (!block) {
     throw new Error(
       `dissolveBlockCommentText: descriptor '${descriptor.id}' declares no comments.block`,

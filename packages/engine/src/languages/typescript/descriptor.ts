@@ -1,9 +1,9 @@
 import type { LanguageDescriptor } from '../../types/adapter.js';
 
 /**
- * TypeScript's `LanguageDescriptor`, plus TSX's — Phase 12b's second and
- * third ECMAScript-family adapters, alongside the extended
- * `../javascript/` one.
+ * TypeScript's `LanguageDescriptor`, plus TSX's — the second and third
+ * ECMAScript-family adapters, alongside the extended `../javascript/`
+ * one.
  *
  * ## Why TSX is a separate descriptor, not an alias
  *
@@ -18,15 +18,15 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  * ambiguous under one grammar; upstream resolves the ambiguity by
  * building two), not a superset flag on one. So `typescriptreact` gets
  * its own full `LanguageDescriptor`/`id`/registration, pointing at its
- * own vendored `.wasm` (`packages/engine/grammars/PROVENANCE.md`) — the
- * plan's own note ("TSX is a *separate* grammar from TS") named this
- * distinction explicitly.
+ * own vendored `.wasm` (`packages/engine/grammars/PROVENANCE.md`) — TSX
+ * being a *separate* grammar from TS, not a variant of it.
  *
  * Everything *else* is identical between the two — verified directly by
  * probing both vendored grammars in the same session
  * (`docs/spikes/tree-sitter-typescript-probe.mjs`; write-up in
- * `docs/adapters.md`'s Phase 12b section and `docs/parsing.md`'s Finding
- * 5): one `comment` node type for all three comment forms, a `string`
+ * `docs/adapters.md`'s JavaScript/TypeScript/TSX — full adapters section
+ * and `docs/parsing.md`'s Finding 5): one `comment` node type for all
+ * three comment forms, a `string`
  * node with no prefix complexity, `binary_expression` with
  * `left`/`operator`/`right` fields for `+`-concatenation. `buildDescriptor`
  * below is the one shared shape both `id`s use, differing only in `id`
@@ -49,6 +49,7 @@ function buildDescriptor(id: 'typescript' | 'typescriptreact', grammarWasm: stri
     comments: {
       line: { marker: '//', spaceAfter: true },
       block: { open: '/**', close: '*/', continuationPrefix: '*', alignContinuation: 'open' },
+      plainBlock: { open: '/*', close: '*/', continuationPrefix: '*', alignContinuation: 'open' },
       doc: { markers: ['/**'], dialects: ['jsdoc', 'plain'] },
       neverReflow: [
         /^\/\/\s*eslint-disable/,

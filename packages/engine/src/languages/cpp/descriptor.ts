@@ -1,14 +1,15 @@
 import type { LanguageDescriptor } from '../../types/adapter.js';
 
 /**
- * C++'s `LanguageDescriptor` (Phase 12c).
+ * C++'s `LanguageDescriptor`.
  *
  * Node names and shapes below were verified against the vendored grammar
  * (`tree-sitter-cpp@0.23.4`, `packages/engine/grammars/`) with a throwaway
  * probe script (`docs/spikes/tree-sitter-cpp-probe.mjs`), not trusted from
- * memory — the same discipline every earlier phase's descriptor used; see
- * `docs/adapters.md`'s Phase 12c section for the full write-up of what
- * that probe found. The short version of what shapes this descriptor:
+ * memory — the same discipline every other language descriptor in this
+ * package uses; see `docs/adapters.md`'s C++ section for the full write-up
+ * of what that probe found. The short version of what shapes this
+ * descriptor:
  *
  * - One `comment` node type covers `//`, plain `/* * /`, `/** * /`, and
  *   `///` alike — the same finding every earlier ECMAScript-family
@@ -37,10 +38,11 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  *   runtime safety check.** `R"(...)"`/`R"delim(...)delim"` parse as a
  *   wholly separate node type, `raw_string_literal` — never matched by
  *   `queries.strings`'s `(string_literal) @string` — so "raw strings...
- *   (never wrap)" (the plan's own words) falls out of the query itself,
- *   the same mechanism that already excludes JS/TS template literals
- *   (`docs/adapters.md`'s Phase 12b section: "not a special-case refusal
- *   anywhere"). `strings.rawForms` below still records the delimiter pair
+ *   (never wrap)" falls out of the query itself, the same mechanism that
+ *   already excludes JS/TS template literals (`docs/adapters.md`'s
+ *   JavaScript/TypeScript/TSX — full adapters section: "not a special-case
+ *   refusal anywhere"). `strings.rawForms` below still records the
+ *   delimiter pair
  *   as descriptive data (the exact motivating example
  *   `RawFormSpec`'s own doc comment on `../../types/adapter.ts` already
  *   names), even though nothing in the engine reads it at runtime yet.
@@ -59,9 +61,10 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  * - **A `#define` macro body is never parsed as C++ syntax at all** — its
  *   argument is one opaque `preproc_arg` leaf carrying the raw, unparsed
  *   text, confirmed directly by probing a multi-line macro with a
- *   backslash-newline continuation. This means the plan's own named hazard
- *   ("Preprocessor line continuations... skip strings inside macro
- *   definitions in the first pass") is already satisfied by the grammar's
+ *   backslash-newline continuation. This means the known hazard of
+ *   preprocessor line continuations — needing to skip strings inside
+ *   macro definitions in the first pass — is already satisfied by the
+ *   grammar's
  *   own structure: neither `comment` nor `string_literal` nodes are ever
  *   produced inside a macro body for `queries.comments`/`queries.strings`
  *   to capture in the first place, so there is nothing here to skip —
@@ -85,7 +88,20 @@ export const cppDescriptor: LanguageDescriptor = {
   comments: {
     line: { marker: '//', spaceAfter: true },
     block: { open: '/**', close: '*/', continuationPrefix: '*', alignContinuation: 'open' },
-    doc: { markers: ['/**'], dialects: ['doxygen', 'plain'] },
+
+    // A plain `/* ... */` comment (no Doxygen marker) shares `block`'s
+    // close delimiter and continuation style but not its open one — see
+    // `./adapter.ts`'s `classify` for how a comment node's text is told
+    // apart from the Doxygen `/**` and `///` forms.
+    plainBlock: { open: '/*', close: '*/', continuationPrefix: '*', alignContinuation: 'open' },
+
+    // `markers` lists every delimiter `classify` recognizes as Doxygen-
+    // shaped; `repeatedMarker` names which one of those is a
+    // repeated-per-line marker (`///`) rather than an open/close pair —
+    // `wrapDocComment` (`../../comments/wrap-doc-comment.ts`) branches on
+    // this to dissolve/emit `///` through the same per-line machinery a
+    // `'lineComment'` region uses, instead of `block`'s open/close one.
+    doc: { markers: ['/**', '///'], dialects: ['doxygen', 'plain'], repeatedMarker: '///' },
 
     // Tooling directives that must never move to a different line —
     // C++'s counterpart to Python's `# noqa`/`# type:` and JS/TS's
@@ -97,8 +113,8 @@ export const cppDescriptor: LanguageDescriptor = {
     ],
 
     // Keywords/directives strong enough on their own to call a dissolved
-    // `//` comment line code-like (Phase 6's commented-out-code
-    // detection) without needing the punctuation-density signal too —
+    // `//` comment line code-like (the commented-out-code detection)
+    // without needing the punctuation-density signal too —
     // C++'s counterpart to Python's `def `/`class `/`import `/... list.
     // Anchored to the start of an already-trimmed line.
     codeLikeKeywords:
@@ -108,9 +124,9 @@ export const cppDescriptor: LanguageDescriptor = {
   strings: {
     quotes: [{ delimiter: '"', multiline: false, escapes: true }],
 
-    // Descriptive only, as of this phase — see this module's own doc
-    // comment above on why raw strings never reach discovery in the
-    // first place regardless of what's declared here.
+    // Descriptive only — see this module's own doc comment above on why
+    // raw strings never reach discovery in the first place regardless of
+    // what's declared here.
     prefixes: [{ prefix: '' }, { prefix: 'L' }, { prefix: 'u' }, { prefix: 'U' }, { prefix: 'u8' }],
 
     // `RawFormSpec`'s own canonical example (`../../types/adapter.ts`) —

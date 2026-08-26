@@ -16,14 +16,16 @@ import { emitString } from '../../strings/emit-string.js';
  * directly against each vendored grammar: one `comment` node type for
  * `//`/`/* * /`/`/** * /` alike, a `string` node with no prefix
  * complexity, a `binary_expression` with `left`/`operator`/`right`
- * fields for `+`-concatenation — see `docs/adapters.md`'s Phase 12b
- * section and `docs/parsing.md`'s Finding 5). Factored out here rather
- * than duplicated three times (JavaScript, TypeScript, TSX each needing
- * their own copy of otherwise-identical logic) or duplicated from
- * scratch per adapter — the same "promote once more than one real
- * consumer needs it" call this project already made for
- * `comments/dissolve-line-comments.ts` (Phase 6b) and `strings/
- * dissolve-string.ts` (this same phase, promoted out of `languages/python/`).
+ * fields for `+`-concatenation — see `docs/adapters.md`'s
+ * JavaScript/TypeScript/TSX — full adapters section and
+ * `docs/parsing.md`'s Finding 5). Factored out here rather than
+ * duplicated three times (JavaScript, TypeScript, TSX each needing their
+ * own copy of otherwise-identical logic) or duplicated from scratch per
+ * adapter — the same "promote once more than one real consumer needs it"
+ * call this project already made for `comments/dissolve-line-comments.ts`
+ * (promoted when the JavaScript canary adapter first needed it) and
+ * `strings/dissolve-string.ts` (promoted out of `languages/python/` here,
+ * once TypeScript and TSX needed the same logic JavaScript already had).
  *
  * What's genuinely *not* shared, and stays in each adapter's own module:
  * the `LanguageDescriptor` itself (grammar path, `id`, `aliases`) and the
@@ -43,23 +45,16 @@ import { emitString } from '../../strings/emit-string.js';
  *   (`'/**'`) is `'docComment'` — JSDoc-shaped, eligible for dialect-aware
  *   wrapping (`../../comments/wrap-doc-comment.ts`) via the `jsdoc`
  *   dialect once `wrap.ts` dispatches it.
- * - **A plain `/* ... * /` comment (single-star, no JSDoc marker) is
- *   deliberately excluded from discovery** (`null`), the same choice
- *   Phase 6b's canary already made for the *only* delimiter shape its
- *   descriptor could express — carried forward here deliberately, not
- *   inherited by accident, because `LanguageDescriptor.comments.block` is
- *   a single open/close/continuation-prefix shape, and it's already
- *   spoken for by the JSDoc `/**`/`*`-continuation form every
- *   `'docComment'` region reuses (`wrapDocComment` dissolves/emits
- *   through that exact same `comments.block` data). Supporting a second,
- *   differently-shaped block-comment delimiter on one descriptor would be
- *   real engine schema surface (`comments.block` becoming a list) that
- *   nothing in Phase 12b's own plan text asks for — only JSDoc, strings,
- *   and concatenation are named. "Bias toward verbatim/skip when
- *   uncertain" (Phase 4's own principle) applies here exactly as it did
- *   for the canary; a future phase that actually needs plain block-
- *   comment wrapping alongside JSDoc can extend the schema deliberately
- *   then.
+ * - A plain `/* ... * /` comment (single-star, no JSDoc marker) is
+ *   `'blockComment'` when the descriptor declares `comments.plainBlock`
+ *   (every real ECMAScript-family descriptor does — see
+ *   `../javascript/descriptor.ts`), dissolved/emitted through that
+ *   distinct open delimiter rather than `comments.block`'s JSDoc-marked
+ *   one (`wrap.ts`'s `emitWrappedBlockComment`). Checked *after* the doc
+ *   marker above, since `/**` also starts with `/*` — a descriptor with
+ *   no `plainBlock` excludes a plain block comment from discovery
+ *   entirely (`null`), the same "bias toward verbatim/skip when
+ *   uncertain" default every earlier version of this function used.
  */
 export function classifyEcmaScriptNode(
   node: SyntaxNode,
@@ -82,6 +77,11 @@ export function classifyEcmaScriptNode(
   const docMarker = descriptor.comments.doc?.markers[0];
   if (docMarker !== undefined && text.startsWith(docMarker)) {
     return 'docComment';
+  }
+
+  const plainBlock = descriptor.comments.plainBlock;
+  if (plainBlock !== undefined && text.startsWith(plainBlock.open)) {
+    return 'blockComment';
   }
 
   return null;
@@ -153,9 +153,9 @@ export function ecmaScriptProseText(region: WrappableRegion, source: string): st
  *
  * Hanging indent for a multi-line split follows the identical "statement's
  * own indent plus four columns" convention Python's `wrapString` uses and
- * documents as a deliberate Phase 9 simplification (`../python/wrap-string.ts`)
- * — carried forward unchanged rather than re-litigated, since nothing
- * about JS/TS gives a reason to choose differently.
+ * documents as a deliberate simplification (`../python/wrap-string.ts`) —
+ * carried forward unchanged rather than re-litigated, since nothing about
+ * JS/TS gives a reason to choose differently.
  */
 export function wrapEcmaScriptString(
   region: WrappableRegion,

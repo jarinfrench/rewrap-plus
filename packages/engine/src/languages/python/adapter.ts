@@ -13,6 +13,7 @@ import { dissolveString } from '../../strings/dissolve-string.js';
 import { dissolveDocstring } from './dissolve-docstring.js';
 import { isSingleTripleQuotedLiteral } from './triple-quote.js';
 import { looksLikeProse } from '../../prose-heuristic.js';
+import { groupAdjacentRegions } from '../../comments/group-adjacent-regions.js';
 
 /**
  * Python's `isProseEligible` override: `false` for a `'stringLiteral'`
@@ -45,7 +46,7 @@ function isProseEligible(region: WrappableRegion, _source: string, tree: Tree, c
  * preconditions are already satisfied for every region reaching its branch
  * below.
  *
- * A single-part triple-quoted region is the one exception (Phase 12f):
+ * A single-part triple-quoted region is the one exception:
  * `dissolveString`'s own `PREFIX_AND_QUOTE` regex never matches a
  * triple-quote delimiter and would throw, so it's routed to
  * `dissolveDocstring` instead — the same dissolve `./wrap-code-string.ts`
@@ -78,9 +79,9 @@ function proseText(region: WrappableRegion, source: string): string {
  *   all is expected to handle every node type its queries can produce.
  *
  * Never returns `null`: nothing this adapter's queries capture should be
- * excluded from discovery outright at this phase. (`isSafeToWrap`, added
- * later in this phase, is where "found but shouldn't be wrapped" belongs
- * — that's a distinct question from "found at all".)
+ * excluded from discovery outright. (`isSafeToWrap`, below, is where
+ * "found but shouldn't be wrapped" belongs — that's a distinct question
+ * from "found at all".)
  */
 function classify(node: SyntaxNode): RegionKind | null {
   if (node.type === 'comment') {
@@ -104,15 +105,15 @@ function classify(node: SyntaxNode): RegionKind | null {
  * flagged unsafe here — a comment region always returns `true`; directive
  * comments that must never be reflowed (`# noqa`, `# type:`, ...) are a
  * `neverReflow`-pattern concern for whatever consumes `pythonDescriptor`
- * once wrapping itself exists (Phase 6), not this hook's job.
+ * once wrapping itself exists, not this hook's job.
  *
  * For a string-shaped region, unsafe means either:
  *
  * - **Raw or byte-prefixed.** A raw string's backslash sequences aren't
  *   real escapes — reflowing one risks producing a value that's no longer
  *   character-for-character what the source said, and a byte string is
- *   rarely prose in the first place (per the plan: "r-strings and
- *   b-strings must be flagged as non-reflowable by default").
+ *   rarely prose in the first place, so r-strings and b-strings are
+ *   flagged as non-reflowable by default.
  * - **Mixed prefixes across a concatenation run's parts.** `region.parts`
  *   only receives `source` and the region itself, not a live syntax node
  *   (see `discoverRegions`'s doc comment on why `isSafeToWrap`'s signature
@@ -125,8 +126,8 @@ function classify(node: SyntaxNode): RegionKind | null {
  * that doesn't correspond to real discovered output, and "assume unsafe"
  * is the failure mode that can't corrupt a file.
  *
- * Phase 9 adds two more unsafe cases, both scoped to `'stringLiteral'`
- * only (never `'docstring'` — a docstring is *always* legitimately
+ * Two more unsafe cases apply, both scoped to `'stringLiteral'` only
+ * (never `'docstring'` — a docstring is *always* legitimately
  * triple-quoted, and that's `wrapDocstring`'s own territory, unaffected
  * by any of this):
  *
@@ -134,16 +135,16 @@ function classify(node: SyntaxNode): RegionKind | null {
  *   part (`"""a""" """b"""`, or a triple-quoted part mixed with ordinary
  *   ones) stays unsafe: `dissolveString`/`emitString`
  *   (`./dissolve-string.ts`, `./emit-string.ts`) — and `wrapCodeString`
- *   (`./wrap-code-string.ts`), Phase 12f's own triple-quoted pipeline —
- *   are each built around one specific shape (every part a single physical
+ *   (`./wrap-code-string.ts`), the triple-quoted-string pipeline — are
+ *   each built around one specific shape (every part a single physical
  *   line, or exactly one part however many lines it spans) that a
  *   multi-part triple-quoted run satisfies neither of. Real, separate work
- *   nothing in the plan currently asks for.
+ *   not undertaken here.
  * - **Triple-quoted, single-part: safe, but only if it looks like prose.**
- *   An ordinary (non-docstring) triple-quoted string is real Python (Phase
- *   3: "arbitrary triple-quoted strings are treated as ordinary string
- *   literals"), and Phase 12f ("Triple-quoted non-docstring code strings")
- *   is what stops deferring it — `./wrap-code-string.ts` reuses
+ *   An ordinary (non-docstring) triple-quoted string is real Python —
+ *   arbitrary triple-quoted strings are treated as ordinary string
+ *   literals — and this adapter doesn't defer wrapping it —
+ *   `./wrap-code-string.ts` reuses
  *   `wrapDocstring`'s own dissolve/segment/emit pipeline, since neither
  *   `dissolveDocstring` nor `emitDocstring` actually depends on docstring
  *   *position* (see that module's own doc comment). Gating this on
@@ -160,24 +161,22 @@ function classify(node: SyntaxNode): RegionKind | null {
  *   opt out of — the same "never bypass a hard structural refusal"
  *   posture raw/byte strings already establish just above. A code-shaped
  *   triple-quoted string (an embedded SQL query, a template, ASCII art) is
- *   expected to fail this heuristic and stay untouched, exactly as the
- *   Phase 3 note predicted for triple-quoted strings in general ("likely
- *   to fail the prose heuristic anyway").
+ *   expected to fail this heuristic and stay untouched, exactly as
+ *   expected for triple-quoted strings in general ("likely to fail the
+ *   prose heuristic anyway").
  * - **Contains a line-continuation escape** (`\` immediately followed by a
- *   real newline) in any part. The plan calls this out by name as a
- *   refusal case ("Refuse (mark unsafe): ... strings with line
- *   continuations"): a line-continuation escape consumes the newline
- *   itself (it contributes nothing to the string's value), which
+ *   real newline) in any part. This is a refusal case by design: a
+ *   line-continuation escape consumes the newline itself (it contributes
+ *   nothing to the string's value), which
  *   `dissolveString`'s "never decode, just concatenate bodies verbatim"
  *   design has no way to represent — concatenating a body that still
  *   contains `\` + a real newline character straight through would hand
  *   `atomizeWords` a body containing an actual line break, which its
  *   single-line contract doesn't expect.
- * - **Contains a tab, or a run of two or more consecutive spaces.**
- *   Neither the plan nor any earlier phase names this one explicitly —
- *   found while generating this phase's own gold fixtures, when a run of
- *   the actual pipeline against real prose text revealed it, rather than
- *   being anticipated up front. `atomizeWords`
+ * - **Contains a tab, or a run of two or more consecutive spaces.** This
+ *   one wasn't anticipated up front — it surfaced while generating this
+ *   adapter's gold fixtures, when running the actual pipeline against
+ *   real prose text revealed it. `atomizeWords`
  *   (`../../segmentation/atomize-words.ts`) is prose-reflow machinery: it
  *   treats *any* run of whitespace as a plain word boundary and always
  *   re-renders exactly one space between words, discarding the original
@@ -237,111 +236,22 @@ const LINE_CONTINUATION = /\\\r?\n/;
 const IRREGULAR_WHITESPACE = /\t| {2}/;
 
 /**
- * Python's `groupRegions` override.
- *
- * Merges consecutive `'lineComment'` regions at the same indent column
- * into a single multi-part region — Phase 6's "consecutive `#` comments
- * at the same indent = one logical block." Unlike concatenation-run
- * grouping (handled inside `discoverRegions` itself, since it needs
- * direct tree access to walk `concat.implicit`/`concat.operator`
- * captures — see that module's doc comment), merging adjacent comment
- * *lines* only needs each region's own span and `indentColumn`, both
- * already on `WrappableRegion` — exactly what this hook's signature
- * provides, so it belongs here rather than in the driver.
- *
- * `discoverRegions` sorts its final return value, but does *not*
- * guarantee the order regions arrive in when handed to this hook (the
- * driver builds concatenation regions, then comments, then leftover
- * strings, each batch in tree-sitter capture order, which is source
- * order but not merged/sorted across kinds) — so `'lineComment'` entries
- * are pulled out and sorted by position before the adjacency scan runs,
- * rather than trusting incoming order. Every other kind passes through
- * untouched and in whatever relative order it arrived in, since the
- * final `sortByPosition` in `discoverRegions` fixes that up regardless.
- *
- * Two regions merge only if they're on strictly consecutive source rows
- * (`b.span.startRow === a.span.endRow + 1`) *and* share the same
- * `indentColumn` — a comment one line below but at a different
- * indentation (e.g. entering or leaving a nested block) starts a new
- * logical block instead of extending this one. This also means a
- * trailing comment (`x = 1  # note`) essentially never merges with an
- * unrelated standalone comment on the next line, since the two are
- * exceedingly unlikely to land on the same visual column by accident.
+ * Python's `groupRegions` override: merges consecutive `'lineComment'`
+ * regions at the same indent column into a single multi-part region —
+ * "consecutive `#` comments at the same indent = one logical block." The
+ * merge algorithm itself is `../../comments/group-adjacent-regions.ts`'s
+ * `groupAdjacentRegions` (see that module's own doc comment for exactly
+ * how the adjacency scan works) — generic across region kinds, since
+ * C++'s own `groupRegions` (`../cpp/adapter.ts`) needs the identical
+ * adjacency merge for its `///` Doxygen comments. Concatenation-run
+ * grouping is handled separately, inside `discoverRegions` itself, since
+ * it needs direct tree access to walk `concat.implicit`/`concat.operator`
+ * captures (see that module's own doc comment) — merging adjacent
+ * comment *lines* only needs each region's own span and `indentColumn`,
+ * both already on `WrappableRegion`, so it belongs in this hook instead.
  */
 function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
-  const others = regions.filter((region) => region.kind !== 'lineComment');
-  const comments = regions
-    .filter((region) => region.kind === 'lineComment')
-    .slice()
-    .sort((a, b) => a.span.startRow - b.span.startRow || a.span.startColumn - b.span.startColumn);
-
-  const merged: WrappableRegion[] = [];
-  let run: WrappableRegion[] = [];
-
-  const flushRun = (): void => {
-    if (run.length === 0) {
-      return;
-    }
-    merged.push(run.length === 1 ? run[0]! : mergeLineCommentRun(run));
-    run = [];
-  };
-
-  for (const region of comments) {
-    const prev = run[run.length - 1];
-    const continuesRun =
-      prev !== undefined &&
-      region.span.startRow === prev.span.endRow + 1 &&
-      region.indentColumn === prev.indentColumn;
-    if (!continuesRun) {
-      flushRun();
-    }
-    run.push(region);
-  }
-  flushRun();
-
-  return [...others, ...merged];
-}
-
-/**
- * Combine a run of single-part `'lineComment'` regions (adjacent source
- * lines, same indent — guaranteed by `groupRegions`'s caller) into one
- * multi-part region spanning all of them.
- *
- * `rawText` approximates the true source slice by joining each part's
- * own text with `'\n' + ' '.repeat(indentColumn)` — reconstructing the
- * newline and re-indentation that sit *between* parts in real source,
- * which individual `WrappableRegion.rawText` values (each just their own
- * node's text, no surrounding whitespace — see `discoverRegions`'s
- * `buildRegion`) don't carry. This is exact for the overwhelmingly
- * common case of space-only indentation; a merged region indented with
- * tabs would see its `rawText` (display/debugging use only — see that
- * field's own doc comment) diverge slightly from the true byte sequence,
- * since `indentColumn` is tab-*expanded*. Nothing downstream treats
- * `rawText` as authoritative for a multi-part region: `wrapRegions`
- * (Phase 6's wrap entry point) compares prospective edits against a
- * fresh `sliceSpanText(source, region.span)` instead, precisely to avoid
- * depending on this approximation for correctness.
- */
-function mergeLineCommentRun(run: readonly WrappableRegion[]): WrappableRegion {
-  const first = run[0]!;
-  const last = run[run.length - 1]!;
-  const indentPrefix = '\n' + ' '.repeat(first.indentColumn);
-
-  return {
-    kind: 'lineComment',
-    span: {
-      startByte: first.span.startByte,
-      endByte: last.span.endByte,
-      startRow: first.span.startRow,
-      startColumn: first.span.startColumn,
-      endRow: last.span.endRow,
-      endColumn: last.span.endColumn,
-    },
-    parts: run.flatMap((region) => region.parts),
-    rawText: run.map((region) => region.rawText).join(indentPrefix),
-    indentColumn: first.indentColumn,
-    languageId: first.languageId,
-  };
+  return groupAdjacentRegions(regions, (region) => region.kind === 'lineComment');
 }
 
 /**
@@ -350,16 +260,16 @@ function mergeLineCommentRun(run: readonly WrappableRegion[]): WrappableRegion {
  * `classify` tells a docstring apart from an ordinary string literal by
  * its syntactic position. `isSafeToWrap` flags raw strings, byte strings,
  * and mixed-prefix concatenation runs as unsafe to wrap. `groupRegions`
- * merges consecutive same-indent line comments into one logical block
- * (Phase 6). Concatenation-run *grouping* is not implemented as part of
- * this hook — it needs direct syntax-tree access that hook's signature
- * doesn't provide, so it lives in the discovery driver instead, keyed
- * off `descriptor.queries.concatenations` (see that commit's message for
- * the full reasoning). `wrapDocstring` (Phase 8) is Python's whole
+ * merges consecutive same-indent line comments into one logical block.
+ * Concatenation-run *grouping* is not implemented as part of this hook —
+ * it needs direct syntax-tree access that hook's signature doesn't
+ * provide, so it lives in the discovery driver instead, keyed off
+ * `descriptor.queries.concatenations` (see that commit's message for the
+ * full reasoning). `wrapDocstring` is Python's whole
  * dissolve→segment→reflow→emit pipeline for `'docstring'` regions — see
  * `./wrap-docstring.ts` and that hook's own doc comment on
  * `../../types/adapter.ts` for why it's one hook rather than several.
- * `emitContext` (Phase 9, `./emit-context.ts`) answers whether a
+ * `emitContext` (`./emit-context.ts`) answers whether a
  * `'stringLiteral'` split needs its own inserted parentheses and which
  * concatenation syntax to preserve; `wrapString` (`./wrap-string.ts`) is
  * that region kind's own whole-pipeline hook, the same shape as

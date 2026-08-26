@@ -3,6 +3,7 @@ import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { dissolveString } from '../../strings/dissolve-string.js';
+import { groupAdjacentRegions } from '../../comments/group-adjacent-regions.js';
 import { cppDescriptor } from './descriptor.js';
 import { extractPrefix } from './prefix.js';
 import { wrapCppString } from './wrap-string.js';
@@ -21,30 +22,18 @@ import { wrapCppString } from './wrap-string.js';
  * (`../ecmascript/adapter-support.ts`) — one grammar node type covers
  * `//`, `///`, plain `/* * /`, and `/** * /` alike:
  *
- * - `///` is excluded from discovery entirely (`null`) — a **deliberate
- *   scope limit**, not an oversight. Doxygen's repeated-line-marker style
- *   is a genuinely different delimiter *shape* than `/** ... * /` (no
- *   single open/close pair `dissolveBlockCommentText`/`emitBlockComments`
- *   can express — those two functions, and therefore `wrapDocComment`,
- *   are built entirely around one open delimiter, one close delimiter,
- *   and an optional per-line continuation marker in between; merging
- *   consecutive `///` lines into a region and running them through that
- *   machinery unchanged would silently rewrite the user's chosen `///`
- *   style into `/** * /` on emit, or fail to strip the marker at all,
- *   since neither `block.open`/`block.close` nor `block.continuationPrefix`
- *   matches `///` text). Building genuine `///` support is real,
- *   separate engine work (a repeated-marker dissolve/emit pair alongside
- *   the existing open/close one) that nothing in this phase's plan text
- *   demands — see `docs/adapters.md`'s Phase 12c section for the full
- *   reasoning. "Bias toward verbatim/skip when uncertain" (Phase 4's own
- *   principle), applied here exactly as Phase 12b already applied it to
- *   plain `/* * /`.
- * - `/**` is `'docComment'` — Doxygen-shaped, eligible for dialect-aware
- *   wrapping via the `doxygen` dialect (`../../docs/doxygen.ts`).
- * - A plain `/* ... * /` (no `///`, no `/**`) is excluded from discovery
- *   too, the same choice every earlier phase's descriptor already made
- *   for the identical reason (`comments.block` is one delimiter shape,
- *   already spoken for by the Doxygen `/**`/`*`-continuation form).
+ * - `/**` and `///` are both `'docComment'` (`cppDescriptor.comments.doc.markers`
+ *   lists both), eligible for dialect-aware wrapping via the `doxygen`
+ *   dialect (`../../docs/doxygen.ts`) — checked against *every* configured
+ *   marker, not just the first, and before the plain `//` check below,
+ *   since `///` also starts with `//`. `wrapDocComment`
+ *   (`../../comments/wrap-doc-comment.ts`) tells the two delimiter
+ *   *shapes* apart at wrap time (`comments.doc.repeatedMarker`): `/**`
+ *   dissolves/emits through `comments.block`'s open/close pair, `///`
+ *   through the same per-line machinery a `'lineComment'` region uses.
+ * - A plain `/* ... * /` (no `///`, no `/**`) is `'blockComment'`,
+ *   dissolved/emitted through `comments.plainBlock`'s distinct open
+ *   delimiter rather than `comments.block`'s Doxygen-marked one.
  * - Everything else starting with `//` (ordinary, non-`///`) is
  *   `'lineComment'`.
  */
@@ -59,16 +48,42 @@ function classify(node: SyntaxNode): RegionKind | null {
   }
 
   const text = node.text;
-  if (text.startsWith('///')) {
-    return null;
+  const docMarkers = cppDescriptor.comments.doc?.markers ?? [];
+  if (docMarkers.some((marker) => text.startsWith(marker))) {
+    return 'docComment';
   }
   if (text.startsWith('//')) {
     return 'lineComment';
   }
-  if (text.startsWith(cppDescriptor.comments.doc!.markers[0]!)) {
-    return 'docComment';
+  const plainBlock = cppDescriptor.comments.plainBlock;
+  if (plainBlock !== undefined && text.startsWith(plainBlock.open)) {
+    return 'blockComment';
   }
   return null;
+}
+
+/**
+ * C++'s `groupRegions` override: merges consecutive `///` (Doxygen
+ * repeated-marker) `'docComment'` regions at the same indent column into
+ * a single multi-part region — the identical adjacency merge Python's
+ * own `'lineComment'` grouping uses
+ * (`../../comments/group-adjacent-regions.ts`'s `groupAdjacentRegions`),
+ * applied to a different `RegionKind`/predicate pair. Deliberately
+ * excludes `/** ... * /`-form `'docComment'` regions
+ * (`!region.rawText.startsWith('///')`): each is already one complete
+ * node needing no merge, and merging two genuinely separate adjacent
+ * block doc comments would corrupt the span
+ * `dissolveBlockCommentText`/`emitBlockComments` expect (one open
+ * delimiter, one close delimiter — not two of each inside one region).
+ * Ordinary `//` line comments are still never merged for C++, the same
+ * open question left for JavaScript/TypeScript's own `//` comments too
+ * (`docs/adapters.md`).
+ */
+function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
+  return groupAdjacentRegions(
+    regions,
+    (region) => region.kind === 'docComment' && region.rawText.startsWith('///'),
+  );
 }
 
 const LINE_CONTINUATION = /\\\r?\n/;
@@ -169,23 +184,23 @@ function proseText(region: WrappableRegion, source: string): string {
 }
 
 /**
- * C++'s `LanguageAdapter` (Phase 12c).
+ * C++'s `LanguageAdapter`.
  *
- * `classify` tells `'lineComment'`/`'docComment'`/`'stringLiteral'` apart
- * by node type and text, and excludes `///` and plain `/* * /` comments
- * from discovery entirely (deliberate scope limits — see `classify`'s own
- * doc comment). `isSafeToWrap` flags mixed-prefix concatenation runs,
+ * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
+ * `'stringLiteral'` apart by node type and text — both `/**` and `///`
+ * doc-comment forms are wrapped, via the `doxygen` dialect, as is a plain
+ * `/* * /` block comment (see `classify`'s own doc comment). `groupRegions`
+ * merges consecutive `///` lines at the same indent into one logical
+ * block, the `///`-specific counterpart to Python's own `'lineComment'`
+ * merging. `isSafeToWrap` flags mixed-prefix concatenation runs,
  * line-continuation escapes, and irregular whitespace as unsafe to wrap.
- * No `groupRegions` override: neither consecutive `//` lines nor `///`
- * runs are merged into a single logical block, the same open question
- * Phase 6b/12b already deferred for JavaScript/TypeScript's own `//`
- * comments (`docs/adapters.md`). `emitContext`/`wrapString` are C++'s
- * whole `'stringLiteral'` pipeline, the same shape every adapter with
- * string support uses.
+ * `emitContext`/`wrapString` are C++'s whole `'stringLiteral'` pipeline,
+ * the same shape every adapter with string support uses.
  */
 export const cppAdapter: LanguageAdapter = {
   descriptor: cppDescriptor,
   classify,
+  groupRegions,
   isSafeToWrap,
   proseText,
   emitContext,

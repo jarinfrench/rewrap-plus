@@ -46,14 +46,22 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * `continuationPrefix.length + 1` (the prefix plus its separating
  * space) before content starts, mirroring `emitLineComments`'s
  * `markerOverhead`.
+ *
+ * `blockOverride`, when passed, is used instead of `descriptor.comments.block`
+ * — the `'blockComment'` counterpart to `dissolveBlockCommentText`'s own
+ * identical parameter (see that function's doc comment), so a plain
+ * `/* ... * /` region can re-delimit with `descriptor.comments.plainBlock`
+ * instead of the doc-marked form. Omitted (the default), this falls back
+ * to `descriptor.comments.block` exactly as before.
  */
 export function emitBlockComments(
   document: LogicalDocument,
   columnLimit: number,
   descriptor: LanguageDescriptor,
   options: ReflowOptions = {},
+  blockOverride?: LanguageDescriptor['comments']['block'],
 ): string {
-  const block = descriptor.comments.block;
+  const block = blockOverride ?? descriptor.comments.block;
   if (!block) {
     throw new Error(`emitBlockComments: descriptor '${descriptor.id}' declares no comments.block`);
   }

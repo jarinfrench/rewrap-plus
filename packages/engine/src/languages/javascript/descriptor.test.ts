@@ -63,8 +63,8 @@ describe('javascriptDescriptor', () => {
   });
 
   it('grammar loads and reports an ABI compatible with the pinned web-tree-sitter version', () => {
-    // Mirrors the Python descriptor's own implicit check (Phase 2,
-    // finding 2): `Language.load` above would already have thrown if
+    // Mirrors the Python descriptor's own implicit check (docs/parsing.md's
+    // Finding 2): `Language.load` above would already have thrown if
     // the ABI were incompatible, but asserting the concrete number
     // keeps a future incompatible upgrade of either package visible in
     // a diff rather than only failing opaquely elsewhere.

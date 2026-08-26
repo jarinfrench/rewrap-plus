@@ -24,7 +24,7 @@ describe('javascriptAdapter', () => {
     expect(region!.kind).toBe('lineComment');
   });
 
-  it('classifies a /** */ comment as docComment (Phase 12b: JSDoc-eligible)', () => {
+  it('classifies a /** */ comment as docComment (JSDoc-eligible)', () => {
     const source = '/**\n * A doc comment.\n */\nconst x = 1;\n';
     const tree = parser.parse(source)!;
 
@@ -42,14 +42,13 @@ describe('javascriptAdapter', () => {
     expect(region!.kind).toBe('docComment');
   });
 
-  it('excludes a plain single-star /* */ comment from discovery entirely', () => {
-    // Deliberate scope limit — see `./adapter.ts`'s own doc comment.
+  it('discovers a plain single-star /* */ comment as a blockComment', () => {
     const source = '/* plain block comment */\nconst x = 1;\n';
     const tree = parser.parse(source)!;
 
-    const regions = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
 
-    expect(regions).toEqual([]);
+    expect(region!.kind).toBe('blockComment');
   });
 
   it('discovers both comment forms plus an ordinary string in the same file', () => {
@@ -72,7 +71,7 @@ describe('javascriptAdapter', () => {
     expect(regions.every((r) => r.parts.length === 1)).toBe(true);
   });
 
-  it('groups a +-concatenated string chain into one multi-part region (Phase 12b)', () => {
+  it('groups a +-concatenated string chain into one multi-part region', () => {
     const source = 'const x = "a" + "b" + "c";\n';
     const tree = parser.parse(source)!;
 

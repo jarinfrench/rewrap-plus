@@ -18,7 +18,7 @@ import { scanDirectives } from './directives.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a
- * caller (the extension's output channel, Phase 7) can tell the user
+ * caller (the VSCode extension's output channel) can tell the user
  * *why* nothing changed rather than leaving them to guess.
  */
 export interface SkippedRegion {
@@ -31,13 +31,13 @@ export interface SkippedRegion {
  * wrap, plus every region that was considered but left alone.
  *
  * `cancelled` is `true` only when a `CancellationSignal` passed to
- * `wrapRegions` (Phase 10, "large-file guardrails") requested
+ * `wrapRegions` (part of this engine's large-file guardrails) requested
  * cancellation partway through — `edits`/`skipped` then reflect only the
  * regions processed *before* that happened, never a partial edit of a
  * single region. A caller that cares about the "single atomic edit so
- * one undo reverts everything" property this project's own commands rely
- * on (Phase 7) should treat a cancelled result as nothing to apply at
- * all, not as a partial wrap to apply anyway — seem `wrap-document.ts`
+ * one undo reverts everything" property this project's own VSCode
+ * commands rely on should treat a cancelled result as nothing to apply
+ * at all, not as a partial wrap to apply anyway — seem `wrap-document.ts`
  * for the one caller that currently passes a real cancellation token.
  */
 export interface WrapResult {
@@ -68,39 +68,39 @@ export interface CancellationSignal {
  * `TextEdit`s needed to apply the wrap plus a reason for every region
  * left untouched.
  *
- * ## Generalized in Phase 6b
+ * ## Generalized from a Python-only original
  *
- * Phase 6 shipped this hardcoded to Python — living under
+ * This function originally shipped hardcoded to Python — living under
  * `languages/python/wrap.ts`, validating `languageId` against
  * `pythonDescriptor.id` directly, and importing `pythonAdapter` by name.
  * That function's own doc comment named the generalization done here as
- * exactly the question Phase 6b's canary and conformance kit exist to
- * settle before Phase 7 hardens around a Python-only assumption. With a
- * second adapter (the JavaScript canary) actually needing to call this,
- * the answer turned out to be straightforward: resolve the adapter from
- * `parserManager` — which already holds the `AdapterRegistry` a caller
- * constructed — via its new `adapterFor` method, the same way
- * `parserFor` already resolves a `Parser` from the identical registry
- * lookup. No second registry parameter, no adapter-name imports here at
- * all.
+ * exactly the question a second adapter's canary and conformance kit
+ * exist to settle before other code hardens around a Python-only
+ * assumption. With a second adapter (the JavaScript canary) actually
+ * needing to call this, the answer turned out to be straightforward:
+ * resolve the adapter from `parserManager` — which already holds the
+ * `AdapterRegistry` a caller constructed — via its new `adapterFor`
+ * method, the same way `parserFor` already resolves a `Parser` from the
+ * identical registry lookup. No second registry parameter, no
+ * adapter-name imports here at all.
  *
  * ## What's still region-kind-limited, and why that's unrelated
  *
  * `'lineComment'` and `'blockComment'` regions are wrapped —
- * `'blockComment'` added later in Phase 6b alongside
+ * `'blockComment'` added alongside that same generalization, alongside
  * `dissolveBlockComments`/`emitBlockComments`, specifically so the
  * JavaScript canary's `/** * /` form has something real to exercise
  * through this same entry point rather than being vacuously skipped.
- * `'docstring'` regions are wrapped too, as of Phase 8, and `'stringLiteral'`
- * regions as of Phase 9 — neither through a generic dissolve/emit pair the
- * way the two comment kinds are: both docstring and string-literal syntax
- * are inherently language-specific (see `LanguageAdapter.wrapDocstring`/
+ * `'docstring'` and `'stringLiteral'` regions are wrapped too — neither
+ * through a generic dissolve/emit pair the way the two comment kinds
+ * are: both docstring and string-literal syntax are inherently
+ * language-specific (see `LanguageAdapter.wrapDocstring`/
  * `wrapString`'s own doc comments on `./types/adapter.js`), so each
  * dispatches to the adapter's own whole-pipeline hook instead — `undefined`
  * for an adapter that doesn't support the kind at all, same "skip with a
  * reason" outcome as every other not-yet-implemented kind.
  *
- * `'docComment'` regions are wrapped as of Phase 12b, and unlike
+ * `'docComment'` regions are wrapped too, and unlike
  * `'docstring'`/`'stringLiteral'`, *through* a generic function
  * (`./comments/wrap-doc-comment.js`'s `wrapDocComment`, called directly
  * below) rather than an adapter hook: a `'docComment'` region
@@ -128,8 +128,8 @@ export interface CancellationSignal {
  * `cfg.wrapComments`'s gate, which `'stringLiteral'` does not share.
  *
  * Every candidate region is checked against `errorSpans` before anything
- * else: a region overlapping a parse error is skipped outright ("skip
- * region, warn, never block" — decision of record), regardless of kind,
+ * else: a region overlapping a parse error is skipped outright (this
+ * project's "skip region, warn, never block" posture), regardless of kind,
  * since dissolving text next to malformed syntax risks working from a
  * tree that doesn't reflect what's actually in the file.
  *
@@ -138,7 +138,8 @@ export interface CancellationSignal {
  * included as a no-op replacement — checked against a fresh
  * `sliceSpanText(source, region.span)`, not `region.rawText`, since a
  * merged multi-line comment region's `rawText` is only an approximation
- * of the true source slice (see the Python adapter's `mergeLineCommentRun`).
+ * of the true source slice (see `./comments/group-adjacent-regions.ts`'s
+ * `mergeRegionRun`).
  */
 export async function wrapRegions(
   source: string,
@@ -208,14 +209,14 @@ export async function wrapRegions(
     ) {
       skipped.push({
         region,
-        reason: `wrapping for region kind '${region.kind}' is not implemented until a later phase`,
+        reason: `wrapping for region kind '${region.kind}' is not implemented`,
       });
       continue;
     }
 
     if (region.kind === 'stringLiteral') {
       // `'stringLiteral'` gets its own gates entirely separate from
-      // `cfg.wrapComments` below (Phase 9): a master `wrapStrings` switch,
+      // `cfg.wrapComments` below: a master `wrapStrings` switch,
       // `isSafeToWrap`'s hard structural refusals (raw/byte/mixed-prefix/
       // triple-quoted/line-continuation — `./languages/python/adapter.ts`),
       // and, for the conservative `'prose'` policy, both the shared
@@ -230,9 +231,9 @@ export async function wrapRegions(
         continue;
       }
       if (cfg.stringPolicy === 'prose' && !directives.isForcedAt(region.span.startRow)) {
-        // A `# rewrap: force` directive is specifically "the escape hatch
-        // that makes a conservative default acceptable" (the plan's own
-        // words) for *this* gate — it bypasses the heuristic, not the
+        // A `# rewrap: force` directive is specifically the escape hatch
+        // that makes a conservative default acceptable for *this* gate —
+        // it bypasses the heuristic, not the
         // wrapStrings/stringPolicy master switch or isSafeToWrap's hard
         // structural refusals above, which stay in effect regardless.
         const textToScore = adapter.proseText
@@ -248,11 +249,10 @@ export async function wrapRegions(
       }
     } else if (!cfg.wrapComments) {
       // Docstrings share this gate rather than getting a separate config
-      // key: they're Python's own form of documentation comment (Phase
-      // 3's own framing — "docstrings get rich treatment," as opposed to
-      // an arbitrary string), and `WrapConfig` has no dedicated
-      // `wrapDocstrings` field for the extension's settings schema to
-      // expose one through.
+      // key: they're Python's own form of documentation comment
+      // ("docstrings get rich treatment," as opposed to an arbitrary
+      // string), and `WrapConfig` has no dedicated `wrapDocstrings` field
+      // for the extension's settings schema to expose one through.
       skipped.push({ region, reason: 'comment wrapping disabled (wrapComments is false)' });
       continue;
     }
@@ -278,11 +278,11 @@ export async function wrapRegions(
     // inside emit itself).
     //
     // Detected per region (`detectLineEndingNear`), not once for the
-    // whole file — a file with genuinely mixed line endings (Phase 10's
-    // own named pathological input) gets each edit matching whatever
-    // convention actually surrounds *that* region, rather than every
-    // edit in the file uniformly adopting whichever convention happened
-    // to appear first.
+    // whole file — a file with genuinely mixed line endings (a named
+    // pathological input in this package's hardening tests) gets each
+    // edit matching whatever convention actually surrounds *that*
+    // region, rather than every edit in the file uniformly adopting
+    // whichever convention happened to appear first.
     const lineEnding = detectLineEndingNear(sourceLines, region.span.startRow);
     const newText = applyLineEnding(emitted, lineEnding);
 
@@ -331,8 +331,8 @@ function emitWrappedLineComment(
 /**
  * Dissolve, reflow, and emit one `'blockComment'` region — the
  * `'blockComment'` counterpart to `emitWrappedLineComment` above,
- * introduced in Phase 6b alongside `dissolveBlockComments`/
- * `emitBlockComments` themselves. A region only ever classifies as
+ * introduced alongside `dissolveBlockComments`/`emitBlockComments`
+ * themselves. A region only ever classifies as
  * `'blockComment'` when the descriptor that discovered it declares
  * `comments.block` (see `dissolveBlockComments`'s own throw for the
  * contract this relies on), so no adapter-agnostic fallback is needed
@@ -346,5 +346,11 @@ function emitWrappedBlockComment(
   reflowOptions: ReflowOptions,
 ): string {
   const document = dissolveBlockComments(region, source, descriptor);
-  return emitBlockComments(document, columnLimit, descriptor, reflowOptions);
+  return emitBlockComments(
+    document,
+    columnLimit,
+    descriptor,
+    reflowOptions,
+    descriptor.comments.plainBlock,
+  );
 }

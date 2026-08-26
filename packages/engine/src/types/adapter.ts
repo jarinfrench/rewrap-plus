@@ -24,16 +24,15 @@ export interface PrefixSpec {
    */
   readonly prefix: string;
   /**
-   * Disables escape processing — a raw string. Raw strings are flagged
-   * non-reflowable by default (Phase 3: "r-strings and b-strings must be
-   * flagged as non-reflowable by default").
+   * Disables escape processing — a raw string. Raw strings, like byte
+   * strings, are flagged non-reflowable by default.
    */
   readonly raw?: boolean;
   /** Marks a byte string rather than text. Byte strings are rarely prose and are non-reflowable by default. */
   readonly bytes?: boolean;
   /**
    * Marks a formatted/interpolated string (e.g. an f-string); its `{expr}`
-   * interpolations become atomic units during segmentation (Phase 6).
+   * interpolations become atomic units during segmentation.
    */
   readonly formatted?: boolean;
 }
@@ -47,7 +46,7 @@ export interface RawFormSpec {
 /**
  * Escape sequences recognized inside a language's string literals. Each
  * pattern matches one complete sequence starting at its leading backslash
- * — the atom segmenter (Phase 5) never splits inside a match.
+ * — the atom segmenter never splits inside a match.
  */
 export interface EscapeSpec {
   readonly sequences: readonly RegExp[];
@@ -73,7 +72,7 @@ export interface LanguageDescriptor {
 
   /**
    * Path or identifier for this language's tree-sitter grammar WASM,
-   * resolved lazily by `ParserManager` (Phase 2) — never loaded eagerly.
+   * resolved lazily by `ParserManager` — never loaded eagerly.
    */
   readonly grammarWasm: string;
 
@@ -88,20 +87,47 @@ export interface LanguageDescriptor {
 
   readonly comments: {
     readonly line?: { readonly marker: string; readonly spaceAfter: boolean };
+    /**
+     * The open/close/continuation-prefix delimiter for a `'docComment'`
+     * region (JSDoc/Doxygen's `/** ... * /` shape) — reused verbatim by a
+     * plain `'blockComment'` region too, unless `plainBlock` below
+     * declares a distinct delimiter for that kind. Python has no block
+     * comments, so the Python adapter leaves this unset.
+     */
     readonly block?: {
       readonly open: string;
       readonly close: string;
-      /**
-       * Per-line continuation marker, e.g. JSDoc/Doxygen's leading `*`.
-       * Python has no block comments, so the v1 Python adapter leaves
-       * this unset (Phase 6b introduces the first adapter that does).
-       */
+      readonly continuationPrefix?: string;
+      readonly alignContinuation?: 'open' | 'indent';
+    };
+    /**
+     * A distinct open/close/continuation-prefix delimiter for a plain
+     * `'blockComment'` region, when it differs from `block` above — e.g.
+     * C-family languages, where `/* ... * /` (no doc marker) and
+     * `/** ... * /` (JSDoc/Doxygen) share a close delimiter but not an
+     * open one. Omit when a language's plain and doc-marked block
+     * comments share one delimiter, or when the language has no plain
+     * block-comment form worth wrapping distinctly from `block`.
+     */
+    readonly plainBlock?: {
+      readonly open: string;
+      readonly close: string;
       readonly continuationPrefix?: string;
       readonly alignContinuation?: 'open' | 'indent';
     };
     readonly doc?: {
       readonly markers: readonly string[];
       readonly dialects: readonly DocDialectId[];
+      /**
+       * Which of `markers` above (if any) uses a repeated-per-line marker
+       * convention (e.g. Doxygen's `///`) instead of `block`'s open/close
+       * pair — a genuinely different delimiter *shape*, not just a
+       * different marker string. When set, a `'docComment'` region whose
+       * text starts with this exact marker dissolves/emits through the
+       * same per-line machinery a `'lineComment'` region uses, segmented
+       * through a `DocDialect` instead of plain paragraph splitting.
+       */
+      readonly repeatedMarker?: string;
     };
     /**
      * Patterns that must never be reflowed regardless of policy, e.g.
@@ -120,12 +146,13 @@ export interface LanguageDescriptor {
      * engine's shared punctuation-density signal (`../comments/looks-like-code.ts`)
      * on its own — weaker without a keyword list, but never absent
      * outright, so a language can start pure-data and add this later
-     * without an engine change. Found to matter in Phase 6b: an earlier
-     * version of this heuristic hardcoded Python's own keyword list
-     * directly inside dissolve, which the JavaScript canary adapter
-     * would have needed to either duplicate or fork — exactly the kind
-     * of Python-specific assumption baked into shared code that the
-     * canary exists to catch (see `docs/adapters.md`).
+     * without an engine change. Found to matter when the JavaScript
+     * canary adapter was added: an earlier version of this heuristic
+     * hardcoded Python's own keyword list directly inside dissolve,
+     * which the canary adapter would have needed to either duplicate or
+     * fork — exactly the kind of Python-specific assumption baked into
+     * shared code that the canary exists to catch (see
+     * `docs/adapters.md`).
      */
     readonly codeLikeKeywords?: RegExp;
   };
@@ -149,10 +176,9 @@ export interface LanguageDescriptor {
 
 /**
  * Context threaded from an adapter's `emitContext` hook into the emit step.
- * Refined once emit is implemented (Phase 9) — for now this is a small,
- * intentionally open bag of adapter-specific data, e.g. Python's "does
- * this concatenation run already sit inside a grouping construct" check,
- * which decides whether parentheses must be inserted on emit.
+ * Deliberately a small, open bag of adapter-specific data, e.g. Python's
+ * "does this concatenation run already sit inside a grouping construct"
+ * check, which decides whether parentheses must be inserted on emit.
  */
 export interface EmitContext {
   readonly [key: string]: unknown;
@@ -162,9 +188,9 @@ export interface EmitContext {
  * Escape hatches for behavior a descriptor can't express as data. All
  * optional — a language needing none of them is pure data. The engine
  * provides a default implementation of each, driven entirely by the
- * descriptor; Python (Phase 3+) overrides `classify` (docstring-by-
- * position) and, later, `emitContext` (paren insertion). Most languages
- * are expected to override nothing.
+ * descriptor; Python overrides `classify` (docstring-by-position) and
+ * `emitContext` (paren insertion). Most languages are expected to
+ * override nothing.
  */
 export interface LanguageAdapter {
   readonly descriptor: LanguageDescriptor;
@@ -193,8 +219,8 @@ export interface LanguageAdapter {
   /**
    * Override string-wrap eligibility beyond `../prose-heuristic.ts`'s
    * shared, text-only `looksLikeProse` — for context that heuristic can't
-   * see from text alone, e.g. a dict literal's key (the plan's own named
-   * "context signal": "string is a dict key → skip"). A soft gate,
+   * see from text alone, e.g. a dict literal's key (a named context
+   * signal: "string is a dict key → skip"). A soft gate,
    * consulted only when `WrapConfig.stringPolicy` is `'prose'` — `'all'`
    * bypasses both this and the shared heuristic, `'off'` never reaches
    * either. Receives `tree` (unlike `isSafeToWrap`) because context
@@ -217,8 +243,8 @@ export interface LanguageAdapter {
    * anchors to the *whole* trimmed text (e.g. "is this a single dotted
    * identifier, start to end") is defeated by a literal `"`/`'` sitting
    * right at each end, since the anchored pattern no longer matches
-   * across the whole string. Found via this phase's own dict/i18n-key
-   * gold fixture: `"errors.validation.some_key"` (with its quotes)
+   * across the whole string. Found via a dict/i18n-key gold fixture:
+   * `"errors.validation.some_key"` (with its quotes)
    * scored as prose — the identifier-shape check's `^...$` anchors
    * couldn't match through the surrounding quote characters — while the
    * same text with its quotes stripped correctly scored as not-prose.
@@ -231,9 +257,9 @@ export interface LanguageAdapter {
    * Compute emit-time context for a region, e.g. whether enclosing
    * grouping already exists and parentheses must be added.
    *
-   * Takes `cfg` alongside `region`/`tree` — refined here in Phase 9 from
-   * the two-argument shape earlier phases anticipated, since resolving
-   * Python's own concatenation style needs `cfg.concatStyle` (an adapter-
+   * Takes `cfg` alongside `region`/`tree` — refined from an earlier
+   * two-argument shape, since resolving Python's own concatenation style
+   * needs `cfg.concatStyle` (an adapter-
    * interpreted override, per that field's own doc comment on
    * `./config.ts`) alongside the syntax-tree lookup
    * (`../languages/python/emit-context.ts`).
@@ -270,8 +296,8 @@ export interface LanguageAdapter {
    * adapter doesn't support string-literal wrapping at all.
    *
    * A whole-pipeline hook for the same reason `wrapDocstring` is one: a
-   * string's own concatenation syntax and paren-insertion rules (Phase 9)
-   * are inherently language-specific, not expressible as `comments.line`/
+   * string's own concatenation syntax and paren-insertion rules are
+   * inherently language-specific, not expressible as `comments.line`/
    * `comments.block`-style descriptor data. Unlike `wrapDocstring`, this
    * also receives the parsed `Tree` — paren insertion needs real syntax
    * context (is this concatenation already inside a call's argument list,

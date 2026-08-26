@@ -29,11 +29,11 @@ describe('typescriptAdapter', () => {
     expect(region!.kind).toBe('docComment');
   });
 
-  it('excludes a plain single-star /* */ comment from discovery entirely', () => {
+  it('discovers a plain single-star /* */ comment as a blockComment', () => {
     const source = '/* plain block comment */\nconst x = 1;\n';
     const tree = tsParser.parse(source)!;
-    const regions = discoverRegions(typescriptAdapter, tree, source, 'typescript');
-    expect(regions).toEqual([]);
+    const [region] = discoverRegions(typescriptAdapter, tree, source, 'typescript');
+    expect(region!.kind).toBe('blockComment');
   });
 
   it('groups a +-concatenated string chain into one multi-part region', () => {
