@@ -10,6 +10,11 @@ out/
 out-test/
 *.tsbuildinfo
 
+# Grammar WASM copied into the extension package by
+# packages/vscode-extension/scripts/build.mjs — the checked-in original
+# lives in packages/engine/grammars/ (see that dir's PROVENANCE.md).
+packages/vscode-extension/grammars/
+
 # @vscode/test-electron's downloaded VSCode instance + extension sandbox
 .vscode-test/
 

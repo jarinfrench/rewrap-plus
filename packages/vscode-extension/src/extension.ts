@@ -7,7 +7,7 @@
  * context key every command/keybinding `when` clause gates on.
  */
 import * as vscode from 'vscode';
-import { getSupportedLanguages } from './engine-host.js';
+import { getSupportedLanguages, initEngineHost } from './engine-host.js';
 import { registerWrapAtCursorCommand } from './commands/wrap-at-cursor.js';
 import { registerWrapSelectionCommand } from './commands/wrap-selection.js';
 import { registerWrapDocumentCommand } from './commands/wrap-document.js';
@@ -16,6 +16,13 @@ import { createRangeFormattingProvider } from './range-formatting-provider.js';
 import { getOutputChannel } from './output-channel.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  // Must happen before anything below resolves a `ParserManager` — see
+  // `initEngineHost`'s own doc comment for why grammar WASM resolution
+  // depends on the extension's real installed location, not on
+  // `@rewrap-plus/engine` being resolvable as a package (it isn't, once
+  // bundled).
+  initEngineHost(context.extensionUri.fsPath);
+
   context.subscriptions.push(getOutputChannel());
 
   const languages = await getSupportedLanguages();

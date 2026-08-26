@@ -37,7 +37,6 @@
  * see the `ParserManager` import below for the straightforward form, and
  * `../config/resolve-wrap-config.ts` for another example.
  */
-import * as path from 'node:path';
 // `with { 'resolution-mode': 'import' }` rather than a bare `import
 // type { ParserManager } from '@rewrap-plus/engine'`: a type-only
 // named import of this ESM-only package from this CJS file needs that
@@ -67,45 +66,43 @@ export function getEngine(): Promise<EngineModule> {
 }
 
 /**
- * Resolve the directory `ParserManager` should resolve grammar `.wasm`
- * paths against, by locating `@rewrap-plus/engine`'s own package root.
- *
- * This is the engine package's *root* directory, not `<root>/grammars`:
- * every `LanguageDescriptor.grammarWasm` value (e.g. Python's
- * `'grammars/tree-sitter-python.wasm'`) already embeds the `grammars/`
- * segment itself — `ParserManager.joinWasmPath` just concatenates
- * `wasmDir` and `grammarWasm` — so appending `'grammars'` here too would
- * double it up. Caught by the first real end-to-end run of a wrap
- * command in a live VSCode host (`ENOENT ... grammars\grammars\
- * tree-sitter-python.wasm`) — the unit/integration test layers below
- * this call all stub or bypass grammar loading, so this specific path
- * arithmetic had never actually been exercised until then.
- *
- * `require.resolve('@rewrap-plus/engine/package.json')` rather than
- * resolving via the package's `"main"` entry (`dist/src/index.js`): a
- * `package.json` is guaranteed to exist at the package root regardless of
- * internal build layout, so this doesn't quietly break if `dist/`'s
- * shape ever changes (it already did once — see the commit fixing
- * engine's own `main`/`types` fields, the first real cross-package
- * consumer of the built artifact catching a path that nothing had
- * exercised before). No `"exports"` field restricts engine's subpaths
- * today, so this subpath resolves under Node's default rules. Unlike the
- * ESM/CJS concern above, `require.resolve` itself is fine here — it only
- * resolves a path, it never loads the ESM module.
- *
- * **Known limitation (deferred to Phase 11):** this depends on
- * `@rewrap-plus/engine` being resolvable as an installed package — true
- * today because npm workspaces symlinks it into `node_modules`, and true
- * for any future dev/test run, but not how a packaged `.vsix` will work.
- * Phase 11 commit 1 ("build: add esbuild bundling for the extension")
- * already anticipates this exact seam: "mark `vscode` external, and do
- * not bundle `.wasm` — copy grammar WASM as assets and resolve at runtime
- * via `context.extensionUri`." This function is the one place that swap
- * needs to happen.
+ * The extension's own installed root directory, set once by
+ * `initEngineHost` during `activate()`. `ParserManager`'s `wasmDir`
+ * resolves against this: every `LanguageDescriptor.grammarWasm` value
+ * (e.g. Python's `'grammars/tree-sitter-python.wasm'`) already embeds the
+ * `grammars/` segment itself, and `scripts/build.mjs` copies the engine's
+ * vendored `.wasm` files to `<this root>/grammars/` as a build step — so
+ * this needs no `'grammars'` suffix appended here.
  */
+let extensionRootDir: string | undefined;
+
+/**
+ * Must be called once during `activate()`, before any command resolves a
+ * `ParserManager` — `getParserManager()` throws if it hasn't been.
+ *
+ * Previously this directory was derived via
+ * `require.resolve('@rewrap-plus/engine/package.json')`, which depended
+ * on `@rewrap-plus/engine` being resolvable as an installed package —
+ * true in every dev/test run (npm workspaces symlinks it into
+ * `node_modules`) but not how a packaged `.vsix` works, where
+ * `scripts/build.mjs` bundles engine's compiled output directly into
+ * `dist/extension.js` and no `node_modules/@rewrap-plus/engine` exists at
+ * all. `context.extensionUri.fsPath` (the caller passes this in from
+ * `extension.ts`) is the one directory guaranteed to be correct in both
+ * dev and packaged runs, since it's how the extension host itself locates
+ * this extension.
+ */
+export function initEngineHost(extensionRoot: string): void {
+  extensionRootDir = extensionRoot;
+}
+
 function resolveWasmDir(): string {
-  const engineManifest = require.resolve('@rewrap-plus/engine/package.json');
-  return path.dirname(engineManifest);
+  if (!extensionRootDir) {
+    throw new Error(
+      'engine-host: initEngineHost() must be called (from activate()) before resolving grammar WASM paths.',
+    );
+  }
+  return extensionRootDir;
 }
 
 let registryPromise: Promise<AdapterRegistry> | undefined;

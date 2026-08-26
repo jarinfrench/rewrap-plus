@@ -38,6 +38,18 @@ export default tseslint.config(
     },
   },
   {
+    // Plain Node build scripts (not part of any package's TypeScript
+    // `src`) — need Node's CommonJS-ish globals that `js.configs.recommended`
+    // doesn't assume, unlike every other file in this config.
+    files: ['**/scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
+  {
     // Hard rule (decision of record): packages/engine must never import
     // `vscode`. This mechanically enforces it rather than relying on
     // discipline — see README.md and CONTRIBUTING.md.
