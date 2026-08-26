@@ -133,3 +133,35 @@ gets its own vendored `.wasm` and its own `LanguageDescriptor` `id`
 finding below applies identically to both. Probed directly (JSX element
 containing a string-concatenation expression) alongside plain TypeScript
 in the same session — see `docs/spikes/tree-sitter-typescript-probe.mjs`.
+
+## `tree-sitter-cpp.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-cpp`](https://www.npmjs.com/package/tree-sitter-cpp) |
+| Package version | `0.23.4` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-cpp |
+| Upstream commit | `f41e1a044c8a84ea9fa8577fdd2eab92ec96de02` |
+| npm tarball shasum | `f40dd18f6154012a357e991b757e051cf11ca98f` |
+| npm tarball integrity | `sha512-qR5qUDyhZ5jJ6V8/umiBxokRbe89bCGmcq/dk94wI4kN86qfdV8k0GHIUEKaqWgcu42wKal5E97LKpLeVW8sKw==` |
+| Vendored file sha256 | `174eb0deb75b2ec7881bcacda9f995648d8e683956e5c2267e69ab6dc503fcbf` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for Phase 12c's `cpp` language adapter
+(`../src/languages/cpp/`). `0.23.4` is this package's newest release as of
+this vendoring — noticeably behind Python/JavaScript's `0.25.0` and even
+`tree-sitter-typescript`'s `0.23.2` (no `0.24.x`/`0.25.x` series exists
+yet for this grammar) — same "check per grammar, don't assume" finding
+`docs/parsing.md` already flagged when `tree-sitter-typescript` turned up
+behind the other two. `0.23.4` publishes a prebuilt `tree-sitter-cpp.wasm`
+at its package root, same as every other grammar vendored so far — no
+local Emscripten/Docker build step needed here either.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+(`MIN_COMPATIBLE_VERSION` 13, `LANGUAGE_VERSION` 15) — this grammar's own
+`abiVersion` is `14`, the same as `tree-sitter-typescript`'s and one older
+than Python/JavaScript's `15`, still inside the supported range.
+
+Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
+above documents, substituting `tree-sitter-cpp` throughout.

@@ -170,6 +170,63 @@ matched by a plain `(string) @string` query — consistent with Phase
 12b's own deliberate choice to defer template-literal wrapping the same
 way Python deferred triple-quoted ordinary strings.
 
+## Finding 6 (Phase 12c): `tree-sitter-cpp` — one grammar, several genuinely new node shapes
+
+Re-checking the "prebuilt or build-it-yourself?" question once more, per
+this file's own repeated "verify per grammar" note: `npm pack
+tree-sitter-cpp@0.23.4` shows a prebuilt `tree-sitter-cpp.wasm` at the
+package root, same as every grammar vendored so far — no build pipeline
+needed. `0.23.4` is this package's newest release, noticeably behind
+Python/JavaScript's `0.25.0` and even `tree-sitter-typescript`'s `0.23.2`
+(no `0.24.x`/`0.25.x` series exists yet); its own `abiVersion` is `14`,
+same as `tree-sitter-typescript`'s, still inside `web-tree-sitter@0.26.13`'s
+supported `[13, 15]` range.
+
+The probe script for this (`docs/spikes/tree-sitter-cpp-probe.mjs`) found
+several node shapes genuinely new to this project, not just a repeat of
+JS/TS's findings:
+
+- One `comment` node type covers `//`, `///`, plain `/* * /`, and
+  `/** * /` alike — the same "tell them apart by text" shape every
+  ECMAScript-family grammar already needed.
+- `concatenated_string` wraps adjacent `string_literal` siblings for bare
+  adjacency (`"foo" "bar"`) — the *identical* node name Python's own
+  grammar uses for the same construct.
+- **No valid `+`-operator string concatenation exists in C++ at all** —
+  `"a" + "b"` is a compile error (pointer + pointer), so unlike every
+  other adapter in this package, `cppDescriptor.queries.concatenations`
+  declares no `@concat.operator` pattern whatsoever. Probing
+  `std::string("a") + "b" + "c"` confirmed the only real-world shape:
+  the `+` chain's `left` operand bottoms out at a `call_expression`
+  (`std::string(...)`), never a second `string_literal` leaf — exactly
+  what `discoverRegions`'s own concatenation grouper already bails on for
+  every other language's `"a" + name` case, so simply not declaring the
+  pattern is correct, not incomplete.
+- **Raw strings (`R"(...)"`, `R"delim(...)delim"`) parse as a wholly
+  separate node type, `raw_string_literal`** — never matched by
+  `(string_literal) @string` — the same "excluded by construction, not by
+  a runtime check" mechanism that already kept JS/TS template literals
+  out of discovery.
+- **A `string_literal` node's own source text bakes its encoding prefix
+  (`L`, `u`, `U`, `u8`) into the same token as the opening quote** —
+  0-2 letters, well inside the shared `dissolve-string.ts`/`emit-string.ts`
+  prefix regex's existing `{0,3}` allowance, so no engine change was
+  needed there; only a small C++-specific mixed-prefix `isSafeToWrap`
+  check (`packages/engine/src/languages/cpp/prefix.ts`) was.
+- `char_literal` (single-quoted, `'x'`) is a separate node type from
+  `string_literal` — never matched by `queries.strings`, so C++'s
+  `strings.quotes` only ever needs `"`.
+- **A `#define` macro body is never parsed as C++ syntax at all** — its
+  argument is one opaque `preproc_arg` leaf carrying raw, unparsed text,
+  confirmed by probing a multi-line macro with a backslash-newline
+  continuation. Neither `comment` nor `string_literal` nodes are ever
+  produced inside one, so the plan's own named hazard ("skip strings
+  inside macro definitions") turned out to already be satisfied by the
+  grammar's own structure — nothing to special-case.
+
+See `docs/adapters.md`'s Phase 12c section for how each of these shaped
+`packages/engine/src/languages/cpp/`'s descriptor and adapter.
+
 ## What Phase 2 built on these findings
 
 - `packages/engine/grammars/tree-sitter-python.wasm` — the vendored
