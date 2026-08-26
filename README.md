@@ -34,10 +34,17 @@ ESLint `no-restricted-imports` rule, not just documentation.
   `DocumentRangeFormattingEditProvider` backed by the same wrap path.
 - **Rewrap+: Wrap Document** (`rewrapPlus.wrapDocument`) — no default
   keybinding; `Format Document` also invokes the range-formatting provider
-  above when no other formatter is registered for the language.
+  above when no other formatter is registered for the language. Shows a
+  cancellable progress notification for large documents (2000+ lines).
+- **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`)
+  — dumps the effective column limit (and which precedence tier it came
+  from), active string/doc-dialect policy, and extension version for the
+  current file to the "Rewrap+" output channel. A telemetry-free diagnostic
+  aid for bug reports and for answering "why did it wrap at N?" — works
+  even for an unsupported language, reporting that explicitly.
 
-All three are Python-only for now (v1 language scope, decision of record);
-they gray themselves out in unsupported languages.
+The three wrap commands are Python-only for now (v1 language scope,
+decision of record); they gray themselves out in unsupported languages.
 
 ## Development
 

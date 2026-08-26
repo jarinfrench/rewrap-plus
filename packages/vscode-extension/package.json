@@ -28,6 +28,11 @@
         "command": "rewrapPlus.wrapDocument",
         "title": "Wrap Document",
         "category": "Rewrap+"
+      },
+      {
+        "command": "rewrapPlus.showResolvedConfig",
+        "title": "Show Resolved Configuration",
+        "category": "Rewrap+"
       }
     ],
     "keybindings": [
