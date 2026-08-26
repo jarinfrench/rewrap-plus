@@ -4,8 +4,10 @@ A VSCode extension that rewraps comments, docstrings, and string literals to a
 configured column limit, preserving formatted structure and emitting
 language-valid concatenation on split.
 
-Status: pre-alpha, under active development. See `docs/implementation-plan.md`
-for the full design and phased build-out.
+Status: v1 feature-complete (through Phase 11 of
+`docs/implementation-plan.md`) — installable as a `.vsix`, not yet
+published to a marketplace (Phase 12e). See
+[CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's known-missing.
 
 ## Repository layout
 
