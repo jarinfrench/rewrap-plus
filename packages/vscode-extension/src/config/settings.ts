@@ -20,7 +20,7 @@ export interface ExtensionSettings {
   readonly wrapComments: boolean;
   readonly wrapStrings: boolean;
   readonly stringPolicy: 'prose' | 'all' | 'off';
-  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'plain';
+  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain';
   readonly preserveIndentedBlocks: boolean;
   readonly respectEditorConfig: boolean;
   readonly balancedWrapping: boolean;
@@ -40,7 +40,10 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // conservative default".
     wrapStrings: config.get<boolean>('wrapStrings', true),
     stringPolicy: config.get<'prose' | 'all' | 'off'>('stringPolicy', 'prose'),
-    docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'plain'>('docDialect', 'auto'),
+    docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain'>(
+      'docDialect',
+      'auto',
+    ),
     // Default true: Phase 4's own stated principle is "bias toward
     // verbatim when uncertain" — an indented block inside a
     // comment/docstring is exactly the kind of structure a wrong guess

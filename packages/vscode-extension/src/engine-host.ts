@@ -110,16 +110,22 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * v1 language scope is Python only (decision of record) — only
- * `pythonAdapter` is registered. The engine's `javascriptAdapter` exists
- * purely as a Phase 6b conformance canary proving the adapter interface
- * generalizes (see `docs/adapters.md`); it has no docstring/string
- * support and was never meant to be user-facing until Phase 12b builds a
- * real JS/TS adapter. Registering it here would make
- * `getSupportedLanguages()` — what command handlers, and the
- * `rewrapPlusSupportedLanguages` context key `extension.ts` sets at
- * activation, use to gray themselves out in unsupported files —
- * advertise JS support that doesn't actually exist yet.
+ * v1 language scope was Python only (decision of record); Phase 12b adds
+ * the real JavaScript/TypeScript/TSX adapters here — the engine's
+ * `javascriptAdapter` was, until this phase, purely a Phase 6b
+ * conformance canary proving the adapter interface generalizes (see
+ * `docs/adapters.md`), deliberately *not* registered here so
+ * `getSupportedLanguages()` wouldn't advertise JS support that didn't
+ * actually exist yet. That canary is now the real, full adapter (strings,
+ * concatenation, JSDoc doc comments) — see `docs/adapters.md`'s Phase 12b
+ * section — so it's registered alongside its `typescript`/`typescriptreact`
+ * siblings. `javascriptAdapter`'s own `javascriptreact` alias and
+ * `AdapterRegistry.supportedLanguages()` (fixed this same phase to
+ * actually include aliases — see that method's own doc comment) are what
+ * make `.jsx` files supported here too, with no separate registration
+ * needed for it the way `.tsx` needs one (a genuinely different grammar,
+ * not an alias — `../../engine/src/languages/typescript/descriptor.ts`'s
+ * own doc comment explains why).
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -141,6 +147,9 @@ async function createRegistry(): Promise<AdapterRegistry> {
   const engine = await getEngine();
   const registry = new engine.AdapterRegistry();
   registry.register(engine.pythonAdapter);
+  registry.register(engine.javascriptAdapter);
+  registry.register(engine.typescriptAdapter);
+  registry.register(engine.typescriptReactAdapter);
   return registry;
 }
 

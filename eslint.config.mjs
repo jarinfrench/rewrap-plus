@@ -30,8 +30,11 @@ export default tseslint.config(
       // triggered this, being a different extension entirely). These are
       // test *data*: deliberately unused variables, and deliberately
       // whatever shape the fixture needs to exercise, not code meant to
-      // satisfy this repo's own lint rules.
+      // satisfy this repo's own lint rules. Covers both the engine's gold
+      // fixtures and the extension's @vscode/test-electron integration
+      // fixtures.
       '**/test/fixtures/**/*.{js,jsx,ts,tsx}',
+      '**/test/integration/fixtures/**/*.{js,jsx,ts,tsx}',
     ],
   },
   js.configs.recommended,
