@@ -1,6 +1,7 @@
 {
   "name": "rewrap-plus-monorepo",
   "private": true,
+  "license": "MIT",
   "description": "Monorepo for Rewrap+: a wrapping engine and its VSCode extension glue.",
   "workspaces": [
     "packages/*"

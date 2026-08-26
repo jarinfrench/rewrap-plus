@@ -53,4 +53,7 @@ npm run test:integration
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE). Third-party licenses for what the
+packaged extension actually bundles (`web-tree-sitter`, the vendored
+tree-sitter grammars) are in
+[THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).

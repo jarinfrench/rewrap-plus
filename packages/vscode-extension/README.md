@@ -182,4 +182,7 @@ build/test/lint commands, and how to add a new language.
 
 ## License
 
-MIT — see [LICENSE](../../LICENSE).
+MIT — see [LICENSE](../../LICENSE). Third-party licenses for what this
+extension actually bundles (`web-tree-sitter`, the vendored tree-sitter
+grammars) are in
+[THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md).

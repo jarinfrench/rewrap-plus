@@ -149,16 +149,25 @@ function copyWebTreeSitter() {
 }
 
 /**
- * Copies the repo-root `LICENSE` to `<packageRoot>/LICENSE` — a build
- * artifact, not a second source of truth, the same as `copyGrammars()`.
- * `vsce package` warns (correctly) when a packaged extension has no
- * `LICENSE`/`LICENSE.md`/`LICENSE.txt` of its own; a monorepo subpackage
- * has no reason to duplicate the root file by hand just to silence that.
- * `web-tree-sitter`'s own `package.json` does the identical
- * `"prepack": "cp ../../LICENSE ."` for the identical reason.
+ * Copies the repo-root `LICENSE` and `THIRD-PARTY-NOTICES.md` into
+ * `<packageRoot>/` — build artifacts, not a second source of truth, the
+ * same as `copyGrammars()`. `vsce package` warns (correctly) when a
+ * packaged extension has no `LICENSE`/`LICENSE.md`/`LICENSE.txt` of its
+ * own; a monorepo subpackage has no reason to duplicate the root file by
+ * hand just to silence that. `web-tree-sitter`'s own `package.json` does
+ * the identical `"prepack": "cp ../../LICENSE ."` for the identical
+ * reason.
  */
 function copyLicense() {
   fs.copyFileSync(path.join(repoRoot, 'LICENSE'), path.join(packageRoot, 'LICENSE'));
+  // Same build-artifact pattern, for the same reason: a packaged
+  // extension that bundles web-tree-sitter and vendored tree-sitter
+  // grammars (see copyWebTreeSitter()/copyGrammars() above) should carry
+  // their notices with it, not just link to them from the repo README.
+  fs.copyFileSync(
+    path.join(repoRoot, 'THIRD-PARTY-NOTICES.md'),
+    path.join(packageRoot, 'THIRD-PARTY-NOTICES.md'),
+  );
 }
 
 main().catch((error) => {
