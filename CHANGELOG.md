@@ -72,18 +72,29 @@ the GitHub Release for whichever tag eventually ships this.
 - **Packaging**: esbuild bundling to a single `dist/extension.js`,
   `vsce`-based `.vsix` packaging, and a CI job that builds and attaches
   the `.vsix` to a GitHub Release on a version-tag push.
+- **JavaScript, TypeScript, and TSX support** (Phase 12b), extending the
+  Phase 6b comments-only JavaScript canary into full adapters: `//` and
+  `/**...*/` (JSDoc) comment wrapping, string-literal wrapping with
+  `+`-operator concatenation (no grouping/parens ever required, unlike
+  Python's implicit-adjacency form), and a new JSDoc documentation
+  dialect (`@param`/`@returns`/`@throws`/...) detected per doc comment
+  the same way Python's docstring dialects are detected per docstring.
+  `rewrapPlus.docDialect` gains a `jsdoc` option alongside Python's
+  existing three. TSX registers as its own adapter (a genuinely separate
+  tree-sitter grammar from plain TypeScript, not an alias); `.jsx` files
+  are supported via `javascript`'s own alias.
 
 ### Known limitations
 
-- **v1 language scope is Python only** — every wrap command grays
-  itself out in any other language (JavaScript/TypeScript, C++, and
-  others are on the roadmap; see
-  `packages/vscode-extension/README.md`'s comparison table).
+- Template literals (`` `...` ``) are not wrapped — deferred the same way
+  Python defers triple-quoted non-docstring strings; a plain
+  single-star `/* ... */` block comment (no JSDoc marker) is discovered
+  but not wrapped, for JavaScript/TypeScript/TSX.
 - Split-string continuation-line indent is always the enclosing
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.
 - `rewrapPlus.stringWrapInclude` is declared but not yet consumed.
-- Markdown/LaTeX/plain-text support, a full JavaScript/TypeScript
-  adapter, a CLI, and Marketplace/OpenVSX publishing are not yet
-  implemented — see `docs/implementation-plan.md`'s Phase 12 roadmap
-  (12b–12e; 12a, format-on-save, is now done).
+- Markdown/LaTeX/plain-text support, a C++ adapter, a CLI, and
+  Marketplace/OpenVSX publishing are not yet implemented — see
+  `docs/implementation-plan.md`'s Phase 12 roadmap (12c–12e; 12a and 12b
+  are now done).

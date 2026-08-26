@@ -171,3 +171,163 @@ if any hooks are needed, source fixtures, and calling
 `runAdapterConformance` — not designing a test strategy from scratch,
 and not discovering mid-Phase-9 that dissolve/emit secretly assumed
 Python.
+
+---
+
+# Phase 12b: JavaScript/TypeScript/TSX — full adapters
+
+Phase 6b's own canary existed to answer "can a new language be added
+without touching the engine?" at the cheapest possible moment — with a
+deliberately thin, comments-only JavaScript descriptor. Phase 12b is
+where that question gets asked for real: a full adapter with strings,
+concatenation, and a documentation dialect, for three language ids
+(`javascript` — extending the canary in place, plus its `javascriptreact`
+alias — `typescript`, and `typescriptreact`). The short answer, as with
+6b: yes, with four real leaked assumptions found and fixed, all in
+shared/generic code nothing before this phase had a second real reason
+to exercise — the same shape of finding 6b's own list above already
+established a pattern for.
+
+## Grammar findings
+
+Re-ran the "prebuilt or build-it-yourself?" check from `docs/parsing.md`
+for `tree-sitter-typescript`: it ships *two* prebuilt grammars,
+`tree-sitter-typescript.wasm` (plain TS) and `tree-sitter-tsx.wasm`
+(TS+JSX), both vendored with full provenance
+(`packages/engine/grammars/PROVENANCE.md`). Probed directly (`docs/spikes/
+tree-sitter-typescript-probe.mjs`) alongside the already-vendored
+`tree-sitter-javascript.wasm`, confirming all three grammars share
+identical shapes for everything this phase's descriptors depend on:
+
+- One `comment` node type for `//`, plain `/* */`, and `/** */` alike —
+  the same finding Phase 6b already made for JavaScript, now confirmed
+  for TypeScript/TSX too.
+- A `string` node's children are its own quote tokens plus a
+  `string_fragment` body — no prefix complexity the way Python's
+  `string_start` carries one. This is what makes Python's own
+  `dissolveString`/`emitString` (see below) reusable verbatim.
+- `binary_expression` exposes `left`/`operator`/`right` fields for
+  `+`-concatenation — the identical field-name convention
+  `discoverRegions`'s concatenation grouper already expected from
+  Python's `binary_operator`, so `queries.concatenations` needed no
+  engine change at all to work for any of the three languages.
+- Template literals (`` `...` ``) are a separate `template_string` node
+  type, never matched by a plain `(string) @string` query — the
+  mechanism by which template-literal wrapping is deferred (per the
+  plan's own suggestion, "the way triple-quoted code strings were
+  deferred in Python") is simply *not adding that node type to the
+  query*, not a special-case refusal anywhere.
+- TSX parses identically to plain TypeScript for every construct this
+  phase cares about (comments, strings, `+`-concatenation), whether
+  they sit in an ordinary statement or inside a JSX attribute/expression
+  container — confirmed by probing a JSX element containing a string
+  concatenation directly.
+
+## Four leaked assumptions found and fixed
+
+Unlike Phase 6b (which found its three leaks *before* the canary needed
+to exist), these were found while generating this phase's own gold
+fixtures and conformance sources — real second/third/fourth uses of code
+that read as generic but had only ever been exercised by Python-shaped
+(or single-adapter-shaped) input before.
+
+### 1. `directives.ts` hardcoded Python's `#` marker
+
+`scanDirectives`'s `DIRECTIVE_PATTERN` spliced a literal `#` into its
+regex, despite the module's own doc comment already claiming to be
+"engine-level and region-kind-agnostic." `// rewrap: off` would never
+have been recognized for any non-Python adapter. Fixed by taking the
+governing `commentMarker` as a parameter (default `'#'`, so every
+existing Python call site is unaffected); `wrap.ts` now passes
+`descriptor.comments.line?.marker`.
+
+### 2. `strings/dissolve-string.ts`/`emit-string.ts`/`escape-quote-collisions.ts` were Python-only by file location, not by behavior
+
+None of the three had any Python-specific logic left in their
+*implementation* (only in their location under `languages/python/`) —
+`dissolveString`'s own prefix/quote regex already matches a zero-length
+prefix before a single quote, exactly JavaScript/TypeScript's shape;
+`emitString` already supports `'operator'`-style concatenation
+alongside `'implicit'`. Promoted to a new shared `strings/` directory
+(mirroring `comments/`, itself promoted the same way in Phase 6b) — the
+identical "promote once a second real consumer needs it" call, applied
+a third time now that JS/TS genuinely needs the same code.
+
+### 3. `emitString` silently dropped a string's own trailing space
+
+Found while generating this phase's own JavaScript gold fixtures, not
+anticipated by Phase 9's plan text: `atomizeWords` drops any whitespace
+trailing the final atom (there's no atom after it for that whitespace to
+be "between"), and `reinsertSplitSpaces` only ever restored a space
+consumed at an *interior* line-break split point — its own `i ===
+lines.length - 1` branch returned the last line completely unexamined.
+A string ending in a real trailing space before its closing quote
+(`"Hello, " + name` — entirely ordinary) silently re-emitted as
+`"Hello," + name`: a genuine value change, not a formatting one, exactly
+the "silent string corruption" Phase 9's plan calls its central risk —
+just at the *end* of the text rather than at a split point, which is why
+the existing interior-only check never caught it. This is shared code
+Python's own Phase 9 already shipped; none of Python's existing gold
+fixtures happen to end a string in a trailing space, so it went
+uncaught until JS's own fixtures exercised it. Fixed in
+`strings/emit-string.ts`'s `reinsertSplitSpaces`, with regression tests
+for both the single-line and multi-line-final-line cases; confirmed no
+existing Python fixture was affected.
+
+### 4. `AdapterRegistry.supportedLanguages()` silently dropped aliases
+
+Returned only primary descriptor ids, excluding every alias — despite
+`packages/vscode-extension/src/engine-host.ts`'s own `getSupportedLanguages`
+doc comment already promising "every VSCode languageId (and alias) a
+registered adapter supports," a promise real call sites
+(`apply-wrap.ts`'s `computeWrapResult`, `format-on-save.ts`) depend on:
+either would have silently no-opped every wrap command on a `.jsx` file
+— not an error, just nothing happening. Unexercised until this phase
+because no adapter before it had registered an alias meant to be
+user-facing (Python has none; the Phase 6b JavaScript canary declared
+none either). Fixed by returning every registered key instead of a
+separately-tracked primary-only set.
+
+## Deliberate scope limits (not leaks)
+
+- **A plain single-star `/* ... */` block comment is excluded from
+  discovery**, for the real JavaScript/TypeScript/TSX adapters just as
+  it was for the Phase 6b canary — but now a deliberate decision made
+  explicitly for real adapters, not inherited implicitly.
+  `LanguageDescriptor.comments.block` is one open/close/continuation-
+  prefix shape, already spoken for by the JSDoc `/**`/`*`-continuation
+  form every `'docComment'` region reuses (`wrapDocComment` dissolves/
+  emits through that exact same `comments.block` data). Supporting a
+  second, differently-shaped block-comment delimiter on one descriptor
+  would be real engine schema surface (`comments.block` becoming a list)
+  that nothing in this phase's plan text asks for.
+- **Template literals are not wrapped** — deferred per the plan's own
+  suggestion, mechanically enforced by `queries.strings` simply never
+  capturing `template_string` nodes (see the grammar findings above).
+- **No `groupRegions` override for JavaScript/TypeScript** — `//`
+  comments still aren't merged across adjacent lines the way Python's
+  are, the same open question Phase 6b already deferred and this phase
+  doesn't need to resolve either.
+- **TSX gets a full duplicate gold-fixture set only at the unit-test
+  level (adapter/descriptor tests), not the end-to-end wrap-fixture
+  level** — every string/JSDoc finding transfers identically from plain
+  TypeScript (confirmed directly), so a second full copy of
+  `test/wrap/typescript-*-fixtures.test.ts` for TSX would exercise
+  nothing new; its own conformance suite (wrapping a comment and a doc
+  comment inside a JSX component body) plus adapter unit tests (a JSX
+  attribute string, a JSX-expression-container concatenation) cover what
+  is TSX-specific.
+
+## What this means for Phase 12c and beyond
+
+Four adapters now pass the identical `runAdapterConformance` suite:
+Python, JavaScript, TypeScript, TSX. The four fixes above were each
+found by a *second, third, or fourth* real consumer of code that looked
+generic — the same lesson Phase 6b's own three leaks taught, just
+arriving one adapter-family later because nothing before Phase 12b
+happened to register a real alias, share `strings/`'s promoted code, or
+feed a trailing-space string through the pipeline. Phase 12c (C++) adds
+a language with genuinely new shapes this phase never exercised — raw
+strings, wide/UTF prefixes, preprocessor line continuations — and should
+expect its own round of this same kind of finding, not assume the
+adapter seam is now fully proven just because four languages pass.
