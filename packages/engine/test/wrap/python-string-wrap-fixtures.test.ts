@@ -21,6 +21,10 @@ import operatorStyleIn from '../fixtures/python/strings/006-operator-style-prese
 import operatorStyleOut from '../fixtures/python/strings/006-operator-style-preserved.out.py?raw';
 import alreadyWrappedIn from '../fixtures/python/strings/007-already-correctly-wrapped-byte-identical.in.py?raw';
 import alreadyWrappedOut from '../fixtures/python/strings/007-already-correctly-wrapped-byte-identical.out.py?raw';
+import tripleSingleLineIn from '../fixtures/python/strings/008-triple-quoted-single-line-prose.in.py?raw';
+import tripleSingleLineOut from '../fixtures/python/strings/008-triple-quoted-single-line-prose.out.py?raw';
+import tripleMultiLineIn from '../fixtures/python/strings/009-triple-quoted-multiline-prose.in.py?raw';
+import tripleMultiLineOut from '../fixtures/python/strings/009-triple-quoted-multiline-prose.out.py?raw';
 
 import negSqlIn from '../fixtures/python/strings/neg-001-sql-query.in.py?raw';
 import negSqlOut from '../fixtures/python/strings/neg-001-sql-query.out.py?raw';
@@ -44,6 +48,8 @@ import negTripleQuoteIn from '../fixtures/python/strings/neg-010-triple-quoted-o
 import negTripleQuoteOut from '../fixtures/python/strings/neg-010-triple-quoted-ordinary-string.out.py?raw';
 import negLineContinuationIn from '../fixtures/python/strings/neg-011-line-continuation.in.py?raw';
 import negLineContinuationOut from '../fixtures/python/strings/neg-011-line-continuation.out.py?raw';
+import negTripleCodeLikeIn from '../fixtures/python/strings/neg-012-triple-quoted-code-like.in.py?raw';
+import negTripleCodeLikeOut from '../fixtures/python/strings/neg-012-triple-quoted-code-like.out.py?raw';
 
 /**
  * Phase 9's stated acceptance criterion: "All string fixtures pass; the
@@ -65,6 +71,23 @@ interface Fixture {
   readonly expected: string;
   /** `true` for a fixture the plan expects to actually be wrapped. */
   readonly positive: boolean;
+  /**
+   * `false` only for Phase 12f's two triple-quoted-prose fixtures (008,
+   * 009) — every other positive fixture goes through the concatenation-
+   * based `wrapString` pipeline, which is value-preserving by construction
+   * (`../../src/strings/dissolve-string.ts`'s own doc comment), so the
+   * eval-equivalence check below is a meaningful test for it. A
+   * triple-quoted non-docstring string instead goes through
+   * `wrapCodeString`'s docstring-style pipeline
+   * (`../../src/languages/python/wrap-code-string.ts`), which — like
+   * `wrapDocstring` itself — applies real PEP-257 whitespace/indent
+   * normalization, so "wrapped value equals original value" is not a
+   * property this pipeline has, or claims to have; asserting it here would
+   * be testing for the wrong invariant, not a stronger one. Defaults to
+   * `true` via `positive` at each site below rather than every existing
+   * fixture needing to spell it out.
+   */
+  readonly valuePreserving?: boolean;
 }
 
 const fixtures: readonly Fixture[] = [
@@ -95,6 +118,20 @@ const fixtures: readonly Fixture[] = [
     expected: alreadyWrappedOut,
     positive: true,
   },
+  {
+    name: '008-triple-quoted-single-line-prose',
+    input: tripleSingleLineIn,
+    expected: tripleSingleLineOut,
+    positive: true,
+    valuePreserving: false,
+  },
+  {
+    name: '009-triple-quoted-multiline-prose',
+    input: tripleMultiLineIn,
+    expected: tripleMultiLineOut,
+    positive: true,
+    valuePreserving: false,
+  },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
   { name: 'neg-002-regex-pattern', input: negRegexIn, expected: negRegexOut, positive: false },
   { name: 'neg-003-url', input: negUrlIn, expected: negUrlOut, positive: false },
@@ -124,6 +161,12 @@ const fixtures: readonly Fixture[] = [
     name: 'neg-011-line-continuation',
     input: negLineContinuationIn,
     expected: negLineContinuationOut,
+    positive: false,
+  },
+  {
+    name: 'neg-012-triple-quoted-code-like',
+    input: negTripleCodeLikeIn,
+    expected: negTripleCodeLikeOut,
     positive: false,
   },
 ];
@@ -194,7 +237,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
+  it("eval-equivalence: every value-preserving positive fixture's wrapped value equals its original value", () => {
     // The plan's own strongest guard against silent corruption: "eval
     // the string expression before and after and assert equality." No
     // Python interpreter is available in this project's toolchain (nor
@@ -204,7 +247,16 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     // independent of the engine's own (deliberately non-decoding)
     // dissolve/emit code, to make this comparison meaningful. See that
     // module's own doc comment for the full rationale.
-    for (const fixture of fixtures.filter((f) => f.positive)) {
+    //
+    // Filtered to `valuePreserving` fixtures only (every one except
+    // Phase 12f's 008/009 — see the `Fixture` interface's own doc comment
+    // on that field): `extractConcatenatedStringValue` doesn't even
+    // attempt to decode triple-quoted content (documented as out of scope
+    // in `../support/decode-python-string.ts`), and more fundamentally,
+    // 008/009's wrapped value is *not* equal to its original value by
+    // design — asserting equality for them would be asserting the wrong
+    // thing, not a stricter version of the right thing.
+    for (const fixture of fixtures.filter((f) => f.positive && f.valuePreserving !== false)) {
       const before = extractConcatenatedStringValue(fixture.input);
       const after = extractConcatenatedStringValue(fixture.expected);
       expect(after).toBe(before);
@@ -231,6 +283,8 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
       '005-already-grouped-call-arg',
       '006-operator-style-preserved',
       '007-already-correctly-wrapped-byte-identical',
+      '008-triple-quoted-single-line-prose',
+      '009-triple-quoted-multiline-prose',
       'neg-001-sql-query',
       'neg-002-regex-pattern',
       'neg-003-url',
@@ -242,6 +296,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
       'neg-009-irregular-whitespace',
       'neg-010-triple-quoted-ordinary-string',
       'neg-011-line-continuation',
+      'neg-012-triple-quoted-code-like',
     ]);
   });
 });

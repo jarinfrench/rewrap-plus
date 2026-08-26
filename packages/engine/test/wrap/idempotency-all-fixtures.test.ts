@@ -28,6 +28,8 @@ import stringsNeedsParens from '../fixtures/python/strings/004-needs-parens-retu
 import stringsAlreadyGrouped from '../fixtures/python/strings/005-already-grouped-call-arg.in.py?raw';
 import stringsOperatorStyle from '../fixtures/python/strings/006-operator-style-preserved.in.py?raw';
 import stringsAlreadyWrapped from '../fixtures/python/strings/007-already-correctly-wrapped-byte-identical.in.py?raw';
+import stringsTripleSingleLine from '../fixtures/python/strings/008-triple-quoted-single-line-prose.in.py?raw';
+import stringsTripleMultiLine from '../fixtures/python/strings/009-triple-quoted-multiline-prose.in.py?raw';
 import stringsNegSql from '../fixtures/python/strings/neg-001-sql-query.in.py?raw';
 import stringsNegRegex from '../fixtures/python/strings/neg-002-regex-pattern.in.py?raw';
 import stringsNegUrl from '../fixtures/python/strings/neg-003-url.in.py?raw';
@@ -39,6 +41,7 @@ import stringsNegRaw from '../fixtures/python/strings/neg-008-raw-string.in.py?r
 import stringsNegWhitespace from '../fixtures/python/strings/neg-009-irregular-whitespace.in.py?raw';
 import stringsNegTripleQuote from '../fixtures/python/strings/neg-010-triple-quoted-ordinary-string.in.py?raw';
 import stringsNegLineContinuation from '../fixtures/python/strings/neg-011-line-continuation.in.py?raw';
+import stringsNegTripleCodeLike from '../fixtures/python/strings/neg-012-triple-quoted-code-like.in.py?raw';
 
 /**
  * Phase 10, "add idempotency property tests": `wrap(wrap(x)) === wrap(x)`
@@ -73,8 +76,18 @@ import stringsNegLineContinuation from '../fixtures/python/strings/neg-011-line-
  * fine and expected: this suite doesn't assert *what* gets wrapped, only
  * that wrapping twice is the same as wrapping once, whatever the first
  * pass produced. The hard structural refusals (`isSafeToWrap` — raw
- * strings, mixed prefixes, triple-quoted, line continuations, irregular
- * whitespace) are policy-independent and stay negative here too.
+ * strings, mixed prefixes, a multi-part triple-quoted run, line
+ * continuations, irregular whitespace) are policy-independent and stay
+ * negative here too. A single-part triple-quoted literal (Phase 12f) is
+ * the one string shape whose `isSafeToWrap` gate is *itself*
+ * `looksLikeProse`, unconditionally, regardless of `stringPolicy` — so
+ * `stringsTripleSingleLine`/`stringsTripleMultiLine` (008/009) stay
+ * positive here exactly as they are under the string-wrap suite's own
+ * `'prose'` config, while `stringsNegTripleQuote` (010, multi-part) and
+ * `stringsNegTripleCodeLike` (012, single-part but SQL-shaped) stay
+ * negative under `'all'` for the same reason they do under `'prose'` —
+ * see `./python-string-wrap-fixtures.test.ts`'s own fixtures for the
+ * positive/negative rationale in full.
  */
 const fixtureSources: readonly string[] = [
   commentsTrailing,
@@ -97,6 +110,8 @@ const fixtureSources: readonly string[] = [
   stringsAlreadyGrouped,
   stringsOperatorStyle,
   stringsAlreadyWrapped,
+  stringsTripleSingleLine,
+  stringsTripleMultiLine,
   stringsNegSql,
   stringsNegRegex,
   stringsNegUrl,
@@ -108,6 +123,7 @@ const fixtureSources: readonly string[] = [
   stringsNegWhitespace,
   stringsNegTripleQuote,
   stringsNegLineContinuation,
+  stringsNegTripleCodeLike,
 ];
 
 const fixtureNames: readonly string[] = [
@@ -131,6 +147,8 @@ const fixtureNames: readonly string[] = [
   'strings/005-already-grouped-call-arg',
   'strings/006-operator-style-preserved',
   'strings/007-already-correctly-wrapped-byte-identical',
+  'strings/008-triple-quoted-single-line-prose',
+  'strings/009-triple-quoted-multiline-prose',
   'strings/neg-001-sql-query',
   'strings/neg-002-regex-pattern',
   'strings/neg-003-url',
@@ -142,6 +160,7 @@ const fixtureNames: readonly string[] = [
   'strings/neg-009-irregular-whitespace',
   'strings/neg-010-triple-quoted-ordinary-string',
   'strings/neg-011-line-continuation',
+  'strings/neg-012-triple-quoted-code-like',
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -184,7 +203,7 @@ describe.each([
   );
 
   it('covers every fixture file this suite is meant to (guards against a silently dropped import)', () => {
-    expect(fixtureNames).toHaveLength(31);
+    expect(fixtureNames).toHaveLength(34);
     expect(fixtureSources).toHaveLength(fixtureNames.length);
   });
 });

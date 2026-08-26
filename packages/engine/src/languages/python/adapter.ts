@@ -10,6 +10,9 @@ import { wrapDocstring } from './wrap-docstring.js';
 import { emitContext } from './emit-context.js';
 import { wrapString } from './wrap-string.js';
 import { dissolveString } from '../../strings/dissolve-string.js';
+import { dissolveDocstring } from './dissolve-docstring.js';
+import { isSingleTripleQuotedLiteral } from './triple-quote.js';
+import { looksLikeProse } from '../../prose-heuristic.js';
 
 /**
  * Python's `isProseEligible` override: `false` for a `'stringLiteral'`
@@ -37,12 +40,22 @@ function isProseEligible(region: WrappableRegion, _source: string, tree: Tree, c
  * comment names as the (wrong, for Python) default.
  *
  * Only ever called by `wrap.ts` for `'stringLiteral'` regions that have
- * already passed `isSafeToWrap` (never raw/byte/mixed-prefix/triple-
- * quoted/line-continuation/irregular-whitespace), so `dissolveString`'s
- * own preconditions are already satisfied here — this never needs its own
- * fallback for a region kind it wasn't built to handle.
+ * already passed `isSafeToWrap` (never raw/byte/mixed-prefix/line-
+ * continuation/irregular-whitespace), so `dissolveString`'s own
+ * preconditions are already satisfied for every region reaching its branch
+ * below.
+ *
+ * A single-part triple-quoted region is the one exception (Phase 12f):
+ * `dissolveString`'s own `PREFIX_AND_QUOTE` regex never matches a
+ * triple-quote delimiter and would throw, so it's routed to
+ * `dissolveDocstring` instead — the same dissolve `./wrap-code-string.ts`
+ * itself uses, since `isSafeToWrap` has already confirmed this exact shape
+ * (and its own `looksLikeProse` gate) before `wrap.ts` ever calls this.
  */
 function proseText(region: WrappableRegion, source: string): string {
+  if (region.kind === 'stringLiteral' && isSingleTripleQuotedLiteral(region, source)) {
+    return dissolveDocstring(region, source).text;
+  }
   return dissolveString(region, source).text;
 }
 
@@ -117,18 +130,39 @@ function classify(node: SyntaxNode): RegionKind | null {
  * triple-quoted, and that's `wrapDocstring`'s own territory, unaffected
  * by any of this):
  *
- * - **Triple-quoted.** An ordinary (non-docstring) triple-quoted string is
- *   real Python (Phase 3: "arbitrary triple-quoted strings are treated as
- *   ordinary string literals"), but `dissolveString`/`emitString`
- *   (`./dissolve-string.ts`, `./emit-string.ts`) are built around every
- *   part being a single physical line — reflowing one that already spans
- *   several real lines, and re-quoting a `"""` delimiter without the
- *   4-in-a-row collision guard `emitDocstring` needs for the exact same
- *   reason, is real, separate work the plan defers explicitly (Phase 12f:
- *   "Triple-quoted non-docstring code strings (the deferred case)").
- *   Marking it unsafe here — rather than attempting it and risking a
- *   subtly wrong result — is this phase's own instance of "bias toward
- *   verbatim/skip when uncertain."
+ * - **Triple-quoted, multi-part.** A concatenation run with a triple-quoted
+ *   part (`"""a""" """b"""`, or a triple-quoted part mixed with ordinary
+ *   ones) stays unsafe: `dissolveString`/`emitString`
+ *   (`./dissolve-string.ts`, `./emit-string.ts`) — and `wrapCodeString`
+ *   (`./wrap-code-string.ts`), Phase 12f's own triple-quoted pipeline —
+ *   are each built around one specific shape (every part a single physical
+ *   line, or exactly one part however many lines it spans) that a
+ *   multi-part triple-quoted run satisfies neither of. Real, separate work
+ *   nothing in the plan currently asks for.
+ * - **Triple-quoted, single-part: safe, but only if it looks like prose.**
+ *   An ordinary (non-docstring) triple-quoted string is real Python (Phase
+ *   3: "arbitrary triple-quoted strings are treated as ordinary string
+ *   literals"), and Phase 12f ("Triple-quoted non-docstring code strings")
+ *   is what stops deferring it — `./wrap-code-string.ts` reuses
+ *   `wrapDocstring`'s own dissolve/segment/emit pipeline, since neither
+ *   `dissolveDocstring` nor `emitDocstring` actually depends on docstring
+ *   *position* (see that module's own doc comment). Gating this on
+ *   `looksLikeProse` *here* — unconditionally, regardless of
+ *   `cfg.stringPolicy`, and not bypassable by a `# rewrap: force`
+ *   directive — rather than leaving it to `wrap.ts`'s own `'prose'`-policy
+ *   branch the way every other `'stringLiteral'` is gated, is deliberate:
+ *   unlike the concatenation-based pipeline, `wrapCodeString` is *not*
+ *   value-preserving (PEP-257 indent-stripping and paragraph-style
+ *   whitespace normalization really do change what the string evaluates
+ *   to — the same trade-off a docstring already accepts). That makes this
+ *   heuristic a genuine safety rule for this one shape, not merely a
+ *   stylistic default `stringPolicy: 'all'` or `force` should be able to
+ *   opt out of — the same "never bypass a hard structural refusal"
+ *   posture raw/byte strings already establish just above. A code-shaped
+ *   triple-quoted string (an embedded SQL query, a template, ASCII art) is
+ *   expected to fail this heuristic and stay untouched, exactly as the
+ *   Phase 3 note predicted for triple-quoted strings in general ("likely
+ *   to fail the prose heuristic anyway").
  * - **Contains a line-continuation escape** (`\` immediately followed by a
  *   real newline) in any part. The plan calls this out by name as a
  *   refusal case ("Refuse (mark unsafe): ... strings with line
@@ -182,7 +216,10 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
   if (region.kind === 'stringLiteral') {
     const partTexts = region.parts.map((part) => sliceSpanText(source, part));
     if (partTexts.some((text) => TRIPLE_QUOTE_BODY.test(text))) {
-      return false;
+      if (region.parts.length > 1) {
+        return false; // concatenation run involving a triple-quoted part: still deferred
+      }
+      return looksLikeProse(dissolveDocstring(region, source).text);
     }
     if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
       return false;

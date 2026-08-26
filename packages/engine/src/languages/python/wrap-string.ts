@@ -7,6 +7,8 @@ import { dissolveString } from '../../strings/dissolve-string.js';
 import { escapeQuoteCollisions } from '../../strings/escape-quote-collisions.js';
 import { emitContext } from './emit-context.js';
 import { emitString } from '../../strings/emit-string.js';
+import { isSingleTripleQuotedLiteral } from './triple-quote.js';
+import { wrapCodeString } from './wrap-code-string.js';
 
 /**
  * Python's `LanguageAdapter.wrapString` implementation: dissolve
@@ -18,6 +20,19 @@ import { emitString } from '../../strings/emit-string.js';
  * syntax is inherently Python-specific, so this can't be dispatched
  * generically from `../../wrap.ts` the way `'lineComment'`/`'blockComment'`
  * are.
+ *
+ * ## Phase 12f: triple-quoted regions fork to a different whole pipeline
+ *
+ * A single-part triple-quoted `'stringLiteral'` (`isSafeToWrap` having
+ * already confirmed it's both that shape and prose-eligible — see
+ * `./adapter.ts`) is structurally incompatible with the concatenation-based
+ * pipeline below: `dissolveString`/`emitString` are built around every part
+ * being one physical line, which a triple-quoted body routinely isn't.
+ * `wrapCodeString` (`./wrap-code-string.ts`) — the same docstring-style
+ * dissolve/segment/emit `wrapDocstring` uses — handles that shape instead.
+ * Checked first, before either dissolve function runs, since
+ * `dissolveString`'s own `PREFIX_AND_QUOTE` regex would throw on a
+ * triple-quote delimiter it was never meant to match.
  *
  * ## Choosing the hanging indent
  *
@@ -39,6 +54,10 @@ import { emitString } from '../../strings/emit-string.js';
  * intentionally settles on.
  */
 export function wrapString(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string {
+  if (isSingleTripleQuotedLiteral(region, source)) {
+    return wrapCodeString(region, source, cfg);
+  }
+
   const dissolved = dissolveString(region, source);
   const ctx = emitContext(region, tree, cfg);
 
