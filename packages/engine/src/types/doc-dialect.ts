@@ -9,8 +9,11 @@
  * too — `'jsdoc'` (Phase 12b) is the first dialect governing a
  * `'docComment'` region (a `/** ... * /` block comment) rather than a
  * `'docstring'` region, proving the split this doc comment already
- * anticipated. A `LanguageDescriptor` only *lists* which dialect ids it
- * supports via `comments.doc.dialects`; it never owns dialect detection or
- * reflow logic itself.
+ * anticipated. `'doxygen'` (Phase 12c) is the second `'docComment'`
+ * dialect — its tags may be written `@tag` *or* `\tag` (both are valid
+ * Doxygen syntax; JSDoc only ever has the former), see `../docs/doxygen.ts`.
+ * A `LanguageDescriptor` only *lists* which dialect ids it supports via
+ * `comments.doc.dialects`; it never owns dialect detection or reflow logic
+ * itself.
  */
-export type DocDialectId = 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain';
+export type DocDialectId = 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';

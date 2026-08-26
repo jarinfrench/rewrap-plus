@@ -8,6 +8,8 @@ describe('createDialectRegistry', () => {
     expect(registry.resolve('google')).toBeDefined();
     expect(registry.resolve('numpy')).toBeDefined();
     expect(registry.resolve('sphinx')).toBeDefined();
+    expect(registry.resolve('jsdoc')).toBeDefined();
+    expect(registry.resolve('doxygen')).toBeDefined();
   });
 
   it('detects google, numpy, and sphinx text correctly among all four candidates', () => {

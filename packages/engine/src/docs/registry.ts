@@ -4,6 +4,7 @@ import { googleDialect } from './google.js';
 import { numpyDialect } from './numpy.js';
 import { sphinxDialect } from './sphinx.js';
 import { jsdocDialect } from './jsdoc.js';
+import { doxygenDialect } from './doxygen.js';
 
 /**
  * Build a `DialectRegistry` carrying every dialect this package ships.
@@ -27,5 +28,6 @@ export function createDialectRegistry(): DialectRegistry {
   registry.register(numpyDialect);
   registry.register(sphinxDialect);
   registry.register(jsdocDialect);
+  registry.register(doxygenDialect);
   return registry;
 }
