@@ -122,6 +122,23 @@ function classify(node: SyntaxNode): RegionKind | null {
  *   contains `\` + a real newline character straight through would hand
  *   `atomizeWords` a body containing an actual line break, which its
  *   single-line contract doesn't expect.
+ * - **Contains a tab, or a run of two or more consecutive spaces.**
+ *   Neither the plan nor any earlier phase names this one explicitly —
+ *   found while generating this phase's own gold fixtures, when a run of
+ *   the actual pipeline against real prose text revealed it, rather than
+ *   being anticipated up front. `atomizeWords`
+ *   (`../../segmentation/atomize-words.ts`) is prose-reflow machinery: it
+ *   treats *any* run of whitespace as a plain word boundary and always
+ *   re-renders exactly one space between words, discarding the original
+ *   run's actual width. That's the right behavior for a comment or
+ *   docstring paragraph (cosmetic prose formatting is the entire point),
+ *   but it would silently change a string literal's real *value* —
+ *   `"foo  bar"` (two spaces) or `"foo\tbar"` re-rendering as `"foo bar"`
+ *   — even on a single line that was never split at all. Refusing any
+ *   string whose word-separating whitespace isn't already a plain single
+ *   space sidesteps the problem entirely rather than teaching the
+ *   segmentation layer to preserve exact whitespace width, which no other
+ *   caller of `atomizeWords` needs and would be real, separate work.
  */
 function isSafeToWrap(region: WrappableRegion, source: string): boolean {
   if (region.kind !== 'stringLiteral' && region.kind !== 'docstring') {
@@ -153,6 +170,9 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
     if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
       return false;
     }
+    if (partTexts.some((text) => IRREGULAR_WHITESPACE.test(text))) {
+      return false;
+    }
   }
 
   return true;
@@ -160,6 +180,7 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
 
 const TRIPLE_QUOTE_BODY = /^[A-Za-z]{0,3}('''|""")/;
 const LINE_CONTINUATION = /\\\r?\n/;
+const IRREGULAR_WHITESPACE = /\t| {2}/;
 
 /**
  * Python's `groupRegions` override.

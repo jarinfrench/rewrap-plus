@@ -23,7 +23,7 @@ describe('emitString', () => {
       'implicit',
       /* columnLimit */ 20,
     );
-    expect(result).toBe('("hello there"\n    "wonderful"\n    "world today")');
+    expect(result).toBe('("hello there "\n    "wonderful "\n    "world today")');
   });
 
   it('splits with no parens when already grouped, gluing to the existing bracket', () => {
@@ -37,12 +37,28 @@ describe('emitString', () => {
       'implicit',
       20,
     );
-    expect(result).toBe('"hello there"\n    "wonderful"\n    "world today"');
+    expect(result).toBe('"hello there "\n    "wonderful "\n    "world today"');
   });
 
   it('appends a trailing " +" to every non-final line in operator style', () => {
     const result = emitString('alpha beta gamma delta', '', '"', 4, 4, true, 'operator', 16);
-    expect(result).toBe('("alpha" +\n    "beta" +\n    "gamma" +\n    "delta")');
+    expect(result).toBe('("alpha " +\n    "beta " +\n    "gamma " +\n    "delta")');
+  });
+
+  it('preserves the space at every split point — concatenating every part reconstructs the original text exactly', () => {
+    // The plan's own named central risk: "Preserve the trailing space at
+    // split points... the single most likely source of silent behavior
+    // change; test it hard."
+    const cases: Array<[string, boolean, 'implicit' | 'operator']> = [
+      ['hello there wonderful world today', true, 'implicit'],
+      ['hello there wonderful world today', false, 'implicit'],
+      ['alpha beta gamma delta', true, 'operator'],
+    ];
+    for (const [text, needsParens, style] of cases) {
+      const result = emitString(text, '', '"', 4, 4, needsParens, style, 20);
+      const parts = [...result.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]!);
+      expect(parts.join('')).toBe(text);
+    }
   });
 
   it('carries the prefix onto every emitted part', () => {
