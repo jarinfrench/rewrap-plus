@@ -1,12 +1,13 @@
 # Rewrap+
 
-A VSCode extension that rewraps comments, docstrings, and string literals to a
-configured column limit, preserving formatted structure and emitting
-language-valid concatenation on split.
+A VSCode extension — and companion CLI — that rewraps comments, docstrings,
+and string literals to a configured column limit, preserving formatted
+structure and emitting language-valid concatenation on split.
 
 Status: v1 feature-complete (through Phase 11 of
-`docs/implementation-plan.md`) — installable as a `.vsix`, not yet
-published to a marketplace (Phase 12e). See
+`docs/implementation-plan.md`), plus a CLI for scripting/pre-commit use
+(Phase 12d) — installable as a `.vsix`/`npm install`, not yet published to
+a marketplace or registry (Phase 12e). See
 [CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's known-missing.
 
 ## Repository layout
@@ -17,21 +18,28 @@ This is an npm workspaces monorepo:
   reflow, emit). Framework-agnostic.
 - `packages/vscode-extension` — the thin VSCode glue layer that adapts the
   engine to editor commands, configuration, and formatting providers.
+- `packages/cli` — the thin CLI glue layer (`rewrap-plus` on the command
+  line) for scripting, CI, and pre-commit hooks.
 
 **Hard rule:** `packages/engine` must never import `vscode`. The engine is
-the reuse seam for a future CLI / pre-commit hook, and that only holds if it
+the reuse seam a CLI / pre-commit hook builds on, and that only holds if it
 stays free of editor-host dependencies. This is enforced mechanically via an
-ESLint `no-restricted-imports` rule, not just documentation.
+ESLint `no-restricted-imports` rule, not just documentation. `packages/cli`
+is the proof the seam holds in practice — see
+[`docs/adapters.md`](docs/adapters.md)'s Phase 12d section for what
+building it against the unchanged engine actually looked like.
 
-## Using the extension
+## Using the extension or the CLI
 
 Features, commands and keybindings, the full settings reference, the
 column-limit precedence chain, directive comment syntax, and what the
 extension deliberately won't touch all live in
 [`packages/vscode-extension/README.md`](packages/vscode-extension/README.md)
 — the canonical user-facing doc (and what ships inside the packaged
-`.vsix` for the Marketplace listing). This file stays focused on the
-monorepo itself.
+`.vsix` for the Marketplace listing). The CLI's own usage, flags, config
+file precedence, and exit codes live in
+[`packages/cli/README.md`](packages/cli/README.md). This file stays
+focused on the monorepo itself.
 
 ## Development
 

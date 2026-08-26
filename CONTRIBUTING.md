@@ -6,7 +6,7 @@ Freeform but structured:
 
 - Short imperative subject line, ≤ 72 characters.
 - Optional `scope:` prefix where it aids scanning — e.g. `engine:`, `python:`,
-  `ext:`, `docs:`, `build:`, `ci:`, `canary:`, `legal:`.
+  `ext:`, `cli:`, `docs:`, `build:`, `ci:`, `canary:`, `legal:`.
 - A body is used for non-obvious rationale (why, not what).
 - No strict Conventional Commits format is enforced.
 
@@ -26,6 +26,15 @@ ext: implement wrap-at-cursor command
 - New languages are added as descriptors under `packages/engine`, not as
   engine code changes. See `docs/adapters.md` (added in Phase 11) once it
   exists.
+- `packages/vscode-extension` and `packages/cli` are independent glue
+  layers over `packages/engine`, not a shared dependency of each other —
+  neither should import from the other. A module that's genuinely
+  editor/runtime-agnostic (config parsing, formatting helpers, ...)
+  belongs in `packages/engine` if it's engine-level, or gets its own copy
+  in each glue package if it's narrow enough that duplicating it costs
+  less than a third shared package would (see `docs/adapters.md`'s Phase
+  12d section for the `.editorconfig` parser as a worked example of that
+  call).
 
 ## Before opening a PR
 

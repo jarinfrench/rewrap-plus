@@ -457,3 +457,131 @@ established. That's a useful data point, not a promise: a future
 C-family adapter (plain C, Objective-C, Java) should still expect its
 own round of grammar-specific findings, the same caution 12b's own
 closing note already gave 12c.
+
+---
+
+# Phase 12d: CLI and pre-commit
+
+Every phase through 12c asked "does the adapter interface hold?" Phase
+12d asks the plan's other standing question about this architecture:
+"does the *engine/glue* separation hold?" — `packages/cli`
+(`@rewrap-plus/cli`, bin name `rewrap-plus`) is a second, independent
+consumer of `packages/engine`, built without touching the engine at all.
+The short answer, stated as plainly as the plan's own acceptance
+criterion puts it: yes — zero engine changes, and the one class of
+friction the extension needed real engineering to solve turned out to be
+a VSCode-hosting artifact, not an engine one, which the CLI simply never
+encounters.
+
+## The ESM/CJS friction the extension paid for and the CLI doesn't
+
+`packages/vscode-extension/src/engine-host.ts`'s own doc comment spends
+several paragraphs on why consuming the ESM-only `@rewrap-plus/engine`
+from that package needs a dynamic `import()`, a `with { 'resolution-mode':
+'import' }` type-import attribute, and (for `web-tree-sitter` specifically)
+an esbuild `alias` redirecting to a hand-written runtime loader
+(`web-tree-sitter-runtime.ts`) — all downstream of one constraint: VSCode's
+extension host loads a `"main"` entry via `require()`, which forces that
+package to compile to CommonJS, which then can't `import` an ESM-only
+dependency the ordinary way.
+
+`packages/cli` has no such host. `package.json` declares `"type":
+"module"`; `packages/cli/src/engine-host.ts` imports `@rewrap-plus/engine`
+with a plain top-of-file `import { AdapterRegistry, ParserManager, ... }
+from '@rewrap-plus/engine'`, exactly like any other ESM package depending
+on another. No dynamic import, no resolution-mode attribute, no
+`web-tree-sitter` aliasing — `web-tree-sitter` itself resolves normally
+through the monorepo's hoisted `node_modules`, the same way any of its
+other dependents would. Confirms directly what the extension's own doc
+comment could only argue by inference: the friction really was VSCode's
+`require()`-based hosting model, not `@rewrap-plus/engine` being ESM-only.
+
+## `wasmDir` resolution: the CLI gets to keep the simple answer
+
+`engine-host.ts` (extension) explicitly *moved away* from
+`require.resolve('@rewrap-plus/engine/package.json')` for locating grammar
+WASM, because a packaged `.vsix` bundles the engine's compiled output
+directly into `dist/extension.js` — no `node_modules/@rewrap-plus/engine`
+exists at runtime for that lookup to find (`context.extensionUri.fsPath`
+replaced it instead, per that file's own doc comment). `packages/cli` has
+no bundling step at all — `package.json`'s `build` script is a plain
+`tsc -b`, the same shape as the engine's own build — so
+`@rewrap-plus/engine` stays a real, resolvable package at runtime in every
+scenario this phase covers, and `require.resolve` (via
+`node:module`'s `createRequire`, since this file is ESM) is simply the
+correct, permanent answer here, not an interim one a future packaging step
+will need to undo.
+
+## Config sources: two independent glue-layer peers, not a shared dependency
+
+The plan named three CLI config sources: `.rewraprc`, `pyproject.toml`'s
+`[tool.rewrap-plus]`, and flags. `.editorconfig` `max_line_length` joins them
+as a fourth (the CLI's own column-limit chain, `src/config/column-limit.ts`,
+is `flag > .rewraprc > pyproject.toml > .editorconfig > default` — shorter
+than the extension's five-tier chain since there's no live-editor
+`editor.rulers` concept to fold in).
+
+`packages/cli/src/config/editorconfig.ts` is a deliberate byte-for-byte
+duplicate of `packages/vscode-extension/src/config/editorconfig.ts` — same
+walk-up algorithm, same glob subset, same tests (adapted only for this
+package being ESM, so its test can use `import.meta.url` directly instead
+of the extension test's `__dirname` CommonJS workaround). This is a
+conscious departure from the "promote to shared code once a second real
+consumer needs it" pattern this document's own Phase 6b/12b sections
+establish repeatedly — and deliberately not treated as an instance of it.
+That pattern is about code living inside one language adapter's directory
+that turns out to be generic *engine* logic, promoted so every adapter
+shares one implementation. `packages/vscode-extension` and `packages/cli`
+are not two adapters feeding one engine; they're two independent,
+optionally-installed glue layers, each meant to be usable without the
+other (nothing about installing this CLI should pull in `vscode`-adjacent
+tooling, and nothing about packaging the extension should need to know the
+CLI exists). A future third glue-layer consumer needing the identical
+`.editorconfig` logic would be the actual trigger to extract it somewhere
+both can import from — two is exactly the number of peers this project's
+own architecture wants to stay decoupled at.
+
+`pyproject.toml` parsing (`src/config/toml-subset.ts`) is a new,
+from-scratch minimal TOML reader — not a `.editorconfig`-style adaptation
+of existing code, since nothing in this repo previously read TOML. Follows
+the identical "implement only the spec surface this feature needs" call
+`editorconfig.ts` already made: table headers and flat `key = value` pairs
+(strings, integers, booleans) are enough for `[tool.rewrap-plus]`'s own key
+set, the same shape every other Python tool's `[tool.*]` table uses.
+Unsupported TOML (arrays, floats, inline tables, `[[array tables]]`) isn't
+a parse error — the key is simply omitted, the same "skip malformed/
+unsupported input, don't block" posture this project applies everywhere
+from a skipped source region up to a skipped `.editorconfig` line.
+
+## Why `applyTextEdits` needed no changes to exist for this
+
+`packages/engine/src/apply-edits.ts`'s own doc comment already named "any
+future non-VSCode consumer (the CLI, Phase 12d)" when it was written back
+in Phase 6 — and `packages/engine/src/types/config.ts`'s `WrapConfig` doc
+comment calls itself "the plain-data contract between a caller (the VSCode
+extension today; a future CLI per Phase 12d) and the engine." Both
+predictions held exactly: `wrapRegions(source, languageId, 'all', wrapConfig,
+parserManager)` followed by `applyTextEdits(source, result.edits)` is the
+CLI's entire wrap path (`src/apply.ts`) — the identical two calls
+`packages/vscode-extension/src/commands/apply-wrap.ts` makes, modulo
+translating the result to `vscode.TextEdit`/`WorkspaceEdit` instead of a
+plain string written back with `node:fs`. Targeting whole files with `'all'`
+(never a cursor or selection) means the CLI never needs `PositionMapper` or
+byte-offset conversion at all — the one piece of Phase 1's UTF-8/UTF-16
+machinery neither of these two glue layers's *own* new code has to touch
+directly, since `wrapRegions`/`applyTextEdits` already hide it.
+
+## What this means going forward
+
+Six real consumers of `packages/engine` now exist across two packages
+(five language adapters plus the CLI's own direct use of the wrap
+pipeline), and the plan's own two standing architectural questions —
+"does the adapter interface hold?" (Phase 6b, reconfirmed through 12c) and
+"does the engine/glue separation hold?" (this phase) — have both now been
+answered with a real second implementation, not just an aspiration in a
+doc comment. The `WrapConfig`/`apply-edits.ts` doc comments that predicted
+this phase by name turned out to be exactly right, which is itself the
+useful data point: a plain-data config contract and an edit-application
+function with no editor-host awareness baked in really do transfer to an
+entirely different runtime shape (batch CLI vs. live editor) with no
+engine-side changes at all.

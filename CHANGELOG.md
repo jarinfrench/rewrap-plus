@@ -96,6 +96,24 @@ the GitHub Release for whichever tag eventually ships this.
   `#define` macro bodies are all handled correctly without any wrap
   engine changes — see `docs/adapters.md`'s Phase 12c section for why.
 
+- **CLI and pre-commit support** (Phase 12d): `packages/cli`, a new
+  `@rewrap-plus/cli` package (bin name `rewrap-plus`) consuming
+  `packages/engine` completely unchanged — no engine changes were needed,
+  confirming the plan's own acceptance criterion for this phase
+  (`docs/adapters.md`'s Phase 12d section). Detects language from file
+  extension, walks directory arguments (skipping `node_modules`,
+  dot-directories, `dist`, `out`, `coverage` by default), and wraps every
+  file in place. `--check` reports what would change and exits non-zero
+  without writing, for CI and pre-commit hooks. Configuration comes from
+  `--flags`, a `.rewraprc`/`.rewraprc.json` (camelCase, mirroring
+  `rewrapPlus.*`), and `pyproject.toml`'s `[tool.rewrap-plus]` table
+  (kebab-case, matching Black/Ruff's own `[tool.*]` convention), in that
+  precedence order; the column limit alone gets a further
+  `.editorconfig` `max_line_length` tier between `pyproject.toml` and the
+  built-in default of 80, via a self-contained parser independent of the
+  extension's own copy (two independent glue-layer peers of the engine,
+  not a shared dependency between them).
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
@@ -112,7 +130,10 @@ the GitHub Release for whichever tag eventually ships this.
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.
 - `rewrapPlus.stringWrapInclude` is declared but not yet consumed.
-- Markdown/LaTeX/plain-text support, a plain-C adapter, a CLI, and
+- The CLI has no `.gitignore` awareness beyond a fixed default-ignored
+  directory list, and doesn't follow symlinked directories during a
+  recursive walk.
+- Markdown/LaTeX/plain-text support, a plain-C adapter, and
   Marketplace/OpenVSX publishing are not yet implemented — see
-  `docs/implementation-plan.md`'s Phase 12 roadmap (12d–12e; 12a, 12b,
-  and 12c are now done).
+  `docs/implementation-plan.md`'s Phase 12 roadmap (12e; 12a, 12b, 12c,
+  and 12d are now done).

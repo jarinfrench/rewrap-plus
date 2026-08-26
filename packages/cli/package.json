@@ -1,0 +1,25 @@
+{
+  "name": "@rewrap-plus/cli",
+  "version": "0.0.1",
+  "private": true,
+  "license": "MIT",
+  "description": "Command-line and pre-commit interface for Rewrap+, consuming @rewrap-plus/engine unchanged.",
+  "type": "module",
+  "bin": {
+    "rewrap-plus": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -b tsconfig.json"
+  },
+  "dependencies": {
+    "@rewrap-plus/engine": "*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

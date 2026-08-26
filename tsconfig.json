@@ -1,4 +1,8 @@
 {
   "files": [],
-  "references": [{ "path": "packages/engine" }, { "path": "packages/vscode-extension" }]
+  "references": [
+    { "path": "packages/engine" },
+    { "path": "packages/vscode-extension" },
+    { "path": "packages/cli" }
+  ]
 }
