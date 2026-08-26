@@ -82,5 +82,47 @@ describe('looksLikeProse', () => {
       const query = `"SELECT id, name FROM users WHERE active = 1 AND created_at > '2020-01-01'"`;
       expect(looksLikeProse(query)).toBe(false);
     });
+
+    it('rejects a multi-line SQL query with no surrounding quotes at all', () => {
+      expect(looksLikeProse('\nSELECT id, name\nFROM users\nWHERE active = 1')).toBe(false);
+    });
+  });
+
+  describe('SQL-keyword false positives on ordinary English (regression)', () => {
+    // Found while building Phase 12f's own gold fixtures: `FROM`/`WHERE`/
+    // `JOIN`/`VALUES` are common English words in their own right, and the
+    // original flat `SQL_KEYWORDS` regex matched any one of them alone —
+    // enough by itself to flip an otherwise clearly-prose paragraph to
+    // ineligible. See prose-heuristic.ts's own `SQL_STRONG_KEYWORDS`/
+    // `SQL_WEAK_KEYWORDS` doc comment for the fix (a lone weak keyword no
+    // longer counts; two distinct ones co-occurring still does).
+    it('accepts prose containing the ordinary word "from"', () => {
+      expect(
+        looksLikeProse(
+          'This second paragraph is separated from the first by a blank line and is reflowed independently.',
+        ),
+      ).toBe(true);
+    });
+
+    it('accepts prose containing the ordinary word "where"', () => {
+      expect(
+        looksLikeProse(
+          'This is the section where the tool explains what it does in enough detail to be useful.',
+        ),
+      ).toBe(true);
+    });
+
+    it('still rejects a real query built only from weak keywords co-occurring', () => {
+      expect(looksLikeProse('name, email FROM subscribers WHERE active = 1 AND JOIN campaigns')).toBe(
+        false,
+      );
+    });
+
+    it('still rejects every strong SQL keyword alone, with no other keyword present', () => {
+      expect(looksLikeProse('INSERT INTO logs (message) VALUES (?)')).toBe(false);
+      expect(looksLikeProse('UPDATE accounts SET balance = balance - 1')).toBe(false);
+      expect(looksLikeProse('CREATE TABLE users (id INTEGER PRIMARY KEY)')).toBe(false);
+      expect(looksLikeProse('DROP TABLE temp_import_staging')).toBe(false);
+    });
   });
 });

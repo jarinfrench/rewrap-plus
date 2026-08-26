@@ -73,7 +73,9 @@ export function looksLikeProse(text: string): boolean {
   if (/[[\]$^]|\{\d+,?\d*\}/.test(trimmed)) {
     score -= 4; // regex-shaped punctuation (character classes, anchors, {n,m})
   }
-  if (SQL_KEYWORDS.test(trimmed)) {
+  const weakSqlMatches = trimmed.match(SQL_WEAK_KEYWORDS) ?? [];
+  const distinctWeakSqlKeywords = new Set(weakSqlMatches.map((w) => w.toUpperCase()));
+  if (SQL_STRONG_KEYWORDS.test(trimmed) || distinctWeakSqlKeywords.size >= 2) {
     score -= 4;
   }
   if (spaceCount === 0 && words.length <= 1 && /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i.test(trimmed)) {
@@ -91,7 +93,25 @@ export function looksLikeProse(text: string): boolean {
   return score > 0;
 }
 
-const SQL_KEYWORDS =
-  /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|FROM|WHERE|JOIN|VALUES|CREATE\s+TABLE|DROP\s+TABLE)\b/i;
+/**
+ * SQL-keyword detection is split into two tiers, rather than one flat
+ * alternation, after a real false positive surfaced while building Phase
+ * 12f's own gold fixtures: `SELECT`/`INSERT INTO`/`UPDATE`/`DELETE
+ * FROM`/`CREATE TABLE`/`DROP TABLE` are vanishingly rare as ordinary
+ * English (nobody writes "insert into" or "drop table" outside SQL), so
+ * matching any one of them alone is a safe, near-definitive disqualifier —
+ * these stay in `SQL_STRONG_KEYWORDS`. `FROM`/`WHERE`/`JOIN`/`VALUES` are
+ * common English words in their own right ("separated *from* the first",
+ * "the *values* here") that show up constantly in genuine prose; a
+ * hand-written prose paragraph containing only the word "from" scored +4
+ * on every positive signal above but was driven to a final score of
+ * exactly 0 (ineligible) by a single match against the old flat regex.
+ * These move to `SQL_WEAK_KEYWORDS` and only count as a SQL signal when at
+ * least two *distinct* ones co-occur (`FROM ... WHERE`, `JOIN ...
+ * VALUES`, ...) — the co-occurrence a real query almost always has and a
+ * stray English sentence almost never does.
+ */
+const SQL_STRONG_KEYWORDS = /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+TABLE|DROP\s+TABLE)\b/i;
+const SQL_WEAK_KEYWORDS = /\b(FROM|WHERE|JOIN|VALUES)\b/gi;
 
 const PLACEHOLDER_PATTERN = /\{[^{}]*\}|%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]*\d*(\.\d+)?[a-zA-Z%]|%[-+ #0]*\d*(\.\d+)?[a-zA-Z%]/g;
