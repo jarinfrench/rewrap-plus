@@ -36,10 +36,7 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // Default true: the engine's own conservative gate for string
     // wrapping is stringPolicy defaulting to 'prose' (below), not this
     // flag — matching the plan's framing of 'prose' as "the
-    // conservative default". Currently inert either way: wrapRegions
-    // (Phase 6b) doesn't yet act on 'stringLiteral'/'docstring' regions
-    // regardless of this setting's value, string wrapping itself being
-    // Phase 9's deliverable.
+    // conservative default".
     wrapStrings: config.get<boolean>('wrapStrings', true),
     stringPolicy: config.get<'prose' | 'all' | 'off'>('stringPolicy', 'prose'),
     docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'plain'>('docDialect', 'auto'),

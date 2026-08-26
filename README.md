@@ -21,30 +21,15 @@ the reuse seam for a future CLI / pre-commit hook, and that only holds if it
 stays free of editor-host dependencies. This is enforced mechanically via an
 ESLint `no-restricted-imports` rule, not just documentation.
 
-## Commands and keybindings
+## Using the extension
 
-- **Rewrap+: Wrap at Cursor** (`rewrapPlus.wrapAtCursor`) — `Alt+Q` (`Cmd+Alt+Q`
-  on macOS). **Note:** this collides with stkb/Rewrap's own default `Alt+Q`
-  binding — the two extensions can't sensibly be bound to the same key at
-  once. Rebind one of them (`Preferences: Open Keyboard Shortcuts`) if you
-  have both installed.
-- **Rewrap+: Wrap Selection** (`rewrapPlus.wrapSelection`) — no default
-  keybinding; also reachable via `Format Selection`
-  (`editor.action.formatSelection`), since Rewrap+ registers a
-  `DocumentRangeFormattingEditProvider` backed by the same wrap path.
-- **Rewrap+: Wrap Document** (`rewrapPlus.wrapDocument`) — no default
-  keybinding; `Format Document` also invokes the range-formatting provider
-  above when no other formatter is registered for the language. Shows a
-  cancellable progress notification for large documents (2000+ lines).
-- **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`)
-  — dumps the effective column limit (and which precedence tier it came
-  from), active string/doc-dialect policy, and extension version for the
-  current file to the "Rewrap+" output channel. A telemetry-free diagnostic
-  aid for bug reports and for answering "why did it wrap at N?" — works
-  even for an unsupported language, reporting that explicitly.
-
-The three wrap commands are Python-only for now (v1 language scope,
-decision of record); they gray themselves out in unsupported languages.
+Features, commands and keybindings, the full settings reference, the
+column-limit precedence chain, directive comment syntax, and what the
+extension deliberately won't touch all live in
+[`packages/vscode-extension/README.md`](packages/vscode-extension/README.md)
+— the canonical user-facing doc (and what ships inside the packaged
+`.vsix` for the Marketplace listing). This file stays focused on the
+monorepo itself.
 
 ## Development
 
