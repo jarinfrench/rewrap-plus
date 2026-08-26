@@ -22,8 +22,11 @@ describe('javascriptDescriptor', () => {
     expect(() => new Query(language, javascriptDescriptor.queries.strings)).not.toThrow();
   });
 
-  it('declares no concatenation query — string wrapping is out of scope for this canary', () => {
-    expect(javascriptDescriptor.queries.concatenations).toBeUndefined();
+  it('declares a concatenation query for +-style string wrapping', () => {
+    expect(javascriptDescriptor.queries.concatenations).toBe(
+      '(binary_expression operator: "+") @concat.operator',
+    );
+    expect(() => new Query(language, javascriptDescriptor.queries.concatenations!)).not.toThrow();
   });
 
   it('declares a JSDoc-shaped block comment form', () => {
@@ -36,8 +39,15 @@ describe('javascriptDescriptor', () => {
     });
   });
 
-  it('declares no documentation dialects — out of scope for this canary', () => {
-    expect(javascriptDescriptor.comments.doc).toBeUndefined();
+  it('declares the jsdoc dialect (falling back to plain) for doc comments', () => {
+    expect(javascriptDescriptor.comments.doc).toEqual({
+      markers: ['/**'],
+      dialects: ['jsdoc', 'plain'],
+    });
+  });
+
+  it('aliases javascriptreact to the same grammar', () => {
+    expect(javascriptDescriptor.aliases).toEqual(['javascriptreact']);
   });
 
   it('flags common tooling directives as never-reflow', () => {

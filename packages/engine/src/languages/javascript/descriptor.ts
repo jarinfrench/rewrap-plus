@@ -1,80 +1,75 @@
 import type { LanguageDescriptor } from '../../types/adapter.js';
 
 /**
- * JavaScript's `LanguageDescriptor` — Phase 6b's canary adapter.
+ * JavaScript's `LanguageDescriptor` — a full adapter as of Phase 12b,
+ * extending Phase 6b's comment-only canary in place (per the plan's own
+ * framing: "the comment-only canary from Phase 6b already exists; this
+ * phase extends it").
  *
- * **Deliberately thin: comments only.** No strings, no dialects, no
- * docstrings — this exists to answer one question ("can a new language
- * be added without touching the engine?") at the cheapest possible
- * moment, not to be a real JavaScript adapter. Full JS/TS support
- * (template literals, JSDoc as a registered dialect, `+`-operator
- * string concatenation) is Phase 12b's job, building on whatever this
- * canary proves out.
- *
- * `strings` below is still populated with real, structurally valid
- * data — `LanguageDescriptor`/`validateDescriptor` require at least one
- * quote form and a non-empty `queries.strings` regardless of whether an
- * adapter does anything with what it discovers (`AdapterRegistry`
- * enforces this at registration, and rightly so: a malformed descriptor
- * should fail loudly, not surface as a mysterious runtime error). This
- * adapter simply never dissolves or emits string regions — Python's own
- * `'stringLiteral'`/`'docstring'` regions are equally undissolved by
- * `wrapRegions` today, reported as skipped with a reason, so this isn't
- * new engine behavior, just the second adapter to rely on it.
- *
- * Node names and shapes verified against the vendored grammar
- * (`tree-sitter-javascript@0.25.0`, `packages/engine/grammars/`) with a
- * throwaway probe script, not trusted from memory — the same
- * "probe before coding" discipline Phase 2/3 used for Python. Findings
- * this descriptor depends on, documented in full in
- * `docs/adapters.md` ("JavaScript canary — grammar findings"):
+ * Node names and shapes below remain exactly what Phase 6b's canary
+ * already verified against the vendored grammar
+ * (`tree-sitter-javascript@0.25.0`, `packages/engine/grammars/`), plus
+ * what Phase 12b additionally probed for `+`-concatenation and string
+ * shape while building the sibling `../typescript/` adapter (identical
+ * grammar family — see `docs/adapters.md`'s Phase 12b section and
+ * `docs/parsing.md`'s Finding 5, both written against
+ * `tree-sitter-typescript`/`tree-sitter-tsx` but directly re-verified
+ * against this package's own vendored `tree-sitter-javascript.wasm` too):
  *
  * - A `comment` node covers `//`, plain `/*` blocks, and `/**` blocks
  *   alike — one node type for all three forms, distinguished only by
- *   their own text. `javascriptAdapter`'s `classify` (`./adapter.ts`)
- *   is what tells them apart.
- * - Unlike Python's `comment` node, a JavaScript `//` comment's span
- *   does *not* include a trailing `\r` on a CRLF-terminated line — the
- *   grammar's own tokenizer already excludes it. `discoverRegions`'s
- *   `trimTrailingCR` safeguard (added for Python) is a no-op here, not
- *   a fix this adapter separately needed.
- * - A `string` node's shape matches Python's exactly (double- or
- *   single-quoted, no prefix complexity to speak of). Template literals
+ *   their own text. `javascriptAdapter`'s `classify` (`./adapter.ts`,
+ *   reusing `../ecmascript/adapter-support.ts`'s shared
+ *   `classifyEcmaScriptNode`) is what tells them apart.
+ * - A `string` node's shape matches Python's exactly enough for reuse —
+ *   double- or single-quoted, no prefix complexity, no triple-quote form
+ *   — which is what lets `wrapString` reuse the same `strings/
+ *   dissolve-string.ts`/`strings/emit-string.ts` Python's own adapter
+ *   uses, promoted to shared code in this same phase. Template literals
  *   (backtick-delimited) are a *different* node type, `template_string`
- *   — not captured by `queries.strings` here, consistent with this
- *   adapter not supporting strings at all.
+ *   — deliberately not captured by `queries.strings` here (deferred, the
+ *   same way Python defers triple-quoted ordinary strings — see the
+ *   plan's own Phase 12b suggestion).
+ * - `binary_expression` exposes `left`/`operator`/`right` fields for
+ *   `+`-concatenation — the same field-name convention
+ *   `discoverRegions`'s concatenation grouper already expected from
+ *   Python's `binary_operator`, so `queries.concatenations` below needed
+ *   no engine change to work.
  */
 export const javascriptDescriptor: LanguageDescriptor = {
   id: 'javascript',
+  aliases: ['javascriptreact'],
   grammarWasm: 'grammars/tree-sitter-javascript.wasm',
 
   queries: {
     comments: '(comment) @comment',
     strings: '(string) @string',
-    // No `concatenations` — this adapter doesn't support string
-    // wrapping, so there's nothing for concatenation-run grouping to
-    // do. Phase 12b adds this alongside real string support.
+    // JavaScript has no implicit (bare-adjacency) string concatenation —
+    // only `+`. Unlike Python's `queries.concatenations`, there's no
+    // `@concat.implicit` alternative to declare.
+    concatenations: '(binary_expression operator: "+") @concat.operator',
   },
 
   comments: {
     line: { marker: '//', spaceAfter: true },
 
     // JSDoc/Doxygen/Javadoc shape: the open delimiter alone on its own
-    // line, a continuation-prefixed content on every line after, the
-    // close delimiter alone on the last line — Phase 6b's own reason
-    // for existing (`comments/dissolve-block-comments.ts`,
-    // `comments/emit-block-comments.ts`). `classify` only ever assigns
-    // `'blockComment'` to a comment whose text starts with this exact
-    // `open` form; a plain single-star block comment is deliberately
-    // excluded from discovery rather than mis-dissolved through a
-    // delimiter pair it doesn't match — see `./adapter.ts`.
+    // line, continuation-prefixed content on every line after, the close
+    // delimiter alone on the last line. Reused identically for both a
+    // `'blockComment'` region (were one ever classified — see
+    // `./adapter.ts`, none currently is) and every `'docComment'` region,
+    // since JSDoc's delimiter syntax *is* this shape.
     block: { open: '/**', close: '*/', continuationPrefix: '*', alignContinuation: 'open' },
+
+    // Phase 12b's first real `comments.doc` for a *comment* convention
+    // rather than Python's triple-quoted-string one — `markers` names the
+    // exact delimiter `classifyEcmaScriptNode` checks a comment's text
+    // against to classify it `'docComment'` rather than excluding it.
+    doc: { markers: ['/**'], dialects: ['jsdoc', 'plain'] },
 
     // A conservative, well-known set of tooling directives that must
     // never move to a different line — the JS/TS analog of Python's
-    // `# noqa`/`# type:`. Not exhaustive (this is a canary, not a real
-    // adapter); extending it is exactly the kind of change Phase 12b
-    // should make freely without touching the engine.
+    // `# noqa`/`# type:`.
     neverReflow: [
       /^\/\/\s*eslint-disable/,
       /^\/\/\s*@ts-(expect-error|ignore|nocheck)\b/,
@@ -84,17 +79,37 @@ export const javascriptDescriptor: LanguageDescriptor = {
   },
 
   strings: {
-    // Structurally valid but unexercised — see this module's own doc
-    // comment for why a "comments only" adapter still populates this.
     quotes: [
       { delimiter: '"', multiline: false, escapes: true },
       { delimiter: "'", multiline: false, escapes: true },
     ],
+    // No string-literal prefix concept in JavaScript (unlike Python's
+    // `r`/`b`/`f`) — every ordinary string is plain.
     prefixes: [],
     rawForms: [],
     escapes: {
-      sequences: [/^\\\\/, /^\\'/, /^\\"/, /^\\n/, /^\\t/, /^\\r/, /^\\0/, /^\\u[0-9a-fA-F]{4}/],
+      sequences: [
+        /^\\\r?\n/, // line continuation — refused outright by isSafeToWrap, not segmented
+        /^\\\\/,
+        /^\\'/,
+        /^\\"/,
+        /^\\`/,
+        /^\\0/,
+        /^\\b/,
+        /^\\f/,
+        /^\\n/,
+        /^\\r/,
+        /^\\t/,
+        /^\\v/,
+        /^\\x[0-9a-fA-F]{2}/,
+        /^\\u\{[0-9a-fA-F]+\}/, // ES2015 Unicode code point escape
+        /^\\u[0-9a-fA-F]{4}/,
+      ],
     },
+    // No `str.format()`/f-string-style placeholder concept in an ordinary
+    // JS/TS string literal — `${}` interpolation exists only inside a
+    // template literal, which this descriptor's `queries.strings`
+    // deliberately never captures (see this module's own doc comment).
     placeholders: [],
     concatenation: { style: 'operator', operator: '+', operatorPlacement: 'trailing' },
   },

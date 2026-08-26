@@ -24,22 +24,22 @@ describe('javascriptAdapter', () => {
     expect(region!.kind).toBe('lineComment');
   });
 
-  it('classifies a /** */ comment as blockComment', () => {
+  it('classifies a /** */ comment as docComment (Phase 12b: JSDoc-eligible)', () => {
     const source = '/**\n * A doc comment.\n */\nconst x = 1;\n';
     const tree = parser.parse(source)!;
 
     const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
 
-    expect(region!.kind).toBe('blockComment');
+    expect(region!.kind).toBe('docComment');
   });
 
-  it('classifies a single-line /** */ comment as blockComment', () => {
+  it('classifies a single-line /** */ comment as docComment', () => {
     const source = '/** inline doc comment */\nconst x = 1;\n';
     const tree = parser.parse(source)!;
 
     const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
 
-    expect(region!.kind).toBe('blockComment');
+    expect(region!.kind).toBe('docComment');
   });
 
   it('excludes a plain single-star /* */ comment from discovery entirely', () => {
@@ -58,7 +58,7 @@ describe('javascriptAdapter', () => {
 
     const regions = discoverRegions(javascriptAdapter, tree, source, 'javascript');
 
-    expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'blockComment', 'stringLiteral']);
+    expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'docComment', 'stringLiteral']);
   });
 
   it('does not merge adjacent line comments the way the Python adapter does', () => {
@@ -70,5 +70,58 @@ describe('javascriptAdapter', () => {
 
     expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'lineComment']);
     expect(regions.every((r) => r.parts.length === 1)).toBe(true);
+  });
+
+  it('groups a +-concatenated string chain into one multi-part region (Phase 12b)', () => {
+    const source = 'const x = "a" + "b" + "c";\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.kind).toBe('stringLiteral');
+    expect(regions[0]!.parts).toHaveLength(3);
+  });
+
+  it('does not group a chain with a non-literal operand', () => {
+    const source = 'const x = "a" + name + "b";\n';
+    const tree = parser.parse(source)!;
+
+    const regions = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    expect(regions.every((r) => r.parts.length === 1)).toBe(true);
+  });
+
+  it('isSafeToWrap refuses a string with a line-continuation escape', () => {
+    const source = 'const x = "foo\\\nbar";\n';
+    const tree = parser.parse(source)!;
+    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(false);
+  });
+
+  it('isSafeToWrap refuses a string with a tab or double space', () => {
+    const source = 'const x = "foo  bar";\n';
+    const tree = parser.parse(source)!;
+    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(false);
+  });
+
+  it('isSafeToWrap allows an ordinary string', () => {
+    const source = 'const x = "a perfectly ordinary string";\n';
+    const tree = parser.parse(source)!;
+    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(true);
+  });
+
+  it('emitContext never needs parens and always resolves to operator style', () => {
+    const source = 'const x = "a" + "b";\n';
+    const tree = parser.parse(source)!;
+    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
+
+    const ctx = javascriptAdapter.emitContext!(region!, tree, {} as never);
+    expect(ctx).toEqual({ needsParens: false, concatenationStyle: 'operator' });
   });
 });

@@ -25,6 +25,13 @@ export default tseslint.config(
       // build, not shipped, and not written against this repo's
       // TypeScript/no-Node-globals conventions.
       'docs/spikes/**',
+      // Gold-fixture source files (Phase 12b's first ones written in a
+      // language ESLint actually parses — Python fixtures never
+      // triggered this, being a different extension entirely). These are
+      // test *data*: deliberately unused variables, and deliberately
+      // whatever shape the fixture needs to exercise, not code meant to
+      // satisfy this repo's own lint rules.
+      '**/test/fixtures/**/*.{js,jsx,ts,tsx}',
     ],
   },
   js.configs.recommended,

@@ -211,13 +211,37 @@ export function emitString(
  * immediately followed by punctuation — nothing to restore, matching
  * Python's own zero-separator concatenation semantics for that case
  * without any special handling needed here).
+ *
+ * ## The last line's own trailing whitespace
+ *
+ * Found missing while generating this phase's own JavaScript gold
+ * fixtures, not anticipated by Phase 9's own plan text: `atomizeWords`
+ * (`../segmentation/atomize-words.ts`) drops *any* whitespace trailing the
+ * final atom — there is no atom after it for that whitespace to be
+ * "between," so the segmenter's word-scanning loop simply never visits
+ * it. For a string literal ending in a real trailing space before its
+ * closing quote (`"Hello, "` — entirely ordinary, e.g. as the left
+ * operand of `"Hello, " + name`), that trailing space is exactly as
+ * semantically real as an interior one, and dropping it silently changes
+ * the string's own value — precisely the "silent string corruption" the
+ * plan calls this phase's central risk, just at the *end* of the text
+ * rather than at a split point, which is why the interior-only check the
+ * loop above already had didn't catch it: the loop's own `i === lines.length
+ * - 1` branch returned the last line completely unexamined. Whatever
+ * remains of `originalText` from `cursor` to its own end, after every
+ * line has consumed its own characters, is exactly this dropped
+ * whitespace (never more than a single space in practice — `isSafeToWrap`
+ * already refuses any text with a tab or a run of two-or-more spaces
+ * before this function ever runs — but appended verbatim regardless of
+ * length, so this stays correct even called directly, outside that gate).
  */
 function reinsertSplitSpaces(originalText: string, lines: readonly string[]): string[] {
   let cursor = 0;
   return lines.map((line, i) => {
     cursor += line.length;
     if (i === lines.length - 1) {
-      return line;
+      const trailing = originalText.slice(cursor);
+      return trailing.length > 0 ? line + trailing : line;
     }
     const hasSpace = originalText[cursor] === ' ';
     if (hasSpace) {

@@ -100,6 +100,24 @@ describe('emitString', () => {
     expect(first).toBe('(' + second + ')');
   });
 
+  it('preserves a trailing space before the closing quote on a single-line result', () => {
+    // Regression: `atomizeWords` drops any whitespace trailing the final
+    // atom (nothing follows it to be "between"), which `reinsertSplitSpaces`
+    // used to only check for at interior split points, silently dropping a
+    // string's own trailing space even when it never gets split at all —
+    // e.g. `"Hello, " + name` re-emitting as `"Hello," + name`, a real
+    // value change, not merely cosmetic.
+    const result = emitString('Hello, ', '', '"', 4, 8, false, 'operator', 80);
+    expect(result).toBe('"Hello, "');
+  });
+
+  it('preserves a trailing space before the closing quote on the last line of a multi-line result', () => {
+    const text = 'hello there wonderful world today ';
+    const result = emitString(text, '', '"', 4, 4, false, 'implicit', 20);
+    const parts = [...result.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]!);
+    expect(parts.join('')).toBe(text);
+  });
+
   it('never produces a line over columnLimit for any split fixture above', () => {
     const cases: Array<[string, string, string, number, number, boolean, 'implicit' | 'operator', number]> = [
       ['hello there wonderful world today', '', '"', 4, 4, true, 'implicit', 20],

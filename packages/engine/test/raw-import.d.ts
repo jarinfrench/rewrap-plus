@@ -17,3 +17,22 @@ declare module '*.txt?raw' {
   const content: string;
   export default content;
 }
+
+// Phase 12b's JavaScript/TypeScript/TSX fixtures — same rationale as the
+// `.py?raw` declaration above, one declaration per source extension.
+declare module '*.js?raw' {
+  const content: string;
+  export default content;
+}
+declare module '*.jsx?raw' {
+  const content: string;
+  export default content;
+}
+declare module '*.ts?raw' {
+  const content: string;
+  export default content;
+}
+declare module '*.tsx?raw' {
+  const content: string;
+  export default content;
+}
