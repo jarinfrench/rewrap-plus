@@ -20,6 +20,8 @@ import doctestIn from '../fixtures/python/docstrings/006-doctest-preserved.in.py
 import doctestOut from '../fixtures/python/docstrings/006-doctest-preserved.out.py?raw';
 import multiRegionIn from '../fixtures/python/docstrings/007-module-class-attribute-docstrings.in.py?raw';
 import multiRegionOut from '../fixtures/python/docstrings/007-module-class-attribute-docstrings.out.py?raw';
+import quoteAloneMultiParaIn from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.in.py?raw';
+import quoteAloneMultiParaOut from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.out.py?raw';
 
 /**
  * Phase 8's stated acceptance criterion: "All docstring fixtures pass; no
@@ -61,6 +63,11 @@ const fixtures: readonly Fixture[] = [
     name: '007-module-class-attribute-docstrings',
     input: multiRegionIn,
     expected: multiRegionOut,
+  },
+  {
+    name: '008-quote-alone-multi-paragraph',
+    input: quoteAloneMultiParaIn,
+    expected: quoteAloneMultiParaOut,
   },
 ];
 
@@ -144,6 +151,7 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
       '005-already-wrapped-byte-identical',
       '006-doctest-preserved',
       '007-module-class-attribute-docstrings',
+      '008-quote-alone-multi-paragraph',
     ]);
   });
 });

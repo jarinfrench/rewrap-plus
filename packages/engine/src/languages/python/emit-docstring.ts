@@ -97,7 +97,18 @@ export function emitDocstring(
     : '';
 
   const physicalLines: string[] = [prefix + quoteDelimiter + firstContent];
-  const rest = openingHasSummary ? contentLines.slice(1) : contentLines;
+  // Always drop `contentLines[0]` here, regardless of `openingHasSummary` —
+  // it was already consumed above, into either `firstContent` (when it had
+  // real text) or the *absence* of any content on the opening line (when it
+  // was blank, per the "quote alone on its own line" convention). Bug found
+  // while building Phase 12f's own fixtures: this used to read
+  // `openingHasSummary ? contentLines.slice(1) : contentLines`, which kept
+  // `contentLines[0]` in `rest` whenever it was blank — that blank line then
+  // got pushed a *second* time by the loop below, growing by one more blank
+  // line on every subsequent wrap (a genuine idempotency violation). No
+  // existing gold fixture before this one used the leading-blank
+  // convention, which is why nothing caught it earlier.
+  const rest = contentLines.slice(1);
   for (const line of rest) {
     physicalLines.push(line.length === 0 ? '' : indent + line);
   }

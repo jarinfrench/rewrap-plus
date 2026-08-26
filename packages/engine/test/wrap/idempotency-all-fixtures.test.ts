@@ -20,6 +20,7 @@ import docstringsSphinx from '../fixtures/python/docstrings/004-sphinx-style.in.
 import docstringsAlreadyWrapped from '../fixtures/python/docstrings/005-already-wrapped-byte-identical.in.py?raw';
 import docstringsDoctest from '../fixtures/python/docstrings/006-doctest-preserved.in.py?raw';
 import docstringsMultiRegion from '../fixtures/python/docstrings/007-module-class-attribute-docstrings.in.py?raw';
+import docstringsQuoteAloneMultiPara from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.in.py?raw';
 
 import stringsLongProse from '../fixtures/python/strings/001-long-prose-message.in.py?raw';
 import stringsRebalanced from '../fixtures/python/strings/002-existing-concat-rebalanced.in.py?raw';
@@ -103,6 +104,7 @@ const fixtureSources: readonly string[] = [
   docstringsAlreadyWrapped,
   docstringsDoctest,
   docstringsMultiRegion,
+  docstringsQuoteAloneMultiPara,
   stringsLongProse,
   stringsRebalanced,
   stringsFstring,
@@ -140,6 +142,7 @@ const fixtureNames: readonly string[] = [
   'docstrings/005-already-wrapped-byte-identical',
   'docstrings/006-doctest-preserved',
   'docstrings/007-module-class-attribute-docstrings',
+  'docstrings/008-quote-alone-multi-paragraph',
   'strings/001-long-prose-message',
   'strings/002-existing-concat-rebalanced',
   'strings/003-fstring-interpolation',
@@ -203,7 +206,7 @@ describe.each([
   );
 
   it('covers every fixture file this suite is meant to (guards against a silently dropped import)', () => {
-    expect(fixtureNames).toHaveLength(34);
+    expect(fixtureNames).toHaveLength(35);
     expect(fixtureSources).toHaveLength(fixtureNames.length);
   });
 });

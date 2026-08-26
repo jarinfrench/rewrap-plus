@@ -35,13 +35,40 @@ describe('emitDocstring', () => {
     // A leading `blank` block is exactly what a dissolved text starting
     // with an empty line looks like (dissolve's own reproduction of "the
     // opening quote sat alone" — see `./dissolve-docstring.test.ts`'s
-    // "quote-alone" case). With `closingQuoteOwnLine: false` (the
-    // default here), the closing delimiter attaches to whatever the
-    // *last* physical line ends up being — the content line, not the
-    // leading blank one.
+    // "quote-alone" case). The opening `"""` gets no content of its own
+    // (the leading blank block reflows to `''`, exactly like every other
+    // blank line), and the *very next* physical line is the real content —
+    // one line break between them, matching the one real newline that sat
+    // between the opening delimiter and the summary in the original
+    // source, not two. With `closingQuoteOwnLine: false` (the default
+    // here), the closing delimiter attaches to whatever the *last*
+    // physical line ends up being — the content line, not the leading
+    // blank one.
     const blocks: Block[] = [{ type: 'blank' }, paragraph('Starts on its own line.')];
     const result = emitDocstring(blocks, meta({ indentColumn: 4, commonIndent: 4 }), 80);
-    expect(result).toBe('"""\n\n    Starts on its own line."""');
+    expect(result).toBe('"""\n    Starts on its own line."""');
+  });
+
+  it('does not duplicate the leading blank line when more than one paragraph follows it (regression)', () => {
+    // Bug found while building Phase 12f's own fixtures: `rest` used to be
+    // computed as `openingHasSummary ? contentLines.slice(1) :
+    // contentLines` — when the first block was blank (`openingHasSummary:
+    // false`), `contentLines[0]` (already consumed into the, empty,
+    // opening line) stayed in `rest` and got pushed a *second* time as a
+    // spurious extra blank line, growing by one more blank line on every
+    // subsequent wrap. Two paragraphs (rather than one) is what exposes
+    // it: with only one paragraph the duplicated blank line and the
+    // paragraph's own reflow happened to still produce plausible-looking
+    // output, which is how the bug went uncaught until a real multi-
+    // paragraph docstring using this convention was tried.
+    const blocks: Block[] = [
+      { type: 'blank' },
+      paragraph('First paragraph.'),
+      { type: 'blank' },
+      paragraph('Second paragraph.'),
+    ];
+    const result = emitDocstring(blocks, meta({ indentColumn: 4, commonIndent: 4 }), 80);
+    expect(result).toBe('"""\n    First paragraph.\n\n    Second paragraph."""');
   });
 
   it('places the closing delimiter on its own line when closingQuoteOwnLine is true', () => {
