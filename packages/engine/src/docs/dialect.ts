@@ -19,11 +19,10 @@ export interface DocEmitContext {
 }
 
 /**
- * A pluggable documentation-comment dialect (Phase 8: "add dialect
- * registry decoupled from language adapters"). Dialects are a
- * cross-cutting concern, not an adapter internal — Google/NumPy/Sphinx
- * conventions are Python-specific today, but the same idea (JSDoc,
- * Doxygen) applies to other languages later (Phase 12b/12c). A
+ * A pluggable documentation-comment dialect, decoupled from language
+ * adapters. Dialects are a cross-cutting concern, not an adapter
+ * internal — Google/NumPy/Sphinx conventions are Python-specific, but
+ * the same idea (JSDoc, Doxygen) applies to other languages too. A
  * `LanguageDescriptor` only *lists* which dialect ids it supports via
  * `comments.doc.dialects`; it never owns detection or reflow logic
  * itself — that's entirely what this module and its per-dialect
@@ -71,7 +70,7 @@ export interface DocDialect {
 
 /**
  * The shared `DocDialect.emit` implementation every dialect in this
- * package reuses as-is: reflow each block (`reflowBlock`, Phase 5) at
+ * package reuses as-is: reflow each block (`reflowBlock`) at
  * its own `hangingIndent`, restoring whatever marker/label
  * `reflowBlock` itself deliberately leaves out (`decorateFirstLine`,
  * `../reflow/decorate-block.ts`).
@@ -153,7 +152,7 @@ export class DialectRegistry {
    * scored 0") favor whichever candidate sorts first in `candidates`'
    * own order, so a descriptor listing `'plain'` last, as every shipped
    * descriptor does, means an unrecognizable/ambiguous docstring falls
-   * back to `'plain'` — "ambiguous → plain," per the plan.
+   * back to `'plain'` — "ambiguous → plain."
    *
    * Throws if a named candidate isn't registered, or if `candidates` is
    * empty — both are configuration errors (a descriptor listing a

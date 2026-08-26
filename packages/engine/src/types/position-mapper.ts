@@ -120,9 +120,9 @@ function nearestCheckpoint(
  * including) its terminating `\n` — so for a CRLF file, a trailing `\r` is
  * currently counted as an ordinary character of the line, which overstates
  * `character` by one relative to VSCode's own CRLF column semantics.
- * Detecting and specially handling CRLF is Phase 10's job ("add line
- * ending and trailing whitespace preservation"); this mapper only commits
- * to the UTF-8/UTF-16 conversion itself.
+ * Detecting and specially handling CRLF (line ending and trailing
+ * whitespace preservation) is handled elsewhere; this mapper only
+ * commits to the UTF-8/UTF-16 conversion itself.
  */
 export class PositionMapper {
   private readonly lines: readonly LineIndex[];
@@ -209,9 +209,9 @@ export class PositionMapper {
    * not from the line's own start — a plain start-of-line scan made this
    * method (and its counterpart below) cost `O(line length)` *per call*,
    * which every node-span computation in `discoverRegions` pays at least
-   * once. For a single pathologically long line (Phase 10's own named
-   * risk: a long `+`-chained concatenation, or one huge string literal, is
-   * exactly this shape), that turned "discover every region in the file"
+   * once. For a single pathologically long line (a long `+`-chained
+   * concatenation, or one huge string literal, is exactly this named
+   * risk shape), that turned "discover every region in the file"
    * quadratic in that line's length — confirmed by direct timing (a
    * 20,000-operand concatenation on one line took over two minutes) before
    * this fix. `CHECKPOINT_INTERVAL`-bounded scans make each call's cost

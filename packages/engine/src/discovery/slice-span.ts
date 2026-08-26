@@ -17,9 +17,9 @@ import type { SourceSpan } from '../types/span.js';
  * Shares the CRLF caveat already noted on `PositionMapper`
  * (`../types/position-mapper.ts`): splitting on `\n` alone leaves a
  * trailing `\r` as part of each line's text for a CRLF file. Detecting and
- * normalizing line endings is Phase 10's job; this function only commits
- * to slicing consistently with how the rest of the engine counts columns
- * today.
+ * normalizing line endings is handled elsewhere; this function only
+ * commits to slicing consistently with how the rest of the engine counts
+ * columns today.
  */
 // Single-entry, reference-equality cache of `source.split('\n')` for the
 // most recently seen `source` string. `wrapRegions` (`../wrap.ts`) calls

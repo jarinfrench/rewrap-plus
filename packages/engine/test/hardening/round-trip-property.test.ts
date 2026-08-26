@@ -10,16 +10,16 @@ import { wrapRegions } from '../../src/wrap.js';
 import { extractConcatenatedStringValue } from '../support/decode-python-string.js';
 
 /**
- * Phase 10, "add round-trip property tests with generated input":
- * fast-check generators for comments/docstrings/strings, asserting the
- * plan's own four named properties — idempotent, no line over limit
- * except a lone atom, output still parses, string values unchanged —
- * against generated rather than hand-written source.
+ * Round-trip property tests with generated input: fast-check generators
+ * for comments/docstrings/strings, asserting four named properties —
+ * idempotent, no line over limit except a lone atom, output still
+ * parses, string values unchanged — against generated rather than
+ * hand-written source.
  *
  * Deliberately word-bank-based rather than raw fuzzed Unicode: a
  * generator that could produce quotes, backslashes, or newlines *inside*
  * the generated content would mostly be exercising dissolve/escape edge
- * cases — real, but already covered by Phase 9's own hand-written,
+ * cases — real, but already covered by the existing hand-written,
  * eval-equivalence-checked gold fixtures (`../wrap/python-string-wrap-
  * fixtures.test.ts`), which can name and check an *exact* expected
  * decoded value in a way a property test can't as usefully. What this
@@ -124,8 +124,8 @@ function assertNoLineOverLimitExceptLoneAtom(
         .replace(/^#\s?/, '')
         .replace(/^"|"$/g, '')
         // A single *trailing* space is the deliberate "preserve the
-        // trailing space at split points" glue Phase 9's string-emit
-        // fixtures cover (`"foo " "bar"`, not `"foo" "bar"`) — not a
+        // trailing space at split points" glue the string-emit fixtures
+        // cover (`"foo " "bar"`, not `"foo" "bar"`) — not a
         // second atom sharing this line, so it doesn't disqualify an
         // otherwise-lone-atom line the way an *interior* space would.
         .replace(/ +$/, '');

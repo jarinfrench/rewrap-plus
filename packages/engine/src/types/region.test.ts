@@ -7,7 +7,7 @@ function span(startByte: number, endByte: number): SourceSpan {
 }
 
 describe('RegionKind', () => {
-  it('covers every v1 region kind exactly once', () => {
+  it('covers every region kind exactly once', () => {
     const kinds: readonly RegionKind[] = [
       'lineComment',
       'blockComment',

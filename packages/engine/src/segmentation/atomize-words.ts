@@ -3,8 +3,7 @@ import { displayWidth } from './display-width.js';
 import { findUnbreakableSpans } from './unbreakable-spans.js';
 
 /**
- * Split a line of text into `Atom`s, honoring unbreakable units (Phase 5,
- * "add atom segmentation with unbreakable unit support").
+ * Split a line of text into `Atom`s, honoring unbreakable units.
  *
  * Atoms are whitespace-delimited words *except* that these are never
  * split internally, even where they contain whitespace of their own
@@ -29,8 +28,7 @@ import { findUnbreakableSpans } from './unbreakable-spans.js';
  *
  * Getting the "never split inside" rule wrong produces *invalid strings*
  * later (a torn f-string interpolation, a mangled escape), not just an
- * ugly wrap — see Phase 5's atom-segmentation commit note in the
- * implementation plan.
+ * ugly wrap.
  *
  * `width` is real display width (`./display-width.ts`): East Asian
  * Wide/Fullwidth characters count as 2 columns, combining marks as 0 —

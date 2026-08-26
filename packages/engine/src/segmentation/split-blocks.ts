@@ -12,7 +12,7 @@ import {
 
 /**
  * Options controlling `splitBlocks`. Threaded straight through from
- * `WrapConfig` by whatever calls this (dissolve, from Phase 6 onward) —
+ * `WrapConfig` by whatever calls this (dissolve) —
  * kept as its own narrow interface, per this project's established
  * pattern (see `../discovery/discover-regions.ts`'s `DiscoverRegionsOptions`),
  * rather than taking the whole `WrapConfig` and coupling this
@@ -32,11 +32,11 @@ export interface SplitBlocksOptions {
 /**
  * Turn dissolved region text into a flat sequence of `Block`s.
  *
- * This is the shared, language-agnostic half of Phase 4's goal ("turn raw
- * region text into a `LogicalDocument` of blocks") — the counterpart that
+ * This is the shared, language-agnostic half of turning raw
+ * region text into a `LogicalDocument` of blocks — the counterpart that
  * actually assembles a `LogicalDocument` (pairing this with `DocMeta`)
- * belongs to whichever dissolve step calls it (docstrings in Phase 8,
- * comments in Phase 6), since only the caller knows the region's
+ * belongs to whichever dissolve step calls it (docstrings,
+ * comments), since only the caller knows the region's
  * `indentColumn` and detected dialect.
  *
  * Line-by-line, in priority order:

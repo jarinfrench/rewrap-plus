@@ -4,11 +4,11 @@ A VSCode extension — and companion CLI — that rewraps comments, docstrings,
 and string literals to a configured column limit, preserving formatted
 structure and emitting language-valid concatenation on split.
 
-Status: v1 feature-complete (through Phase 11 of
-`docs/implementation-plan.md`), plus a CLI for scripting/pre-commit use
-(Phase 12d) — installable as a `.vsix`/`npm install`, not yet published to
-a marketplace or registry (Phase 12e). See
-[CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's known-missing.
+Status: **alpha.** Python, JavaScript, TypeScript, TSX, and C++ support,
+plus a CLI for scripting/pre-commit use — installable as a `.vsix`/
+`npm install`, not yet published to a marketplace or registry. See
+[CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's
+known-missing.
 
 ## Repository layout
 
@@ -26,7 +26,7 @@ the reuse seam a CLI / pre-commit hook builds on, and that only holds if it
 stays free of editor-host dependencies. This is enforced mechanically via an
 ESLint `no-restricted-imports` rule, not just documentation. `packages/cli`
 is the proof the seam holds in practice — see
-[`docs/adapters.md`](docs/adapters.md)'s Phase 12d section for what
+[`docs/adapters.md`](docs/adapters.md)'s CLI section for what
 building it against the unchanged engine actually looked like.
 
 ## Using the extension or the CLI

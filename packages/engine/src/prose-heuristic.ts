@@ -1,21 +1,21 @@
 /**
  * Score whether `text` reads as wrappable prose, for `WrapConfig.stringPolicy:
- * 'prose'` (the conservative default — "wrap only strings that score as
- * prose-like under the heuristic," per the plan). Language-agnostic and
- * operates on plain text only: it knows nothing about Python, tree-sitter,
- * or any particular call context, unlike the *context* signals the plan
- * also calls for (a string used as a dict key, or as the sole argument to
+ * 'prose'` (the conservative default — wraps only strings that score as
+ * prose-like under this heuristic). Language-agnostic and operates on
+ * plain text only: it knows nothing about Python, tree-sitter, or any
+ * particular call context, unlike the *context* signals this project also
+ * cares about (a string used as a dict key, or as the sole argument to
  * `re.compile`/`open`/a logging call) — those need real syntax-tree access
  * to answer correctly and live in `LanguageAdapter.isSafeToWrap`
  * (`./languages/python/adapter.ts`) instead, per that hook's own doc
  * comment ("eligibility beyond the shared prose heuristic").
  *
  * This is inherently a heuristic, not a specification with an exact
- * pass/fail boundary — the plan itself only lists qualitative signals
- * ("positive," "negative," "context"). Each signal below nudges a running
- * score up or down; `text` is eligible once the total is strictly
- * positive. The concrete weights were tuned against this phase's own gold
- * fixtures (`test/fixtures/python/strings/`), not derived from a formula —
+ * pass/fail boundary — only qualitative signals ("positive," "negative,"
+ * "context") drive it. Each signal below nudges a running score up or
+ * down; `text` is eligible once the total is strictly positive. The
+ * concrete weights were tuned against this package's own gold fixtures
+ * (`test/fixtures/python/strings/`), not derived from a formula —
  * expect to retune them if a real-world false positive/negative surfaces
  * later, the same way any heuristic in this codebase
  * (`./comments/looks-like-code.ts`, `./segmentation/verbatim.ts`) is

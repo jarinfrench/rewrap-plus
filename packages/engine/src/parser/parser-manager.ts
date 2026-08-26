@@ -15,9 +15,9 @@ export interface ParserManagerOptions {
    * wherever `web-tree-sitter` itself can (`Language.load` accepts a
    * path string in Node and works the same way in a browser given a
    * same-shaped URL string; see decision-of-record on `web-tree-sitter`
-   * being chosen partly for future browser support, Phase 12f). A
-   * trailing slash on `wasmDir` or a leading slash on `grammarWasm` is
-   * tolerated so callers don't need to think about it.
+   * being chosen partly for future browser support). A trailing slash on
+   * `wasmDir` or a leading slash on `grammarWasm` is tolerated so callers
+   * don't need to think about it.
    */
   readonly wasmDir: string;
 
@@ -69,8 +69,8 @@ export class ParserManager {
    * touching the grammar cache at all — the counterpart to `parserFor`
    * for callers that need the adapter itself (its descriptor, its
    * `classify`/`groupRegions`/`isSafeToWrap` hooks) rather than a ready
-   * `Parser`. Added in Phase 6b alongside the generalized, engine-level
-   * `wrapRegions` (`../wrap.js`), which needs exactly this: given a
+   * `Parser`. Added alongside the generalized, engine-level `wrapRegions`
+   * (`../wrap.js`), which needs exactly this: given a
    * `languageId` and this same `ParserManager`, resolve *both* "which
    * adapter" and "a parser for it" through the one registry a caller
    * already constructed, rather than requiring a second, separate

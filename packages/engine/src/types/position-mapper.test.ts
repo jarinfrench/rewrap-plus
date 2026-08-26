@@ -179,8 +179,9 @@ describe('PositionMapper — combining characters', () => {
   // A combining acute accent (U+0301) following a plain 'e' is two
   // separate code points — two for-of iteration steps — even though they
   // render as one visual grapheme ("é"). Byte/UTF-16 accounting operates
-  // per code point, not per grapheme; grapheme-aware display width is a
-  // Phase 5 concern (East Asian Wide/combining-mark width), not this one.
+  // per code point, not per grapheme; grapheme-aware display width (East
+  // Asian Wide/combining-mark width) is atom segmentation's concern, not
+  // this one.
   const decomposed = 'cafe\u0301'; // "café" as e + combining acute
   const precomposed = 'caf\u00e9'; // "café" as a single precomposed é
 

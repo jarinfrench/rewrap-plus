@@ -1,11 +1,11 @@
 /**
  * Heuristic for recognizing a run of dissolved comment lines as
  * commented-out code rather than prose, so dissolve can route it to a
- * `verbatim` block instead of reflowing it (Phase 6's gold-fixture list
+ * `verbatim` block instead of reflowing it (the gold-fixture list
  * calls this out explicitly: "commented-out code (should be verbatim —
  * detect via high punctuation density / parseability)").
  *
- * This is the comment-side counterpart to Phase 9's prose heuristic for
+ * This is the comment-side counterpart to the prose heuristic for
  * string literals — same motivation (don't mangle something that isn't
  * prose), much simpler scope. A wrong "prose" guess reflows a disabled
  * function definition into something that no longer round-trips back to
@@ -22,11 +22,11 @@
  *
  * ## Why this lives at the engine level, not under `languages/python/`
  *
- * Phase 6's first version of this hardcoded Python's own leading-keyword
+ * An earlier version of this hardcoded Python's own leading-keyword
  * list (`def `, `class `, `import `, ...) directly inside the function,
  * imported straight into `dissolveLineComments`. That made
  * `dissolveLineComments` — otherwise fully generic, driven entirely by a
- * `LanguageDescriptor` — secretly Python-only: the Phase 6b JavaScript
+ * `LanguageDescriptor` — secretly Python-only: the JavaScript
  * canary would have needed either its own fork of the whole function or
  * a duplicate of this one with `function `/`const `/`let `/... swapped
  * in. Splitting the *pattern* out to
@@ -34,7 +34,7 @@
  * project's "adapter is data first" rule) and keeping only the shared
  * punctuation-density math here is what makes this genuinely
  * language-agnostic — exactly the kind of leaked assumption the
- * conformance kit and canary exist to surface before Phase 7 (see
+ * conformance kit and canary exist to surface early (see
  * `docs/adapters.md`, "Commented-out-code detection hardcoded Python's
  * keyword list").
  */

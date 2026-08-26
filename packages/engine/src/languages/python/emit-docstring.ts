@@ -101,7 +101,8 @@ export function emitDocstring(
   // it was already consumed above, into either `firstContent` (when it had
   // real text) or the *absence* of any content on the opening line (when it
   // was blank, per the "quote alone on its own line" convention). Bug found
-  // while building Phase 12f's own fixtures: this used to read
+  // while building this adapter's triple-quoted-string fixtures: this
+  // used to read
   // `openingHasSummary ? contentLines.slice(1) : contentLines`, which kept
   // `contentLines[0]` in `rest` whenever it was blank — that blank line then
   // got pushed a *second* time by the loop below, growing by one more blank

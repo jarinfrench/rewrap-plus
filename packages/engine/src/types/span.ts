@@ -21,12 +21,12 @@
  * offset into that line — matching `vscode.Position`'s `line`/`character`.
  *
  * The single place that converts between the two schemes is
- * `PositionMapper` (`./position-mapper.ts`, added later in this phase).
+ * `PositionMapper` (`./position-mapper.ts`, added slightly later).
  * Nothing else in the engine should reimplement that conversion.
  *
- * **Phase 2 addendum:** the paragraph above states the correct rule for
- * *native* tree-sitter bindings, and it's what this file was written
- * against. It does not hold for `web-tree-sitter` fed a JS string (the
+ * **Correction:** the paragraph above states the correct rule for
+ * *native* tree-sitter bindings, and it's what this file was originally
+ * written against. It does not hold for `web-tree-sitter` fed a JS string (the
  * only way this project parses): that binding's node offsets turn out to
  * already be UTF-16-based, not UTF-8 bytes, contradicting its own type
  * declarations. See `docs/parsing.md` (finding 3) for the spike that

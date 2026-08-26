@@ -1,7 +1,6 @@
 /**
  * Maps a file's extension to the VSCode-style `languageId` the engine's
- * `AdapterRegistry` keys its adapters by (`docs/implementation-plan.md`,
- * Phase 12d).
+ * `AdapterRegistry` keys its adapters by.
  *
  * The extension host has no equivalent of this: `document.languageId` is
  * assigned by VSCode itself (built-in associations plus the user's own
@@ -14,8 +13,8 @@
  * Deliberately a plain extension table, not a content-sniffing heuristic
  * (shebang lines, `#!/usr/bin/env python3`, etc.) — extension-based
  * detection is what every comparable tool (Prettier, Black, ESLint) does
- * by default, and content-sniffing is real, separate scope nothing in
- * the plan asks for.
+ * by default, and content-sniffing is real, separate scope this tool
+ * doesn't need to take on.
  */
 import { extname } from 'node:path';
 
@@ -42,7 +41,7 @@ const EXTENSION_TO_LANGUAGE: ReadonlyMap<string, string> = new Map([
   ['.hxx', 'cpp'],
   ['.h++', 'cpp'],
   // `.h` is genuinely ambiguous between C and C++ — this project has no
-  // `c` adapter (`docs/adapters.md`'s Phase 12c section: "a future `c`
+  // `c` adapter (`docs/adapters.md`'s C++ section: "a future `c`
   // adapter is separate work, not a same-descriptor alias"), so a plain
   // `.h` file is assumed to be C++ rather than excluded from detection
   // entirely. A real C header run through the `cpp` adapter risks a

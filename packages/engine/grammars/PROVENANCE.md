@@ -39,14 +39,13 @@ of `docs/parsing.md` for how this was confirmed).
    tree-sitter-python@<version> dist`), the vendored file's own
    `sha256sum`, and the grammar's `abiVersion` (log
    `Language.load(...).then(l => l.abiVersion)` once, or check the
-   conformance suite output once Phase 6b exists).
+   conformance suite output).
 6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
    typecheck && npm run build` — including anything in
    `src/parser/*.test.ts`, since node type/field names occasionally shift
    between grammar releases (the parser layer's own tests will catch a
-   query that no longer compiles; region-discovery tests, added in
-   Phase 3, are what catch a node *name* changing under a query that still
-   compiles).
+   query that no longer compiles; region-discovery tests are what catch a
+   node *name* changing under a query that still compiles).
 
 ## `tree-sitter-javascript.wasm`
 
@@ -62,15 +61,15 @@ of `docs/parsing.md` for how this was confirmed).
 | Grammar ABI version | `15` (`Language#abiVersion`) |
 | License | MIT (see upstream `LICENSE`) |
 
-Vendored for Phase 6b's canary JavaScript adapter
+Vendored for the JavaScript canary adapter
 (`../src/languages/javascript/`) — confirming this repeats the same
 "prebuilt or build-it-yourself?" question `docs/parsing.md` answered for
 Python, and it repeats the same answer: `0.25.0` publishes a prebuilt
 `tree-sitter-javascript.wasm` at its package root, same as
 `tree-sitter-python` did. No build pipeline needed here either. This is
 itself a useful finding on its own terms — see `docs/parsing.md`'s
-"consequence for later phases" note, which flagged this as something to
-re-check per grammar rather than assume.
+"consequence for future grammars" note, which flagged this as something
+to re-check per grammar rather than assume.
 
 Regenerating/updating follows the identical steps above, substituting
 `tree-sitter-javascript` for `tree-sitter-python` throughout.
@@ -89,14 +88,14 @@ Regenerating/updating follows the identical steps above, substituting
 | Grammar ABI version | `14` (`Language#abiVersion`) |
 | License | MIT (see upstream `LICENSE`) |
 
-Vendored for Phase 12b's `typescript` language adapter
+Vendored for the `typescript` language adapter
 (`../src/languages/typescript/`). `tree-sitter-typescript` publishes *two*
 grammars from one package — `tree-sitter-typescript.wasm` (plain TS) and
 `tree-sitter-tsx.wasm` (TS+JSX) below — both prebuilt at the package root,
 same "no local Emscripten/Docker build step" finding `docs/parsing.md`
 already made for Python and JavaScript, re-verified here rather than
-assumed (per that file's own "Phase 12b/12c should do the same" note).
-The package's newest release (`0.23.2`) predates Python/JavaScript's
+assumed (per that file's own note to check this per grammar rather than
+assume). The package's newest release (`0.23.2`) predates Python/JavaScript's
 `0.25.0`; no `0.25.x` series exists for this grammar as of this vendoring.
 
 Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
@@ -124,7 +123,7 @@ above, substituting `tree-sitter-typescript` throughout — except step 3
 | Grammar ABI version | `14` (`Language#abiVersion`) |
 | License | MIT (see upstream `LICENSE`) |
 
-Vendored for Phase 12b's `typescriptreact` language adapter — TSX is a
+Vendored for the `typescriptreact` language adapter — TSX is a
 genuinely *separate* grammar from plain TypeScript (a `<T>` type
 assertion and a JSX element are ambiguous under one grammar, per
 upstream's own package split), not a superset flag on the same one, so it
@@ -148,7 +147,7 @@ in the same session — see `docs/spikes/tree-sitter-typescript-probe.mjs`.
 | Grammar ABI version | `14` (`Language#abiVersion`) |
 | License | MIT (see upstream `LICENSE`) |
 
-Vendored for Phase 12c's `cpp` language adapter
+Vendored for the `cpp` language adapter
 (`../src/languages/cpp/`). `0.23.4` is this package's newest release as of
 this vendoring — noticeably behind Python/JavaScript's `0.25.0` and even
 `tree-sitter-typescript`'s `0.23.2` (no `0.24.x`/`0.25.x` series exists

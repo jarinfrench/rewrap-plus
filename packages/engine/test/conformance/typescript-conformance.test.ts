@@ -2,7 +2,7 @@ import { typescriptAdapter } from '../../src/languages/typescript/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Phase 12b's own adapter through the identical conformance suite Python
+ * The TypeScript adapter through the identical conformance suite Python
  * and JavaScript already pass — see `./javascript-conformance.test.ts`
  * for the same rationale. Sources below exercise `//`, JSDoc-shaped
  * `/**`, and a type-annotated function, each long enough to need

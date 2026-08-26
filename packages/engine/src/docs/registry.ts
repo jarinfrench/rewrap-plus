@@ -16,8 +16,8 @@ import { doxygenDialect } from './doxygen.js';
  * Dialects are stateless, so a single shared instance (built once by
  * whichever caller needs one — Python's `../languages/python/wrap-docstring.ts`
  * for `'docstring'` regions, `../comments/wrap-doc-comment.ts` for
- * `'docComment'` regions as of Phase 12b) is always safe to reuse.
- * There's no v1 story for a caller registering its *own* dialect, so
+ * `'docComment'` regions) is always safe to reuse.
+ * There's no story yet for a caller registering its *own* dialect, so
  * this stays a plain factory rather than a configurable registry
  * builder.
  */

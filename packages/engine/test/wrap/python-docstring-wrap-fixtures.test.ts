@@ -24,7 +24,7 @@ import quoteAloneMultiParaIn from '../fixtures/python/docstrings/008-quote-alone
 import quoteAloneMultiParaOut from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.out.py?raw';
 
 /**
- * Phase 8's stated acceptance criterion: "All docstring fixtures pass; no
+ * The stated acceptance criterion: "All docstring fixtures pass; no
  * dialect's structural markers are lost." Mirrors
  * `./python-comment-wrap-fixtures.test.ts`'s own structure and rationale
  * for this project's established fixture-driven convention — static
@@ -136,7 +136,7 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
     );
   });
 
-  it('covers the cases the plan calls out for this phase', () => {
+  it('covers the cases docstring wrapping is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases (minimal/plain, each of the
     // three dialects, an already-correctly-wrapped case, doctest

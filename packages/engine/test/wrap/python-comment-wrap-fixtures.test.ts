@@ -20,7 +20,7 @@ import directivesIn from '../fixtures/python/comments/006-directive-comments-unt
 import directivesOut from '../fixtures/python/comments/006-directive-comments-untouched.out.py?raw';
 
 /**
- * Phase 6's stated acceptance criterion: "Python comment wrapping works
+ * The stated acceptance criterion: "Python comment wrapping works
  * end-to-end in the engine, no VSCode yet." Each fixture pairs a
  * standalone `.in.py` source with a checked-in `.out.py` gold file
  * (this project's established fixture convention — see e.g.
@@ -147,7 +147,7 @@ describe('Python comment wrapping — end-to-end gold fixtures', () => {
     expect(directivesIn).toBe(directivesOut);
   });
 
-  it('covers the cases the plan calls out for this phase', () => {
+  it('covers the cases line-comment wrapping is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases (trailing comments after
     // code, comment blocks at varying indents, comments inside function

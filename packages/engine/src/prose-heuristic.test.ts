@@ -7,7 +7,7 @@ describe('looksLikeProse', () => {
     expect(looksLikeProse('   ')).toBe(false);
   });
 
-  describe('positive cases (the plan\'s own examples)', () => {
+  describe('positive cases (representative real examples)', () => {
     it('accepts a long prose message', () => {
       expect(
         looksLikeProse(
@@ -33,7 +33,7 @@ describe('looksLikeProse', () => {
     });
   });
 
-  describe('negative cases (the plan\'s own examples)', () => {
+  describe('negative cases (representative real examples)', () => {
     it('rejects a SQL query', () => {
       expect(looksLikeProse('SELECT id, name FROM users WHERE active = 1')).toBe(false);
     });
@@ -89,8 +89,9 @@ describe('looksLikeProse', () => {
   });
 
   describe('SQL-keyword false positives on ordinary English (regression)', () => {
-    // Found while building Phase 12f's own gold fixtures: `FROM`/`WHERE`/
-    // `JOIN`/`VALUES` are common English words in their own right, and the
+    // Found while building the triple-quoted-string gold fixtures:
+    // `FROM`/`WHERE`/`JOIN`/`VALUES` are common English words in their own
+    // right, and the
     // original flat `SQL_KEYWORDS` regex matched any one of them alone —
     // enough by itself to flip an otherwise clearly-prose paragraph to
     // ineligible. See prose-heuristic.ts's own `SQL_STRONG_KEYWORDS`/

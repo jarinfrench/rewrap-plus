@@ -108,8 +108,8 @@ describe('AdapterRegistry', () => {
   });
 
   it('lists every registered id, sorted, primary ids and aliases alike', () => {
-    // Phase 12b: `apply-wrap.ts`/`format-on-save.ts` both gate on this
-    // list including a real, resolvable alias — see `./adapter-registry.ts`'s
+    // `apply-wrap.ts`/`format-on-save.ts` both gate on this list
+    // including a real, resolvable alias — see `./adapter-registry.ts`'s
     // own doc comment on `supportedLanguages` for the bug this test would
     // otherwise have kept pinned.
     const registry = new AdapterRegistry();

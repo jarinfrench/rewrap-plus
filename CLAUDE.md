@@ -73,8 +73,14 @@ concatenation syntax on split.
   commit message, in depth, matching the existing convention — don't
   silently diverge and don't silently follow the plan past the point where
   it stops matching reality.
-- Known limitations get an explicit, phase-referenced comment in source,
-  never a silent omission.
+- Known limitations get an explicit comment in source, never a silent
+  omission — but not a phase-referenced one. Source comments, like
+  `docs/`/README/CHANGELOG prose, describe what a future reader (human or
+  Claude) needs to understand the code and its design rationale, not the
+  private phased history in `docs/implementation-plan.md`. Don't cite
+  "Phase N" or "the plan" in new comments; if you're editing a comment
+  that still has one, clean it up as part of that edit rather than adding
+  to it.
 
 ## How work gets delivered
 

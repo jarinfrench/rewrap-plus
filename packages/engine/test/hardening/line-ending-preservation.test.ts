@@ -15,14 +15,14 @@ import stringsLongProse from '../fixtures/python/strings/001-long-prose-message.
 import stringsRebalanced from '../fixtures/python/strings/002-existing-concat-rebalanced.in.py?raw';
 
 /**
- * Phase 10, "add line ending and trailing whitespace preservation".
+ * Line ending and trailing whitespace preservation.
  *
  * `detect-line-ending.test.ts` unit-tests `detectLineEndingNear` itself;
  * this file exercises it end to end through `wrapRegions`, plus the two
- * other preservation properties the plan names ("trailing whitespace,
- * and file-final newline preserved") across the *real* gold fixtures
- * (comments, docstrings, and strings together), not just the conformance
- * kit's own small synthetic sources.
+ * other preservation properties ("trailing whitespace, and file-final
+ * newline preserved") across the *real* gold fixtures (comments,
+ * docstrings, and strings together), not just the conformance kit's own
+ * small synthetic sources.
  */
 const cfg: WrapConfig = {
   columnLimit: 30,

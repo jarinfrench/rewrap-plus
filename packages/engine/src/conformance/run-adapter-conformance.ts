@@ -15,7 +15,7 @@ import { wrapRegions } from '../wrap.js';
  *
  * Deliberately narrow — every field here is *source text*, not
  * hand-built engine types, matching this package's established
- * fixture-driven convention (Phase 6's own gold-fixture tests never
+ * fixture-driven convention (this package's own gold-fixture tests never
  * hand-build `WrappableRegion`s either). Adding a language is meant to
  * mean "write a descriptor plus fixtures," and fixtures here means
  * exactly that: files, not code.
@@ -43,7 +43,7 @@ export interface ConformanceFixtures {
    * Deliberately plural: a single snippet can't exercise both a CRLF
    * and an LF source's line-ending preservation in one pass, and a
    * conformance kit that only ever proved itself against one shape of
-   * input would be a weaker gate than the plan asks for.
+   * input would be a weaker gate than this kit is meant to provide.
    */
   readonly sources: readonly string[];
 }
@@ -60,21 +60,20 @@ const CONFIG: Omit<WrapConfig, 'columnLimit'> = {
 
 /**
  * A parameterized `describe` block every `LanguageAdapter` must pass,
- * asserting the language-independent invariants Phase 6b exists to
- * pin down before Phase 7 hardens around whatever one adapter (Python)
+ * asserting the language-independent invariants that keep any adapter
+ * honest before other code hardens around whatever one adapter (Python)
  * happens to do. Call this once per adapter, inside an ordinary Vitest
  * test file — it registers its own `describe`/`it` blocks, the same
  * pattern this package already uses for fixture-driven suites (e.g.
  * `test/wrap/python-comment-wrap-fixtures.test.ts`), just parameterized
  * over an adapter instead of hardcoded to Python's.
  *
- * This is the deliverable that makes new languages cheap (Phase 11's
- * own framing): adding a language means writing a descriptor plus
- * fixtures and calling this one function, not designing a test strategy
- * from scratch.
+ * This is the deliverable that makes new languages cheap: adding a
+ * language means writing a descriptor plus fixtures and calling this
+ * one function, not designing a test strategy from scratch.
  *
- * Every invariant below traces directly to a bullet in the Phase 6b
- * plan text; each `it` block's own doc comment cites which one.
+ * Every invariant below is named in the doc comment of the `it` block
+ * that checks it.
  */
 export function runAdapterConformance(
   adapter: LanguageAdapter,

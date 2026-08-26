@@ -23,8 +23,9 @@ import comprehensionStringsSource from '../fixtures/python/regions/009-comprehen
 import comprehensionStringsExpected from '../fixtures/python/regions/009-comprehension-strings.expected.json';
 
 /**
- * Phase 3's stated acceptance criterion: "For each fixture, discovered
- * regions match a checked-in expected list (kind, span, part count)."
+ * The acceptance criterion this suite exists to check: for each
+ * fixture, discovered regions match a checked-in expected list (kind,
+ * span, part count).
  *
  * Each fixture pairs a standalone `.py` source file with a checked-in
  * `.expected.json` gold file, per the project's own testing convention
@@ -136,9 +137,9 @@ describe('Python region discovery fixtures', () => {
     expect(actual).toEqual(fixture.expected);
   });
 
-  it('covers the cases the plan calls out for this phase', () => {
+  it('covers the specific cases region discovery is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
-    // coverage of one of the specific cases Phase 3's plan enumerates
+    // coverage of one of the specific cases enumerated below
     // (nested functions, class/module docstrings, dict-literal strings,
     // f-strings, raw regex strings, multi-line implicit concatenation,
     // `+`-concatenation, strings inside comprehensions) if a fixture were

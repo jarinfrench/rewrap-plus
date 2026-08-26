@@ -92,9 +92,9 @@ describe('wrapRegions', () => {
 
   it('produces no edit for a comment already correctly wrapped at the configured width', async () => {
     // Wrap once to get a known-good wrapping, then wrap again — the
-    // second pass should be a pure no-op (idempotency, Phase 10's
-    // eventual property test, exercised early here for the one region
-    // kind this phase implements).
+    // second pass should be a pure no-op (idempotency, exercised early
+    // here for line comments, ahead of the round-trip property test
+    // that covers every region kind).
     const source = '# ' + 'word '.repeat(20).trim() + '\n';
     const cfg = config({ columnLimit: 20 });
     const first = await wrapRegions(source, 'python', 'all', cfg, parserManager);
@@ -118,7 +118,7 @@ describe('wrapRegions', () => {
     expect(result.skipped[0]!.reason).toMatch(/wrapComments/);
   });
 
-  it('wraps a docstring region (Phase 8) rather than skipping it', async () => {
+  it('wraps a docstring region rather than skipping it', async () => {
     const source = '"""A module docstring that is too long to fit on one line."""\n';
     const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
     expect(result.skipped).toEqual([]);
@@ -138,7 +138,7 @@ describe('wrapRegions', () => {
     expect(result.skipped[0]!.reason).toMatch(/wrapStrings/);
   });
 
-  it('wraps a stringLiteral region (Phase 9) rather than skipping it, once enabled', async () => {
+  it('wraps a stringLiteral region rather than skipping it, once enabled', async () => {
     const source = 'x = "a plain string literal, not a docstring, well over the column limit"\n';
     const result = await wrapRegions(
       source,
@@ -175,9 +175,8 @@ describe('wrapRegions', () => {
     // A target on its own statement (a string literal), not another
     // comment line — an ignore directive followed by *another* `#`
     // comment at the same indent would instead merge with it into one
-    // region (Phase 6's own consecutive-comment grouping), which is a
-    // different, already-covered interaction, not what this test means
-    // to isolate.
+    // region (consecutive-comment grouping), which is a different,
+    // already-covered interaction, not what this test means to isolate.
     const source =
       '# rewrap: ignore\n' +
       'x = "' +

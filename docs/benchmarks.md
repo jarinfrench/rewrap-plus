@@ -1,11 +1,10 @@
-# Performance benchmarks (Phase 10)
+# Performance benchmarks
 
-Phase 10 ("engine: add performance benchmarks and large-file
-guardrails") asked for `wrap-document` to be benchmarked on 1k/10k/50k-
-line files, and for `wrap-at-cursor` to "feel instant (< 50 ms after warm
-grammar load)." This documents the actual measurements those numbers are
-based on, the two real bugs the benchmarking work found along the way,
-and the large-file guardrail threshold they informed.
+This benchmarks `wrap-document` on 1k/10k/50k-line files, and checks
+that `wrap-at-cursor` feels instant (< 50 ms after warm grammar load).
+This documents the actual measurements those numbers are based on, the
+two real bugs the benchmarking work found along the way, and the
+large-file guardrail threshold they informed.
 
 The regression-guard version of this benchmark lives at
 `packages/engine/test/hardening/large-file-performance.test.ts` — generous
@@ -40,7 +39,7 @@ absolute numbers as one data point, not a guarantee).
 ### `wrap-at-cursor` (one region, targeted span)
 
 A single-region wrap, in a 2,000–5,000 line file, after the grammar is
-already warm: **~30 ms**, comfortably inside the plan's own "< 50 ms"
+already warm: **~30 ms**, comfortably inside the target "< 50 ms"
 budget, and independent of the surrounding file's size (it was already
 this fast before either fix below — the quadratic costs only showed up
 when *every* region in a large file was touched in one call).
@@ -66,8 +65,8 @@ front, and reuse the result.
    own).
 
 2. **`detectLineEndingNear`** (`packages/engine/src/detect-line-ending.ts`,
-   added earlier in this same phase for per-region line-ending detection)
-   — had the identical bug from the moment it was introduced, caught by
+   added for per-region line-ending detection) — had the identical bug
+   from the moment it was introduced, caught by
    this benchmarking work before it was ever released rather than as a
    separate regression later. Fixed by changing its signature to take the
    caller's own pre-split `lines` array instead of re-splitting `source`

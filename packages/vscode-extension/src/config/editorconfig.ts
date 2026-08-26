@@ -1,6 +1,6 @@
 /**
- * Self-contained `.editorconfig` `max_line_length` resolution (plan,
- * Phase 7 commit 3).
+ * Self-contained `.editorconfig` `max_line_length` resolution
+ * (commit 3).
  *
  * Parsed directly rather than depending on the EditorConfig extension
  * being installed — otherwise precedence tier 3 (see

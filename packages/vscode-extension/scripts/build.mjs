@@ -10,9 +10,9 @@
  *
  * The obvious approach — bundle everything reachable from `extension.ts`
  * into one file — silently breaks `web-tree-sitter`'s own WASM loading.
- * Probed directly (not trusted from the plan's shorthand "mark `vscode`
- * external"; this is a second, unwritten landmine the same principle
- * applies to): `web-tree-sitter`'s package `exports` map resolves a bare
+ * Probed directly (not trusted from the shorthand "mark `vscode`
+ * external" advice; this is a second, unwritten landmine the same
+ * principle applies to): `web-tree-sitter`'s package `exports` map resolves a bare
  * `import { Parser } from 'web-tree-sitter'` to its ESM build, whose
  * Emscripten-generated bootstrap locates its own `web-tree-sitter.wasm`
  * via `new URL('web-tree-sitter.wasm', import.meta.url)`. esbuild cannot
@@ -24,7 +24,7 @@
  * relationship to this repo's `node_modules` — the exact shape a
  * packaged `.vsix` has.
  *
- * The first fix tried (Phase 11 commit 1) was marking `web-tree-sitter`
+ * The first fix tried (commit 1) was marking `web-tree-sitter`
  * `external`: esbuild then downlevels the bundled `import` to a plain
  * `require('web-tree-sitter')`, resolving via the package's `"require"`
  * export condition — the `.cjs` build, which locates its WASM via

@@ -24,16 +24,15 @@ ext: implement wrap-at-cursor command
   ESLint `no-restricted-imports` rule — if it fires, the change belongs in
   `packages/vscode-extension` instead.
 - New languages are added as descriptors under `packages/engine`, not as
-  engine code changes. See `docs/adapters.md` (added in Phase 11) once it
-  exists.
+  engine code changes. See `docs/adapters.md` and `docs/adding-a-language.md`.
 - `packages/vscode-extension` and `packages/cli` are independent glue
   layers over `packages/engine`, not a shared dependency of each other —
   neither should import from the other. A module that's genuinely
   editor/runtime-agnostic (config parsing, formatting helpers, ...)
   belongs in `packages/engine` if it's engine-level, or gets its own copy
   in each glue package if it's narrow enough that duplicating it costs
-  less than a third shared package would (see `docs/adapters.md`'s Phase
-  12d section for the `.editorconfig` parser as a worked example of that
+  less than a third shared package would (see `docs/adapters.md`'s CLI
+  section for the `.editorconfig` parser as a worked example of that
   call).
 
 ## Before opening a PR

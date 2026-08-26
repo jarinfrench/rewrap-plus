@@ -27,10 +27,9 @@ export interface WrapOutcome {
 /**
  * Run `wrapRegions` for `document` against `targets`. Returns `undefined`
  * when `rewrapPlus.enable` is `false` (the one check every command needs
- * to make before doing anything else, per the plan's framing of `enable`
- * as the setting reached for when debugging a save pipeline with several
- * formatters in it), or when `document.languageId` isn't a registered
- * language.
+ * to make before doing anything else — `enable` is the setting reached
+ * for when debugging a save pipeline with several formatters in it), or
+ * when `document.languageId` isn't a registered language.
  *
  * That second check matters because the `"editorLangId in
  * rewrapPlusSupportedLanguages"` `when` clauses gating keybindings/menu
@@ -48,7 +47,7 @@ export interface WrapOutcome {
  * that check exists to prevent.
  */
 /**
- * `cancellation` (Phase 10, "large-file guardrails") is passed straight
+ * `cancellation` (the large-file guardrails signal) is passed straight
  * through to `engine.wrapRegions` — `vscode.CancellationToken`'s own
  * `isCancellationRequested: boolean` property already matches the
  * engine's minimal, `vscode`-free `CancellationSignal` shape exactly
@@ -105,8 +104,8 @@ export function toVSCodeTextEdits(edits: readonly EngineTextEdit[]): vscode.Text
 
 /**
  * Apply `edits` to `document` as one atomic `WorkspaceEdit` — "single
- * atomic edit so one undo reverts everything" (the plan's own framing
- * for wrap-document, commit 7, applied uniformly here since it's just as
+ * atomic edit so one undo reverts everything" (the design goal for
+ * wrap-document, commit 7, applied uniformly here since it's just as
  * true for a multi-cursor wrap-at-cursor or a selection spanning several
  * regions). Returns `true` when there was nothing to apply, matching
  * `WorkspaceEdit.apply`'s own "vacuously successful" convention rather
@@ -132,7 +131,7 @@ export async function applyWrapEdits(
  * directly. Returns `undefined` in exactly the cases `computeWrapResult`
  * does (`rewrapPlus.enable` is `false`).
  *
- * A cancelled result (`outcome.result.cancelled` — Phase 10) applies
+ * A cancelled result (`outcome.result.cancelled`) applies
  * nothing at all, even though `edits` may already hold some real edits
  * computed before cancellation fired: the "single atomic edit so one
  * undo reverts everything" property this function exists to provide

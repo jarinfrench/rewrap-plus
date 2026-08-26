@@ -4,11 +4,12 @@ import type { LanguageAdapter, LanguageDescriptor } from './adapter.js';
 import type { SyntaxNode } from './tree-sitter-types.js';
 
 // `classify`'s `node` parameter is a real `web-tree-sitter` `Node` (see
-// `./tree-sitter-types.ts` — Phase 2 replaced the Phase 1 placeholder
-// shape with a re-export of the genuine type). `Node` is a class with
-// many required members (`id`, `tree`, `typeId`, getters, ...), so a
-// hand-written object literal can no longer stand in for one the way it
-// could against the Phase 1 placeholder interface. Parsing a one-line
+// `./tree-sitter-types.ts`, which re-exports the genuine type — earlier
+// in this package's history it stood in for a hand-rolled placeholder
+// shape). `Node` is a class with many required members (`id`, `tree`,
+// `typeId`, getters, ...), so a hand-written object literal can no
+// longer stand in for one the way it could against that earlier
+// placeholder interface. Parsing a one-line
 // snippet with the vendored grammar to obtain a real node is only a
 // little more setup and tests the hook against what it will actually
 // receive in practice.

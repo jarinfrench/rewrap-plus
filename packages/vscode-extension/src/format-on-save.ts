@@ -1,10 +1,10 @@
 /**
- * `rewrapPlus.formatOnSave` (Phase 12a): wrap the whole document
- * automatically before every save, as its own independent opt-in rather
- * than by leaning on VSCode's native `editor.formatOnSave` +
+ * `rewrapPlus.formatOnSave`: wrap the whole document automatically
+ * before every save, as its own independent opt-in rather than by
+ * leaning on VSCode's native `editor.formatOnSave` +
  * `editor.defaultFormatter` composition (that path is still available —
- * see `./document-formatting-provider.ts` — and is what the plan's
- * "honor `editor.formatOnSave` semantics" bullet refers to).
+ * see `./document-formatting-provider.ts` — and is what "honor
+ * `editor.formatOnSave` semantics" refers to).
  *
  * The two paths exist side by side because VSCode's own mechanism
  * requires the user to designate Rewrap+ as *the* default formatter for

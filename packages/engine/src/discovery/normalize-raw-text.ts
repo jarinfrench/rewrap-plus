@@ -7,7 +7,7 @@
  *
  * Two distinct CRLF shapes need handling, both confirmed against the
  * vendored grammar directly (`docs/adapters.md`, "CRLF handling" —
- * probed the same way Phase 2/3 probed node shapes, not assumed):
+ * probed directly against the grammar, not assumed):
  *
  * - A node whose span is fully interior to the source — e.g. a
  *   multi-line `concatenated_string` container — reproduces the file's

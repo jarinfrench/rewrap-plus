@@ -1,7 +1,7 @@
 /**
  * Reads `[tool.rewrap-plus]` out of the nearest ancestor `pyproject.toml`
- * (`docs/implementation-plan.md`, Phase 12d: "Config from `.rewraprc` /
- * `pyproject.toml` `[tool.rewrap-plus]` / flags").
+ * — one of the CLI's configuration sources, alongside `.rewraprc` /
+ * `.rewraprc.json` and CLI flags.
  *
  * Keys are kebab-case, matching every other `[tool.*]` table's own
  * convention in the Python packaging ecosystem this file lives

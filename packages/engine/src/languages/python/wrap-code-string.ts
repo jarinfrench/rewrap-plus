@@ -7,12 +7,11 @@ import { dissolveDocstring } from './dissolve-docstring.js';
 import { emitDocstring } from './emit-docstring.js';
 
 /**
- * Wrap a *non-docstring* triple-quoted `'stringLiteral'` region — Phase
- * 12f's "Triple-quoted non-docstring code strings," the case Phase 3
- * explicitly deferred when it scoped docstring detection to syntactic
- * position only ("arbitrary triple-quoted strings are treated as ordinary
- * string literals") and Phase 9 then hard-refused outright (`./adapter.ts`'s
- * `isSafeToWrap`, until this phase).
+ * Wrap a *non-docstring* triple-quoted `'stringLiteral'` region — a case
+ * explicitly deferred when docstring detection was first scoped to
+ * syntactic position only ("arbitrary triple-quoted strings are treated
+ * as ordinary string literals") and then hard-refused outright
+ * (`./adapter.ts`'s `isSafeToWrap`), until this module.
  *
  * ## Reuses the docstring pipeline verbatim, not a fork of it
  *
@@ -24,8 +23,9 @@ import { emitDocstring } from './emit-docstring.js';
  * where CPython would recognize it as `__doc__`. Calling them here directly,
  * rather than duplicating their logic, is the same "promote once a second
  * real consumer needs it" call this project has made repeatedly (see
- * `docs/adapters.md`'s Phase 6b/12b sections) — except here the second
- * consumer needed literally the same functions, not a copy.
+ * `docs/adapters.md`'s JavaScript canary and JavaScript/TypeScript/TSX —
+ * full adapters sections) — except here the second consumer needed
+ * literally the same functions, not a copy.
  *
  * Always segments with `plainDialect` directly — paragraph/list/verbatim
  * structure only — rather than `./wrap-docstring.ts`'s `resolveDialectId`
@@ -44,9 +44,10 @@ import { emitDocstring } from './emit-docstring.js';
  * boundary inserts zero characters into the string's own runtime value
  * (see `../../strings/dissolve-string.ts`'s own doc comment). This pipeline
  * is not — PEP-257 common-indent stripping and paragraph-style whitespace
- * normalization (the same trade-off `wrapDocstring` already makes, and this
- * project has accepted since Phase 8) really do change what the string
- * evaluates to, not merely how it's laid out. That is exactly why
+ * normalization (the same trade-off `wrapDocstring` already makes, and
+ * this project has accepted since docstring wrapping was first built)
+ * really do change what the string evaluates to, not merely how it's
+ * laid out. That is exactly why
  * `isSafeToWrap` (`./adapter.ts`) gates this pipeline behind
  * `looksLikeProse` *unconditionally* — regardless of `cfg.stringPolicy`,
  * and not bypassable by a `# rewrap: force` directive either — rather than

@@ -5,8 +5,9 @@ import { type DocDialect, type DocEmitContext, reflowDocBlocks } from './dialect
 /**
  * The fallback dialect: paragraph/list/verbatim reflow only, no section
  * structure — `WrapConfig.docDialect: 'plain'`, and where `'auto'`
- * detection lands when nothing more specific is recognized ("ambiguous →
- * plain," per the plan). `segment` is a direct `splitBlocks` pass-through:
+ * detection lands when nothing more specific is recognized (an ambiguous
+ * docstring/comment falls back to plain reflow). `segment` is a direct
+ * `splitBlocks` pass-through:
  * every other dialect layers section/field parsing *on top of* the same
  * paragraph/list/verbatim primitives this dialect uses bare.
  *

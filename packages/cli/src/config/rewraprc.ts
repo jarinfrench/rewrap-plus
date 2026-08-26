@@ -1,6 +1,5 @@
 /**
- * Reads the nearest ancestor `.rewraprc` / `.rewraprc.json`
- * (`docs/implementation-plan.md`, Phase 12d).
+ * Reads the nearest ancestor `.rewraprc` / `.rewraprc.json`.
  *
  * Plain JSON, keyed exactly like `packages/vscode-extension`'s
  * `rewrapPlus.*` settings (camelCase, no `rewrapPlus.` prefix — e.g.
@@ -49,10 +48,9 @@ const DOC_DIALECTS = ['auto', 'google', 'numpy', 'sphinx', 'jsdoc', 'doxygen', '
  * `filePath`. Returns an empty config when none exists on the way up to
  * the filesystem root, or when the nearest one found is present but
  * fails to parse as valid JSON — malformed input is warned about by the
- * caller (`./resolve-config.ts`), not thrown here, matching the engine-
- * wide "skip, warn, never block" posture (`docs/implementation-plan.md`
- * decision of record) applied to a config file instead of a source
- * region.
+ * caller (`./resolve-config.ts`), not thrown here, matching this
+ * project's engine-wide "skip, warn, never block" posture applied to a
+ * config file instead of a source region.
  */
 export function resolveRewraprcConfig(filePath: string): {
   readonly config: PartialCliConfig;

@@ -7,7 +7,7 @@ import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
  *
  * `WrappableRegion` deliberately carries no live `SyntaxNode` reference —
  * only `span`/`parts`/`rawText` (see `discoverRegions`'s doc comment on why
- * `isSafeToWrap`'s signature looks the way it does) — but Phase 9's
+ * `isSafeToWrap`'s signature looks the way it does) — but the
  * paren-insertion logic (`./emit-context.ts`) needs real tree access to
  * walk a concatenation's syntactic ancestors, and `emitContext`'s own
  * signature (`../types/adapter.ts`) hands it a `Tree`, not a node. This

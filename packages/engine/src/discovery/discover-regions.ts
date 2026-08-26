@@ -29,8 +29,8 @@ export interface DiscoverRegionsOptions {
  * region list to `adapter.groupRegions` for any language-specific
  * merging. Nothing here references Python, or any other language, by
  * name — that's what keeps this reusable once a second adapter exists
- * (Phase 6b's canary is what actually proves that; this is the code the
- * canary will exercise).
+ * (the JavaScript canary adapter is what actually proves that; this is
+ * the code the canary exercises).
  *
  * `adapter.classify` returning `null` for a captured node excludes it
  * from discovery entirely (per its own doc comment on
@@ -44,7 +44,7 @@ export interface DiscoverRegionsOptions {
  * adjacent string literals into multi-part regions — e.g. Python's
  * `"a" "b" "c"` or `"a" + "b" + "c"`, each as one `WrappableRegion` with
  * three `parts`, rather than three separate regions (this is what makes
- * wrapping a concatenation idempotent; Phase 10 depends on it).
+ * wrapping a concatenation idempotent, which reflow logic depends on).
  *
  * This still isn't language-specific code: it's driven entirely by a
  * capture-name convention every `queries.concatenations` is expected to
@@ -113,8 +113,8 @@ export function discoverRegions(
       // concatenation run is always `'stringLiteral'`, never
       // `'docstring'`: CPython's `__doc__` mechanism doesn't recognize a
       // concatenated string as a docstring in the first place, so
-      // `classify` (Phase 3's docstring-position commit) never assigns
-      // `'docstring'` to a node that could end up here.
+      // `classify`'s docstring-position logic never assigns `'docstring'`
+      // to a node that could end up here.
       kind: 'stringLiteral',
       span,
       parts: leaves.map(spanOf),
@@ -198,13 +198,13 @@ export function discoverRegions(
  *
  * Iterative (explicit stack), not recursive — a long chain of
  * `+`-concatenated string literals (real Python `tree-sitter-python`
- * happily parses, and exactly the shape Phase 3's own grouping algorithm
- * exists to handle) parses left-associatively, producing an
- * `binary_operator` tree whose depth scales with operand count. A
- * recursive walk blew the actual JS call stack on such input
- * (`RangeError: Maximum call stack size exceeded` on a ~20k-operand
- * chain, caught by Phase 10's pathological-input hardening) well before
- * "deeply nested concat" as a named risk was ever exercised for real.
+ * happily parses, and exactly the shape this grouping algorithm exists
+ * to handle) parses left-associatively, producing an `binary_operator`
+ * tree whose depth scales with operand count. A recursive walk blew the
+ * actual JS call stack on such input (`RangeError: Maximum call stack
+ * size exceeded` on a ~20k-operand chain, caught by dedicated
+ * pathological-input hardening) well before "deeply nested concat" as a
+ * named risk was ever exercised for real.
  * The standard "push right then left" iterative in-order traversal below
  * has no such limit (bounded only by heap, not call-stack depth) and
  * handles right-side nesting (explicit parenthesization) the same way,

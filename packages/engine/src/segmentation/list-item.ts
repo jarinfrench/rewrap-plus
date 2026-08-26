@@ -6,7 +6,7 @@
  * Dissolved comment/docstring text is overwhelmingly space-indented in
  * practice, and treating this internally-consistent character count as a
  * column is enough to detect and align list continuations; genuine tab
- * handling inside dissolved text is deferred to Phase 5's display-width
+ * handling inside dissolved text is deferred to display-width's own
  * work, same as word width itself (see `./atomize-words.ts`).
  */
 export interface ListMarkerMatch {
@@ -25,9 +25,9 @@ export interface ListMarkerMatch {
 }
 
 /**
- * Bullets per the plan: `-`, `*`, `+`, `•`.
+ * Recognized bullet markers: `-`, `*`, `+`, `•`.
  *
- * Ordered markers per the plan's examples (`1.`, `1)`, `a.`, `i.`):
+ * Recognized ordered markers (`1.`, `1)`, `a.`, `i.`):
  * digits, a single letter, or a short (1-4 character) run of roman-
  * numeral letters. The roman alternative is tried before the bare
  * single-letter one so a multi-letter roman numeral like `iv.` or `xii.`
@@ -69,7 +69,7 @@ export function matchListMarker(line: string): ListMarkerMatch | null {
  * A continuation line must be non-blank, must not itself be a list marker
  * (a marker line always starts a fresh `listItem` — including a *nested*
  * one, which this module represents simply as another top-level
- * `listItem` block with a deeper `hangingIndent`, per the plan: `Block` is
+ * `listItem` block with a deeper `hangingIndent`: `Block` is
  * a flat sequence, so nesting is encoded positionally rather than as a
  * tree), and must be indented further than the marker itself — i.e. it
  * sits visually "under" the item, not back out at the marker's own

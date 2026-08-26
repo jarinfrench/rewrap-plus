@@ -1,14 +1,12 @@
 /**
  * Display width in terminal/editor columns, not character count.
  *
- * Phase 5 ("add display width calculation for wide and combining
- * characters"): East Asian Wide and Fullwidth characters count as 2
+ * East Asian Wide and Fullwidth characters count as 2
  * columns; combining marks count as 0. This matters for two of this
  * project's routine cases — CJK text in comments/docstrings, and emoji
  * (themselves largely East Asian Wide-adjacent ranges) in docstrings —
- * where `text.length` (the Phase 1-4 stand-in) silently over- or
- * under-counts, letting reflow either wrap too early or run a line past
- * the actual column limit.
+ * where `text.length` silently over- or under-counts, letting reflow
+ * either wrap too early or run a line past the actual column limit.
  *
  * Deliberately dependency-free: the engine's only runtime dependency is
  * `web-tree-sitter` (see `package.json` and the project's "keep the

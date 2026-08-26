@@ -21,7 +21,7 @@ import { wrapCodeString } from './wrap-code-string.js';
  * generically from `../../wrap.ts` the way `'lineComment'`/`'blockComment'`
  * are.
  *
- * ## Phase 12f: triple-quoted regions fork to a different whole pipeline
+ * ## Triple-quoted regions fork to a different whole pipeline
  *
  * A single-part triple-quoted `'stringLiteral'` (`isSafeToWrap` having
  * already confirmed it's both that shape and prose-eligible — see
@@ -36,11 +36,11 @@ import { wrapCodeString } from './wrap-code-string.js';
  *
  * ## Choosing the hanging indent
  *
- * The plan calls for "continuation lines indented to the opening delimiter
- * or +4, per setting" but `WrapConfig` gained no dedicated setting for
- * this choice in Phase 7 — adding one now would be new settings-schema
- * surface `packages/vscode-extension` doesn't yet expose, for a decision
- * the plan itself frames as a style preference, not a correctness
+ * Continuation lines could in principle be indented to the opening
+ * delimiter or to a fixed +4, selectable per setting, but `WrapConfig`
+ * has no dedicated setting for this choice — adding one now would be new
+ * settings-schema surface `packages/vscode-extension` doesn't yet
+ * expose, for a decision that's a style preference, not a correctness
  * requirement. This always uses the second option (`+4`, matching Black's
  * own hanging-indent convention): the *statement's own* line indentation
  * (the source line the region starts on, tab-expanded the same way
@@ -49,9 +49,9 @@ import { wrapCodeString } from './wrap-code-string.js';
  * own column mid-line (`x = "..."`'s string starts well past the
  * statement's own indent) and would misplace every continuation line for
  * anything but a docstring-like region starting a line of its own. A known,
- * explicitly documented Phase 9 simplification, not an oversight — see
- * this module's own commit message for the "or +4" wording this
- * intentionally settles on.
+ * explicitly documented simplification, not an oversight — see this
+ * module's own commit message for the "or +4" wording this intentionally
+ * settles on.
  */
 export function wrapString(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string {
   if (isSingleTripleQuotedLiteral(region, source)) {

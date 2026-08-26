@@ -2,9 +2,9 @@ import { pythonAdapter } from '../../src/languages/python/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * The kit's own first real workout: run it against the adapter Phase 6
- * already shipped, before Phase 6b's canary JavaScript adapter exists to
- * prove genericity too. If this suite fails, the kit itself has a bug —
+ * The kit's own first real workout: run it against the Python adapter,
+ * ahead of the JavaScript canary adapter that exists to prove
+ * genericity too. If this suite fails, the kit itself has a bug —
  * Python's line-comment wrapping already has its own dedicated gold
  * fixtures (`../wrap/python-comment-wrap-fixtures.test.ts`) passing
  * independently of this file.
@@ -25,7 +25,7 @@ const CRLF_SOURCE =
 const LF_SOURCE = CRLF_SOURCE.replace(/\r\n/g, '\n');
 
 /**
- * A second source pair, this time exercising Phase 8's `'docstring'`
+ * A second source pair, this time exercising the `'docstring'`
  * region kind — `wrapDocstring` (`../../src/languages/python/wrap-docstring.ts`)
  * had no conformance coverage at all until this addition, since neither
  * source above contains a docstring.

@@ -50,9 +50,9 @@ describe('displayWidth', () => {
   });
 
   it('counts smart quotes and em-dashes as one column, not two', () => {
-    // These are exactly the non-ASCII characters the plan flags as
-    // "extremely common" in docstrings (Phase 1's UTF-16/UTF-8 note) —
-    // and they are emphatically narrow, unlike CJK punctuation.
+    // These are exactly the non-ASCII characters flagged as
+    // "extremely common" in docstrings — and they are emphatically
+    // narrow, unlike CJK punctuation.
     expect(displayWidth('\u2018quoted\u2019')).toBe(8);
     expect(displayWidth('em\u2014dash')).toBe(7);
   });

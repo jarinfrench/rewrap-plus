@@ -4,8 +4,8 @@
  * `packages/vscode-extension/src/engine-host.ts`. Structurally the same
  * job (which adapters are registered, where their grammar WASM loads
  * from), but the mechanics are far simpler here, which is itself the
- * finding this module exists to demonstrate: `docs/adapters.md`'s Phase
- * 12d section on why.
+ * finding this module exists to demonstrate: `docs/adapters.md`'s CLI
+ * section on why.
  *
  * ## Why this file needs none of the extension's ESM/CJS workarounds
  *
@@ -18,11 +18,11 @@
  * its own `package.json` — nothing forces it into CommonJS — so it
  * imports `@rewrap-plus/engine` with a perfectly ordinary static
  * `import` statement, exactly like any other ESM package depending on
- * another. This is the plan's own acceptance criterion for Phase 12d
- * made concrete: "if the CLI needs engine changes, the seam leaked" — it
- * turns out the *engine* needed zero changes, and even the glue-layer
- * friction the extension had to solve turns out to have been a VSCode-
- * hosting artifact, not an engine one.
+ * another. The acceptance criterion that matters here is concrete: "if
+ * the CLI needs engine changes, the seam leaked" — it turns out the
+ * *engine* needed zero changes, and even the glue-layer friction the
+ * extension had to solve turns out to have been a VSCode-hosting
+ * artifact, not an engine one.
  *
  * ## Why `require.resolve` is the right answer here, not a workaround
  *

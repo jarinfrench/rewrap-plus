@@ -110,9 +110,10 @@ describe('ParserManager', () => {
     const registry = new AdapterRegistry();
     registry.register(makeAdapter({ id: 'python' }));
     // Reuses the vendored Python grammar under a second synthetic id —
-    // there's no second grammar vendored yet (that's Phase 6b's canary
-    // JS adapter), but this is enough to prove distinct descriptor ids
-    // are cached, and therefore loaded, independently of one another.
+    // this keeps the test focused on cache-key behavior rather than on
+    // loading a distinct grammar file, and is enough to prove distinct
+    // descriptor ids are cached, and therefore loaded, independently of
+    // one another.
     registry.register(makeAdapter({ id: 'python-again' }));
     const manager = await ParserManager.create({ wasmDir: engineRoot, registry });
 

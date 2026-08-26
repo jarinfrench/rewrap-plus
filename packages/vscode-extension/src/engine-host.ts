@@ -3,10 +3,10 @@
  * extension process: which language adapters are registered, and where
  * their grammar WASM is loaded from.
  *
- * Kept separate from `extension.ts` so command modules (Phase 7, commits
- * 5-7) can import `getParserManager()`/`getEngine()` without pulling in
- * activation plumbing, and so the v1 language scope decision below lives
- * in exactly one place.
+ * Kept separate from `extension.ts` so command modules (commits 5-7)
+ * can import `getParserManager()`/`getEngine()` without pulling in
+ * activation plumbing, and so the adapter-registration decision below
+ * lives in exactly one place.
  *
  * ## Why `getEngine()` uses a dynamic `import()`, not a static one
  *
@@ -110,25 +110,28 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * v1 language scope was Python only (decision of record); Phase 12b adds
- * the real JavaScript/TypeScript/TSX adapters here — the engine's
- * `javascriptAdapter` was, until this phase, purely a Phase 6b
- * conformance canary proving the adapter interface generalizes (see
- * `docs/adapters.md`), deliberately *not* registered here so
- * `getSupportedLanguages()` wouldn't advertise JS support that didn't
- * actually exist yet. That canary is now the real, full adapter (strings,
- * concatenation, JSDoc doc comments) — see `docs/adapters.md`'s Phase 12b
+ * `createRegistry()` (below) registers five adapters — `pythonAdapter`,
+ * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`, and
+ * `cppAdapter` — and this list is the one deliberate place deciding what's
+ * actually user-facing, since `getSupportedLanguages()` (below) drives
+ * which documents the extension's commands and formatters activate for.
+ * The engine's `javascriptAdapter` didn't start out registered here: it
+ * began as a conformance canary proving the adapter interface generalizes
+ * beyond Python (see `docs/adapters.md`'s JavaScript canary section),
+ * deliberately *not* registered here so `getSupportedLanguages()` wouldn't
+ * advertise JS support that didn't actually exist yet. That canary is now
+ * the real, full adapter (strings, concatenation, JSDoc doc comments) —
+ * see `docs/adapters.md`'s JavaScript/TypeScript/TSX — full adapters
  * section — so it's registered alongside its `typescript`/`typescriptreact`
  * siblings. `javascriptAdapter`'s own `javascriptreact` alias and
- * `AdapterRegistry.supportedLanguages()` (fixed this same phase to
- * actually include aliases — see that method's own doc comment) are what
- * make `.jsx` files supported here too, with no separate registration
- * needed for it the way `.tsx` needs one (a genuinely different grammar,
- * not an alias — `../../engine/src/languages/typescript/descriptor.ts`'s
- * own doc comment explains why). Phase 12c adds `cppAdapter` (`'cpp'`)
- * alongside them — a real adapter from the start, unlike JavaScript's
- * canary-then-real path, since C++ had no Phase-6b-equivalent thin
- * precursor to extend.
+ * `AdapterRegistry.supportedLanguages()` (which includes aliases — see
+ * that method's own doc comment) are what make `.jsx` files supported
+ * here too, with no separate registration needed for it the way `.tsx`
+ * needs one (a genuinely different grammar, not an alias —
+ * `../../engine/src/languages/typescript/descriptor.ts`'s own doc comment
+ * explains why). `cppAdapter` (`'cpp'`) is a real adapter from the start,
+ * unlike JavaScript's canary-then-real path, since C++ had no equivalent
+ * thin precursor to extend.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -157,7 +160,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   return registry;
 }
 
-/** Every VSCode languageId (and alias) a registered adapter supports — see `getRegistry()`'s doc comment for v1's Python-only scope. */
+/** Every VSCode languageId (and alias) a registered adapter supports — see `getRegistry()`'s doc comment for which adapters that includes and why. */
 export async function getSupportedLanguages(): Promise<readonly string[]> {
   const registry = await getRegistry();
   return registry.supportedLanguages();

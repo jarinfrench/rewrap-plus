@@ -3,11 +3,10 @@
  * row?" — precomputed once per `wrapRegions` call (`./wrap.ts`) by
  * scanning the whole source for `# rewrap: ...`/`# fmt: ...` comments,
  * independent of region discovery. Deliberately engine-level and
- * region-kind-agnostic — Phase 9's plan names this "engine: add directive
- * comment support for opt-in and opt-out," not a Python- or
- * string-specific concern, even though a string's own `stringPolicy:
- * 'prose'` gate (`./wrap.ts`) is the only place `isForcedAt` currently has
- * anything to override.
+ * region-kind-agnostic — this is opt-in and opt-out directive comment
+ * support, not a Python- or string-specific concern, even though a
+ * string's own `stringPolicy: 'prose'` gate (`./wrap.ts`) is the only
+ * place `isForcedAt` currently has anything to override.
  */
 export interface DirectiveScan {
   /** Is `row` inside a directive `off` .. `on` range? */
@@ -27,15 +26,17 @@ export interface DirectiveScan {
  * ignore/force entry for `fmt`, rather than needing a second, narrower
  * pattern.
  *
- * `marker` is regex-escaped before being spliced in — Phase 12b found this
- * hardcoded to a literal `#` (Python's own marker) despite this module's
- * own doc comment already framing directive support as "engine-level and
+ * `marker` is regex-escaped before being spliced in — the
+ * JavaScript/TypeScript/TSX adapters found this hardcoded to a literal
+ * `#` (Python's own marker) despite this module's own doc comment
+ * already framing directive support as "engine-level and
  * region-kind-agnostic," which would have silently meant `// rewrap: off`
  * never worked for the first real non-Python adapter. Documented in
- * `docs/adapters.md` alongside Phase 6b's own leaked-assumption writeups —
- * the same shape of bug (a Python-only literal baked into ostensibly
- * generic code), just found a phase later since nothing before Phase 12b
- * exercised a second real `comments.line.marker` value through this path.
+ * `docs/adapters.md` alongside the JavaScript canary's own
+ * leaked-assumption writeups — the same shape of bug (a Python-only
+ * literal baked into ostensibly generic code), just found later since
+ * nothing before then exercised a second real `comments.line.marker`
+ * value through this path.
  */
 function buildDirectivePattern(marker: string): RegExp {
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

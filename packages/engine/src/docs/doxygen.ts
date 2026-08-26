@@ -51,7 +51,7 @@ function matchDoxygenEntry(line: string): EntryStartMatch | null {
  * (`///`-repeated triple-slash lines, `//!`, `/*! ... * /`) — those are a
  * genuinely different delimiter *shape* (no single open/close pair the
  * existing `comments.block`-driven dissolve/emit machinery can express;
- * see `docs/adapters.md`'s Phase 12c section for the full reasoning), not
+ * see `docs/adapters.md`'s C++ section for the full reasoning), not
  * a dialect concern. This dialect only ever receives text already
  * dissolved from a `/** ... * /`-shaped region, whichever adapter feeds it.
  */

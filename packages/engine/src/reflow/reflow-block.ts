@@ -7,17 +7,16 @@ export interface ReflowOptions {
   /**
    * `'greedy'` (default) — first-fit: fill each line as much as
    * possible before wrapping. Matches Rewrap's behavior and user
-   * expectation, per the plan.
+   * expectation.
    *
    * `'balanced'` — minimum-raggedness: choose break points that
-   * minimize the total squared slack across all lines but the last
-   * (Phase 5, "add optional balanced (minimum-raggedness) reflow
-   * mode"), the same family of algorithm TeX/Knuth–Plass uses for
+   * minimize the total squared slack across all lines but the last,
+   * the same family of algorithm TeX/Knuth–Plass uses for
    * paragraph justification. Often visibly nicer for short docstrings,
    * where greedy's tendency to cram every line but the last can leave
    * one dramatically shorter final line; balanced spreads the
    * raggedness out instead. Behind `WrapConfig.balancedWrapping`
-   * (default off, wired in Phase 7) since it costs more to compute and
+   * (default off) since it costs more to compute and
    * greedy is the more predictable, more widely-expected default.
    */
   readonly mode?: 'greedy' | 'balanced';
@@ -53,29 +52,28 @@ export interface ReflowOptions {
 
 /**
  * Reflow one `Block`'s content to `availableWidth` columns, indenting
- * every line after the first by `hangingIndent` spaces (Phase 5,
- * "implement greedy reflow with width and indent constraints").
+ * every line after the first by `hangingIndent` spaces.
  *
  * Only `paragraph`, `listItem`, and `fieldEntry` have atoms to reflow;
  * the other three `Block` variants pass through basically unchanged,
- * matching how Phase 4 already treats them ("`verbatim` is the escape
+ * matching how `splitBlocks` already treats them ("`verbatim` is the escape
  * hatch that makes 'preserve formatting' tractable"):
  *
  * - `blank` — a single empty line.
  * - `verbatim` — its `lines`, untouched. Reflowing a fenced code block,
  *   a doctest, or an ASCII table would corrupt it; that's the entire
- *   reason `splitBlocks` (Phase 4) routed this content to `verbatim`
+ *   reason `splitBlocks` routed this content to `verbatim`
  *   instead of `paragraph` in the first place.
  * - `sectionHeader` — its `text` as one line. Headers ("Args:", a NumPy
  *   underline) are structural markers, not prose to fill; reflowing one
  *   would break whatever fixed relationship it has to its section (see
- *   Phase 8's NumPy commit: "underline length re-synced to header
+ *   the NumPy dialect's own handling: "underline length re-synced to header
  *   length if the header is untouched").
  *
  * For `paragraph`/`listItem`/`fieldEntry`, this deliberately reflows
  * only the atom stream — it does **not** prepend a list marker or field
- * label. Those belong to the region's own dissolve/emit step (Phase 6+,
- * per-language and, for doc dialects, per-dialect — see Phase 8's
+ * label. Those belong to the region's own dissolve/emit step
+ * (per-language and, for doc dialects, per-dialect — see
  * `DocDialect.emit`), which is the only code that knows the marker's
  * *display* form (bullet character, renumbered ordinal, dialect-specific
  * field syntax like `:param x:`). Keeping that concern out of this
@@ -90,7 +88,7 @@ export interface ReflowOptions {
  * budget the caller resolved (`columnLimit - indentColumn`, in the
  * pipeline's terms). A block's own `hangingIndent` field (`listItem`,
  * `fieldEntry`) is *not* read directly here — the caller decides what
- * value to pass, since Phase 8 dialects may want alignment that differs
+ * value to pass, since a doc dialect may want alignment that differs
  * from the raw marker width (e.g. aligning under a parameter name rather
  * than under the bullet).
  *
@@ -100,7 +98,7 @@ export interface ReflowOptions {
  * own doc comment for why this is a separate knob from `hangingIndent`
  * rather than folded into it.
  *
- * **Overflow rule** (the plan's decision #5): an atom wider than its
+ * **Overflow rule**: an atom wider than its
  * line's available width is placed alone on that line and allowed to
  * exceed the limit — never force-split mid-atom. This is what makes a
  * lone 90-column URL survive intact instead of being mangled. Holds
@@ -130,7 +128,7 @@ export function reflowBlock(
 }
 
 /**
- * Greedy first-fit line breaking (matches the plan's stated goal: "match
+ * Greedy first-fit line breaking (matches the stated goal: "match
  * Rewrap's behavior and user expectation"). Walks the atom stream once,
  * adding each atom to the current line if it fits and starting a new
  * line otherwise; never looks ahead or reconsiders a placed atom (that's

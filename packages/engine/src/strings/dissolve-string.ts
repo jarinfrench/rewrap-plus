@@ -36,9 +36,8 @@ export interface DissolvedString {
  * a triple-quoted `'stringLiteral'` region never reaches this function,
  * since `isSafeToWrap` (`./adapter.ts`) marks one unsafe before dissolve is
  * ever called (see that function's own doc comment on why triple-quoted
- * *ordinary* strings are Phase 9's deliberate scope limit, matching the
- * plan's own Phase 12f framing: "Triple-quoted non-docstring code strings
- * (the deferred case)"). A part that somehow doesn't match this narrower
+ * *ordinary* strings are a deliberate scope limit here: triple-quoted
+ * non-docstring code strings are the deferred case). A part that somehow doesn't match this narrower
  * pattern is a genuine contract violation from whatever built the region,
  * so this throws rather than guessing — the same posture
  * `dissolveDocstring` takes for its own prefix/quote mismatch.
@@ -68,26 +67,26 @@ function parsePart(raw: string): StringPartInfo {
  * concatenation run of them — into its merged logical text plus the
  * quote/prefix metadata `./emit-string.ts` needs to re-quote it.
  *
- * ## Promoted out of `languages/python/` in Phase 12b
+ * ## Promoted out of `languages/python/`
  *
- * Written for Python (Phase 9) but never actually Python-specific in its
+ * Originally written for Python but never actually Python-specific in its
  * *implementation* — every operation here works off a part's own raw text
  * via `PREFIX_AND_QUOTE`, a regex general enough to match a zero-length,
  * letters-only prefix before a single- or double-quote delimiter, which is
  * exactly JavaScript/TypeScript's shape too (no prefix at all — the empty
- * match — and no triple-quote form to special-case around). Phase 12b's
+ * match — and no triple-quote form to special-case around). The
  * TypeScript adapter needed the identical logic verbatim, which is the same
- * "promote once a second real consumer needs it" call Phase 6b already
+ * "promote once a second real consumer needs it" call already
  * made for `comments/dissolve-line-comments.ts`/`emit-line-comments.ts` (see
- * `docs/adapters.md`) — not a new abstraction invented speculatively, but
+ * `docs/adapters.md`'s JavaScript canary section) — not a new abstraction invented speculatively, but
  * the same one this project has already used twice.
  *
  * ## Deliberately no real unescaping
  *
- * The plan's own pipeline vocabulary calls dissolve's job "strip syntax,
- * unescape, recover logical text" — but decoding an escape sequence into
- * its real character here would actively work against Phase 5's own
- * segmentation design, not cooperate with it. `atomizeWords`
+ * Dissolve's job is "strip syntax, unescape, recover logical text" — but
+ * decoding an escape sequence into its real character here would
+ * actively work against segmentation's own design, not cooperate with
+ * it. `atomizeWords`
  * (`../../segmentation/atomize-words.ts`) already treats every recognized
  * escape sequence (`\n`, `\t`, `\x41`, ...) as one opaque, unsplittable
  * atom — exactly so reflow can move it as a unit without knowing what it
@@ -95,8 +94,8 @@ function parsePart(raw: string): StringPartInfo {
  * make `atomizeWords`'s own whitespace scanner treat it as a word
  * *separator* instead, silently discarding the escape entirely on
  * re-emission — a real value change, not merely a formatting one, and
- * exactly the "silent string corruption" the plan calls its central risk
- * for this phase. Leaving every escape exactly as written and letting the
+ * exactly the kind of silent string corruption this module exists to
+ * avoid. Leaving every escape exactly as written and letting the
  * existing unbreakable-span machinery carry it through untouched is both
  * simpler and strictly safer: nothing here ever has to *re*-encode an
  * escape on emit, because nothing decoded it in the first place.
@@ -119,8 +118,8 @@ function parsePart(raw: string): StringPartInfo {
  * exact-case prefix for the whole merged result is lossless. Quote
  * delimiter is not equally guaranteed (`"it's" 'safe'` mixes styles and
  * is perfectly legal Python) — the first part's own delimiter is reused
- * for every emitted part regardless, matching the plan's "record original
- * quote style" (singular): once parts are merged and freely reflowed
+ * for every emitted part regardless: the design records a single original
+ * quote style, not one per part, since once parts are merged and freely reflowed
  * across new line boundaries, there is no single further "original style"
  * left to preserve per output line, so one consistent choice is what
  * `escapeQuoteCollisions` is there to make safe.

@@ -11,9 +11,8 @@ export interface UnbreakableSpan {
 }
 
 /**
- * Patterns for the unbreakable forms the plan calls out for atom
- * segmentation (Phase 5, "add atom segmentation with unbreakable unit
- * support"):
+ * Patterns for the unbreakable forms atom segmentation needs to
+ * recognize:
  *
  * - escape sequences (`\n`, `\t`, `\\`, `\x41`, `\u1234`, `\U0001F600`,
  *   `\N{NAME}`) — none of these contain whitespace, so word-splitting

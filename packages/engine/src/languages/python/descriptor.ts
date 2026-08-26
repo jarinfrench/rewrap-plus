@@ -6,10 +6,10 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  * Node names and shapes below were verified against the vendored grammar
  * (`tree-sitter-python@0.25.0`, `packages/engine/grammars/`) with a
  * throwaway probe script, not trusted from memory — the same discipline
- * Phase 2's spike used and documented in `docs/parsing.md`; see that
- * file's own warning ("don't trust memory here") and Phase 3's commit
- * introducing `queries.concatenations` for the specific findings this
- * descriptor depends on (`concatenated_string`'s children are always
+ * used and documented in `docs/parsing.md`; see that file's own warning
+ * ("don't trust memory here") and the commit introducing
+ * `queries.concatenations` for the specific findings this descriptor
+ * depends on (`concatenated_string`'s children are always
  * plain `string` nodes; `binary_operator` exposes `left`/`operator`/
  * `right` fields; a `string` node's `string_start` child carries the
  * prefix and opening quote as one token, e.g. `rb"`, `f"`, `"""`).
@@ -49,20 +49,20 @@ export const pythonDescriptor: LanguageDescriptor = {
     line: { marker: '#', spaceAfter: true },
 
     // Python has no block-comment syntax — every `#` comment is a line
-    // comment, so `comments.block` is intentionally left unset. Phase 6b
-    // introduces the first descriptor that *does* set it (the canary
-    // JavaScript adapter, `/** */` and friends), specifically so that
-    // path isn't exercised for the first time by a language that also
-    // has every other kind of complexity Python does.
+    // comment, so `comments.block` is intentionally left unset. The
+    // canary JavaScript adapter (`/** */` and friends) was deliberately
+    // the first descriptor to set it, specifically so that path isn't
+    // exercised for the first time by a language that also has every
+    // other kind of complexity Python does.
     doc: { markers: ['"""', "'''"], dialects: ['google', 'numpy', 'sphinx', 'plain'] },
 
     // Directive comments that must never be reflowed regardless of
     // policy — moving one to a different line changes program behavior
     // (shebang, encoding declaration, inline type comments) or a
-    // tool's own opt-out (`noqa`, `pylint:`, `fmt:`). This is Phase 6
-    // territory to *act on*, but the patterns belong on the descriptor —
-    // static data about Python's own comment conventions — so they're
-    // populated here rather than invented ad hoc later.
+    // tool's own opt-out (`noqa`, `pylint:`, `fmt:`). Acting on these is
+    // wrapping-time behavior elsewhere, but the patterns belong on the
+    // descriptor — static data about Python's own comment conventions —
+    // so they're populated here rather than invented ad hoc later.
     neverReflow: [
       /^#!/, // shebang
       /^#\s*-\*-.*-\*-\s*$/, // PEP 263 coding declaration, e.g. `# -*- coding: utf-8 -*-`
@@ -70,11 +70,11 @@ export const pythonDescriptor: LanguageDescriptor = {
       /^#\s*noqa\b/i,
       /^#\s*pylint:\s*/,
       /^#\s*pragma\b/i,
-      /^#\s*fmt:\s*(on|off)\b/i, // Black's own directive (Phase 9 honors these too)
+      /^#\s*fmt:\s*(on|off)\b/i, // Black's own directive (honored elsewhere too)
     ],
 
     // Statement/definition keywords, decorators, and shebangs enough on
-    // their own to call a dissolved comment line code-like (Phase 6's
+    // their own to call a dissolved comment line code-like (the
     // commented-out-code detection, `../../comments/looks-like-code.ts`)
     // without needing the punctuation-density signal too. Anchored to
     // the start of the (already-trimmed) line: these are keywords Python
@@ -83,10 +83,10 @@ export const pythonDescriptor: LanguageDescriptor = {
     // (rare enough, and the same failure mode a real linter accepts).
     //
     // Originally hardcoded inside the (Python-only) dissolve
-    // implementation; moved here in Phase 6b once the JavaScript canary
-    // adapter confirmed the *pattern* was the only Python-specific part
-    // of that logic — see `../../comments/looks-like-code.ts`'s own doc
-    // comment and `docs/adapters.md`.
+    // implementation; moved here once the JavaScript canary adapter
+    // confirmed the *pattern* was the only Python-specific part of that
+    // logic — see `../../comments/looks-like-code.ts`'s own doc comment
+    // and `docs/adapters.md`.
     codeLikeKeywords:
       /^(def |class |import |from |return\b|if |elif |else\s*:|for |while |with |try\s*:|except|finally\s*:|raise |yield |lambda |async |await |assert |global |nonlocal |del |pass\s*$|break\s*$|continue\s*$|@\w|#!)/,
   },
@@ -103,9 +103,9 @@ export const pythonDescriptor: LanguageDescriptor = {
     // ("R" vs "r", "Rb" vs "rb") is explicitly the adapter's concern per
     // `PrefixSpec.prefix`'s own doc comment, not the descriptor's. `rf`
     // and `rb` stand in for both orderings (`rf`/`fr`, `rb`/`br`); the
-    // adapter's prefix parsing (added later in this phase) normalizes
-    // whichever order it finds in source to these canonical forms before
-    // matching against this list.
+    // adapter's own prefix parsing normalizes whichever order it finds
+    // in source to these canonical forms before matching against this
+    // list.
     prefixes: [
       { prefix: '' },
       { prefix: 'u' },
@@ -117,7 +117,7 @@ export const pythonDescriptor: LanguageDescriptor = {
     ],
 
     // Python has no separate raw-form delimiter pair (unlike C++'s
-    // `R"(...)"`, Phase 12c) — rawness is entirely prefix-driven, via the
+    // `R"(...)"`) — rawness is entirely prefix-driven, via the
     // `r`/`rf`/`rb` entries above.
     rawForms: [],
 

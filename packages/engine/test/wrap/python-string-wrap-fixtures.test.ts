@@ -52,7 +52,7 @@ import negTripleCodeLikeIn from '../fixtures/python/strings/neg-012-triple-quote
 import negTripleCodeLikeOut from '../fixtures/python/strings/neg-012-triple-quoted-code-like.out.py?raw';
 
 /**
- * Phase 9's stated acceptance criterion: "All string fixtures pass; the
+ * The stated acceptance criterion: "All string fixtures pass; the
  * eval-equivalence test passes for every wrapped string; every negative
  * fixture is byte-identical after wrapping." Mirrors
  * `./python-docstring-wrap-fixtures.test.ts`'s own structure and
@@ -69,10 +69,10 @@ interface Fixture {
   readonly name: string;
   readonly input: string;
   readonly expected: string;
-  /** `true` for a fixture the plan expects to actually be wrapped. */
+  /** `true` for a fixture that's expected to actually be wrapped. */
   readonly positive: boolean;
   /**
-   * `false` only for Phase 12f's two triple-quoted-prose fixtures (008,
+   * `false` only for the two triple-quoted-prose fixtures (008,
    * 009) — every other positive fixture goes through the concatenation-
    * based `wrapString` pipeline, which is value-preserving by construction
    * (`../../src/strings/dissolve-string.ts`'s own doc comment), so the
@@ -238,7 +238,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
   });
 
   it("eval-equivalence: every value-preserving positive fixture's wrapped value equals its original value", () => {
-    // The plan's own strongest guard against silent corruption: "eval
+    // The strongest guard against silent corruption: "eval
     // the string expression before and after and assert equality." No
     // Python interpreter is available in this project's toolchain (nor
     // should one need to be, for a TypeScript engine with zero runtime
@@ -249,7 +249,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     // module's own doc comment for the full rationale.
     //
     // Filtered to `valuePreserving` fixtures only (every one except
-    // Phase 12f's 008/009 — see the `Fixture` interface's own doc comment
+    // 008/009 — see the `Fixture` interface's own doc comment
     // on that field): `extractConcatenatedStringValue` doesn't even
     // attempt to decode triple-quoted content (documented as out of scope
     // in `../support/decode-python-string.ts`), and more fundamentally,
@@ -271,7 +271,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('covers the cases the plan calls out for this phase', () => {
+  it('covers the cases string wrapping is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases if a fixture were ever
     // renamed or removed without a replacement.

@@ -10,8 +10,8 @@ export const WRAP_DOCUMENT_COMMAND = 'rewrapPlus.wrapDocument';
 
 /**
  * Line count above which `wrapDocument` shows a cancellable progress
- * notification instead of running silently (Phase 10, "large-file
- * guardrails"). `docs/benchmarks.md` has the measurements this is based
+ * notification instead of running silently, as a large-file guardrail.
+ * `docs/benchmarks.md` has the measurements this is based
  * on: a realistic file at this size finishes in a small fraction of a
  * second (the cost that actually matters scales with how many *wrappable
  * regions* the file has, not its raw line count — see that doc's own

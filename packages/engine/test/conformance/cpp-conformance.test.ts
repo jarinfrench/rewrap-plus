@@ -2,7 +2,7 @@ import { cppAdapter } from '../../src/languages/cpp/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Phase 12c's own adapter through the identical conformance suite Python,
+ * The C++ adapter through the identical conformance suite Python,
  * JavaScript, TypeScript, and TSX already pass — see
  * `./javascript-conformance.test.ts` for the same rationale. Sources
  * below exercise `//`, Doxygen-shaped `/**`, and a bare-adjacency string

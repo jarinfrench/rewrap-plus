@@ -1,10 +1,9 @@
 /**
  * Test-only reimplementation of enough of Python's own non-raw string
  * escape decoding to support an eval-equivalence check
- * (`../wrap/python-string-wrap-fixtures.test.ts`): "for every positive
+ * (`../wrap/python-string-wrap-fixtures.test.ts`): for every positive
  * fixture, eval the string expression before and after and assert
- * equality" (the plan's own words for this phase's strongest possible
- * guard against silent corruption).
+ * equality — the strongest possible guard against silent corruption.
  *
  * This is deliberately never shipped in engine runtime code — production
  * `dissolveString`/`emitString` (`../../src/languages/python/`) never

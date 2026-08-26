@@ -7,16 +7,16 @@ import { pythonAdapter } from '../../src/languages/python/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Phase 10, "harden parse error and unsafe region handling": the plan's
- * own named pathological-input list ("single 100k-char string, deeply
- * nested concat, file with no trailing newline, CRLF line endings, mixed
+ * Hardening parse error and unsafe region handling: a named
+ * pathological-input list ("single 100k-char string, deeply nested
+ * concat, file with no trailing newline, CRLF line endings, mixed
  * tabs/spaces") plus the "region overlapping an error span → skip with
  * reason, never partial-edit" invariant. CRLF line endings get their own
- * dedicated coverage in `./line-ending-preservation.test.ts` (Phase 10's
- * next commit) rather than here.
+ * dedicated coverage in `./line-ending-preservation.test.ts` rather than
+ * here.
  *
- * Two real bugs surfaced while writing these — not hypothetical risks the
- * plan merely anticipated:
+ * Two real bugs surfaced while writing these — not hypothetical risks
+ * merely anticipated in advance:
  *
  * - `parseWithErrors`' `collectErrorSpans` and `discoverRegions`'
  *   `collectOperatorChainLeaves` were both recursive, one call frame per
@@ -111,7 +111,7 @@ describe('pathological input hardening', () => {
     const result = await wrapRegions(source, 'python', 'all', cfg, parserManager);
     expect(result.edits.length + result.skipped.length).toBeGreaterThan(0);
 
-    // Idempotent, same as every other fixture (Phase 10's own headline
+    // Idempotent, same as every other fixture (this suite's own headline
     // property) — proves the pathological-sized input isn't just "doesn't
     // crash" but actually produces a stable, well-formed result.
     const wrapped = applyTextEdits(source, result.edits);

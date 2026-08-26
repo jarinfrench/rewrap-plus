@@ -11,7 +11,7 @@
  * `web-tree-sitter` external" — see `scripts/build.mjs`'s top comment for
  * the first (bundling its ESM build breaks its own WASM loading via
  * `import.meta.url`, fixed by resolving its `.cjs` build instead). The
- * second only showed up while wiring up packaging (Phase 11 commit 2):
+ * second only showed up while wiring up packaging (commit 2):
  * `external` downlevels to a plain `require('web-tree-sitter')`, which
  * needs a real `node_modules/web-tree-sitter` reachable from
  * `dist/extension.js`. Copying one to this package's own

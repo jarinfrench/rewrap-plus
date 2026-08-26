@@ -12,8 +12,8 @@ import plainIn from '../fixtures/javascript/doc-comments/002-plain-narrative.in.
 import plainOut from '../fixtures/javascript/doc-comments/002-plain-narrative.out.js?raw';
 
 /**
- * Phase 12b's gold fixtures for `'docComment'` regions — the JSDoc
- * dialect (`../../src/docs/jsdoc.ts`) applied through the new generic
+ * Gold fixtures for `'docComment'` regions — the JSDoc
+ * dialect (`../../src/docs/jsdoc.ts`) applied through the generic
  * `wrapDocComment` (`../../src/comments/wrap-doc-comment.ts`), end to end
  * via `wrapRegions`. Mirrors this package's established fixture-driven
  * convention (`./python-docstring-wrap-fixtures.test.ts`).

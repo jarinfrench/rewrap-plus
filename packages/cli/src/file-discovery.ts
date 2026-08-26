@@ -105,6 +105,6 @@ function walkDirectory(dir: string, out: DiscoveredFile[]): void {
 // - Not `.gitignore`-aware: a project-specific ignore rule beyond the
 //   fixed `DEFAULT_IGNORED_DIR_NAMES` set above isn't consulted. Real,
 //   separate scope (a `.gitignore` parser is a project of its own) that
-//   nothing in the plan's Phase 12d text asks for.
+//   this tool doesn't need to take on.
 // - Symlinked directories are not followed (`readdirSync`'s own default
 //   behavior) — avoids an unbounded/cyclic walk from a symlink loop.

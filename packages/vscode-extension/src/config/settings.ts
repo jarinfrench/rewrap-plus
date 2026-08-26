@@ -36,26 +36,25 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     wrapComments: config.get<boolean>('wrapComments', true),
     // Default true: the engine's own conservative gate for string
     // wrapping is stringPolicy defaulting to 'prose' (below), not this
-    // flag — matching the plan's framing of 'prose' as "the
-    // conservative default".
+    // flag — 'prose' is the conservative default.
     wrapStrings: config.get<boolean>('wrapStrings', true),
     stringPolicy: config.get<'prose' | 'all' | 'off'>('stringPolicy', 'prose'),
     docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain'>(
       'docDialect',
       'auto',
     ),
-    // Default true: Phase 4's own stated principle is "bias toward
+    // Default true: the guiding principle here is "bias toward
     // verbatim when uncertain" — an indented block inside a
     // comment/docstring is exactly the kind of structure a wrong guess
     // mangles (an aligned example, an ASCII diagram), so the safer
     // default leaves it alone until the user opts out.
     preserveIndentedBlocks: config.get<boolean>('preserveIndentedBlocks', true),
     respectEditorConfig: config.get<boolean>('respectEditorConfig', true),
-    // Default false, matching Phase 5 commit 4's own note that balanced
+    // Default false, matching commit 4's own note that balanced
     // (minimum-raggedness) reflow ships "behind a setting, default off".
     balancedWrapping: config.get<boolean>('balancedWrapping', false),
     stringWrapInclude: config.get<readonly string[]>('stringWrapInclude', ['**']),
-    // Default false (Phase 12a): a whole-document reflow is a much more
+    // Default false: a whole-document reflow is a much more
     // content-transformative operation than a typical code formatter, so
     // it stays opt-in even once the extension is installed and its
     // range-formatting provider is already active for "Format

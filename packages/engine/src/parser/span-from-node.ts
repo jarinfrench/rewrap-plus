@@ -9,8 +9,8 @@ import type { SourceSpan } from '../types/span.js';
  * read as UTF-8 byte offsets — that's what native tree-sitter bindings
  * give you, it's what `web-tree-sitter`'s own `Parser#parse` doc comment
  * claims ("the UTF8-encoded text to parse"), and it's what `SourceSpan`'s
- * own doc comment assumed when it was written in Phase 1. But
- * `web-tree-sitter`, fed a plain JS string as this project always does,
+ * own doc comment originally assumed. But `web-tree-sitter`, fed a plain
+ * JS string as this project always does,
  * actually reports `startIndex`/`endIndex`/every `Point.column` as
  * UTF-16 code-unit offsets — identical in kind to `node.startPosition`/
  * `node.endPosition`, and to `vscode.Position`. Passing `node.startIndex`

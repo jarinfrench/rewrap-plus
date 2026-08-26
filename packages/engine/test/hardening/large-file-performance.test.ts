@@ -6,12 +6,12 @@ import { pythonAdapter } from '../../src/languages/python/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Phase 10, "add performance benchmarks and large-file guardrails" —
- * the engine-side half. `docs/benchmarks.md` documents the actual
- * measured numbers this test's thresholds are derived from, and the two
- * real quadratic-cost bugs the benchmarking work in this commit found
- * and fixed (`sliceSpanText`'s and `detectLineEndingNear`'s own doc
- * comments carry the full detail):
+ * Performance benchmarks and large-file guardrails — the engine-side
+ * half. `docs/benchmarks.md` documents the actual measured numbers this
+ * test's thresholds are derived from, and the two real quadratic-cost
+ * bugs the benchmarking work in this commit found and fixed
+ * (`sliceSpanText`'s and `detectLineEndingNear`'s own doc comments
+ * carry the full detail):
  *
  * - `sliceSpanText` re-split the entire file on every call — called at
  *   least once per region — making "wrap every region in the file"
@@ -93,8 +93,8 @@ describe('large-file performance', () => {
   }, 60_000);
 
   it('wraps a single region near the cursor in a large file near-instantly, independent of file size', async () => {
-    // The plan's own stated budget: "wrap-at-cursor should feel instant
-    // (< 50 ms after warm grammar load)." A generous 200ms bound (this
+    // The stated budget: "wrap-at-cursor should feel instant (< 50 ms
+    // after warm grammar load)." A generous 200ms bound (this
     // machine's own measured number was ~30ms) rather than literally 50 —
     // CI hardware varies, and the property under test is "independent of
     // file size," not a tight latency SLA.

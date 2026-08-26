@@ -1,52 +1,56 @@
 /**
  * Rewrap+ engine entry point.
  *
- * Re-exports the engine's public type surface. Phase 1 defines the shared
- * vocabulary used by every later phase — spans and edits, the wrappable
- * region model, wrap configuration, the language adapter interface and
- * registry, and the logical document/block model — plus `PositionMapper`,
- * the one place that converts between tree-sitter's UTF-8 byte offsets and
- * VSCode's UTF-16 positions. Phase 2 adds the parser layer:
- * `ParserManager` (lazy, cached `web-tree-sitter` grammar loading) and
- * `parseWithErrors`/`ParseResult` (error and missing-node detection built
- * on it). Phase 3 adds `discoverRegions`: the generic, descriptor-driven
- * driver that turns a parsed tree into `WrappableRegion`s, plus the
- * Python adapter (`./languages/python/`) that exercises it end to end.
+ * Re-exports the engine's public type surface, built up in layers.
  *
- * Phase 4 adds `splitBlocks`: the shared, language-agnostic segmenter that
- * turns dissolved region text into a `Block[]` — paragraphs and blank
- * lines, list items with hanging indents, and verbatim regions (fenced
- * code, doctests, Markdown tables, reST `::`-triggered literal blocks,
- * and indented blocks under `preserveIndentedBlocks`).
+ * The foundation is the shared vocabulary used throughout the engine —
+ * spans and edits, the wrappable region model, wrap configuration, the
+ * language adapter interface and registry, and the logical
+ * document/block model — plus `PositionMapper`, the one place that
+ * converts between tree-sitter's UTF-8 byte offsets and VSCode's UTF-16
+ * positions. On top of that sits the parser layer: `ParserManager`
+ * (lazy, cached `web-tree-sitter` grammar loading) and
+ * `parseWithErrors`/`ParseResult` (error and missing-node detection
+ * built on it). Above that, `discoverRegions`: the generic,
+ * descriptor-driven driver that turns a parsed tree into
+ * `WrappableRegion`s, plus the Python adapter (`./languages/python/`)
+ * that exercises it end to end.
  *
- * Phase 5 completes the reflow pipeline's engine-side half:
- * `displayWidth` (East Asian Wide/Fullwidth and combining-character-aware
- * column counting, replacing the earlier phases' `text.length` stand-in)
- * and the unbreakable-unit-aware atom segmentation it feeds
- * (`atomizeWords`, internal — escape sequences, format placeholders,
- * f-string interpolations, inline code spans, and reST roles are never
- * split, even at their own internal whitespace); and `reflowBlock`, the
+ * `splitBlocks` is the shared, language-agnostic segmenter that turns
+ * dissolved region text into a `Block[]` — paragraphs and blank lines,
+ * list items with hanging indents, and verbatim regions (fenced code,
+ * doctests, Markdown tables, reST `::`-triggered literal blocks, and
+ * indented blocks under `preserveIndentedBlocks`).
+ *
+ * The reflow pipeline's engine-side half is `displayWidth` (East Asian
+ * Wide/Fullwidth and combining-character-aware column counting,
+ * replacing an earlier `text.length` stand-in) and the
+ * unbreakable-unit-aware atom segmentation it feeds (`atomizeWords`,
+ * internal — escape sequences, format placeholders, f-string
+ * interpolations, inline code spans, and reST roles are never split,
+ * even at their own internal whitespace); and `reflowBlock`, the
  * line-breaking algorithm itself, in both a `'greedy'` first-fit mode
  * (the default) and an optional `'balanced'` minimum-raggedness mode.
  * `reflowBlock` reflows atoms only — dissolve and emit, which turn a
  * `WrappableRegion`'s raw text into blocks and back into re-escaped,
- * re-delimited source text, are Phase 6 (comments) and Phase 8/9
- * (docstrings and strings) respectively.
+ * re-delimited source text, are separate concerns, handled respectively
+ * for comments and for docstrings/strings.
  *
- * Phase 6 adds the first end-to-end wrap path: `dissolveLineComments`/
+ * The first end-to-end wrap path is `dissolveLineComments`/
  * `emitLineComments` (`./comments/`) and `wrapRegions` (`./wrap.js`), the
  * entry point that ties parsing, discovery, dissolve, reflow, and emit
  * into `TextEdit`s.
  *
- * Phase 6b generalizes what Phase 6 shipped Python-only and proves it
- * holds for a second adapter before Phase 7 hardens around a one-adapter
- * sample size: `wrapRegions` and the comment dissolve/emit functions
- * moved to this engine-level, adapter-driven shape; `dissolveBlockComments`/
- * `emitBlockComments` add the block-comment path Python never exercised;
- * `runAdapterConformance` (`./conformance/`) is the parameterized
- * invariant suite every adapter must pass; and `javascriptAdapter`
- * (`./languages/javascript/`) is the canary that suite runs against
- * alongside Python. See `docs/adapters.md` for what that canary found.
+ * That path was later generalized from what shipped Python-only, and
+ * proven to hold for a second adapter before other code could harden
+ * around a one-adapter sample size: `wrapRegions` and the comment
+ * dissolve/emit functions moved to this engine-level, adapter-driven
+ * shape; `dissolveBlockComments`/`emitBlockComments` add the
+ * block-comment path Python never exercised; `runAdapterConformance`
+ * (`./conformance/`) is the parameterized invariant suite every adapter
+ * must pass; and `javascriptAdapter` (`./languages/javascript/`) is the
+ * canary that suite runs against alongside Python. See
+ * `docs/adapters.md` for what that canary found.
  *
  * Hard rule: this package must never import `vscode`. See CONTRIBUTING.md.
  */

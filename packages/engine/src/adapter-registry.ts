@@ -7,11 +7,10 @@ import type { LanguageAdapter, LanguageDescriptor } from './types/adapter.js';
  *
  * This is deliberately partial. Deeper validation — that the declared
  * tree-sitter queries actually compile against the grammar — needs a
- * loaded `Language` and so is layered on once the parser exists (Phase 2),
- * and comprehensively by the adapter conformance kit (Phase 6b,
- * "descriptor validates; all tree-sitter queries compile against the
- * grammar"). What's checked here is everything that's knowable before any
- * of that exists.
+ * loaded `Language` and so is layered on once the parser exists, and
+ * comprehensively by the adapter conformance kit ("descriptor validates;
+ * all tree-sitter queries compile against the grammar"). What's checked
+ * here is everything that's knowable before any of that exists.
  *
  * Throws — including the offending descriptor's `id` in the message —
  * rather than letting a malformed descriptor surface later as a confusing
@@ -68,9 +67,9 @@ export function validateDescriptor(descriptor: LanguageDescriptor): void {
  * Registry mapping VSCode languageIds — and their aliases — to language
  * adapters.
  *
- * Grammar WASM is loaded lazily by `ParserManager` (Phase 2) on first
- * *parse*, not here: registering an adapter never touches the filesystem
- * or a grammar, so it's always cheap and safe to do eagerly at extension
+ * Grammar WASM is loaded lazily by `ParserManager` on first *parse*, not
+ * here: registering an adapter never touches the filesystem or a
+ * grammar, so it's always cheap and safe to do eagerly at extension
  * activation.
  *
  * The extension enumerates `supportedLanguages()` to build its activation
@@ -109,17 +108,18 @@ export class AdapterRegistry {
    * Every registered VSCode languageId — primary ids *and* aliases —
    * sorted for stable output.
    *
-   * Phase 12b found this returning only primary ids, excluding aliases
-   * entirely, despite `packages/vscode-extension/src/engine-host.ts`'s own
+   * The JavaScript/TypeScript/TSX adapters found this returning only
+   * primary ids, excluding aliases entirely, despite
+   * `packages/vscode-extension/src/engine-host.ts`'s own
    * `getSupportedLanguages` doc comment already promising "every VSCode
    * languageId (and alias) a registered adapter supports" — a promise
    * `apply-wrap.ts`'s `computeWrapResult` and `format-on-save.ts` both
    * depend on for real: either would have silently no-opped every wrap
    * command on a `.jsx`/`.tsx` file (a real, resolvable `languageId` via
    * `resolve()` below) purely because `javascriptreact`/`typescriptreact`
-   * never appeared in this list. Unexercised until this phase because no
-   * adapter before it — Python has no aliases; the Phase 6b JavaScript
-   * canary declared none either — actually registered one. The identical
+   * never appeared in this list. Unexercised until then because no
+   * adapter before it — Python has no aliases; the JavaScript canary
+   * declared none either — actually registered one. The identical
    * shape of bug this project has already found twice before at a
    * language-adapter seam (`docs/adapters.md`): code that looked generic
    * but was only ever exercised by inputs that happened not to trigger

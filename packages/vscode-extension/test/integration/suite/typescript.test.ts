@@ -4,7 +4,7 @@ import { fixturePath } from './fixtures.js';
 import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from './helpers.js';
 
 /**
- * Phase 12b's own real-host proof: the engine-level gold fixtures
+ * The real-host proof for TypeScript: the engine-level gold fixtures
  * already cover string/JSDoc wrapping in detail
  * (`packages/engine/test/wrap/typescript-*-fixtures.test.ts`), but none
  * of those go through the real VSCode extension host — activation,

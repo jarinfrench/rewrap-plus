@@ -11,7 +11,7 @@ const TRIPLE_QUOTE_OPEN = /^[A-Za-z]{0,3}('''|""")/;
 
 /**
  * True if `region` is a single-part `'stringLiteral'` whose one part opens
- * with a triple-quote delimiter (`'''`/`"""`) — the shape Phase 12f's
+ * with a triple-quote delimiter (`'''`/`"""`) — the shape the
  * docstring-style wrap pipeline (`./wrap-code-string.ts`) targets.
  *
  * Deliberately `region.parts.length === 1` only: a concatenation run with

@@ -14,11 +14,10 @@
  *
  * Only the *first* line break is inspected — a per-file fallback for
  * when there's no more specific signal to go by. See
- * `detectLineEndingNear`, below, for the per-*region* detection Phase 10
- * ("engine: add line ending and trailing whitespace preservation") adds
- * on top of this for a file with genuinely mixed line endings — this
- * function alone remains what `detectLineEndingNear` itself falls back
- * to when a region has no nearby line break of its own to go by.
+ * `detectLineEndingNear`, below, for the per-*region* detection that
+ * layers on top of this for a file with genuinely mixed line endings —
+ * this function alone remains what `detectLineEndingNear` itself falls
+ * back to when a region has no nearby line break of its own to go by.
  *
  * A source with no line break at all (a single-line file) has nothing
  * to detect from; `'\n'` is returned as the conservative default, since
@@ -36,8 +35,9 @@ export function detectLineEnding(source: string): '\n' | '\r\n' {
 /**
  * Detect the line-ending convention actually surrounding one region,
  * rather than the whole file's first line break — what makes a genuinely
- * mixed-line-ending file (Phase 10's own named pathological input) wrap
- * correctly: `wrap.ts` calls this once per region instead of computing
+ * mixed-line-ending file (a named pathological input in this package's
+ * hardening tests) wrap correctly: `wrap.ts` calls this once per region
+ * instead of computing
  * one `detectLineEnding(source)` up front and reusing it for every edit,
  * so a region living in the file's `\n`-only stretch gets `\n`-joined
  * replacement text even if the file elsewhere (or even earlier on the
@@ -47,11 +47,11 @@ export function detectLineEnding(source: string): '\n' | '\r\n' {
  * `source` itself and re-splitting internally — the first version of
  * this function did exactly that, and calling it once per region turned
  * "wrap every region in the file" quadratic in file size all over again
- * (`O(region count × file length)`), the same class of bug Phase 10's
- * own `PositionMapper` checkpoint fix (`./types/position-mapper.ts`)
- * exists to prevent, caught here by this phase's own benchmark work
- * before it shipped as a silent regression. Splitting once and passing
- * the result to every call, the way `discoverRegions` already does
+ * (`O(region count × file length)`), the same class of bug the
+ * `PositionMapper` checkpoint fix (`./types/position-mapper.ts`) exists
+ * to prevent, caught here by this codebase's own benchmark work before
+ * it shipped as a silent regression. Splitting once and passing the
+ * result to every call, the way `discoverRegions` already does
  * internally for its own per-line indent lookups, is `O(file length)`
  * total regardless of how many regions call this.
  *
@@ -88,8 +88,8 @@ export function detectLineEndingNear(lines: readonly string[], row: number): '\n
  * closest is `\r` written as the two-character escape `\\r` inside a
  * string literal, which stays two characters, `\` and `r`, through
  * dissolve/reflow/emit and is never unescaped to an actual `\r` byte —
- * see Phase 9's dissolve commit for where real unescaping happens, once
- * string wrapping exists).
+ * see the dissolve step's own commit for where real unescaping happens,
+ * once string wrapping exists).
  */
 export function applyLineEnding(text: string, lineEnding: '\n' | '\r\n'): string {
   return lineEnding === '\n' ? text : text.replace(/\n/g, lineEnding);

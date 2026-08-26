@@ -5,12 +5,12 @@
  * and everything downstream of it.
  *
  * This file used to define minimal structural stand-ins for these shapes
- * (Phase 1, "placeholder `SyntaxNode`/`Tree` types standing in for
- * `web-tree-sitter` until Phase 2"), written before `web-tree-sitter` was
- * a dependency of this package. Phase 2 adds that dependency (see
- * `docs/parsing.md`), so this file now re-exports the real types instead
- * of shadowing them — as planned, nothing outside this file needed to
- * change for the swap.
+ * — placeholder `SyntaxNode`/`Tree` types standing in for
+ * `web-tree-sitter` — written before `web-tree-sitter` was a dependency
+ * of this package. Once that dependency was added (see
+ * `docs/parsing.md`), this file switched to re-exporting the real types
+ * instead of shadowing them — as intended from the start, nothing
+ * outside this file needed to change for the swap.
  *
  * `SyntaxNode` is kept as this package's name for what `web-tree-sitter`
  * calls `Node`, since `Node` alone reads ambiguously in a codebase that

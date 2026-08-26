@@ -7,19 +7,19 @@ import { looksLikeCommentedOutCode } from './looks-like-code.js';
 
 /**
  * The result of dissolving a `'lineComment'` `WrappableRegion`: the
- * shared `LogicalDocument` model (Phase 4) that `reflowBlock` (Phase 5)
- * and this module's `emitLineComments` counterpart operate on, plus one
- * piece of line-comment-specific state that doesn't belong on the
- * shared `DocMeta` — see `spaceAfterMarker`'s own doc comment.
+ * shared `LogicalDocument` model that `reflowBlock` and this module's
+ * `emitLineComments` counterpart operate on, plus one piece of
+ * line-comment-specific state that doesn't belong on the shared
+ * `DocMeta` — see `spaceAfterMarker`'s own doc comment.
  *
  * Fully generic, driven entirely by a `LanguageDescriptor` — nothing
- * here is Python-specific, despite Python being the first (and, as of
- * Phase 6, only) adapter that exercises it. Originally implemented
- * under `languages/python/` and promoted here in Phase 6b once the
- * canary JavaScript adapter confirmed nothing about this module's own
- * logic actually depended on Python (the one thing that did —
- * commented-out-code detection's leading-keyword list — was split out
- * to `LanguageDescriptor.comments.codeLikeKeywords`; see
+ * here is Python-specific, despite Python being the first (and, for a
+ * while, only) adapter that exercises it. Originally implemented under
+ * `languages/python/` and promoted here once the canary JavaScript
+ * adapter confirmed nothing about this module's own logic actually
+ * depended on Python (the one thing that did — commented-out-code
+ * detection's leading-keyword list — was split out to
+ * `LanguageDescriptor.comments.codeLikeKeywords`; see
  * `./looks-like-code.ts`).
  */
 export interface DissolvedLineComments {
@@ -28,7 +28,7 @@ export interface DissolvedLineComments {
   /**
    * Whether this region's reflowable comment lines, as observed in
    * source, put a space after `#` (`# comment`) or not (`#comment`).
-   * Plan: "preserve original spacing convention... as observed" — rather
+   * Preserves the original spacing convention as observed — rather
    * than always normalizing to `descriptor.comments.line.spaceAfter`'s
    * default, emit reproduces whatever convention the block itself used.
    *
@@ -108,8 +108,8 @@ function classifyLines(
  * - buffers up consecutive reflowable lines and, on flush, either routes
  *   the whole run to a single `verbatim` block (`looksLikeCommentedOutCode`
  *   says it reads as commented-out code — "bias toward verbatim when
- *   uncertain," same principle Phase 4 applied to indented/fenced/table
- *   content) or runs it through `splitBlocks` (Phase 4) to get real
+ *   uncertain," the same principle applied to indented/fenced/table
+ *   content) or runs it through `splitBlocks` to get real
  *   paragraph/list/blank structure. A blank `#` line's content is `''`,
  *   which `splitBlocks` naturally turns into a `blank` block and a
  *   paragraph break — no special-casing needed for the common
@@ -118,7 +118,7 @@ function classifyLines(
  *   one multi-line `verbatim` block carrying their exact raw text.
  *
  * `region.indentColumn` becomes the document's `DocMeta.indentColumn`
- * directly — Phase 3's grouping guarantees every part of a `'lineComment'`
+ * directly — grouping guarantees every part of a `'lineComment'`
  * region shares one indent column (see `./adapter.ts`), so there's only
  * one value to carry.
  */

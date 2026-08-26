@@ -1,10 +1,10 @@
 /**
  * `DocumentFormattingEditProvider` (whole-document, as opposed to
  * `./range-formatting-provider.ts`'s range provider) backed by the same
- * wrap path as `rewrapPlus.wrapDocument` — Phase 12a's "register as a
- * `DocumentFormattingEditProvider` so it composes with other formatters
- * rather than fighting them, and honor `editor.formatOnSave` semantics"
- * bullet.
+ * wrap path as `rewrapPlus.wrapDocument` — this is what lets Rewrap+
+ * register as a `DocumentFormattingEditProvider` so it composes with
+ * other formatters rather than fighting them, and honors
+ * `editor.formatOnSave` semantics.
  *
  * Before this existed, "Format Document" already worked via
  * `./range-formatting-provider.ts` (VSCode falls back to a language's

@@ -18,16 +18,17 @@ import zeroWidthLimitSource from '../fixtures/reflow/007-zero-width-limit.txt?ra
 import zeroWidthLimitExpected from '../fixtures/reflow/007-zero-width-limit.json';
 
 /**
- * Phase 5's acceptance criterion: "Gold fixtures for reflow pass; no
- * output line exceeds the limit unless it is a single unbreakable
- * atom." These fixtures are exactly the edge cases the plan names for
- * this phase's final commit ("add reflow tests including overflow and
- * width edge cases"): a long URL alone; a long URL mid-paragraph; an
- * atom exactly at the limit; an atom at limit+1; hanging indent leaving
- * fewer than 10 columns; CJK text; and a zero-width limit guard.
+ * The acceptance criterion this suite exists to check: gold fixtures
+ * for reflow pass; no output line exceeds the limit unless it is a
+ * single unbreakable atom. These fixtures are exactly the edge cases
+ * that reflow testing needs to cover ("add reflow tests including
+ * overflow and width edge cases"): a long URL alone; a long URL
+ * mid-paragraph; an atom exactly at the limit; an atom at limit+1;
+ * hanging indent leaving fewer than 10 columns; CJK text; and a
+ * zero-width limit guard.
  *
  * Each fixture pairs a plain-prose `.txt` source (run through
- * `splitBlocks` from Phase 4 to get a real, single `paragraph` block —
+ * `splitBlocks` to get a real, single `paragraph` block —
  * exercising the actual segment → reflow pipeline rather than
  * hand-built `Atom` arrays) with a `.json` file carrying the reflow
  * parameters and the expected output lines. Follows this project's
@@ -104,7 +105,7 @@ describe('reflowBlock fixtures', () => {
     expect(actual).toEqual(fixture.config.expected);
   });
 
-  it('covers the overflow/width edge cases the plan calls out for this commit', () => {
+  it('covers the overflow/width edge cases reflow is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases if a fixture were ever
     // renamed or removed without a replacement.

@@ -10,8 +10,8 @@ import type { Block } from '../types/document.js';
  * ... which is the only code that knows the marker's *display* form."
  * Every caller that reflows a `listItem`/`fieldEntry` block is therefore
  * responsible for restoring this prefix, via `decorateFirstLine` below, or
- * the marker/label is silently dropped — found while building Phase 8's
- * docstring emit (which needs this for real, since Google/plain dialect
+ * the marker/label is silently dropped — found while building docstring
+ * emit's dialect support (which needs this for real, since Google/plain dialect
  * lists are common), and retrofitted into `../comments/emit-line-comments.ts`
  * and `../comments/emit-block-comments.ts` at the same time: those two
  * already reflow `listItem` blocks (a bulleted list inside an ordinary

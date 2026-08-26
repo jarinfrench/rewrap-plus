@@ -57,9 +57,9 @@ describe('parseWithErrors', () => {
     expect(result.hasErrors).toBe(true);
     // The well-formed function is still discoverable as an ordinary named
     // node elsewhere in the tree — the error is localized, not a parse
-    // failure for the whole file. (Region discovery skipping only
-    // *overlapping* regions is Phase 3's job; this just proves the tree
-    // still carries that information for Phase 3 to use.)
+    // failure for the whole file. (Region discovery is responsible for
+    // skipping only *overlapping* regions; this just proves the tree
+    // still carries the information that logic needs.)
     const functionNames = result.tree.rootNode
       .descendantsOfType('function_definition')
       .map((node) => node?.childForFieldName('name')?.text);
@@ -83,7 +83,7 @@ describe('parseWithErrors', () => {
 
     const result = parseWithErrors(parser, source);
 
-    // The Phase 2 spike (see docs/spikes/tree-sitter-wasm-loading.mjs)
+    // An early spike (see docs/spikes/tree-sitter-wasm-loading.mjs)
     // observed *two* ERROR nodes for this input — an outer one at [0, 31)
     // and one nested inside it at [20, 26). Asserting exactly one span
     // here (rather than just >0) is the actual regression guard: it

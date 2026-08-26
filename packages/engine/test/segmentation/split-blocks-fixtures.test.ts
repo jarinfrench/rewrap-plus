@@ -21,11 +21,11 @@ import preserveIndentedBlocksSource from '../fixtures/blocks/008-preserve-indent
 import preserveIndentedBlocksExpected from '../fixtures/blocks/008-preserve-indented-blocks.expected.json';
 
 /**
- * Phase 4's stated acceptance criterion: "Blocks round-trip: a document
+ * The stated acceptance criterion: "Blocks round-trip: a document
  * with no over-limit lines produces identical output through
- * segment → reflow → emit." Reflow and emit don't exist until Phase 5
- * and Phase 6+ respectively, so the executable half of that acceptance
- * criterion available *today* is the segment step alone: every fixture's
+ * segment → reflow → emit." Reflow and emit didn't exist yet when this
+ * was written, so the executable half of that acceptance criterion
+ * available at the time is the segment step alone: every fixture's
  * `Block[]` matches a checked-in gold file exactly, byte for byte —
  * meaning every word from the source landed in exactly one atom, every
  * verbatim region kept its original lines untouched, and nothing was
@@ -78,9 +78,9 @@ describe('splitBlocks fixtures', () => {
     expect(actual).toEqual(fixture.expected);
   });
 
-  it('covers the cases the plan calls out for this phase', () => {
+  it('covers the block kinds splitBlocks is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
-    // coverage of one of the block kinds this phase introduces (plain
+    // coverage of one of the block kinds handled here (plain
     // paragraphs, list items with hanging indent, fenced code, doctests,
     // Markdown tables, `::`-triggered reST literal blocks, a mixed
     // document exercising all of them together, and the
@@ -99,11 +99,12 @@ describe('splitBlocks fixtures', () => {
   });
 
   it('re-splitting a fixture is idempotent', () => {
-    // A weak preview of Phase 10's blocking idempotency property test:
-    // splitBlocks has no reason to behave differently given its own
-    // output's *shape* fed back through — verbatim `lines` and paragraph/
-    // listItem `atoms` re-tokenize identically to themselves. Real
-    // idempotency (through reflow/emit) is Phase 10's job.
+    // A weak preview of the round-trip property test's blocking
+    // idempotency check: splitBlocks has no reason to behave differently
+    // given its own output's *shape* fed back through — verbatim `lines`
+    // and paragraph/listItem `atoms` re-tokenize identically to
+    // themselves. Real idempotency (through reflow/emit) is that
+    // property test's job.
     for (const fixture of fixtures) {
       const once = splitBlocks(fixture.source, fixture.options ?? {});
       const twice = splitBlocks(fixture.source, fixture.options ?? {});

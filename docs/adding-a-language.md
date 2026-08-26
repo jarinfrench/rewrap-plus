@@ -1,16 +1,17 @@
 # Adding a language
 
-The whole point of Phase 6b (the adapter conformance kit, the JavaScript
-canary) was to make this true: **a new language means writing a
-descriptor plus fixtures and calling `runAdapterConformance`, not
+The whole point of the adapter conformance kit (built alongside the
+JavaScript canary) was to make this true: **a new language means writing
+a descriptor plus fixtures and calling `runAdapterConformance`, not
 designing a test strategy from scratch — and not discovering mid-way
 through that dissolve/emit secretly assumed Python.** If you find
 yourself needing to change anything under `packages/engine/src/core`
 (comment/reflow/segment/emit shared logic, the adapter interface itself)
 to add a language, **stop** — that's a bug in the adapter interface, not
 a normal step, and it's worth a GitHub issue before working around it.
-`docs/adapters.md` records the leaks Phase 6b itself found and fixed
-this way; read it before starting, and add to it if you find a new one.
+`docs/adapters.md` records the leaks that investigation itself found and
+fixed this way; read it before starting, and add to it if you find a new
+one.
 
 ## Before you start
 
@@ -20,11 +21,11 @@ Read, in this order:
 2. **`docs/parsing.md`** — how grammar WASM gets sourced (prebuilt vs.
    built-it-yourself) and the "probe before coding" finding that drives
    step 3 below.
-3. **`docs/adapters.md`** — every cross-cutting engine finding from
-   Phase 6b: leaked Python-only assumptions that were found and fixed,
-   the JavaScript canary's own grammar findings, and deliberate scope
-   limits worth distinguishing from oversights. A second reader hitting
-   an undocumented leak is far more likely to abandon than one who was
+3. **`docs/adapters.md`** — every cross-cutting engine finding recorded so
+   far: leaked Python-only assumptions that were found and fixed, the
+   JavaScript canary's own grammar findings, and deliberate scope limits
+   worth distinguishing from oversights. A second reader hitting an
+   undocumented leak is far more likely to abandon than one who was
    warned.
 4. **`packages/engine/src/languages/javascript/`** — the smallest real
    example in the repo (comments only, no strings/dialects/docstrings).
@@ -137,10 +138,11 @@ The conformance suite runs against the adapter directly and needs no
 registration. Making it actually usable inside the VSCode extension is a
 separate, deliberate step: `packages/vscode-extension/src/engine-host.ts`'s
 `createRegistry()` is the **one place** that decides which adapters are
-user-facing — v1's Python-only language scope (a decision of record, not
-an oversight) is exactly why the JavaScript canary isn't registered
-there despite existing in the engine. Add your adapter to that function
-once it's ready to be user-facing, not before — an adapter registered
+user-facing — the JavaScript canary was deliberately left unregistered
+there for a long stretch despite existing in the engine, precisely so
+that "exists in the engine" and "user-facing" could stay two separate
+questions. Add your adapter to that function once it's ready to be
+user-facing, not before — an adapter registered
 before it's ready would advertise support (via
 `getSupportedLanguages()`, which drives which files the wrap commands
 gray themselves out in) that doesn't actually work yet.
@@ -150,12 +152,13 @@ gray themselves out in) that doesn't actually work yet.
 - Decide the language's actual comment/string syntax — that's step 3,
   and it's the part every step above depends on being right.
 - Add a documentation dialect (Doxygen, JSDoc, …) — dialects are a
-  separate, pluggable layer (`DialectRegistry`, `docs/implementation-plan.md`
-  Phase 8 commit 2), decoupled from language adapters specifically so
-  Doxygen (C/C++/Java) or JSDoc (JS/TS/Flow) become available to every
-  adapter that declares support for them, not reimplemented per language.
+  separate, pluggable layer (`DialectRegistry`), decoupled from language
+  adapters specifically so Doxygen (C/C++/Java) or JSDoc (JS/TS/Flow)
+  become available to every adapter that declares support for them, not
+  reimplemented per language.
 - Add string-literal wrapping support — `wrapRegions` only dissolves and
   emits `'stringLiteral'`/`'docstring'` regions for adapters that
-  implement it (Python does, as of Phase 9); a new adapter's strings are
-  reported as skipped, same as an adapter with no string support at all,
-  until its own `wrapString`/`wrapDocstring` hooks are written.
+  implement it (Python, JavaScript, TypeScript, TSX, and C++ all do); a
+  new adapter's strings are reported as skipped, same as an adapter with
+  no string support at all, until its own `wrapString`/`wrapDocstring`
+  hooks are written.

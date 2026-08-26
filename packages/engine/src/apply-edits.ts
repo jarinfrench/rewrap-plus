@@ -11,9 +11,9 @@ import type { TextEdit } from './types/span.js';
  * trailing `\r` on a CRLF file's lines ends up counted as part of the
  * *previous* line's content rather than stripped, which is fine here
  * since this function only cares about where each line *starts*, not
- * what it contains. Phase 10 normalizes line-ending handling end to end;
- * this is consistent with every other line-splitter in the codebase
- * until then.
+ * what it contains. Line-ending handling is normalized end to end
+ * elsewhere in the codebase; this is consistent with every other
+ * line-splitter here.
  */
 function lineStartOffsets(source: string): number[] {
   const offsets = [0];
@@ -28,13 +28,13 @@ function lineStartOffsets(source: string): number[] {
 /**
  * Apply a set of `TextEdit`s to `source`, returning the resulting text.
  *
- * This is the counterpart every `WrapResult.edits` (Phase 6's
- * `wrapRegions`) needs on the far side: something has to actually turn
- * "replace this span with this text" into a new document, whether
- * that's a real editor host's `WorkspaceEdit` (VSCode, Phase 7) or —
- * here — a plain string, for engine-level round-trip testing and any
- * future non-VSCode consumer (the CLI, Phase 12d) that wants the same
- * "apply this batch of edits" behavior without an editor in the loop.
+ * This is the counterpart every `WrapResult.edits` (from `wrapRegions`)
+ * needs on the far side: something has to actually turn "replace this
+ * span with this text" into a new document, whether that's a real
+ * editor host's `WorkspaceEdit` (the VSCode extension) or — here — a
+ * plain string, for engine-level round-trip testing and any other
+ * non-VSCode consumer (the CLI) that wants the same "apply this batch
+ * of edits" behavior without an editor in the loop.
  *
  * A `TextEdit.span`'s row/column fields are UTF-16 positions (per
  * `../types/span.ts`'s own doc comment) — the same units a JS string is

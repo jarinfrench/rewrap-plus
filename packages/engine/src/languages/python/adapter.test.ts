@@ -143,7 +143,7 @@ describe('pythonAdapter.isSafeToWrap', () => {
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
   });
 
-  it('is safe for a single-part triple-quoted ordinary string that looks like prose (Phase 12f)', () => {
+  it('is safe for a single-part triple-quoted ordinary string that looks like prose', () => {
     const { region, source } = discoverOne(
       'x = 1\ny = """not a docstring, just an ordinary prose-shaped string here."""\n',
     );
@@ -155,7 +155,7 @@ describe('pythonAdapter.isSafeToWrap', () => {
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
   });
 
-  it('is unsafe for a triple-quoted concatenation run, even if prose-shaped (Phase 12f scope limit)', () => {
+  it('is unsafe for a triple-quoted concatenation run, even if prose-shaped (scope limit)', () => {
     const { region, source } = discoverOne(
       'x = 1\ny = """this part looks like prose """ """but the run has two parts."""\n',
     );
@@ -163,7 +163,7 @@ describe('pythonAdapter.isSafeToWrap', () => {
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
   });
 
-  it('is safe for a triple-quoted docstring (unaffected by the Phase 12f prose gate)', () => {
+  it('is safe for a triple-quoted docstring (unaffected by the prose gate)', () => {
     const { region, source } = discoverOne('"""A module docstring."""\n');
     expect(region.kind).toBe('docstring');
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);

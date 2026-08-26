@@ -45,7 +45,7 @@ import stringsNegLineContinuation from '../fixtures/python/strings/neg-011-line-
 import stringsNegTripleCodeLike from '../fixtures/python/strings/neg-012-triple-quoted-code-like.in.py?raw';
 
 /**
- * Phase 10, "add idempotency property tests": `wrap(wrap(x)) === wrap(x)`
+ * Idempotency property tests: `wrap(wrap(x)) === wrap(x)`
  * across every gold fixture in the repo, wired into CI as a blocking check
  * (an ordinary `it` in the default `npm test` run, same as every other
  * suite — there's no separate "blocking" mechanism in this project beyond
@@ -79,8 +79,8 @@ import stringsNegTripleCodeLike from '../fixtures/python/strings/neg-012-triple-
  * pass produced. The hard structural refusals (`isSafeToWrap` — raw
  * strings, mixed prefixes, a multi-part triple-quoted run, line
  * continuations, irregular whitespace) are policy-independent and stay
- * negative here too. A single-part triple-quoted literal (Phase 12f) is
- * the one string shape whose `isSafeToWrap` gate is *itself*
+ * negative here too. A single-part triple-quoted literal is the one
+ * string shape whose `isSafeToWrap` gate is *itself*
  * `looksLikeProse`, unconditionally, regardless of `stringPolicy` — so
  * `stringsTripleSingleLine`/`stringsTripleMultiLine` (008/009) stay
  * positive here exactly as they are under the string-wrap suite's own

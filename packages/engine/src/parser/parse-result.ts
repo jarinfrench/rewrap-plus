@@ -8,7 +8,7 @@ import { spanFromNode } from './span-from-node.js';
  * The result of parsing one source text: the resulting `Tree`, plus a
  * pre-computed summary of where it went wrong, if it did.
  *
- * This is what "skip region, warn, never block" (decision of record) is
+ * This is what this project's "skip region, warn, never block" posture is
  * built on: a region is skipped only if it *overlaps* one of these spans,
  * so one syntax error elsewhere in the file doesn't disable wrapping for
  * the rest of it.
@@ -26,9 +26,9 @@ export interface ParseResult {
  * tree, each reported once as the outermost span that covers it — an
  * `ERROR` node's descendants are not walked separately, since they
  * describe the same malformed region at redundant or misleading
- * positions, and every consumer of `errorSpans` (Phase 3 onward) only
- * needs to know *whether a region overlaps damage*, not the shape of the
- * damage itself.
+ * positions, and every consumer of `errorSpans` only needs to know
+ * *whether a region overlaps damage*, not the shape of the damage
+ * itself.
  */
 export function parseWithErrors(parser: Parser, source: string): ParseResult {
   const tree = parser.parse(source);
@@ -60,13 +60,14 @@ export function parseWithErrors(parser: Parser, source: string): ParseResult {
  * that `tree-sitter-python` happily parses) produces a syntax tree whose
  * depth scales with operand count, and a recursive walk blew the actual
  * JS call stack on exactly that input (`RangeError: Maximum call stack
- * size exceeded`, caught by Phase 10's pathological-input hardening
+ * size exceeded`, caught by dedicated pathological-input hardening
  * before it shipped as a real bug) — well before this package's own
- * `WrapConfig`/region-discovery logic ever saw the file. "Skip region,
- * warn, never block" (decision of record) presumes `parseWithErrors`
+ * `WrapConfig`/region-discovery logic ever saw the file. This project's
+ * "skip region, warn, never block" posture presumes `parseWithErrors`
  * itself can't crash the whole invocation; a stack overflow here breaks
  * that promise for *any* file with one sufficiently long chained
- * expression, not just the string-concatenation case Phase 3 named.
+ * expression, not just the string-concatenation case that motivated the
+ * fix.
  */
 function collectErrorSpans(root: SyntaxNode, mapper: PositionMapper, out: SourceSpan[]): void {
   const stack: SyntaxNode[] = [root];

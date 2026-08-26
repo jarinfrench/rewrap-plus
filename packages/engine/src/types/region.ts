@@ -3,10 +3,10 @@ import type { SourceSpan } from './span.js';
 /**
  * The kinds of source regions the engine can discover and wrap.
  *
- * This list is intentionally closed for v1 (Python-only, per the decisions
- * of record) rather than left open-ended — adding a kind is a deliberate,
- * cross-cutting change (dissolve/emit support in every relevant adapter),
- * not something that should happen accidentally via a typo'd string.
+ * This list is intentionally closed rather than left open-ended — adding
+ * a kind is a deliberate, cross-cutting change (dissolve/emit support in
+ * every relevant adapter), not something that should happen accidentally
+ * via a typo'd string.
  */
 export type RegionKind =
   'lineComment' | 'blockComment' | 'docComment' | 'docstring' | 'stringLiteral';
@@ -27,11 +27,10 @@ export interface WrappableRegion {
   /**
    * The individual parts making up this region. Length 1 for an ordinary
    * region; length > 1 only for a concatenation run — adjacent string
-   * literals grouped into one logical unit (Phase 3: "group adjacent
-   * string literals into concatenation runs"). Grouping a run into a
-   * single region with multiple `parts`, rather than one region per
-   * literal, is what makes wrapping a concatenation idempotent (Phase 10
-   * depends on this).
+   * literals grouped into one logical unit. Grouping a run into a single
+   * region with multiple `parts`, rather than one region per literal, is
+   * what makes wrapping a concatenation idempotent, which reflow logic
+   * depends on.
    */
   readonly parts: readonly SourceSpan[];
 

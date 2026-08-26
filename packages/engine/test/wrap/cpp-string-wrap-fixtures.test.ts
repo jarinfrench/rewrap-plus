@@ -18,8 +18,8 @@ import negRawIn from '../fixtures/cpp/strings/neg-002-raw-string.in.cpp?raw';
 import negRawOut from '../fixtures/cpp/strings/neg-002-raw-string.out.cpp?raw';
 
 /**
- * Phase 12c's own string-wrapping gold fixtures for the C++ adapter —
- * mirrors `./javascript-string-wrap-fixtures.test.ts`'s structure and
+ * String-wrapping gold fixtures for the C++ adapter — mirrors
+ * `./javascript-string-wrap-fixtures.test.ts`'s structure and
  * rationale, proving the *shared* `strings/dissolve-string.ts`/
  * `strings/emit-string.ts` behaves correctly for C++'s `'implicit'`-only,
  * no-grouping-required, no-operator-style concatenation — a third real

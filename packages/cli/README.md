@@ -2,7 +2,7 @@
 
 Command-line and pre-commit interface for [Rewrap+](../../README.md),
 built on `@rewrap-plus/engine` unchanged — see
-[`docs/adapters.md`](../../docs/adapters.md)'s Phase 12d section for what
+[`docs/adapters.md`](../../docs/adapters.md)'s CLI section for what
 that separation looked like in practice.
 
 ## Usage

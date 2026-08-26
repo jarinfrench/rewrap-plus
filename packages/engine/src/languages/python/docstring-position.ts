@@ -16,13 +16,12 @@ const DEFINITION_TYPES = new Set(['function_definition', 'class_definition']);
  * the first statement of a `module`, or of a `function_definition`/
  * `class_definition`'s body block.
  *
- * Deliberately position-only, matching the plan's stated scope for this
- * commit: "a docstring is a `string` that is the first statement of a
- * module/function/class body — not merely any triple-quoted string."
- * A triple-quoted string anywhere else (e.g. as a block-comment substitute
- * mid-function) is an ordinary `stringLiteral`, and — per the plan's own
- * note — is likely to fail the prose heuristic anyway when Phase 9 gets
- * there.
+ * Deliberately position-only: a docstring is a `string` that is the first
+ * statement of a module/function/class body — not merely any
+ * triple-quoted string. A triple-quoted string anywhere else (e.g. as a
+ * block-comment substitute mid-function) is an ordinary `stringLiteral`,
+ * and is likely to fail the prose heuristic applied to such strings
+ * elsewhere in this adapter.
  *
  * A concatenated or `+`-joined multi-part run is *not* eligible here, even
  * if the whole run sits in first-statement position: CPython's own

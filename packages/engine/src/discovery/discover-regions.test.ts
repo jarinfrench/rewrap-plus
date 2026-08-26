@@ -22,9 +22,8 @@ beforeAll(async () => {
 // A deliberately bare-bones descriptor/adapter — no `classify`,
 // `groupRegions`, or `concatenations` query. This is the point: it proves
 // `discoverRegions` works from descriptor data alone, with no
-// language-specific code anywhere. The real Python adapter (added over
-// the rest of Phase 3) is exercised separately in
-// `../languages/python/*.test.ts` and the fixture suite.
+// language-specific code anywhere. The real Python adapter is exercised
+// separately in `../languages/python/*.test.ts` and the fixture suite.
 function minimalDescriptor(): LanguageDescriptor {
   return {
     id: 'python',

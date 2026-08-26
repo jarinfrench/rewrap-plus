@@ -50,7 +50,8 @@ describe('emitDocstring', () => {
   });
 
   it('does not duplicate the leading blank line when more than one paragraph follows it (regression)', () => {
-    // Bug found while building Phase 12f's own fixtures: `rest` used to be
+    // Bug found while building this adapter's triple-quoted-string
+    // fixtures: `rest` used to be
     // computed as `openingHasSummary ? contentLines.slice(1) :
     // contentLines` — when the first block was blank (`openingHasSummary:
     // false`), `contentLines[0]` (already consumed into the, empty,

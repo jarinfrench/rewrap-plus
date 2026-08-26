@@ -26,10 +26,9 @@ import { emitString } from '../../strings/emit-string.js';
  * Hanging indent follows the identical "statement's own indent plus four
  * columns" convention every other adapter's `wrapString` uses — see
  * `../python/wrap-string.ts`'s own doc comment for why this is a
- * deliberate, documented Phase 9 simplification rather than the plan's
- * literal "aligned to the opening delimiter" text, carried forward
- * unchanged here since nothing about C++ gives a reason to choose
- * differently.
+ * deliberate, documented simplification rather than "aligned to the
+ * opening delimiter," carried forward unchanged here since nothing about
+ * C++ gives a reason to choose differently.
  */
 export function wrapCppString(region: WrappableRegion, source: string, cfg: WrapConfig): string {
   const dissolved = dissolveString(region, source);

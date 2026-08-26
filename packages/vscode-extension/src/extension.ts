@@ -1,10 +1,10 @@
 /**
  * Rewrap+ VSCode extension entry point.
  *
- * Phase 0 left this empty. Phase 7 wires up real activation: warm the
- * engine host (`./engine-host.ts`), register commands and the
- * range-formatting provider, and set the `rewrapPlusSupportedLanguages`
- * context key every command/keybinding `when` clause gates on.
+ * Wires up real activation: warm the engine host (`./engine-host.ts`),
+ * register commands and the range-formatting provider, and set the
+ * `rewrapPlusSupportedLanguages` context key every command/keybinding
+ * `when` clause gates on.
  */
 import * as vscode from 'vscode';
 import { getSupportedLanguages, initEngineHost } from './engine-host.js';

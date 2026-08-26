@@ -9,21 +9,20 @@ import { emitDocstring } from './emit-docstring.js';
 
 /**
  * Dialects are stateless; one shared registry for every call is safe and
- * avoids rebuilding it per docstring (Phase 8, wired here as Python's
+ * avoids rebuilding it per docstring. Wired here as Python's
  * `LanguageAdapter.wrapDocstring` implementation — see that hook's own
  * doc comment on `../../types/adapter.ts` for why this can't be
- * dispatched generically from `../../wrap.ts`).
+ * dispatched generically from `../../wrap.ts`.
  */
 const dialectRegistry = createDialectRegistry();
 
 /**
  * Resolve which dialect governs one docstring: `cfg.docDialect`'s named
- * dialects force that dialect outright; `'auto'` detects per docstring
- * (the plan: "detect per docstring, not per file — mixed conventions in
- * one codebase are common and a file-level guess will be wrong
- * somewhere") among whichever dialects `pythonDescriptor` declares
- * support for (`comments.doc.dialects` — every dialect this package
- * ships, today).
+ * dialects force that dialect outright; `'auto'` detects per docstring —
+ * mixed conventions in one codebase are common, and a file-level guess
+ * would be wrong somewhere — among whichever dialects `pythonDescriptor`
+ * declares support for (`comments.doc.dialects` — every dialect this
+ * package ships, today).
  */
 function resolveDialectId(cfg: WrapConfig, text: string) {
   if (cfg.docDialect !== 'auto') {

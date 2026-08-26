@@ -1,18 +1,17 @@
-# Parsing: spike findings (Phase 2)
+# Parsing: spike findings
 
-Phase 2 commit 1 ("engine: add web-tree-sitter dependency and grammar
-loading spike") existed to answer one question before anything got built
-on top of it: **does `tree-sitter-python` ship a usable prebuilt `.wasm`,
-or does this project need its own grammar build pipeline?** The plan
-flagged this as the fiddliest part of the whole project and asked for it
-to be resolved in commit 1, before commit 2 (a conditional build/vendoring
-pipeline) either happens or doesn't.
+This document exists to answer one question before anything got built on
+top of it: **does `tree-sitter-python` ship a usable prebuilt `.wasm`, or
+does this project need its own grammar build pipeline?** This was
+expected to be the fiddliest part of the whole project, and worth
+resolving before any conditional build/vendoring pipeline either happens
+or doesn't.
 
 The throwaway script used for this is checked in at
 [`spikes/tree-sitter-wasm-loading.mjs`](./spikes/tree-sitter-wasm-loading.mjs)
 for reproducibility; it is not part of the build, not linted, and not run
 in CI. Everything it demonstrated is written up below, and the durable
-product of this phase — `ParserManager` and `ParseResult`, under
+product of this investigation — `ParserManager` and `ParseResult`, under
 `packages/engine/src/parser/` — is properly tested instead.
 
 ## Finding 1: `tree-sitter-python` ships a prebuilt `.wasm`
@@ -29,21 +28,19 @@ package/prebuilds/linux-x64/tree-sitter-python.node
 ```
 
 This has been true since at least the `0.23.x` series. **The prebuilt
-route works** — so commit 2 from the plan ("build: add grammar wasm build
-and vendoring pipeline _(only if step 1 requires it)_") does not apply:
-there is no Emscripten/Docker build step to add, and no build pipeline to
-maintain. What that commit _would_ have delivered — committing the
-artifact with a provenance note, and documenting how to regenerate it — is
-still worth having, so it's folded into this commit instead. See
+route works** — a conditional grammar-build/vendoring pipeline does not
+apply: there is no Emscripten/Docker build step to add, and no build
+pipeline to maintain. What that pipeline _would_ have delivered —
+committing the artifact with a provenance note, and documenting how to
+regenerate it — is still worth having, so it's covered here instead. See
 `packages/engine/grammars/PROVENANCE.md` for the vendored file's exact
 source, version, checksums, and update instructions.
 
-**Consequence for later phases:** don't assume this holds for every future
-grammar. Phase 6b's canary JavaScript adapter re-checks it for
-`tree-sitter-javascript` ("also validates that the Phase 2 grammar
-pipeline generalizes past one grammar"); Phase 12b/12c should do the same
-for `tree-sitter-typescript` and `tree-sitter-cpp` before assuming the
-skip applies there too.
+**Consequence for future grammars:** don't assume this holds for every
+future one. The JavaScript canary adapter re-checks it for
+`tree-sitter-javascript` ("also validates that this grammar-loading
+approach generalizes past one grammar"); every language added since does
+the same for its own grammar before assuming the skip applies there too.
 
 ## Finding 2: `web-tree-sitter` and the grammar's ABI must be compatible
 
@@ -67,7 +64,7 @@ package fails loudly in CI rather than at first use in the extension.
 
 ## Finding 3: `web-tree-sitter` node offsets are UTF-16, not UTF-8 — despite the byte-oriented framing everywhere else
 
-This is the one worth being careful about. Phase 1's `SourceSpan` doc
+This is the one worth being careful about. `SourceSpan`'s own doc
 comment states the general, correct rule for _native_ tree-sitter
 bindings: tree-sitter indexes bytes (UTF-8), VSCode indexes UTF-16 code
 units, and the two diverge for any non-ASCII content. `PositionMapper` was
@@ -105,23 +102,23 @@ endByte)` exists to convert genuine UTF-8 byte offsets into a full
 `spanFromByteRange(node.startIndex, node.endIndex)` — that silently
 double-interprets an already-UTF-16 number as if it were a UTF-8 byte
 count, corrupting every span for any file containing non-ASCII text
-(astral emoji, CJK, accented characters, smart quotes — all called out as
-"extremely common" in docstrings by Phase 1's own risk note).
+(astral emoji, CJK, accented characters, smart quotes — all extremely
+common in real source).
 
-**What this phase does instead:** `packages/engine/src/parser/span-from-node.ts`
+**What this project does instead:** `packages/engine/src/parser/span-from-node.ts`
 treats a node's `startPosition`/`endPosition` as the authoritative,
 already-UTF-16 `Position` and derives the _true_ UTF-8 `startByte`/
 `endByte` from them via `PositionMapper.positionToByteOffset`, rather than
 trusting `startIndex`/`endIndex` as byte offsets. This is the same
-`PositionMapper` built in Phase 1 for this exact purpose, used in the
-direction that's actually correct for this parser binding. See that
-file's doc comment for the implementation, and
-`span-from-node.test.ts` for a non-ASCII regression test asserting the
-byte offsets it produces are real UTF-8 byte counts, not a relabeled
-UTF-16 count.
+`PositionMapper` built for this exact purpose, used in the direction
+that's actually correct for this parser binding. See that file's doc
+comment for the implementation, and `span-from-node.test.ts` for a
+non-ASCII regression test asserting the byte offsets it produces are
+real UTF-8 byte counts, not a relabeled UTF-16 count.
 
-If a future phase adds a _native_ (non-WASM) tree-sitter binding — e.g.
-for a Node-only CLI fast path — this finding does not carry over: native
+If a future addition brings in a _native_ (non-WASM) tree-sitter
+binding — e.g. for a Node-only CLI fast path — this finding does not
+carry over: native
 bindings parse raw bytes directly and their offsets are genuine UTF-8
 bytes. `span-from-node.ts` is specifically about the WASM/JS-string
 binding this project uses everywhere today.
@@ -134,9 +131,9 @@ binding this project uses everywhere today.
 deliberately broken snippet (`def greet(name:` with no closing paren or
 body) produces `rootNode.hasError === true` and two descendant `ERROR`
 nodes bounding the malformed region — exactly the shape `ParseResult`
-(commit 4) needs to report `errorSpans`.
+needs to report `errorSpans`.
 
-## Finding 5 (Phase 12b): `tree-sitter-typescript` also ships prebuilt WASM — for *two* grammars
+## Finding 5: `tree-sitter-typescript` also ships prebuilt WASM — for *two* grammars
 
 Re-checking the "prebuilt or build-it-yourself?" question for
 `tree-sitter-typescript`, per this file's own note flagging it as
@@ -146,7 +143,7 @@ tree-sitter-typescript@0.23.2` and inspecting the tarball shows *both*
 root. One npm package, two grammars — TSX is a genuinely separate
 grammar from plain TypeScript (upstream's own split; a `<T>` type
 assertion and a JSX element are ambiguous under one grammar), not a
-superset flag on the same one, so Phase 12b vendors and registers both
+superset flag on the same one, so both are vendored and registered
 separately (`packages/engine/grammars/PROVENANCE.md`). No build pipeline
 needed for either, same as Python and JavaScript before it.
 
@@ -157,20 +154,20 @@ but a reminder that a future grammar could fall outside it where Python
 and JavaScript's shared `15` didn't hint at any ceiling.
 
 The probe script for this (`docs/spikes/tree-sitter-typescript-probe.mjs`)
-also confirmed the node shapes Phase 12b's descriptor depends on: a
-`comment` node covers all three JS/TS comment forms exactly as the Phase
-6b JavaScript canary already found for `tree-sitter-javascript`; a
+also confirmed the node shapes the TypeScript/TSX descriptors depend on:
+a `comment` node covers all three JS/TS comment forms exactly as the
+JavaScript canary already found for `tree-sitter-javascript`; a
 `string` node's children are its quote tokens plus a `string_fragment`
 body (no prefix complexity, unlike Python); `binary_expression` exposes
 `left`/`operator`/`right` fields for `+`-concatenation, the same
 convention `discoverRegions`'s concatenation-grouping algorithm already
 expected from Python's `binary_operator`; and template literals
 (`` ` ``-delimited) are a separate `template_string` node type, not
-matched by a plain `(string) @string` query — consistent with Phase
-12b's own deliberate choice to defer template-literal wrapping the same
-way Python deferred triple-quoted ordinary strings.
+matched by a plain `(string) @string` query — consistent with the
+deliberate choice to defer template-literal wrapping the same way
+Python defers triple-quoted ordinary strings.
 
-## Finding 6 (Phase 12c): `tree-sitter-cpp` — one grammar, several genuinely new node shapes
+## Finding 6: `tree-sitter-cpp` — one grammar, several genuinely new node shapes
 
 Re-checking the "prebuilt or build-it-yourself?" question once more, per
 this file's own repeated "verify per grammar" note: `npm pack
@@ -220,14 +217,14 @@ JS/TS's findings:
   argument is one opaque `preproc_arg` leaf carrying raw, unparsed text,
   confirmed by probing a multi-line macro with a backslash-newline
   continuation. Neither `comment` nor `string_literal` nodes are ever
-  produced inside one, so the plan's own named hazard ("skip strings
-  inside macro definitions") turned out to already be satisfied by the
-  grammar's own structure — nothing to special-case.
+  produced inside one, so the anticipated hazard of needing to skip
+  strings inside macro definitions turned out to already be satisfied by
+  the grammar's own structure — nothing to special-case.
 
-See `docs/adapters.md`'s Phase 12c section for how each of these shaped
+See `docs/adapters.md`'s C++ section for how each of these shaped
 `packages/engine/src/languages/cpp/`'s descriptor and adapter.
 
-## What Phase 2 built on these findings
+## What this investigation built on these findings
 
 - `packages/engine/grammars/tree-sitter-python.wasm` — the vendored
   prebuilt asset from finding 1, with `PROVENANCE.md` alongside it.

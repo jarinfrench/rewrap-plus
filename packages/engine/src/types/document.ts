@@ -1,16 +1,15 @@
 import type { DocDialectId } from './doc-dialect.js';
 
 /**
- * A unit of reflowable text produced by segmentation (Phase 5: "add atom
- * segmentation with unbreakable unit support"). Defined here, ahead of
- * Phase 5, only because `Block` needs to reference it in its shape —
- * `width`, `breakBefore`, and `glue` aren't exercised until segmentation
- * and reflow exist.
+ * A unit of reflowable text produced by atom segmentation. Defined here,
+ * ahead of the segmentation code that produces it, only because `Block`
+ * needs to reference it in its shape — `width`, `breakBefore`, and `glue`
+ * aren't exercised until segmentation and reflow exist.
  */
 export interface Atom {
   readonly text: string;
   /**
-   * Display width in columns, not character count (Phase 5: East Asian
+   * Display width in columns, not character count (East Asian
    * Wide/Fullwidth characters count as 2, combining marks as 0).
    */
   readonly width: number;
@@ -24,8 +23,8 @@ export interface Atom {
  * `verbatim` is the escape hatch that makes "preserve formatting"
  * tractable: anything the engine can't confidently reflow — code fences,
  * tables, ASCII art — becomes `verbatim` and passes through untouched
- * rather than risking corruption. Phase 4 biases toward `verbatim` when
- * uncertain for exactly this reason: a missed reflow opportunity is
+ * rather than risking corruption. The engine biases toward `verbatim`
+ * when uncertain for exactly this reason: a missed reflow opportunity is
  * invisible, a mangled table is a bug report.
  */
 export type Block =
@@ -58,7 +57,7 @@ export interface DocMeta {
   readonly indentColumn: number;
   /**
    * Detected or configured documentation dialect, for a docstring/doc-
-   * comment body (Phase 8). Absent for plain comment blocks, which have no
+   * comment body. Absent for plain comment blocks, which have no
    * dialect concept.
    */
   readonly dialect?: DocDialectId;

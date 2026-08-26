@@ -8,8 +8,8 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * JavaScript/TypeScript's descriptor declares — see
  * `../languages/typescript/emit-context.ts`).
  *
- * Promoted here (from Python's own `languages/python/emit-context.ts`) in
- * Phase 12b alongside `emitString`/`dissolveString`/`escapeQuoteCollisions`
+ * Promoted here (from Python's own `languages/python/emit-context.ts`)
+ * alongside `emitString`/`dissolveString`/`escapeQuoteCollisions`
  * — this type is `emitString`'s own vocabulary (its `style` parameter),
  * not something specific to how any one adapter's `emitContext` hook
  * happens to resolve it, so it belongs with the function that actually
@@ -24,17 +24,18 @@ export type ConcatenationStyle = 'implicit' | 'operator';
  * replacement source text — the `'stringLiteral'` counterpart to
  * `../languages/python/emit-docstring.ts`.
  *
- * ## Promoted out of `languages/python/` in Phase 12b
+ * ## Promoted out of `languages/python/`
  *
  * Nothing in this function's own logic is Python-specific — every
  * Python-only concern (paren insertion, dict-key detection, prefix
- * casing) lives in `needsParens`/`prefix`'s *callers*, not here. Phase
- * 12b's TypeScript adapter needed this exact function (with
+ * casing) lives in `needsParens`/`prefix`'s *callers*, not here. The
+ * TypeScript adapter needed this exact function (with
  * `needsParens` always `false` and `style` always `'operator'` — JS/TS
  * concatenation never requires its own grouping), the same "promote once
  * a second real consumer needs it" call already made twice before for
- * `comments/dissolve-line-comments.ts`/`emit-line-comments.ts` (Phase 6b)
- * and `./dissolve-string.ts` (this same phase) — see `docs/adapters.md`.
+ * `comments/dissolve-line-comments.ts`/`emit-line-comments.ts`
+ * and `./dissolve-string.ts` — see `docs/adapters.md`'s JavaScript
+ * canary section.
  *
  * ## Why every physical line pays its own quote overhead
  *
@@ -88,22 +89,22 @@ export type ConcatenationStyle = 'implicit' | 'operator';
  *
  * ## Preserving the space at a split point
  *
- * `atomizeWords`/`reflowBlock` (Phase 5) are prose-reflow machinery: a
+ * `atomizeWords`/`reflowBlock` are prose-reflow machinery: a
  * line break there *replaces* the space it broke at, which is exactly
  * right for a comment or docstring paragraph, where a soft line break and
  * a space are interchangeable. They are not interchangeable here — Python
  * concatenates adjacent literals with *zero* inserted characters, so
  * splitting `"...it exceeds..."` into `"...it"` / `"exceeds..."` at the
  * word boundary would silently delete the space between "it" and
- * "exceeds" the moment they're concatenated back together. This is the
- * plan's own named central risk for this phase: "Preserve the trailing
- * space at split points — `"foo " "bar"` not `"foo" "bar"`. This is the
- * single most likely source of silent behavior change; test it hard."
+ * "exceeds" the moment they're concatenated back together. Preserving the
+ * trailing space at split points — `"foo " "bar"` not `"foo" "bar"` — is
+ * the single most likely source of silent behavior change here, so it's
+ * tested hard.
  * `reinsertSplitSpaces` below re-derives, from the original text itself
  * (not from `Atom.glue`, which `reflowBlock`'s returned `string[]` no
  * longer carries), whether each line boundary consumed a real space, and
- * reinserts it as a trailing space on the line before the break — the
- * exact form the plan's own example uses.
+ * reinserts it as a trailing space on the line before the break, exactly
+ * as in the example above.
  *
  * This only has to be exact because `isSafeToWrap`
  * (`./adapter.ts`) refuses any string containing a tab or a run of two or
@@ -200,8 +201,8 @@ export function emitString(
  * any text with irregular whitespace before this runs, per this module's
  * own doc comment), reinsert the single space each line boundary consumed
  * wherever one genuinely separated the two words on either side —
- * trailing it onto the line before the break, matching the plan's own
- * `"foo " "bar"` example.
+ * trailing it onto the line before the break, as in the
+ * `"foo " "bar"` example above.
  *
  * Walks `originalText` with a cursor rather than trusting line lengths in
  * isolation: after matching `lines[i]` starting at `cursor`, the very next
@@ -214,8 +215,8 @@ export function emitString(
  *
  * ## The last line's own trailing whitespace
  *
- * Found missing while generating this phase's own JavaScript gold
- * fixtures, not anticipated by Phase 9's own plan text: `atomizeWords`
+ * Found missing while generating the JavaScript gold
+ * fixtures, not anticipated by the original design: `atomizeWords`
  * (`../segmentation/atomize-words.ts`) drops *any* whitespace trailing the
  * final atom — there is no atom after it for that whitespace to be
  * "between," so the segmenter's word-scanning loop simply never visits
@@ -223,8 +224,8 @@ export function emitString(
  * closing quote (`"Hello, "` — entirely ordinary, e.g. as the left
  * operand of `"Hello, " + name`), that trailing space is exactly as
  * semantically real as an interior one, and dropping it silently changes
- * the string's own value — precisely the "silent string corruption" the
- * plan calls this phase's central risk, just at the *end* of the text
+ * the string's own value — precisely the kind of silent string corruption
+ * this module exists to avoid, just at the *end* of the text
  * rather than at a split point, which is why the interior-only check the
  * loop above already had didn't catch it: the loop's own `i === lines.length
  * - 1` branch returned the last line completely unexamined. Whatever

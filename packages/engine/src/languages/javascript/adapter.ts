@@ -15,7 +15,7 @@ function classify(node: SyntaxNode): RegionKind | null {
 }
 
 /**
- * JavaScript's `LanguageAdapter` — a full adapter as of Phase 12b.
+ * JavaScript's `LanguageAdapter` — a full adapter.
  *
  * `classify` distinguishes `//`/JSDoc-shaped `/**`/plain `/* * /`
  * comments (excluding the last, per `../ecmascript/adapter-support.ts`'s
@@ -25,9 +25,8 @@ function classify(node: SyntaxNode): RegionKind | null {
  * itself needs its own version of any of them. No `groupRegions`
  * override: JavaScript's `//` comments still aren't merged across
  * adjacent lines the way Python's are, left as a genuine open question
- * Phase 6b already deferred and Phase 12b doesn't need to resolve either.
- * No `wrapDocstring`: JavaScript has no string-literal-as-documentation
- * convention.
+ * this adapter doesn't need to resolve either. No `wrapDocstring`:
+ * JavaScript has no string-literal-as-documentation convention.
  */
 export const javascriptAdapter: LanguageAdapter = {
   descriptor: javascriptDescriptor,

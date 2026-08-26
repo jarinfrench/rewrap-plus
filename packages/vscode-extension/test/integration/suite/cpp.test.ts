@@ -4,8 +4,8 @@ import { fixturePath } from './fixtures.js';
 import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from './helpers.js';
 
 /**
- * Phase 12c's own real-host proof — the same loop `./typescript.test.ts`
- * closed for TypeScript in Phase 12b: the engine-level gold fixtures
+ * The real-host proof for C++ — the same loop `./typescript.test.ts`
+ * closes for TypeScript below: the engine-level gold fixtures
  * already cover string/Doxygen wrapping in detail
  * (`packages/engine/test/wrap/cpp-*-fixtures.test.ts`), but none of those
  * go through the real VSCode extension host — activation, `AdapterRegistry`

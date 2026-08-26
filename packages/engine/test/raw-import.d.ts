@@ -9,16 +9,16 @@ declare module '*.py?raw' {
   export default content;
 }
 
-// Phase 4's block-splitter fixtures are plain `.txt` files (not Python),
-// per the plan ("Fixture directory `packages/engine/test/fixtures/blocks/`
-// — input `.txt`, expected block JSON.") — same rationale as the `.py?raw`
+// The block-splitter fixtures are plain `.txt` files (not Python) —
+// fixture directory `packages/engine/test/fixtures/blocks/`, input
+// `.txt`, expected block JSON — same rationale as the `.py?raw`
 // declaration above, just a different source extension.
 declare module '*.txt?raw' {
   const content: string;
   export default content;
 }
 
-// Phase 12b's JavaScript/TypeScript/TSX fixtures — same rationale as the
+// The JavaScript/TypeScript/TSX fixtures — same rationale as the
 // `.py?raw` declaration above, one declaration per source extension.
 declare module '*.js?raw' {
   const content: string;
@@ -37,8 +37,7 @@ declare module '*.tsx?raw' {
   export default content;
 }
 
-// Phase 12c's C++ fixtures — same rationale as the `.py?raw` declaration
-// above.
+// The C++ fixtures — same rationale as the `.py?raw` declaration above.
 declare module '*.cpp?raw' {
   const content: string;
   export default content;

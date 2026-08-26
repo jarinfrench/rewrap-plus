@@ -12,7 +12,8 @@ describe('detectLineEnding', () => {
 
   it('goes by the first line break even if later ones differ', () => {
     // Genuinely mixed line endings are out of scope for this function
-    // (Phase 10's job) — it's a per-file, first-line-break detector.
+    // (that's `detectLineEndingNear`'s job) — it's a per-file,
+    // first-line-break detector.
     expect(detectLineEnding('a\r\nb\nc\n')).toBe('\r\n');
     expect(detectLineEnding('a\nb\r\nc\r\n')).toBe('\n');
   });

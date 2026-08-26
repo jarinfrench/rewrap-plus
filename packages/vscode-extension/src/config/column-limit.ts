@@ -1,7 +1,6 @@
 /**
  * Column limit resolution: the precedence chain a wrap command actually
- * needs (docs/implementation-plan.md, Phase 7 commit 2), as a pure
- * function over already-extracted values.
+ * needs (commit 2), as a pure function over already-extracted values.
  *
  * Deliberately vscode-free — not because of the engine's hard rule (that
  * only binds `packages/engine`), but so this, the single most
@@ -11,7 +10,7 @@
  * extracts these inputs from `vscode.workspace.getConfiguration` and
  * calls through to `resolveColumnLimit` below.
  *
- * Precedence, highest to lowest (plan, Phase 7 commit 2):
+ * Precedence, highest to lowest (commit 2):
  * 1. `rewrapPlus.columnLimit`, including a language-scoped override.
  * 2. Language-scoped `editor.rulers` for the document's language.
  * 3. `.editorconfig` `max_line_length`.

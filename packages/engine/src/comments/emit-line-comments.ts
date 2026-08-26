@@ -21,7 +21,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * starts right at the marker — see `spellOutIndent` below). So the
  * indent/marker overhead is subtracted from `availableWidth` once, up
  * front, uniformly — not folded into a per-block `hangingIndent` the way
- * a docstring's quote delimiter will be in Phase 8.
+ * a docstring's quote delimiter is.
  *
  * A block's own `hangingIndent` (`listItem`/`fieldEntry`) is still
  * passed through to `reflowBlock` as-is: that's a *content-internal*
@@ -46,10 +46,9 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * - every other line gets `marker` prepended, plus a single space when
  *   `spaceAfterMarker` and the line has content — and *no* trailing
  *   space when it doesn't (an empty `paragraph`/`blank` line becomes a
- *   bare marker, never `'# '` with nothing after the space: "never
- *   introduce trailing whitespace" is a Phase 10 acceptance criterion,
- *   but there's no reason to wait until then for a case this easy to
- *   avoid getting right the first time).
+ *   bare marker, never `'# '` with nothing after the space: trailing
+ *   whitespace should never be introduced, and there's no reason to get
+ *   it wrong just because this particular case is easy).
  */
 export function emitLineComments(
   document: LogicalDocument,
@@ -95,8 +94,8 @@ export function emitLineComments(
 
 /**
  * The very first output line never spells out its own indentation: the
- * `TextEdit` this feeds (Phase 6's `wrapRegions`, next commit) replaces
- * `region.span`, which starts at the marker itself — the indentation
+ * `TextEdit` this feeds (`wrapRegions`) replaces `region.span`, which
+ * starts at the marker itself — the indentation
  * before it is untouched, pre-existing source text, not part of the
  * edit. Every later line is brand new text being inserted into the
  * document, so it has to spell its own indentation out to land in the

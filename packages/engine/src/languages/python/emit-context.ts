@@ -16,23 +16,22 @@ export interface StringEmitContext extends EmitContext {
   readonly concatenationStyle: ConcatenationStyle;
   /**
    * Whether this region is a dictionary literal's key, e.g. the `"k"` in
-   * `{"k": "v"}` — one of the plan's own named "context signals" for
-   * string-wrap eligibility ("string is a dict key → skip"), alongside the
-   * shared text-only `looksLikeProse` heuristic (`../../prose-heuristic.ts`).
+   * `{"k": "v"}` — one of the named "context signals" for string-wrap
+   * eligibility ("string is a dict key → skip"), alongside the shared
+   * text-only `looksLikeProse` heuristic (`../../prose-heuristic.ts`).
    * A dict key is virtually never prose regardless of its own shape, and
-   * unlike the *sole-argument-to-a-known-call* context signal the plan
-   * also names (`re.compile`/`open`/`Path`/`subprocess.*`/a logging
-   * format slot), this one is answerable exactly from the tree already
-   * available here, via the `pair` node's own `key` field — no heuristic
-   * text-matching needed. The sole-argument signal is *not* implemented
-   * in this phase: it would need matching against an open-ended set of
-   * call names textually or resolving imports to know `re.compile` really
-   * means the `re` module, which is real additional work the plan doesn't
-   * strictly require given the shared prose heuristic already rejects the
-   * plan's own named example for it (`logging.info("%s failed", x)` — its
-   * placeholder-density signal alone scores that text below the
-   * eligibility threshold). Documented here, rather than silently
-   * dropped, as a deliberate Phase 9 scope limit.
+   * unlike the *sole-argument-to-a-known-call* context signal also named
+   * (`re.compile`/`open`/`Path`/`subprocess.*`/a logging format slot),
+   * this one is answerable exactly from the tree already available here,
+   * via the `pair` node's own `key` field — no heuristic text-matching
+   * needed. The sole-argument signal is *not* implemented here: it would
+   * need matching against an open-ended set of call names textually or
+   * resolving imports to know `re.compile` really means the `re` module,
+   * which is real additional work that isn't strictly required given the
+   * shared prose heuristic already rejects the motivating example for it
+   * (`logging.info("%s failed", x)` — its placeholder-density signal
+   * alone scores that text below the eligibility threshold). Documented
+   * here, rather than silently dropped, as a deliberate scope limit.
    */
   readonly isDictKey: boolean;
 }

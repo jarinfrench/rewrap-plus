@@ -20,12 +20,12 @@ import negPathIn from '../fixtures/javascript/strings/neg-003-path-literal.in.js
 import negPathOut from '../fixtures/javascript/strings/neg-003-path-literal.out.js?raw';
 
 /**
- * Phase 12b's own string-wrapping gold fixtures for the now-full
- * JavaScript adapter — mirrors
- * `./python-string-wrap-fixtures.test.ts`'s structure and rationale,
- * proving the *shared* `strings/dissolve-string.ts`/`strings/emit-string.ts`
- * (promoted out of `languages/python/` this same phase) behaves
- * identically for JS/TS's `'operator'`-only, no-grouping-required
+ * String-wrapping gold fixtures for the now-full JavaScript adapter —
+ * mirrors `./python-string-wrap-fixtures.test.ts`'s structure and
+ * rationale, proving the *shared* `strings/dissolve-string.ts`/
+ * `strings/emit-string.ts` (promoted out of `languages/python/` as part
+ * of this same effort) behaves identically for JS/TS's `'operator'`-only,
+ * no-grouping-required
  * concatenation as it does for Python's `'implicit'`/`'operator'` pair.
  */
 const COLUMN_LIMIT = 60;

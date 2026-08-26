@@ -85,7 +85,7 @@ function main() {
   console.log(`  4. Fill in the conformance test's TODO sources and run:`);
   console.log(`       npm test --workspace=@rewrap-plus/engine`);
   console.log(`     — a passing run with no changes needed under packages/engine/src/core`);
-  console.log(`     is the adapter interface holding, per Phase 6b's own hard gate.`);
+  console.log(`     is the adapter interface holding — the hard gate a new adapter needs to pass.`);
 }
 
 function descriptorStub(languageId, pascalName) {
@@ -204,7 +204,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * packages/engine/test/conformance/javascript-conformance.test.ts for a
  * worked example, including why both a CRLF and an LF variant of the
  * same source matter (the line-ending-preservation invariant needs
- * both). Per Phase 6b's own hard gate: if getting this suite green
+ * both). The hard gate here: if getting this suite green
  * requires a change under packages/engine/src/core, stop and fix the
  * abstraction there instead of working around it here.
  */

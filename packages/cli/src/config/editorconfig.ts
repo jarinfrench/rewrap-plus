@@ -21,7 +21,7 @@
  *
  * Uses `node:fs` directly — this is `packages/cli`, not the engine
  * (which must stay free of Node built-ins for its own future-browser
- * goal, Phase 12f); a CLI tool has no such constraint.
+ * goal); a CLI tool has no such constraint.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';

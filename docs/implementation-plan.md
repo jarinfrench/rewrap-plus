@@ -897,6 +897,10 @@ Sequenced by value-to-risk ratio.
 - Additional languages: Rust, Go, Java, Ruby.
 - `web-tree-sitter` already being WASM means browser VSCode (`vscode.dev`) support is
   mostly a manifest change - worth revisiting once stable.
+- A GitHub Pages landing site (feature demos, install instructions), in the spirit of
+  stkb/Rewrap's own github.io page - worth doing once there's a real Marketplace
+  listing to point it at and the extension has seen real-world use; premature before
+  that.
 
 ---
 

@@ -1,6 +1,6 @@
 /**
  * Wrap configuration: the plain-data contract between a caller (the VSCode
- * extension today; a future CLI per Phase 12d) and the engine.
+ * extension, the CLI) and the engine.
  *
  * Deliberately plain data — no VSCode types anywhere in this file, and
  * nothing here requires a live editor host. This is the reuse seam that
@@ -21,16 +21,15 @@ export interface WrapConfig {
    * How aggressively to wrap string literals:
    * - `'off'` — never wrap strings; comments/docstrings only.
    * - `'prose'` — wrap only strings that score as prose-like under the
-   *   heuristic (Phase 9). The conservative default.
+   *   shared prose heuristic. The conservative default.
    * - `'all'` — wrap every eligible string, ignoring the prose heuristic.
    */
   readonly stringPolicy: 'prose' | 'all' | 'off';
 
   /**
    * Documentation dialect to assume for docstrings/doc comments. `'auto'`
-   * detects per docstring (Phase 8, "detect per docstring, not per file");
-   * the named dialects force that dialect's parsing/emission regardless of
-   * detection.
+   * detects per docstring, not per file; the named dialects force that
+   * dialect's parsing/emission regardless of detection.
    */
   readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';
 
@@ -46,10 +45,9 @@ export interface WrapConfig {
    * (`../reflow/reflow-block.ts`) for what the two modes actually do.
    * `false` (greedy) by default: greedy is the more predictable, more
    * widely-expected default, and costs less to compute. This field was
-   * anticipated by Phase 5 ("behind `WrapConfig.balancedWrapping`,
-   * wired in Phase 7") but not actually added to the interface until
-   * Phase 7 needed it for real — see `../wrap.ts` for where it's
-   * threaded through to `emitLineComments`/`emitBlockComments`.
+   * anticipated well before it was actually added to the interface,
+   * once VSCode integration needed it for real — see `../wrap.ts` for
+   * where it's threaded through to `emitLineComments`/`emitBlockComments`.
    */
   readonly balancedWrapping: boolean;
 

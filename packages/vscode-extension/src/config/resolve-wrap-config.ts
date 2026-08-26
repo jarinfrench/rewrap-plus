@@ -1,7 +1,7 @@
 /**
  * Assembles the engine's `WrapConfig` for one document: the point where
  * `./settings.ts`, `./resolve-column-limit.ts`, and `./editorconfig.ts`
- * all come together into the one object `wrapRegions` (Phase 6b) needs.
+ * all come together into the one object `wrapRegions` needs.
  * Thin `vscode`-facing glue, exercised via the @vscode/test-electron
  * suite (commit 9) — the pieces it composes are each independently unit
  * tested already.
