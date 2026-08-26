@@ -12,6 +12,7 @@ import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
 import { emitBlockComments } from './comments/emit-block-comments.js';
+import { looksLikeProse } from './prose-heuristic.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a
@@ -61,20 +62,29 @@ export interface WrapResult {
  * `dissolveBlockComments`/`emitBlockComments`, specifically so the
  * JavaScript canary's `/** * /` form has something real to exercise
  * through this same entry point rather than being vacuously skipped.
- * `'docstring'` regions are wrapped too, as of Phase 8, but *not*
- * through a generic dissolve/emit pair the way the two comment kinds
- * are: docstring syntax is inherently language-specific (see
- * `LanguageAdapter.wrapDocstring`'s own doc comment on
- * `./types/adapter.js`), so this dispatches to the adapter's own
- * `wrapDocstring` hook instead — `undefined` for an adapter that
- * doesn't support docstrings at all, same "skip with a reason" outcome
- * as every other not-yet-implemented kind. `'stringLiteral'` and
- * `'docComment'` are still reported as skipped with a reason naming the
- * missing phase, rather than silently ignored or (worse) crashing. This
- * is a *region-kind* limitation, not a language limitation, and stays
- * true regardless of which adapter is passed in — Python has no block
- * comments to exercise that path itself, but the dispatch here doesn't
- * care which descriptor is driving it.
+ * `'docstring'` regions are wrapped too, as of Phase 8, and `'stringLiteral'`
+ * regions as of Phase 9 — neither through a generic dissolve/emit pair the
+ * way the two comment kinds are: both docstring and string-literal syntax
+ * are inherently language-specific (see `LanguageAdapter.wrapDocstring`/
+ * `wrapString`'s own doc comments on `./types/adapter.js`), so each
+ * dispatches to the adapter's own whole-pipeline hook instead — `undefined`
+ * for an adapter that doesn't support the kind at all, same "skip with a
+ * reason" outcome as every other not-yet-implemented kind. `'docComment'`
+ * is still reported as skipped with a reason naming the missing phase,
+ * rather than silently ignored or (worse) crashing. This is a
+ * *region-kind* limitation, not a language limitation, and stays true
+ * regardless of which adapter is passed in — Python has no block comments
+ * to exercise that path itself, but the dispatch here doesn't care which
+ * descriptor is driving it.
+ *
+ * `'stringLiteral'` additionally passes through gates no other kind does
+ * before reaching `wrapString` — a master `cfg.wrapStrings`/
+ * `cfg.stringPolicy` switch, `isSafeToWrap`'s hard structural refusals,
+ * and, under the conservative `'prose'` policy, both the shared
+ * `looksLikeProse` text heuristic (`./prose-heuristic.js`) and whatever
+ * context signal the adapter's own `isProseEligible` can answer exactly
+ * (a dict key, for Python) — see the loop body below rather than
+ * `cfg.wrapComments`'s gate, which `'stringLiteral'` does not share.
  *
  * Every candidate region is checked against `errorSpans` before anything
  * else: a region overlapping a parse error is skipped outright ("skip
@@ -123,7 +133,8 @@ export async function wrapRegions(
     if (
       region.kind !== 'lineComment' &&
       region.kind !== 'blockComment' &&
-      !(region.kind === 'docstring' && adapter.wrapDocstring)
+      !(region.kind === 'docstring' && adapter.wrapDocstring) &&
+      !(region.kind === 'stringLiteral' && adapter.wrapString)
     ) {
       skipped.push({
         region,
@@ -132,7 +143,32 @@ export async function wrapRegions(
       continue;
     }
 
-    if (!cfg.wrapComments) {
+    if (region.kind === 'stringLiteral') {
+      // `'stringLiteral'` gets its own gates entirely separate from
+      // `cfg.wrapComments` below (Phase 9): a master `wrapStrings` switch,
+      // `isSafeToWrap`'s hard structural refusals (raw/byte/mixed-prefix/
+      // triple-quoted/line-continuation — `./languages/python/adapter.ts`),
+      // and, for the conservative `'prose'` policy, both the shared
+      // text-only heuristic and whatever context signal the adapter can
+      // answer exactly (`isProseEligible` — a dict key, for Python).
+      if (!cfg.wrapStrings || cfg.stringPolicy === 'off') {
+        skipped.push({ region, reason: 'string wrapping disabled (wrapStrings/stringPolicy)' });
+        continue;
+      }
+      if (adapter.isSafeToWrap && !adapter.isSafeToWrap(region, source)) {
+        skipped.push({ region, reason: 'string is not safe to wrap' });
+        continue;
+      }
+      if (cfg.stringPolicy === 'prose') {
+        const eligible =
+          looksLikeProse(sliceSpanText(source, region.span)) &&
+          (adapter.isProseEligible?.(region, source, tree, cfg) ?? true);
+        if (!eligible) {
+          skipped.push({ region, reason: "string doesn't score as prose under stringPolicy 'prose'" });
+          continue;
+        }
+      }
+    } else if (!cfg.wrapComments) {
       // Docstrings share this gate rather than getting a separate config
       // key: they're Python's own form of documentation comment (Phase
       // 3's own framing — "docstrings get rich treatment," as opposed to
@@ -149,7 +185,9 @@ export async function wrapRegions(
         ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
         : region.kind === 'blockComment'
           ? emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
-          : adapter.wrapDocstring!(region, source, cfg);
+          : region.kind === 'stringLiteral'
+            ? adapter.wrapString!(region, source, cfg, tree)
+            : adapter.wrapDocstring!(region, source, cfg);
 
     // `emitLineComments`/`emitBlockComments` always join their own
     // output lines with a bare `\n` (see each function's own doc

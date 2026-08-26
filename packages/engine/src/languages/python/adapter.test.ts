@@ -142,6 +142,22 @@ describe('pythonAdapter.isSafeToWrap', () => {
     const { region, source } = discoverOne('# looks like r"raw" but is a comment\n');
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
   });
+
+  it('is unsafe for a triple-quoted ordinary string (Phase 9 scope limit)', () => {
+    const { region, source } = discoverOne('x = 1\ny = """not a docstring"""\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
+
+  it('is safe for a triple-quoted docstring (unaffected by the Phase 9 scope limit)', () => {
+    const { region, source } = discoverOne('"""A module docstring."""\n');
+    expect(region.kind).toBe('docstring');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
+  });
+
+  it('is unsafe for a string containing a line-continuation escape', () => {
+    const { region, source } = discoverOne('x = "a\\\nb"\n');
+    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
+  });
 });
 
 describe('pythonAdapter groupRegions — line comment merging', () => {

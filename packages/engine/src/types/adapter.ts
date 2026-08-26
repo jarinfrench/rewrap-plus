@@ -184,15 +184,40 @@ export interface LanguageAdapter {
 
   /**
    * Override eligibility beyond the shared prose heuristic — e.g. refusing
-   * raw strings, byte strings, or mixed-prefix concatenation runs.
+   * raw strings, byte strings, or mixed-prefix concatenation runs. A hard
+   * gate: `false` here means "would be wrong to attempt," checked
+   * regardless of `WrapConfig.stringPolicy`.
    */
   isSafeToWrap?(region: WrappableRegion, source: string): boolean;
 
   /**
+   * Override string-wrap eligibility beyond `../prose-heuristic.ts`'s
+   * shared, text-only `looksLikeProse` — for context that heuristic can't
+   * see from text alone, e.g. a dict literal's key (the plan's own named
+   * "context signal": "string is a dict key → skip"). A soft gate,
+   * consulted only when `WrapConfig.stringPolicy` is `'prose'` — `'all'`
+   * bypasses both this and the shared heuristic, `'off'` never reaches
+   * either. Receives `tree` (unlike `isSafeToWrap`) because context
+   * signals like this one are exactly the kind of question only real
+   * syntax-tree access can answer correctly; see
+   * `../languages/python/emit-context.ts`'s own doc comment for why a
+   * text-only proxy for "is this a dict key" risks false positives
+   * `isSafeToWrap`'s text-only checks don't have to worry about.
+   */
+  isProseEligible?(region: WrappableRegion, source: string, tree: Tree, cfg: WrapConfig): boolean;
+
+  /**
    * Compute emit-time context for a region, e.g. whether enclosing
    * grouping already exists and parentheses must be added.
+   *
+   * Takes `cfg` alongside `region`/`tree` — refined here in Phase 9 from
+   * the two-argument shape earlier phases anticipated, since resolving
+   * Python's own concatenation style needs `cfg.concatStyle` (an adapter-
+   * interpreted override, per that field's own doc comment on
+   * `./config.ts`) alongside the syntax-tree lookup
+   * (`../languages/python/emit-context.ts`).
    */
-  emitContext?(region: WrappableRegion, tree: Tree): EmitContext;
+  emitContext?(region: WrappableRegion, tree: Tree, cfg: WrapConfig): EmitContext;
 
   /**
    * Dissolve, dialect-segment, reflow, and emit one `'docstring'` region,
@@ -217,4 +242,21 @@ export interface LanguageAdapter {
    * it exists.
    */
   wrapDocstring?(region: WrappableRegion, source: string, cfg: WrapConfig): string;
+
+  /**
+   * Dissolve, resolve emit context, and emit one `'stringLiteral'` region,
+   * returning its replacement source text — or `undefined` if this
+   * adapter doesn't support string-literal wrapping at all.
+   *
+   * A whole-pipeline hook for the same reason `wrapDocstring` is one: a
+   * string's own concatenation syntax and paren-insertion rules (Phase 9)
+   * are inherently language-specific, not expressible as `comments.line`/
+   * `comments.block`-style descriptor data. Unlike `wrapDocstring`, this
+   * also receives the parsed `Tree` — paren insertion needs real syntax
+   * context (is this concatenation already inside a call's argument list,
+   * a list literal, ...?) that `region`/`source` alone can't answer; see
+   * `../languages/python/emit-context.ts`'s own doc comment for what that
+   * lookup actually does.
+   */
+  wrapString?(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string;
 }

@@ -129,13 +129,30 @@ describe('wrapRegions', () => {
     }
   });
 
-  it('still skips a stringLiteral region with a reason naming the missing implementation', async () => {
+  it('skips a stringLiteral region when wrapStrings is false (the default)', async () => {
     const source = 'x = "a plain string literal, not a docstring, well over the column limit"\n';
     const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
     expect(result.edits).toEqual([]);
     expect(result.skipped).toHaveLength(1);
     expect(result.skipped[0]!.region.kind).toBe('stringLiteral');
-    expect(result.skipped[0]!.reason).toMatch(/not implemented/);
+    expect(result.skipped[0]!.reason).toMatch(/wrapStrings/);
+  });
+
+  it('wraps a stringLiteral region (Phase 9) rather than skipping it, once enabled', async () => {
+    const source = 'x = "a plain string literal, not a docstring, well over the column limit"\n';
+    const result = await wrapRegions(
+      source,
+      'python',
+      'all',
+      config({ wrapStrings: true, stringPolicy: 'all' }),
+      parserManager,
+    );
+    expect(result.skipped).toEqual([]);
+    expect(result.edits).toHaveLength(1);
+    const wrapped = applyTextEdits(source, result.edits);
+    for (const line of wrapped.split('\n')) {
+      expect(line.length).toBeLessThanOrEqual(40);
+    }
   });
 
   it('skips a region overlapping a parse error rather than throwing', async () => {

@@ -1,11 +1,33 @@
 import type { LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
-import type { SyntaxNode } from '../../types/tree-sitter-types.js';
+import type { SyntaxNode, Tree } from '../../types/tree-sitter-types.js';
+import type { WrapConfig } from '../../types/config.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { pythonDescriptor } from './descriptor.js';
 import { isAttributeDocstringPosition, isDocstringPosition } from './docstring-position.js';
 import { classifyPrefix, extractPrefix } from './prefix.js';
 import { wrapDocstring } from './wrap-docstring.js';
+import { emitContext } from './emit-context.js';
+import { wrapString } from './wrap-string.js';
+
+/**
+ * Python's `isProseEligible` override: `false` for a `'stringLiteral'`
+ * that's a dictionary literal's own key (`emitContext`'s `isDictKey`,
+ * computed exactly rather than guessed at from text — see that module's
+ * own doc comment). Every other region kind, and every string that isn't
+ * a dict key, is left to the shared `looksLikeProse` text heuristic alone.
+ *
+ * `cfg` is threaded through only because `emitContext`'s own signature
+ * requires one (for `concatStyle` resolution, irrelevant to this narrower
+ * question) — `wrap.ts` already has the real one in scope when it calls
+ * this hook, so there's no placeholder to invent.
+ */
+function isProseEligible(region: WrappableRegion, _source: string, tree: Tree, cfg: WrapConfig): boolean {
+  if (region.kind !== 'stringLiteral') {
+    return true;
+  }
+  return !emitContext(region, tree, cfg).isDictKey;
+}
 
 /**
  * Python's `classify` override.
@@ -72,6 +94,34 @@ function classify(node: SyntaxNode): RegionKind | null {
  * thrown on — reachable in principle for a hand-built `WrappableRegion`
  * that doesn't correspond to real discovered output, and "assume unsafe"
  * is the failure mode that can't corrupt a file.
+ *
+ * Phase 9 adds two more unsafe cases, both scoped to `'stringLiteral'`
+ * only (never `'docstring'` — a docstring is *always* legitimately
+ * triple-quoted, and that's `wrapDocstring`'s own territory, unaffected
+ * by any of this):
+ *
+ * - **Triple-quoted.** An ordinary (non-docstring) triple-quoted string is
+ *   real Python (Phase 3: "arbitrary triple-quoted strings are treated as
+ *   ordinary string literals"), but `dissolveString`/`emitString`
+ *   (`./dissolve-string.ts`, `./emit-string.ts`) are built around every
+ *   part being a single physical line — reflowing one that already spans
+ *   several real lines, and re-quoting a `"""` delimiter without the
+ *   4-in-a-row collision guard `emitDocstring` needs for the exact same
+ *   reason, is real, separate work the plan defers explicitly (Phase 12f:
+ *   "Triple-quoted non-docstring code strings (the deferred case)").
+ *   Marking it unsafe here — rather than attempting it and risking a
+ *   subtly wrong result — is this phase's own instance of "bias toward
+ *   verbatim/skip when uncertain."
+ * - **Contains a line-continuation escape** (`\` immediately followed by a
+ *   real newline) in any part. The plan calls this out by name as a
+ *   refusal case ("Refuse (mark unsafe): ... strings with line
+ *   continuations"): a line-continuation escape consumes the newline
+ *   itself (it contributes nothing to the string's value), which
+ *   `dissolveString`'s "never decode, just concatenate bodies verbatim"
+ *   design has no way to represent — concatenating a body that still
+ *   contains `\` + a real newline character straight through would hand
+ *   `atomizeWords` a body containing an actual line break, which its
+ *   single-line contract doesn't expect.
  */
 function isSafeToWrap(region: WrappableRegion, source: string): boolean {
   if (region.kind !== 'stringLiteral' && region.kind !== 'docstring') {
@@ -95,8 +145,21 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
     }
   }
 
+  if (region.kind === 'stringLiteral') {
+    const partTexts = region.parts.map((part) => sliceSpanText(source, part));
+    if (partTexts.some((text) => TRIPLE_QUOTE_BODY.test(text))) {
+      return false;
+    }
+    if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
+      return false;
+    }
+  }
+
   return true;
 }
+
+const TRIPLE_QUOTE_BODY = /^[A-Za-z]{0,3}('''|""")/;
+const LINE_CONTINUATION = /\\\r?\n/;
 
 /**
  * Python's `groupRegions` override.
@@ -217,17 +280,26 @@ function mergeLineCommentRun(run: readonly WrappableRegion[]): WrappableRegion {
  * this hook — it needs direct syntax-tree access that hook's signature
  * doesn't provide, so it lives in the discovery driver instead, keyed
  * off `descriptor.queries.concatenations` (see that commit's message for
- * the full reasoning). `emitContext` isn't implemented yet; that's Phase
- * 9's job, once paren-insertion for bare multi-part literals is a real
- * question to answer. `wrapDocstring` (Phase 8) is Python's whole
+ * the full reasoning). `wrapDocstring` (Phase 8) is Python's whole
  * dissolve→segment→reflow→emit pipeline for `'docstring'` regions — see
  * `./wrap-docstring.ts` and that hook's own doc comment on
  * `../../types/adapter.ts` for why it's one hook rather than several.
+ * `emitContext` (Phase 9, `./emit-context.ts`) answers whether a
+ * `'stringLiteral'` split needs its own inserted parentheses and which
+ * concatenation syntax to preserve; `wrapString` (`./wrap-string.ts`) is
+ * that region kind's own whole-pipeline hook, the same shape as
+ * `wrapDocstring` for the same reason. `isProseEligible` adds the one
+ * context signal `emitContext` already has the tree access to answer
+ * exactly (a dict literal's key) on top of the shared text-only
+ * `looksLikeProse` heuristic.
  */
 export const pythonAdapter: LanguageAdapter = {
   descriptor: pythonDescriptor,
   classify,
   groupRegions,
   isSafeToWrap,
+  isProseEligible,
+  emitContext,
   wrapDocstring,
+  wrapString,
 };
