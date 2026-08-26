@@ -84,7 +84,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "markdownDescription": "Wrap eligible string literals, subject to `#rewrapPlus.stringPolicy#`. **Not yet implemented** — string wrapping is a later phase of this project; this setting has no effect yet and is exposed now only so its schema and default are in place ahead of that work."
+          "markdownDescription": "Wrap eligible string literals, subject to `#rewrapPlus.stringPolicy#`."
         },
         "rewrapPlus.stringPolicy": {
           "type": "string",
@@ -96,7 +96,7 @@
           ],
           "default": "prose",
           "scope": "resource",
-          "markdownDescription": "How aggressively to wrap string literals once string wrapping is implemented. See `#rewrapPlus.wrapStrings#`."
+          "markdownDescription": "How aggressively to wrap string literals. See `#rewrapPlus.wrapStrings#`."
         },
         "rewrapPlus.docDialect": {
           "type": "string",
@@ -110,7 +110,7 @@
           ],
           "default": "auto",
           "scope": "resource",
-          "markdownDescription": "Documentation dialect to assume for docstrings and doc comments. **Not yet implemented** — docstring dialect handling is a later phase of this project."
+          "markdownDescription": "Documentation dialect for docstrings. `auto` (the default) detects per docstring rather than per file, since mixed conventions in one codebase are common; any other value forces that dialect for every docstring regardless of its own shape."
         },
         "rewrapPlus.preserveIndentedBlocks": {
           "type": "boolean",
