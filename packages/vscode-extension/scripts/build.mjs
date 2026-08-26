@@ -6,10 +6,9 @@
  * script (`typecheck` keeps using `tsc -b` for actual type checking —
  * esbuild only transpiles, it never checks types).
  *
- * ## Why `web-tree-sitter` is `external`, not bundled
+ * ## Why `web-tree-sitter` is aliased to a loader, not just `external`
  *
- * The obvious approach — bundle everything reachable from `extension.ts`,
- * including `@rewrap-plus/engine` and its `web-tree-sitter` dependency,
+ * The obvious approach — bundle everything reachable from `extension.ts`
  * into one file — silently breaks `web-tree-sitter`'s own WASM loading.
  * Probed directly (not trusted from the plan's shorthand "mark `vscode`
  * external"; this is a second, unwritten landmine the same principle
@@ -19,36 +18,46 @@
  * via `new URL('web-tree-sitter.wasm', import.meta.url)`. esbuild cannot
  * synthesize a real `import.meta.url` when the output format is `cjs` (a
  * documented esbuild limitation, not a bug to work around) — it stubs
- * `import.meta` to `{}`, so `import.meta.url` is `undefined` and the
- * bootstrap fails with `TypeError [ERR_INVALID_ARG_VALUE]` inside
- * `createRequire(undefined)`. Confirmed by bundling a throwaway probe
- * script and running it from a directory with no relationship to this
- * repo's `node_modules` — the exact shape a packaged `.vsix` has.
+ * `import.meta` to `{}`, so the bootstrap fails with `TypeError
+ * [ERR_INVALID_ARG_VALUE]` inside `createRequire(undefined)`. Confirmed
+ * by bundling a throwaway probe and running it from a directory with no
+ * relationship to this repo's `node_modules` — the exact shape a
+ * packaged `.vsix` has.
  *
- * Marking `web-tree-sitter` external sidesteps the ESM build entirely:
- * esbuild downlevels the bundled code's `import` of it to a plain
- * `require('web-tree-sitter')`, which is a genuine CJS `require()` at
- * runtime and therefore resolves via the package's `"require"` export
- * condition instead — the `.cjs` build, which locates its WASM via
- * `__dirname` (a real Node global, unaffected by any of the above).
- * Verified the same way: bundle, copy a real `node_modules/web-tree-sitter`
- * next to the bundle, run from an unrelated directory — succeeds.
+ * The first fix tried (Phase 11 commit 1) was marking `web-tree-sitter`
+ * `external`: esbuild then downlevels the bundled `import` to a plain
+ * `require('web-tree-sitter')`, resolving via the package's `"require"`
+ * export condition — the `.cjs` build, which locates its WASM via
+ * `__dirname` and sidesteps the landmine above. That much is correct and
+ * still true. But `require('web-tree-sitter')` needs a real
+ * `node_modules/web-tree-sitter` reachable from `dist/extension.js`, and
+ * wiring up actual packaging (commit 2) surfaced a *second* landmine on
+ * top of it: `vsce`'s own file-collection walk hardcodes
+ * `ignore: 'node_modules/**'` for this package's own directory,
+ * unconditionally — no `.vscodeignore` negation overrides it, so a local
+ * `node_modules/web-tree-sitter` copy could never actually ship that
+ * way. The only alternative `vsce` offers — its own dependency-resolution
+ * walk, the default unless `--no-dependencies` is passed — shells out to
+ * `npm list --production`, which in this npm-workspaces monorepo reports
+ * the *workspace root* as a "dependency directory" too: confirmed
+ * directly, `vsce ls` from this package without `--no-dependencies`
+ * listed `../../.git/**` and every unrelated doc in the repo.
  *
- * That "real `node_modules/web-tree-sitter` next to the bundle" is exactly
- * what this script's `copyWebTreeSitter()` step produces, deliberately
- * local to this package rather than relying on the monorepo's hoisted
- * root `node_modules`: `vsce package` only packages this package's own
- * directory, and npm workspaces hoists `web-tree-sitter` to the repo
- * root, not here — so without this copy, `require('web-tree-sitter')`
- * would resolve fine in every dev/test run (root `node_modules` is a real
- * ancestor directory then) and only fail once actually packaged, the
- * worst possible time to discover it.
+ * The fix that clears both landmines at once: don't let `web-tree-sitter`
+ * resolve as a package at all. `alias` below redirects the bare
+ * specifier to `../src/web-tree-sitter-runtime.ts` (see that file's own,
+ * fuller doc comment), which loads the real `.cjs` build via a
+ * *computed* `require()` path esbuild can't statically resolve, reading
+ * from `dist/web-tree-sitter-runtime/` — an ordinary subdirectory name,
+ * not `node_modules`, so `vsce`'s hardcoded ignore doesn't apply and
+ * packaging never needs its dependency walk (`package.json`'s `package`
+ * script always passes `--no-dependencies`).
  *
- * `@rewrap-plus/engine` itself is deliberately *not* external — bundling
- * its compiled output directly avoids needing to ship a second workspace
- * package's node_modules entry, and nothing in its own source touches
- * `import.meta.url` the way `web-tree-sitter`'s ESM build does, so the
- * landmine above doesn't apply to it.
+ * `@rewrap-plus/engine` itself is deliberately bundled directly (not
+ * aliased or external) — nothing in its own source touches
+ * `import.meta.url`, so neither landmine applies to it, and bundling its
+ * compiled output avoids shipping a second workspace package's
+ * node_modules entry.
  */
 import * as esbuild from 'esbuild';
 import { fileURLToPath } from 'node:url';
@@ -72,14 +81,19 @@ async function main() {
     outfile: path.join(outdir, 'extension.js'),
     sourcemap: true,
     // `vscode` is injected by the extension host, never resolvable as a
-    // real package. `web-tree-sitter` is external for the reason in this
-    // file's own doc comment above.
-    external: ['vscode', 'web-tree-sitter'],
+    // real package. `web-tree-sitter` is aliased to a local loader
+    // rather than bundled or marked external — see this file's own top
+    // doc comment for why either of those simpler options breaks.
+    external: ['vscode'],
+    alias: {
+      'web-tree-sitter': path.join(packageRoot, 'src', 'web-tree-sitter-runtime.ts'),
+    },
     logLevel: 'info',
   });
 
   copyGrammars();
   copyWebTreeSitter();
+  copyLicense();
 }
 
 /**
@@ -109,16 +123,17 @@ function copyGrammars() {
  * Copies just the files `web-tree-sitter`'s own `package.json` "files"
  * list ships (its `.cjs`/`.js`/`.wasm`/`.d.ts` runtime plus `LICENSE`),
  * skipping devDependency-only clutter, from the monorepo's hoisted root
- * `node_modules` into this package's own `node_modules/web-tree-sitter` —
- * see this file's top doc comment for why a local copy is required at all.
+ * `node_modules` to `dist/web-tree-sitter-runtime/` — read by
+ * `src/web-tree-sitter-runtime.ts` at runtime via a path relative to its
+ * own bundled `__dirname`. See that file's doc comment for why this
+ * directory is deliberately not named `node_modules`.
  */
 function copyWebTreeSitter() {
   const srcDir = path.join(repoRoot, 'node_modules', 'web-tree-sitter');
-  const destDir = path.join(packageRoot, 'node_modules', 'web-tree-sitter');
+  const destDir = path.join(outdir, 'web-tree-sitter-runtime');
   if (!fs.existsSync(srcDir)) {
     throw new Error(`build: expected web-tree-sitter at ${srcDir} — run npm ci first.`);
   }
-  fs.rmSync(destDir, { recursive: true, force: true });
   fs.mkdirSync(destDir, { recursive: true });
 
   for (const entry of fs.readdirSync(srcDir)) {
@@ -131,6 +146,19 @@ function copyWebTreeSitter() {
       fs.copyFileSync(srcPath, path.join(destDir, entry));
     }
   }
+}
+
+/**
+ * Copies the repo-root `LICENSE` to `<packageRoot>/LICENSE` — a build
+ * artifact, not a second source of truth, the same as `copyGrammars()`.
+ * `vsce package` warns (correctly) when a packaged extension has no
+ * `LICENSE`/`LICENSE.md`/`LICENSE.txt` of its own; a monorepo subpackage
+ * has no reason to duplicate the root file by hand just to silence that.
+ * `web-tree-sitter`'s own `package.json` does the identical
+ * `"prepack": "cp ../../LICENSE ."` for the identical reason.
+ */
+function copyLicense() {
+  fs.copyFileSync(path.join(repoRoot, 'LICENSE'), path.join(packageRoot, 'LICENSE'));
 }
 
 main().catch((error) => {

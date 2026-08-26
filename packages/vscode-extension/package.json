@@ -6,6 +6,15 @@
   "description": "Rewraps comments, docstrings, and string literals to a configured column limit, preserving formatted structure and emitting language-valid concatenation.",
   "publisher": "jarinfrench",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jarinfrench/rewrap-plus.git",
+    "directory": "packages/vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/jarinfrench/rewrap-plus/issues"
+  },
+  "homepage": "https://github.com/jarinfrench/rewrap-plus#readme",
   "categories": ["Formatters"],
   "engines": {
     "vscode": "^1.122.0"
@@ -136,16 +145,20 @@
     "test": "vitest run",
     "pretest:integration": "npm run build && tsc -p tsconfig.test.json",
     "test:integration": "node ./out-test/runTest.js",
-    "typecheck": "tsc -b tsconfig.json"
+    "typecheck": "tsc -b tsconfig.json",
+    "prepackage": "npm run build",
+    "package": "vsce package --no-dependencies"
   },
   "dependencies": {
-    "@rewrap-plus/engine": "*"
+    "@rewrap-plus/engine": "*",
+    "web-tree-sitter": "^0.26.13"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.0.0",
     "@types/vscode": "^1.120.0",
     "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
     "mocha": "^11.8.0",
     "vitest": "^4.1.11"

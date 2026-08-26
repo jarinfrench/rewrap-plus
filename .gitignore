@@ -15,6 +15,10 @@ out-test/
 # lives in packages/engine/grammars/ (see that dir's PROVENANCE.md).
 packages/vscode-extension/grammars/
 
+# Root LICENSE copied into the extension package by the same build
+# script, so `vsce package` finds one without a second checked-in copy.
+packages/vscode-extension/LICENSE
+
 # @vscode/test-electron's downloaded VSCode instance + extension sandbox
 .vscode-test/
 
