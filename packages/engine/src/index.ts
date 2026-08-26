@@ -90,7 +90,7 @@ export type { WrapResult, SkippedRegion } from './wrap.js';
 export { runAdapterConformance } from './conformance/run-adapter-conformance.js';
 export type { ConformanceFixtures } from './conformance/run-adapter-conformance.js';
 export { applyTextEdits } from './apply-edits.js';
-export { detectLineEnding, applyLineEnding } from './detect-line-ending.js';
+export { detectLineEnding, detectLineEndingNear, applyLineEnding } from './detect-line-ending.js';
 export { splitBlocks } from './segmentation/split-blocks.js';
 export type { SplitBlocksOptions } from './segmentation/split-blocks.js';
 export { displayWidth } from './segmentation/display-width.js';

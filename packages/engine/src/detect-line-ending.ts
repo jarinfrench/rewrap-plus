@@ -12,17 +12,13 @@
  * which calls this once per `wrapRegions` invocation and substitutes
  * accordingly before an edit is ever compared or returned.
  *
- * Only the *first* line break is inspected — one file is assumed to use
- * one convention consistently, matching the plan's own framing of this
- * as a per-file property ("detect and preserve CRLF vs LF **per file**",
- * Phase 10). A file with genuinely mixed line endings is out of scope
- * here; Phase 10 ("engine: add line ending and trailing whitespace
- * preservation") is where that general hardening belongs. What this
- * function exists for now is narrower and more basic: make the Python
- * adapter's own wrap output consistent with the file it's wrapping,
- * which is also exactly what the Phase 6b conformance kit's own
- * invariant ("line endings ... preserved") requires to be true before
- * that kit can pass.
+ * Only the *first* line break is inspected — a per-file fallback for
+ * when there's no more specific signal to go by. See
+ * `detectLineEndingNear`, below, for the per-*region* detection Phase 10
+ * ("engine: add line ending and trailing whitespace preservation") adds
+ * on top of this for a file with genuinely mixed line endings — this
+ * function alone remains what `detectLineEndingNear` itself falls back
+ * to when a region has no nearby line break of its own to go by.
  *
  * A source with no line break at all (a single-line file) has nothing
  * to detect from; `'\n'` is returned as the conservative default, since
@@ -35,6 +31,38 @@ export function detectLineEnding(source: string): '\n' | '\r\n' {
     return '\r\n';
   }
   return '\n';
+}
+
+/**
+ * Detect the line-ending convention actually surrounding one region,
+ * rather than the whole file's first line break — what makes a genuinely
+ * mixed-line-ending file (Phase 10's own named pathological input) wrap
+ * correctly: `wrap.ts` calls this once per region instead of computing
+ * one `detectLineEnding(source)` up front and reusing it for every edit,
+ * so a region living in the file's `\n`-only stretch gets `\n`-joined
+ * replacement text even if the file elsewhere (or even earlier on the
+ * very same line boundary) uses `\r\n`, and vice versa.
+ *
+ * Looks at `row`'s own line terminator first (the row a region's own
+ * `SourceSpan.startRow` names): `source.split('\n')` leaves a trailing
+ * `\r` on every line that was really `\r\n`-terminated, since only the
+ * `\n` itself is consumed by the split — checking for that trailing `\r`
+ * is exactly `detectLineEnding`'s own test, just applied to one line
+ * instead of the whole file. Falls back to the *previous* row's own
+ * terminator when `row` is the file's last line (which has no
+ * terminator of its own to inspect), and to `detectLineEnding(source)`'s
+ * whole-file heuristic only when neither exists — a single-line file, or
+ * `row` being both the first and the last line.
+ */
+export function detectLineEndingNear(source: string, row: number): '\n' | '\r\n' {
+  const lines = source.split('\n');
+  if (row >= 0 && row < lines.length - 1) {
+    return lines[row]!.endsWith('\r') ? '\r\n' : '\n';
+  }
+  if (row > 0) {
+    return lines[row - 1]!.endsWith('\r') ? '\r\n' : '\n';
+  }
+  return detectLineEnding(source);
 }
 
 /**

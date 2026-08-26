@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyLineEnding, detectLineEnding } from './detect-line-ending.js';
+import { applyLineEnding, detectLineEnding, detectLineEndingNear } from './detect-line-ending.js';
 
 describe('detectLineEnding', () => {
   it('detects CRLF from the first line break', () => {
@@ -24,6 +24,39 @@ describe('detectLineEnding', () => {
 
   it('does not mistake a line break as the very first character for CRLF', () => {
     expect(detectLineEnding('\nfirst char is a newline')).toBe('\n');
+  });
+});
+
+describe('detectLineEndingNear', () => {
+  it('detects the convention of a row inside a genuinely mixed-line-ending file, independent of every other row', () => {
+    // Row 0 ('a') is CRLF-terminated; row 1 ('b') is LF-terminated. Each
+    // row's own detection should reflect only its own terminator, not
+    // whichever convention the file happens to lead with (unlike
+    // `detectLineEnding`, which is a whole-file, first-break heuristic —
+    // see that function's own "goes by the first line break" test).
+    const source = 'a\r\nb\nc\r\n';
+    expect(detectLineEndingNear(source, 0)).toBe('\r\n');
+    expect(detectLineEndingNear(source, 1)).toBe('\n');
+    expect(detectLineEndingNear(source, 2)).toBe('\r\n');
+  });
+
+  it("falls back to the previous row's terminator for the file's last line, which has none of its own", () => {
+    expect(detectLineEndingNear('a\r\nb', 1)).toBe('\r\n');
+    expect(detectLineEndingNear('a\nb', 1)).toBe('\n');
+  });
+
+  it('falls back to whole-file detectLineEnding when the row itself has no terminator to inspect', () => {
+    expect(detectLineEndingNear('a', 0)).toBe('\n');
+    expect(detectLineEndingNear('', 0)).toBe('\n');
+  });
+
+  it('agrees with detectLineEnding for a uniformly LF or uniformly CRLF file, at any row', () => {
+    const lf = 'a\nb\nc\n';
+    const crlf = 'a\r\nb\r\nc\r\n';
+    for (let row = 0; row < 3; row++) {
+      expect(detectLineEndingNear(lf, row)).toBe(detectLineEnding(lf));
+      expect(detectLineEndingNear(crlf, row)).toBe(detectLineEnding(crlf));
+    }
   });
 });
 

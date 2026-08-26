@@ -2,7 +2,7 @@ import type { ParserManager } from './parser/parser-manager.js';
 import { parseWithErrors } from './parser/parse-result.js';
 import { discoverRegions } from './discovery/discover-regions.js';
 import { sliceSpanText } from './discovery/slice-span.js';
-import { applyLineEnding, detectLineEnding } from './detect-line-ending.js';
+import { applyLineEnding, detectLineEndingNear } from './detect-line-ending.js';
 import type { LanguageDescriptor } from './types/adapter.js';
 import type { WrapConfig } from './types/config.js';
 import type { SourceSpan, TextEdit } from './types/span.js';
@@ -112,7 +112,6 @@ export async function wrapRegions(
 
   const parser = await parserManager.parserFor(languageId);
   const { tree, errorSpans } = parseWithErrors(parser, source);
-  const lineEnding = detectLineEnding(source);
 
   const allRegions = discoverRegions(adapter, tree, source, languageId, {
     tabSize: cfg.tabSize,
@@ -224,6 +223,14 @@ export async function wrapRegions(
     // editable text (`./detect-line-ending.ts`'s own doc comment
     // explains why this substitution belongs at this layer rather than
     // inside emit itself).
+    //
+    // Detected per region (`detectLineEndingNear`), not once for the
+    // whole file — a file with genuinely mixed line endings (Phase 10's
+    // own named pathological input) gets each edit matching whatever
+    // convention actually surrounds *that* region, rather than every
+    // edit in the file uniformly adopting whichever convention happened
+    // to appear first.
+    const lineEnding = detectLineEndingNear(source, region.span.startRow);
     const newText = applyLineEnding(emitted, lineEnding);
 
     if (newText === sliceSpanText(source, region.span)) {
