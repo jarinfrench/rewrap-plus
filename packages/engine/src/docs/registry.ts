@@ -3,6 +3,7 @@ import { plainDialect } from './plain.js';
 import { googleDialect } from './google.js';
 import { numpyDialect } from './numpy.js';
 import { sphinxDialect } from './sphinx.js';
+import { jsdocDialect } from './jsdoc.js';
 
 /**
  * Build a `DialectRegistry` carrying every dialect this package ships.
@@ -12,8 +13,9 @@ import { sphinxDialect } from './sphinx.js';
  * `./dialect.ts`.
  *
  * Dialects are stateless, so a single shared instance (built once by
- * whichever language adapter needs one — currently only Python's
- * `../languages/python/wrap-docstring.ts`) is always safe to reuse.
+ * whichever caller needs one — Python's `../languages/python/wrap-docstring.ts`
+ * for `'docstring'` regions, `../comments/wrap-doc-comment.ts` for
+ * `'docComment'` regions as of Phase 12b) is always safe to reuse.
  * There's no v1 story for a caller registering its *own* dialect, so
  * this stays a plain factory rather than a configurable registry
  * builder.
@@ -24,5 +26,6 @@ export function createDialectRegistry(): DialectRegistry {
   registry.register(googleDialect);
   registry.register(numpyDialect);
   registry.register(sphinxDialect);
+  registry.register(jsdocDialect);
   return registry;
 }

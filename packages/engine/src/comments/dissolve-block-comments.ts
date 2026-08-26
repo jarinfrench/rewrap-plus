@@ -50,22 +50,45 @@ export function dissolveBlockComments(
   descriptor: LanguageDescriptor,
   options: SplitBlocksOptions = {},
 ): LogicalDocument {
+  const text = dissolveBlockCommentText(region, source, descriptor);
+  return { blocks: splitBlocks(text, options), meta: { indentColumn: region.indentColumn } };
+}
+
+/**
+ * Strip a `'blockComment'`/`'docComment'` region's delimiters and
+ * continuation-prefix decoration, returning its merged logical text —
+ * everything `dissolveBlockComments` above does, short of the final
+ * `splitBlocks` call.
+ *
+ * Split out in Phase 12b for `../comments/wrap-doc-comment.ts`, which
+ * needs this exact same delimiter-stripping (a `'docComment'` region uses
+ * the identical `comments.block` open/close/continuationPrefix syntax a
+ * plain `'blockComment'` does — JSDoc's `/** ... * /` is not a different
+ * delimiter shape, just different *content*) but must segment the result
+ * through a `DocDialect`'s own `segment` (tag-aware, e.g. `@param`/
+ * `@returns` grouping) instead of the generic paragraph-only `splitBlocks`
+ * this function calls. A pure extraction — `dissolveBlockComments`'s own
+ * behavior for `'blockComment'` regions is unchanged, still exercised by
+ * this file's own tests.
+ */
+export function dissolveBlockCommentText(
+  region: WrappableRegion,
+  source: string,
+  descriptor: LanguageDescriptor,
+): string {
   const block = descriptor.comments.block;
   if (!block) {
     throw new Error(
-      `dissolveBlockComments: descriptor '${descriptor.id}' declares no comments.block`,
+      `dissolveBlockCommentText: descriptor '${descriptor.id}' declares no comments.block`,
     );
   }
 
   const raw = sliceSpanText(source, region.span);
   const physicalLines = raw.split(/\r?\n/);
 
-  const text =
-    physicalLines.length === 1
-      ? dissolveSingleLine(physicalLines[0] ?? '', block)
-      : dissolveMultiLine(physicalLines, block);
-
-  return { blocks: splitBlocks(text, options), meta: { indentColumn: region.indentColumn } };
+  return physicalLines.length === 1
+    ? dissolveSingleLine(physicalLines[0] ?? '', block)
+    : dissolveMultiLine(physicalLines, block);
 }
 
 function dissolveSingleLine(

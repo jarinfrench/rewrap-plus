@@ -12,6 +12,7 @@ import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
 import { emitBlockComments } from './comments/emit-block-comments.js';
+import { wrapDocComment } from './comments/wrap-doc-comment.js';
 import { looksLikeProse } from './prose-heuristic.js';
 import { scanDirectives } from './directives.js';
 
@@ -97,12 +98,24 @@ export interface CancellationSignal {
  * `wrapString`'s own doc comments on `./types/adapter.js`), so each
  * dispatches to the adapter's own whole-pipeline hook instead — `undefined`
  * for an adapter that doesn't support the kind at all, same "skip with a
- * reason" outcome as every other not-yet-implemented kind. `'docComment'`
- * is still reported as skipped with a reason naming the missing phase,
- * rather than silently ignored or (worse) crashing. This is a
+ * reason" outcome as every other not-yet-implemented kind.
+ *
+ * `'docComment'` regions are wrapped as of Phase 12b, and unlike
+ * `'docstring'`/`'stringLiteral'`, *through* a generic function
+ * (`./comments/wrap-doc-comment.js`'s `wrapDocComment`, called directly
+ * below) rather than an adapter hook: a `'docComment'` region
+ * uses the exact same `comments.block` open/close/continuation-prefix
+ * delimiter syntax a plain `'blockComment'` region already does (JSDoc's
+ * `/** ... * /` is the same delimiter shape, just content a dialect
+ * additionally understands), so nothing about *emitting* it is
+ * language-specific the way a docstring's or string's own quoting/
+ * concatenation syntax is. A `'docComment'` region only ever appears when
+ * the descriptor that discovered it declares `comments.doc` (mirroring
+ * `'blockComment'`'s own `comments.block` precondition), so no
+ * adapter-agnostic fallback is needed for it beyond that check. This is a
  * *region-kind* limitation, not a language limitation, and stays true
  * regardless of which adapter is passed in — Python has no block comments
- * to exercise that path itself, but the dispatch here doesn't care which
+ * to exercise either path itself, but the dispatch here doesn't care which
  * descriptor is driving it.
  *
  * `'stringLiteral'` additionally passes through gates no other kind does
@@ -189,6 +202,7 @@ export async function wrapRegions(
     if (
       region.kind !== 'lineComment' &&
       region.kind !== 'blockComment' &&
+      !(region.kind === 'docComment' && descriptor.comments.doc) &&
       !(region.kind === 'docstring' && adapter.wrapDocstring) &&
       !(region.kind === 'stringLiteral' && adapter.wrapString)
     ) {
@@ -249,9 +263,11 @@ export async function wrapRegions(
         ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
         : region.kind === 'blockComment'
           ? emitWrappedBlockComment(region, source, descriptor, cfg.columnLimit, reflowOptions)
-          : region.kind === 'stringLiteral'
-            ? adapter.wrapString!(region, source, cfg, tree)
-            : adapter.wrapDocstring!(region, source, cfg);
+          : region.kind === 'docComment'
+            ? wrapDocComment(region, source, descriptor, cfg, reflowOptions)
+            : region.kind === 'stringLiteral'
+              ? adapter.wrapString!(region, source, cfg, tree)
+              : adapter.wrapDocstring!(region, source, cfg);
 
     // `emitLineComments`/`emitBlockComments` always join their own
     // output lines with a bare `\n` (see each function's own doc
