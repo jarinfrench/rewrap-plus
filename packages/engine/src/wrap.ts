@@ -28,10 +28,37 @@ export interface SkippedRegion {
 /**
  * The result of a `wrapRegions` call: every edit needed to apply the
  * wrap, plus every region that was considered but left alone.
+ *
+ * `cancelled` is `true` only when a `CancellationSignal` passed to
+ * `wrapRegions` (Phase 10, "large-file guardrails") requested
+ * cancellation partway through — `edits`/`skipped` then reflect only the
+ * regions processed *before* that happened, never a partial edit of a
+ * single region. A caller that cares about the "single atomic edit so
+ * one undo reverts everything" property this project's own commands rely
+ * on (Phase 7) should treat a cancelled result as nothing to apply at
+ * all, not as a partial wrap to apply anyway — seem `wrap-document.ts`
+ * for the one caller that currently passes a real cancellation token.
  */
 export interface WrapResult {
   readonly edits: readonly TextEdit[];
   readonly skipped: readonly SkippedRegion[];
+  readonly cancelled: boolean;
+}
+
+/**
+ * A minimal, framework-agnostic cancellation check — deliberately just
+ * the one property this engine package actually needs, not a full
+ * `vscode.CancellationToken` (which this package must never depend on:
+ * `packages/engine` importing `vscode` is the one hard rule the whole
+ * monorepo is built around). `vscode.CancellationToken` itself exposes
+ * `isCancellationRequested` as a plain boolean property with exactly
+ * this shape, so a caller in `packages/vscode-extension` can pass a real
+ * one straight through with no adapter object needed — TypeScript's
+ * structural typing makes the two interchangeable without either side
+ * naming the other.
+ */
+export interface CancellationSignal {
+  readonly isCancellationRequested: boolean;
 }
 
 /**
@@ -106,12 +133,18 @@ export async function wrapRegions(
   targets: readonly SourceSpan[] | 'all',
   cfg: WrapConfig,
   parserManager: ParserManager,
+  cancellation?: CancellationSignal,
 ): Promise<WrapResult> {
   const adapter = parserManager.adapterFor(languageId);
   const { descriptor } = adapter;
 
   const parser = await parserManager.parserFor(languageId);
   const { tree, errorSpans } = parseWithErrors(parser, source);
+  // Split once, up front, and reused by every `detectLineEndingNear`
+  // call below — see that function's own doc comment for why re-
+  // splitting `source` per region (this function's first version) made
+  // wrapping every region in a large file quadratic in file size.
+  const sourceLines = source.split('\n');
 
   const allRegions = discoverRegions(adapter, tree, source, languageId, {
     tabSize: cfg.tabSize,
@@ -126,6 +159,10 @@ export async function wrapRegions(
   const skipped: SkippedRegion[] = [];
 
   for (const region of candidates) {
+    if (cancellation?.isCancellationRequested) {
+      return { edits, skipped, cancelled: true };
+    }
+
     if (errorSpans.some((errorSpan) => spansOverlap(region.span, errorSpan))) {
       skipped.push({ region, reason: 'region overlaps a parse error' });
       continue;
@@ -230,7 +267,7 @@ export async function wrapRegions(
     // convention actually surrounds *that* region, rather than every
     // edit in the file uniformly adopting whichever convention happened
     // to appear first.
-    const lineEnding = detectLineEndingNear(source, region.span.startRow);
+    const lineEnding = detectLineEndingNear(sourceLines, region.span.startRow);
     const newText = applyLineEnding(emitted, lineEnding);
 
     if (newText === sliceSpanText(source, region.span)) {
@@ -240,7 +277,7 @@ export async function wrapRegions(
     edits.push({ span: region.span, newText });
   }
 
-  return { edits, skipped };
+  return { edits, skipped, cancelled: false };
 }
 
 function spansOverlap(a: SourceSpan, b: SourceSpan): boolean {

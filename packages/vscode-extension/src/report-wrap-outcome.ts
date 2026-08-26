@@ -31,6 +31,17 @@ export function reportWrapOutcome(document: vscode.TextDocument, outcome: WrapOu
     channel.appendLine(`  skipped ${skipped.region.kind} at line ${line}: ${skipped.reason}`);
   }
 
+  if (result.cancelled) {
+    // No edits were applied for a cancelled result at all (`apply-wrap.ts`'s
+    // own "single atomic edit" reasoning) — the status bar message says
+    // so explicitly rather than reporting the partial edit/skip counts
+    // `wrapRegions` happened to accumulate before cancellation fired,
+    // which would misleadingly read as a completed, if small, wrap.
+    channel.appendLine('  cancelled before finishing — no changes applied');
+    vscode.window.setStatusBarMessage('Rewrap+: cancelled, no changes applied', STATUS_BAR_MESSAGE_TIMEOUT_MS);
+    return;
+  }
+
   const wrapped = result.edits.length;
   const skipped = result.skipped.length;
   vscode.window.setStatusBarMessage(

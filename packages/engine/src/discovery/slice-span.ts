@@ -21,8 +21,40 @@ import type { SourceSpan } from '../types/span.js';
  * to slicing consistently with how the rest of the engine counts columns
  * today.
  */
-export function sliceSpanText(source: string, span: SourceSpan): string {
+// Single-entry, reference-equality cache of `source.split('\n')` for the
+// most recently seen `source` string. `wrapRegions` (`../wrap.ts`) calls
+// `sliceSpanText` once per region — directly, and indirectly through
+// several dissolve functions and `isSafeToWrap` — always with the exact
+// same `source` string reference for the whole of one invocation. Without
+// this, every one of those calls re-split the entire file from scratch,
+// making "wrap every region in the file" quadratic in file size: a
+// 50,000-line synthetic benchmark file (10,000 regions) took roughly a
+// minute to wrap before this fix, confirmed by direct profiling, and a
+// small fraction of a second after it.
+//
+// A single cached entry (not an unbounded `Map`) is deliberate: `source`
+// is fixed for the duration of one `wrapRegions` call, so one entry is
+// all any real call site benefits from, and a long-lived process (the
+// VSCode extension host, wrapping many different large files over a
+// session) never accumulates memory for files it's done with. Reference
+// equality (`===`), not content equality, is the right comparison here —
+// it's `O(1)` rather than `O(source length)`, and every real caller
+// passes the identical string object through, never a same-content copy.
+let cachedSource: string | undefined;
+let cachedLines: string[] | undefined;
+
+function splitLinesCached(source: string): string[] {
+  if (cachedSource === source && cachedLines !== undefined) {
+    return cachedLines;
+  }
   const lines = source.split('\n');
+  cachedSource = source;
+  cachedLines = lines;
+  return lines;
+}
+
+export function sliceSpanText(source: string, span: SourceSpan): string {
+  const lines = splitLinesCached(source);
   const startLine = lines[span.startRow];
   const endLine = lines[span.endRow];
   if (startLine === undefined || endLine === undefined) {

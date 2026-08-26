@@ -248,4 +248,81 @@ describe('wrapRegions', () => {
     expect(result.edits).toHaveLength(1);
     expect(result.edits[0]!.span.startRow).toBe(allRegions[0]!.span.startRow);
   });
+
+  it('reports cancelled: false when no cancellation signal is given', async () => {
+    const result = await wrapRegions('# a comment\n', 'python', 'all', config(), parserManager);
+    expect(result.cancelled).toBe(false);
+  });
+
+  it('reports cancelled: false when a signal is given but never requests cancellation', async () => {
+    const result = await wrapRegions(
+      '# a comment\n',
+      'python',
+      'all',
+      config(),
+      parserManager,
+      { isCancellationRequested: false },
+    );
+    expect(result.cancelled).toBe(false);
+  });
+
+  it('stops processing further regions and reports cancelled: true once the signal fires', async () => {
+    const source =
+      '# first comment that is quite long indeed\n' +
+      'x = 1\n' +
+      '# second comment also long indeed\n' +
+      'y = 1\n' +
+      '# third comment also long indeed\n';
+
+    // A signal already cancelled before the call starts is the simplest
+    // deterministic way to prove *no* region past the check gets
+    // processed — this doesn't depend on timing or region count.
+    const result = await wrapRegions(
+      source,
+      'python',
+      'all',
+      config({ columnLimit: 15 }),
+      parserManager,
+      { isCancellationRequested: true },
+    );
+
+    expect(result.cancelled).toBe(true);
+    expect(result.edits).toEqual([]);
+    expect(result.skipped).toEqual([]);
+  });
+
+  it('keeps whatever was processed before a cancellation that fires partway through', async () => {
+    const source =
+      '# first comment that is quite long indeed\n' +
+      'x = 1\n' +
+      '# second comment also long indeed\n' +
+      'y = 1\n' +
+      '# third comment also long indeed\n';
+
+    // A getter with a side effect: cancellation fires only once the
+    // check has already been read once (i.e. after the first region was
+    // processed), proving the loop checks the signal *per region*
+    // rather than only once up front, and that whatever was already
+    // processed survives in the result rather than being discarded.
+    let reads = 0;
+    const signal = {
+      get isCancellationRequested() {
+        reads += 1;
+        return reads > 1;
+      },
+    };
+
+    const result = await wrapRegions(
+      source,
+      'python',
+      'all',
+      config({ columnLimit: 15 }),
+      parserManager,
+      signal,
+    );
+
+    expect(result.cancelled).toBe(true);
+    expect(result.edits).toHaveLength(1);
+    expect(result.edits[0]!.span.startRow).toBe(0);
+  });
 });

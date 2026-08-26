@@ -28,34 +28,37 @@ describe('detectLineEnding', () => {
 });
 
 describe('detectLineEndingNear', () => {
+  // Takes the caller's own `source.split('\n')`, not the raw source
+  // string — see the function's own doc comment for why (re-splitting
+  // per call made wrapping every region in a large file quadratic).
   it('detects the convention of a row inside a genuinely mixed-line-ending file, independent of every other row', () => {
     // Row 0 ('a') is CRLF-terminated; row 1 ('b') is LF-terminated. Each
     // row's own detection should reflect only its own terminator, not
     // whichever convention the file happens to lead with (unlike
     // `detectLineEnding`, which is a whole-file, first-break heuristic —
     // see that function's own "goes by the first line break" test).
-    const source = 'a\r\nb\nc\r\n';
-    expect(detectLineEndingNear(source, 0)).toBe('\r\n');
-    expect(detectLineEndingNear(source, 1)).toBe('\n');
-    expect(detectLineEndingNear(source, 2)).toBe('\r\n');
+    const lines = 'a\r\nb\nc\r\n'.split('\n');
+    expect(detectLineEndingNear(lines, 0)).toBe('\r\n');
+    expect(detectLineEndingNear(lines, 1)).toBe('\n');
+    expect(detectLineEndingNear(lines, 2)).toBe('\r\n');
   });
 
   it("falls back to the previous row's terminator for the file's last line, which has none of its own", () => {
-    expect(detectLineEndingNear('a\r\nb', 1)).toBe('\r\n');
-    expect(detectLineEndingNear('a\nb', 1)).toBe('\n');
+    expect(detectLineEndingNear('a\r\nb'.split('\n'), 1)).toBe('\r\n');
+    expect(detectLineEndingNear('a\nb'.split('\n'), 1)).toBe('\n');
   });
 
   it('falls back to whole-file detectLineEnding when the row itself has no terminator to inspect', () => {
-    expect(detectLineEndingNear('a', 0)).toBe('\n');
-    expect(detectLineEndingNear('', 0)).toBe('\n');
+    expect(detectLineEndingNear('a'.split('\n'), 0)).toBe('\n');
+    expect(detectLineEndingNear(''.split('\n'), 0)).toBe('\n');
   });
 
   it('agrees with detectLineEnding for a uniformly LF or uniformly CRLF file, at any row', () => {
     const lf = 'a\nb\nc\n';
     const crlf = 'a\r\nb\r\nc\r\n';
     for (let row = 0; row < 3; row++) {
-      expect(detectLineEndingNear(lf, row)).toBe(detectLineEnding(lf));
-      expect(detectLineEndingNear(crlf, row)).toBe(detectLineEnding(crlf));
+      expect(detectLineEndingNear(lf.split('\n'), row)).toBe(detectLineEnding(lf));
+      expect(detectLineEndingNear(crlf.split('\n'), row)).toBe(detectLineEnding(crlf));
     }
   });
 });

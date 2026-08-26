@@ -47,9 +47,23 @@ export interface WrapOutcome {
  * during commit 9's own verification pass — exactly the class of gap
  * that check exists to prevent.
  */
+/**
+ * `cancellation` (Phase 10, "large-file guardrails") is passed straight
+ * through to `engine.wrapRegions` — `vscode.CancellationToken`'s own
+ * `isCancellationRequested: boolean` property already matches the
+ * engine's minimal, `vscode`-free `CancellationSignal` shape exactly
+ * (see that type's own doc comment on `@rewrap-plus/engine`), so no
+ * adapter object is needed here. Omitted entirely by every caller that
+ * has no cancellation UI of its own (`wrap-at-cursor`, `wrap-selection`,
+ * the range-formatting provider) — a wrap those commands do is expected
+ * to be fast enough that offering to cancel it would be noise, not help
+ * (see `wrap-document.ts`'s own `LARGE_DOCUMENT_LINE_THRESHOLD` for the
+ * one caller that does pass one, and why only it needs to).
+ */
 export async function computeWrapResult(
   document: vscode.TextDocument,
   targets: readonly SourceSpan[] | 'all',
+  cancellation?: vscode.CancellationToken,
 ): Promise<WrapOutcome | undefined> {
   const resolvedConfig = resolveWrapConfigForDocument(document);
   if (!resolvedConfig.enable) {
@@ -69,6 +83,7 @@ export async function computeWrapResult(
     targets,
     resolvedConfig.wrapConfig,
     parserManager,
+    cancellation,
   );
 
   const outcome: WrapOutcome = { result, resolvedConfig };
@@ -116,16 +131,28 @@ export async function applyWrapEdits(
  * return its edits for VSCode to apply itself rather than applying them
  * directly. Returns `undefined` in exactly the cases `computeWrapResult`
  * does (`rewrapPlus.enable` is `false`).
+ *
+ * A cancelled result (`outcome.result.cancelled` — Phase 10) applies
+ * nothing at all, even though `edits` may already hold some real edits
+ * computed before cancellation fired: the "single atomic edit so one
+ * undo reverts everything" property this function exists to provide
+ * would otherwise become "a *partial*, silently-incomplete wrap of the
+ * document," which is a worse outcome than doing nothing — the user
+ * asked to cancel specifically because they didn't want to wait for the
+ * whole thing.
  */
 export async function computeAndApplyWrap(
   document: vscode.TextDocument,
   targets: readonly SourceSpan[] | 'all',
+  cancellation?: vscode.CancellationToken,
 ): Promise<WrapOutcome | undefined> {
-  const outcome = await computeWrapResult(document, targets);
+  const outcome = await computeWrapResult(document, targets, cancellation);
   if (!outcome) {
     return undefined;
   }
-  await applyWrapEdits(document, outcome.result.edits);
+  if (!outcome.result.cancelled) {
+    await applyWrapEdits(document, outcome.result.edits);
+  }
   return outcome;
 }
 

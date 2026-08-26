@@ -43,26 +43,38 @@ export function detectLineEnding(source: string): '\n' | '\r\n' {
  * replacement text even if the file elsewhere (or even earlier on the
  * very same line boundary) uses `\r\n`, and vice versa.
  *
+ * Takes `lines` (the caller's own `source.split('\n')`) rather than
+ * `source` itself and re-splitting internally — the first version of
+ * this function did exactly that, and calling it once per region turned
+ * "wrap every region in the file" quadratic in file size all over again
+ * (`O(region count × file length)`), the same class of bug Phase 10's
+ * own `PositionMapper` checkpoint fix (`./types/position-mapper.ts`)
+ * exists to prevent, caught here by this phase's own benchmark work
+ * before it shipped as a silent regression. Splitting once and passing
+ * the result to every call, the way `discoverRegions` already does
+ * internally for its own per-line indent lookups, is `O(file length)`
+ * total regardless of how many regions call this.
+ *
  * Looks at `row`'s own line terminator first (the row a region's own
- * `SourceSpan.startRow` names): `source.split('\n')` leaves a trailing
+ * `SourceSpan.startRow` names): a `'\n'`-only split leaves a trailing
  * `\r` on every line that was really `\r\n`-terminated, since only the
  * `\n` itself is consumed by the split — checking for that trailing `\r`
  * is exactly `detectLineEnding`'s own test, just applied to one line
  * instead of the whole file. Falls back to the *previous* row's own
  * terminator when `row` is the file's last line (which has no
- * terminator of its own to inspect), and to `detectLineEnding(source)`'s
- * whole-file heuristic only when neither exists — a single-line file, or
- * `row` being both the first and the last line.
+ * terminator of its own to inspect), and to `detectLineEnding`'s
+ * whole-file heuristic (reconstructing `source` by rejoining `lines`,
+ * only in this rare fallback path) only when neither exists — a
+ * single-line file, or `row` being both the first and the last line.
  */
-export function detectLineEndingNear(source: string, row: number): '\n' | '\r\n' {
-  const lines = source.split('\n');
+export function detectLineEndingNear(lines: readonly string[], row: number): '\n' | '\r\n' {
   if (row >= 0 && row < lines.length - 1) {
     return lines[row]!.endsWith('\r') ? '\r\n' : '\n';
   }
   if (row > 0) {
     return lines[row - 1]!.endsWith('\r') ? '\r\n' : '\n';
   }
-  return detectLineEnding(source);
+  return detectLineEnding(lines.join('\n'));
 }
 
 /**
