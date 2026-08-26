@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ['v*']
 
 jobs:
   ci:
@@ -39,3 +40,56 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  package:
+    name: Package .vsix and attach to GitHub Release
+    # Only on a version tag push (v*), and only once every `ci` matrix
+    # leg has passed on that exact tagged commit — packaging a build
+    # that hasn't cleared the same gate every other commit has to is
+    # exactly the "no broken intermediates" rule CLAUDE.md states for
+    # local commits, extended to what actually reaches a release.
+    needs: ci
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          # A single, current-LTS build — `ci` above already proved this
+          # commit builds and tests clean across the full Node matrix;
+          # this job exists to produce the one artifact that ships, not
+          # to re-prove matrix compatibility.
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package .vsix
+        working-directory: packages/vscode-extension
+        run: npm run package
+
+      - name: Upload .vsix as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rewrap-plus-vsix
+          path: packages/vscode-extension/*.vsix
+          if-no-files-found: error
+
+      - name: Attach .vsix to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            packages/vscode-extension/*.vsix \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            --repo "${{ github.repository }}"
