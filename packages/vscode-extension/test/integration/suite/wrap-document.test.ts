@@ -24,24 +24,29 @@ describe('rewrapPlus.wrapDocument', () => {
     assert.strictEqual(overLong.length, 0, 'no comment line should exceed the column limit');
   });
 
-  it('leaves a docstring untouched (not yet implemented) while still wrapping a sibling comment', async () => {
+  it('wraps both a docstring and a sibling comment', async () => {
     const config = vscode.workspace.getConfiguration('rewrapPlus');
     await config.update('columnLimit', 40, vscode.ConfigurationTarget.Global);
 
     const editor = await openFixture(fixturePath('docstring-and-comment.py'));
+    const originalLineCount = editor.document.lineCount;
     await vscode.commands.executeCommand('rewrapPlus.wrapDocument');
     await settle();
 
     const text = editor.document.getText();
+    const overLong = text.split('\n').filter((line) => line.length > 40);
+    assert.strictEqual(overLong.length, 0, 'no line should exceed the column limit after wrapping');
+
+    // Positive evidence that the docstring was actually reflowed, not
+    // just that no line happens to exceed the limit: the fixture's
+    // single-line docstring is itself well over 40 characters, so the
+    // overLong check above would already fail if wrapRegions skipped it
+    // entirely — this second assertion additionally rules out some
+    // other edit coincidentally producing short lines without genuine
+    // multi-line reflow.
     assert.ok(
-      text.includes(
-        '"""A module docstring that is going to be skipped since docstrings are not implemented yet in this phase."""',
-      ),
-      'docstring should be byte-identical — wrapRegions does not act on docstring regions yet',
+      editor.document.lineCount > originalLineCount,
+      'wrapping the docstring should have split it across more lines than the original',
     );
-    const overLongComments = text
-      .split('\n')
-      .filter((line) => line.trim().startsWith('#') && line.length > 40);
-    assert.strictEqual(overLongComments.length, 0, 'the sibling comment should still have been wrapped');
   });
 });
