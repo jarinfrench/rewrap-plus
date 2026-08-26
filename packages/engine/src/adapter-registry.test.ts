@@ -107,12 +107,16 @@ describe('AdapterRegistry', () => {
     expect(registry.resolve('typescriptreact')).toBe(adapter);
   });
 
-  it('lists distinct primary ids, sorted, excluding aliases', () => {
+  it('lists every registered id, sorted, primary ids and aliases alike', () => {
+    // Phase 12b: `apply-wrap.ts`/`format-on-save.ts` both gate on this
+    // list including a real, resolvable alias — see `./adapter-registry.ts`'s
+    // own doc comment on `supportedLanguages` for the bug this test would
+    // otherwise have kept pinned.
     const registry = new AdapterRegistry();
     registry.register(makeAdapter({ id: 'typescript', aliases: ['typescriptreact'] }));
     registry.register(makeAdapter({ id: 'python' }));
 
-    expect(registry.supportedLanguages()).toEqual(['python', 'typescript']);
+    expect(registry.supportedLanguages()).toEqual(['python', 'typescript', 'typescriptreact']);
   });
 
   it('refuses to register a second adapter under an id already taken', () => {

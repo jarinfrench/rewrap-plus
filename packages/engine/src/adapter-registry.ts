@@ -79,7 +79,6 @@ export function validateDescriptor(descriptor: LanguageDescriptor): void {
  */
 export class AdapterRegistry {
   private readonly byKey = new Map<string, LanguageAdapter>();
-  private readonly primaryIds = new Set<string>();
 
   register(adapter: LanguageAdapter): void {
     validateDescriptor(adapter.descriptor);
@@ -100,7 +99,6 @@ export class AdapterRegistry {
     for (const key of keys) {
       this.byKey.set(key, adapter);
     }
-    this.primaryIds.add(id);
   }
 
   resolve(languageId: string): LanguageAdapter | undefined {
@@ -108,10 +106,26 @@ export class AdapterRegistry {
   }
 
   /**
-   * Distinct primary language ids — not aliases — sorted for stable
-   * output.
+   * Every registered VSCode languageId — primary ids *and* aliases —
+   * sorted for stable output.
+   *
+   * Phase 12b found this returning only primary ids, excluding aliases
+   * entirely, despite `packages/vscode-extension/src/engine-host.ts`'s own
+   * `getSupportedLanguages` doc comment already promising "every VSCode
+   * languageId (and alias) a registered adapter supports" — a promise
+   * `apply-wrap.ts`'s `computeWrapResult` and `format-on-save.ts` both
+   * depend on for real: either would have silently no-opped every wrap
+   * command on a `.jsx`/`.tsx` file (a real, resolvable `languageId` via
+   * `resolve()` below) purely because `javascriptreact`/`typescriptreact`
+   * never appeared in this list. Unexercised until this phase because no
+   * adapter before it — Python has no aliases; the Phase 6b JavaScript
+   * canary declared none either — actually registered one. The identical
+   * shape of bug this project has already found twice before at a
+   * language-adapter seam (`docs/adapters.md`): code that looked generic
+   * but was only ever exercised by inputs that happened not to trigger
+   * the gap.
    */
   supportedLanguages(): string[] {
-    return [...this.primaryIds].sort();
+    return [...this.byKey.keys()].sort();
   }
 }
