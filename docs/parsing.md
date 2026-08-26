@@ -136,6 +136,40 @@ body) produces `rootNode.hasError === true` and two descendant `ERROR`
 nodes bounding the malformed region — exactly the shape `ParseResult`
 (commit 4) needs to report `errorSpans`.
 
+## Finding 5 (Phase 12b): `tree-sitter-typescript` also ships prebuilt WASM — for *two* grammars
+
+Re-checking the "prebuilt or build-it-yourself?" question for
+`tree-sitter-typescript`, per this file's own note flagging it as
+something to verify per grammar rather than assume: `npm pack
+tree-sitter-typescript@0.23.2` and inspecting the tarball shows *both*
+`tree-sitter-typescript.wasm` and `tree-sitter-tsx.wasm` at the package
+root. One npm package, two grammars — TSX is a genuinely separate
+grammar from plain TypeScript (upstream's own split; a `<T>` type
+assertion and a JSX element are ambiguous under one grammar), not a
+superset flag on the same one, so Phase 12b vendors and registers both
+separately (`packages/engine/grammars/PROVENANCE.md`). No build pipeline
+needed for either, same as Python and JavaScript before it.
+
+One difference worth naming: this grammar's own `abiVersion` is `14`,
+one older than Python/JavaScript's `15` — still inside
+`web-tree-sitter@0.26.13`'s supported `[13, 15]` range (Finding 2 above),
+but a reminder that a future grammar could fall outside it where Python
+and JavaScript's shared `15` didn't hint at any ceiling.
+
+The probe script for this (`docs/spikes/tree-sitter-typescript-probe.mjs`)
+also confirmed the node shapes Phase 12b's descriptor depends on: a
+`comment` node covers all three JS/TS comment forms exactly as the Phase
+6b JavaScript canary already found for `tree-sitter-javascript`; a
+`string` node's children are its quote tokens plus a `string_fragment`
+body (no prefix complexity, unlike Python); `binary_expression` exposes
+`left`/`operator`/`right` fields for `+`-concatenation, the same
+convention `discoverRegions`'s concatenation-grouping algorithm already
+expected from Python's `binary_operator`; and template literals
+(`` ` ``-delimited) are a separate `template_string` node type, not
+matched by a plain `(string) @string` query — consistent with Phase
+12b's own deliberate choice to defer template-literal wrapping the same
+way Python deferred triple-quoted ordinary strings.
+
 ## What Phase 2 built on these findings
 
 - `packages/engine/grammars/tree-sitter-python.wasm` — the vendored

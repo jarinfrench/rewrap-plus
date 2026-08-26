@@ -74,3 +74,62 @@ re-check per grammar rather than assume.
 
 Regenerating/updating follows the identical steps above, substituting
 `tree-sitter-javascript` for `tree-sitter-python` throughout.
+
+## `tree-sitter-typescript.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-typescript`](https://www.npmjs.com/package/tree-sitter-typescript) |
+| Package version | `0.23.2` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-typescript |
+| Upstream commit | `f975a621f4e7f532fe322e13c4f79495e0a7b2e7` |
+| npm tarball shasum | `70bc615a2f664a8e9c87c533382beca587f28ab3` |
+| npm tarball integrity | `sha512-e04JUUKxTT53/x3Uq1zIL45DoYKVfHH4CZqwgZhPg5qYROl5nQjV+85ruFzFGZxu+QeFVbRTPDRnqL9UbU4VeA==` |
+| Vendored file sha256 | `778025db5a8be0e70f8ccc3671e486dfeddd048c25d9e8a70c26de2e1bf6f97d` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for Phase 12b's `typescript` language adapter
+(`../src/languages/typescript/`). `tree-sitter-typescript` publishes *two*
+grammars from one package — `tree-sitter-typescript.wasm` (plain TS) and
+`tree-sitter-tsx.wasm` (TS+JSX) below — both prebuilt at the package root,
+same "no local Emscripten/Docker build step" finding `docs/parsing.md`
+already made for Python and JavaScript, re-verified here rather than
+assumed (per that file's own "Phase 12b/12c should do the same" note).
+The package's newest release (`0.23.2`) predates Python/JavaScript's
+`0.25.0`; no `0.25.x` series exists for this grammar as of this vendoring.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+(`MIN_COMPATIBLE_VERSION` 13, `LANGUAGE_VERSION` 15) — this grammar's own
+`abiVersion` is `14`, one older than Python/JavaScript's `15` but still
+inside the supported range.
+
+Regenerating/updating follows the same steps as `tree-sitter-python.wasm`
+above, substituting `tree-sitter-typescript` throughout — except step 3
+("confirm the `.wasm` is present at the package root") must check for
+*both* `tree-sitter-typescript.wasm` and `tree-sitter-tsx.wasm`, and step
+4 copies both files.
+
+## `tree-sitter-tsx.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-typescript`](https://www.npmjs.com/package/tree-sitter-typescript) (same package as above) |
+| Package version | `0.23.2` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-typescript |
+| Upstream commit | `f975a621f4e7f532fe322e13c4f79495e0a7b2e7` |
+| npm tarball shasum | `70bc615a2f664a8e9c87c533382beca587f28ab3` |
+| npm tarball integrity | `sha512-e04JUUKxTT53/x3Uq1zIL45DoYKVfHH4CZqwgZhPg5qYROl5nQjV+85ruFzFGZxu+QeFVbRTPDRnqL9UbU4VeA==` |
+| Vendored file sha256 | `79e5da75ea62855a0cd67177685f0164eac87d5f630b3cbe1e0a099751ad30f8` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for Phase 12b's `typescriptreact` language adapter — TSX is a
+genuinely *separate* grammar from plain TypeScript (a `<T>` type
+assertion and a JSX element are ambiguous under one grammar, per
+upstream's own package split), not a superset flag on the same one, so it
+gets its own vendored `.wasm` and its own `LanguageDescriptor` `id`
+(`'typescriptreact'`) even though every comment/string/concatenation
+finding below applies identically to both. Probed directly (JSX element
+containing a string-concatenation expression) alongside plain TypeScript
+in the same session — see `docs/spikes/tree-sitter-typescript-probe.mjs`.
