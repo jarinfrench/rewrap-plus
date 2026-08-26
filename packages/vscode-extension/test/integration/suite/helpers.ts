@@ -16,6 +16,7 @@ export async function resetRewrapPlusSettings(): Promise<void> {
   const config = vscode.workspace.getConfiguration('rewrapPlus');
   await config.update('columnLimit', undefined, vscode.ConfigurationTarget.Global);
   await config.update('enable', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('formatOnSave', undefined, vscode.ConfigurationTarget.Global);
 }
 
 export async function openFixture(absolutePath: string): Promise<vscode.TextEditor> {

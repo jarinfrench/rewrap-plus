@@ -13,6 +13,8 @@ import { registerWrapSelectionCommand } from './commands/wrap-selection.js';
 import { registerWrapDocumentCommand } from './commands/wrap-document.js';
 import { registerShowResolvedConfigCommand } from './commands/show-resolved-config.js';
 import { createRangeFormattingProvider } from './range-formatting-provider.js';
+import { createDocumentFormattingProvider } from './document-formatting-provider.js';
+import { registerFormatOnSave } from './format-on-save.js';
 import { getOutputChannel } from './output-channel.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -41,6 +43,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   registerWrapSelectionCommand(context);
   registerWrapDocumentCommand(context);
   registerShowResolvedConfigCommand(context);
+  registerFormatOnSave(context);
 
   const selector: vscode.DocumentSelector = languages.map((language) => ({ language }));
   context.subscriptions.push(
@@ -48,6 +51,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       selector,
       createRangeFormattingProvider(),
     ),
+    vscode.languages.registerDocumentFormattingEditProvider(selector, createDocumentFormattingProvider()),
   );
 }
 

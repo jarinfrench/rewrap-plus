@@ -25,6 +25,7 @@ export interface ExtensionSettings {
   readonly respectEditorConfig: boolean;
   readonly balancedWrapping: boolean;
   readonly stringWrapInclude: readonly string[];
+  readonly formatOnSave: boolean;
 }
 
 export function readExtensionSettings(document: vscode.TextDocument): ExtensionSettings {
@@ -51,5 +52,13 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // (minimum-raggedness) reflow ships "behind a setting, default off".
     balancedWrapping: config.get<boolean>('balancedWrapping', false),
     stringWrapInclude: config.get<readonly string[]>('stringWrapInclude', ['**']),
+    // Default false (Phase 12a): a whole-document reflow is a much more
+    // content-transformative operation than a typical code formatter, so
+    // it stays opt-in even once the extension is installed and its
+    // range-formatting provider is already active for "Format
+    // Selection"/"Format Document" — see `../format-on-save.ts`'s own
+    // doc comment for why this needs its own setting rather than reusing
+    // `editor.formatOnSave` + `editor.defaultFormatter` alone.
+    formatOnSave: config.get<boolean>('formatOnSave', false),
   };
 }

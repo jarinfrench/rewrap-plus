@@ -37,7 +37,16 @@ the GitHub Release for whichever tag eventually ships this.
   `.showResolvedConfig` (telemetry-free diagnostic dump of the effective
   column limit, its precedence source, and active policy).
 - A `DocumentRangeFormattingEditProvider`, backed by the same wrap path
-  as `.wrapSelection`, so "Format Selection"/"Format Document" work too.
+  as `.wrapSelection`, so "Format Selection" works, plus a
+  `DocumentFormattingEditProvider` for "Format Document" and native
+  `editor.formatOnSave`/`editor.defaultFormatter` composition.
+- **Format on save** (`rewrapPlus.formatOnSave`, Phase 12a, default
+  `false`): wraps the whole document immediately before every save via
+  its own `onWillSaveTextDocument` hook, independent of
+  `editor.defaultFormatter` so it never contends with Black/Prettier/etc.
+  for that slot. Never delays a save — a slow wrap or a parse failure is
+  skipped with a note in the output channel and the save proceeds
+  regardless.
 - **Column-limit resolution** with a five-tier precedence chain
   (`rewrapPlus.columnLimit` → language-scoped `editor.rulers` →
   self-parsed `.editorconfig` `max_line_length` → global `editor.rulers`
@@ -74,6 +83,7 @@ the GitHub Release for whichever tag eventually ships this.
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.
 - `rewrapPlus.stringWrapInclude` is declared but not yet consumed.
-- Format-on-save, Markdown/LaTeX/plain-text support, and
-  Marketplace/OpenVSX publishing are not yet implemented — see
-  `docs/implementation-plan.md`'s Phase 12 roadmap.
+- Markdown/LaTeX/plain-text support, a full JavaScript/TypeScript
+  adapter, a CLI, and Marketplace/OpenVSX publishing are not yet
+  implemented — see `docs/implementation-plan.md`'s Phase 12 roadmap
+  (12b–12e; 12a, format-on-save, is now done).

@@ -136,6 +136,12 @@
           "default": ["**"],
           "scope": "resource",
           "markdownDescription": "Glob patterns scoping *string-literal* wrapping to specific paths, once implemented — lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. Does not affect comment wrapping. **Not yet implemented** — see `#rewrapPlus.wrapStrings#`."
+        },
+        "rewrapPlus.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "markdownDescription": "Wrap the whole document automatically before every save, independent of `#editor.formatOnSave#`/`#editor.defaultFormatter#`. Off by default: a whole-document reflow touches far more of the file than a typical code formatter, so it stays opt-in even after installing. Never delays a save — a parse failure or a wrap that doesn't finish quickly is skipped with a warning in the \"Rewrap+\" output channel, and the save proceeds either way. If another formatter (Black, Prettier, ...) also runs on save, ordering between them is controlled by VS Code's own `#editor.defaultFormatter#`/`#editor.codeActionsOnSave#`, not by this setting — see the README's format-on-save section."
         }
       }
     }

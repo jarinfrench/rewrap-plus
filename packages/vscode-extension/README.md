@@ -78,6 +78,7 @@ overrides work).
 | `rewrapPlus.respectEditorConfig` | `true` | Consult `.editorconfig`'s `max_line_length` as a precedence tier, parsed directly by this extension — independent of whether the separate EditorConfig extension is installed. |
 | `rewrapPlus.balancedWrapping` | `false` | Use minimum-raggedness (balanced) line breaking instead of greedy first-fit. Often visibly nicer for short comments/docstrings, at the cost of more computation. |
 | `rewrapPlus.stringWrapInclude` | `["**"]` | **Not yet implemented.** Intended to scope string wrapping to specific path globs, letting it be trialled on one package before trusting it repo-wide; currently read but has no effect. |
+| `rewrapPlus.formatOnSave` | `false` | Wrap the whole document automatically before every save. See [Format on save](#format-on-save) below. |
 
 ### Column limit precedence
 
@@ -92,6 +93,38 @@ Re-resolved on every wrap (never cached), highest priority first:
 `editor.rulers` entries may be a plain number or `{ column, color }` —
 both are handled. Run **Rewrap+: Show Resolved Configuration** any time
 the resolved limit is a surprise; it names the exact tier that produced it.
+
+### Format on save
+
+Two independent ways to wrap on save, because they solve different problems:
+
+- **`rewrapPlus.formatOnSave`** (default `false`) — flip this on and
+  Rewrap+ wraps the whole document immediately before every save, no
+  further setup required. It fires regardless of what
+  `editor.defaultFormatter` is set to for the language, so it composes
+  cleanly with Black, Prettier, or any other formatter already running
+  on save — Rewrap+ never contends with them for the "default formatter"
+  slot. Never delays a save: a wrap that doesn't finish quickly (roughly
+  1.5s — see `docs/benchmarks.md` for the numbers that bound is based
+  on), or a parse failure, is skipped with a note in the "Rewrap+" output
+  channel, and the save proceeds either way.
+- **VSCode's own `editor.formatOnSave`** — Rewrap+ also registers a
+  standard `DocumentFormattingEditProvider`, so setting
+  `"[python]": { "editor.defaultFormatter": "jarinfrench.rewrap-plus" }`
+  and `"editor.formatOnSave": true` works too, the same as any other
+  formatter extension. Use this instead of `rewrapPlus.formatOnSave` if
+  you want VSCode's native `editor.formatOnSaveMode` and
+  `editor.codeActionsOnSave` ordering controls to apply to Rewrap+ as
+  well — that ordering is entirely VSCode's own to configure; Rewrap+
+  doesn't try to control it.
+
+If Black/Prettier/etc. also run on save via `editor.defaultFormatter`,
+they're unaffected by `rewrapPlus.formatOnSave` — it's a separate
+`onWillSaveTextDocument` hook, not a competing default-formatter claim.
+If instead you've set Rewrap+ *as* the default formatter for a language,
+its ordering relative to other save-time actions (`editor
+.codeActionsOnSave`, for instance) follows VSCode's usual rules for that
+setting, same as it would for any formatter.
 
 ## What this won't touch
 
@@ -141,7 +174,7 @@ of the others instead of filing a bug here.
 | Markdown / LaTeX / plain-text files | Yes | Yes | Yes | **No (v1)** |
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
-| Format-on-save | No | No | — | Planned |
+| Format-on-save | No | No | — | Yes |
 
 ¹ Neither reads `.editorconfig` directly in VS Code; both fall back to
 `editor.rulers`/`editor.wordWrapColumn`, which a user (or a separate
