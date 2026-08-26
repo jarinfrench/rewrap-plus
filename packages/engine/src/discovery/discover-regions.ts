@@ -191,51 +191,50 @@ export function discoverRegions(
 }
 
 /**
- * Resolve one operand of a `@concat.operator` node to the ordered list of
- * string leaves it bottoms out to, or `null` if it doesn't bottom out to
- * string leaves at all (a non-literal operand — e.g. an identifier).
- */
-function resolveOperand(
-  node: SyntaxNode,
-  stringNodeIds: ReadonlySet<number>,
-  operatorNodeIds: ReadonlySet<number>,
-): SyntaxNode[] | null {
-  if (stringNodeIds.has(node.id)) {
-    return [node];
-  }
-  if (operatorNodeIds.has(node.id)) {
-    return collectOperatorChainLeaves(node, stringNodeIds, operatorNodeIds);
-  }
-  return null;
-}
-
-/**
- * Walk a `@concat.operator` node's `left`/`right` fields, recursing
- * through nested operator nodes, and return the ordered (left-to-right)
- * list of string leaves — or `null` if any operand along the way isn't
- * ultimately a string literal.
+ * Walk a `@concat.operator` node's `left`/`right` fields, through nested
+ * operator nodes, and return the ordered (left-to-right) list of string
+ * leaves — or `null` if any operand along the way isn't ultimately a
+ * string literal.
+ *
+ * Iterative (explicit stack), not recursive — a long chain of
+ * `+`-concatenated string literals (real Python `tree-sitter-python`
+ * happily parses, and exactly the shape Phase 3's own grouping algorithm
+ * exists to handle) parses left-associatively, producing an
+ * `binary_operator` tree whose depth scales with operand count. A
+ * recursive walk blew the actual JS call stack on such input
+ * (`RangeError: Maximum call stack size exceeded` on a ~20k-operand
+ * chain, caught by Phase 10's pathological-input hardening) well before
+ * "deeply nested concat" as a named risk was ever exercised for real.
+ * The standard "push right then left" iterative in-order traversal below
+ * has no such limit (bounded only by heap, not call-stack depth) and
+ * handles right-side nesting (explicit parenthesization) the same way,
+ * so no separate `resolveOperand` helper is needed.
  */
 function collectOperatorChainLeaves(
-  node: SyntaxNode,
+  root: SyntaxNode,
   stringNodeIds: ReadonlySet<number>,
   operatorNodeIds: ReadonlySet<number>,
 ): SyntaxNode[] | null {
-  const left = node.childForFieldName('left');
-  const right = node.childForFieldName('right');
-  if (!left || !right) {
-    return null;
+  const leaves: SyntaxNode[] = [];
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (stringNodeIds.has(node.id)) {
+      leaves.push(node);
+      continue;
+    }
+    if (operatorNodeIds.has(node.id)) {
+      const left = node.childForFieldName('left');
+      const right = node.childForFieldName('right');
+      if (!left || !right) {
+        return null;
+      }
+      stack.push(right, left); // left popped (processed) first
+      continue;
+    }
+    return null; // a non-literal operand disqualifies the whole chain
   }
-
-  const leftLeaves = resolveOperand(left, stringNodeIds, operatorNodeIds);
-  if (!leftLeaves) {
-    return null;
-  }
-  const rightLeaves = resolveOperand(right, stringNodeIds, operatorNodeIds);
-  if (!rightLeaves) {
-    return null;
-  }
-
-  return [...leftLeaves, ...rightLeaves];
+  return leaves;
 }
 
 /**

@@ -53,14 +53,35 @@ export function parseWithErrors(parser: Parser, source: string): ParseResult {
   };
 }
 
-function collectErrorSpans(node: SyntaxNode, mapper: PositionMapper, out: SourceSpan[]): void {
-  if (node.isError || node.isMissing) {
-    out.push(spanFromNode(node, mapper));
-    return;
-  }
-  for (const child of node.children) {
-    if (child) {
-      collectErrorSpans(child, mapper, out);
+/**
+ * Iterative (explicit-stack) tree walk — not the recursive one-node-per-
+ * call-frame version this started as. A deeply left-associative
+ * expression (e.g. several thousand `+`-chained operands, real Python
+ * that `tree-sitter-python` happily parses) produces a syntax tree whose
+ * depth scales with operand count, and a recursive walk blew the actual
+ * JS call stack on exactly that input (`RangeError: Maximum call stack
+ * size exceeded`, caught by Phase 10's pathological-input hardening
+ * before it shipped as a real bug) — well before this package's own
+ * `WrapConfig`/region-discovery logic ever saw the file. "Skip region,
+ * warn, never block" (decision of record) presumes `parseWithErrors`
+ * itself can't crash the whole invocation; a stack overflow here breaks
+ * that promise for *any* file with one sufficiently long chained
+ * expression, not just the string-concatenation case Phase 3 named.
+ */
+function collectErrorSpans(root: SyntaxNode, mapper: PositionMapper, out: SourceSpan[]): void {
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (node.isError || node.isMissing) {
+      out.push(spanFromNode(node, mapper));
+      continue;
+    }
+    const children = node.children;
+    for (let i = children.length - 1; i >= 0; i--) {
+      const child = children[i];
+      if (child) {
+        stack.push(child);
+      }
     }
   }
 }

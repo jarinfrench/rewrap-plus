@@ -18,7 +18,29 @@ interface LineIndex {
   readonly startUtf16: number;
   /** The line's text, excluding its terminating `\n`, if any. */
   readonly text: string;
+  /**
+   * Byte/UTF-16 offsets (both relative to this line's own start) recorded
+   * every `CHECKPOINT_INTERVAL` UTF-16 units into `text`, always starting
+   * with `{ byte: 0, utf16: 0 }` — see `nearestCheckpoint`'s own doc
+   * comment for why these exist.
+   */
+  readonly checkpoints: readonly Checkpoint[];
 }
+
+/** One entry of a `LineIndex.checkpoints` table — see that field's doc comment. */
+interface Checkpoint {
+  readonly utf16: number;
+  readonly byte: number;
+}
+
+/**
+ * How many UTF-16 units apart `LineIndex.checkpoints` entries are spaced.
+ * Small enough that the linear scan `positionToByteOffset`/
+ * `byteOffsetToPosition` still do *within* a chunk stays cheap, large
+ * enough that the checkpoint table itself stays a small fraction of a
+ * line's own length.
+ */
+const CHECKPOINT_INTERVAL = 256;
 
 /** Number of UTF-8 bytes needed to encode a single Unicode code point. */
 function utf8ByteLength(codePoint: number): number {
@@ -26,6 +48,61 @@ function utf8ByteLength(codePoint: number): number {
   if (codePoint <= 0x7ff) return 2;
   if (codePoint <= 0xffff) return 3;
   return 4;
+}
+
+/**
+ * Build `lineText`'s checkpoint table: `{ utf16: 0, byte: 0 }` followed by
+ * one entry every `CHECKPOINT_INTERVAL` UTF-16 units, in ascending order of
+ * both fields (the two axes advance together, one direction is never ahead
+ * of the other) — see `nearestCheckpoint`'s doc comment for why.
+ */
+function buildCheckpoints(lineText: string): Checkpoint[] {
+  const checkpoints: Checkpoint[] = [{ utf16: 0, byte: 0 }];
+  let utf16Acc = 0;
+  let byteAcc = 0;
+  let sinceLastCheckpoint = 0;
+
+  for (const ch of lineText) {
+    byteAcc += utf8ByteLength(ch.codePointAt(0)!);
+    utf16Acc += ch.length;
+    sinceLastCheckpoint += ch.length;
+    if (sinceLastCheckpoint >= CHECKPOINT_INTERVAL) {
+      checkpoints.push({ utf16: utf16Acc, byte: byteAcc });
+      sinceLastCheckpoint = 0;
+    }
+  }
+
+  return checkpoints;
+}
+
+/**
+ * Greatest checkpoint whose `field` value is `<= target`, via binary
+ * search — `checkpoints` is always non-empty (`buildCheckpoints` always
+ * emits the `{0, 0}` entry), so this always finds one.
+ *
+ * The one table built per line serves both lookup directions
+ * (`byteOffsetToPosition` searches by `.byte`, `positionToByteOffset` by
+ * `.utf16`) because both fields advance together in the same order:
+ * a checkpoint's UTF-16 offset is never past another's while its byte
+ * offset is behind, so "sorted by utf16" and "sorted by byte" are the
+ * same ordering.
+ */
+function nearestCheckpoint(
+  checkpoints: readonly Checkpoint[],
+  target: number,
+  field: 'utf16' | 'byte',
+): Checkpoint {
+  let lo = 0;
+  let hi = checkpoints.length - 1;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (checkpoints[mid]![field] <= target) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return checkpoints[lo]!;
 }
 
 /**
@@ -70,10 +147,12 @@ export class PositionMapper {
       const codePoint = ch.codePointAt(0)!;
 
       if (ch === '\n') {
+        const text = source.slice(lineStartUtf16, utf16Offset);
         lines.push({
           startByte: lineStartByte,
           startUtf16: lineStartUtf16,
-          text: source.slice(lineStartUtf16, utf16Offset),
+          text,
+          checkpoints: buildCheckpoints(text),
         });
         byteOffset += utf8ByteLength(codePoint);
         utf16Offset += ch.length;
@@ -86,10 +165,12 @@ export class PositionMapper {
       utf16Offset += ch.length;
     }
 
+    const lastText = source.slice(lineStartUtf16);
     lines.push({
       startByte: lineStartByte,
       startUtf16: lineStartUtf16,
-      text: source.slice(lineStartUtf16),
+      text: lastText,
+      checkpoints: buildCheckpoints(lastText),
     });
 
     return lines;
@@ -120,15 +201,31 @@ export class PositionMapper {
     return lo;
   }
 
-  /** Convert a tree-sitter UTF-8 byte offset to a VSCode-shaped UTF-16 position. */
+  /**
+   * Convert a tree-sitter UTF-8 byte offset to a VSCode-shaped UTF-16
+   * position.
+   *
+   * Scans forward from the nearest checkpoint at or before `byteIntoLine`,
+   * not from the line's own start — a plain start-of-line scan made this
+   * method (and its counterpart below) cost `O(line length)` *per call*,
+   * which every node-span computation in `discoverRegions` pays at least
+   * once. For a single pathologically long line (Phase 10's own named
+   * risk: a long `+`-chained concatenation, or one huge string literal, is
+   * exactly this shape), that turned "discover every region in the file"
+   * quadratic in that line's length — confirmed by direct timing (a
+   * 20,000-operand concatenation on one line took over two minutes) before
+   * this fix. `CHECKPOINT_INTERVAL`-bounded scans make each call's cost
+   * independent of line length again.
+   */
   byteOffsetToPosition(byteOffset: number): Position {
     const row = this.rowForByteOffset(byteOffset);
     const line = this.lineAt(row);
     const byteIntoLine = byteOffset - line.startByte;
 
-    let byteAcc = 0;
-    let utf16Acc = 0;
-    for (const ch of line.text) {
+    const checkpoint = nearestCheckpoint(line.checkpoints, byteIntoLine, 'byte');
+    let byteAcc = checkpoint.byte;
+    let utf16Acc = checkpoint.utf16;
+    for (const ch of line.text.slice(checkpoint.utf16)) {
       if (byteAcc >= byteIntoLine) break;
       byteAcc += utf8ByteLength(ch.codePointAt(0)!);
       utf16Acc += ch.length;
@@ -137,13 +234,18 @@ export class PositionMapper {
     return { line: row, character: utf16Acc };
   }
 
-  /** Convert a VSCode-shaped UTF-16 position back to a tree-sitter UTF-8 byte offset. */
+  /**
+   * Convert a VSCode-shaped UTF-16 position back to a tree-sitter UTF-8
+   * byte offset. See `byteOffsetToPosition`'s doc comment for why this
+   * scans forward from a nearby checkpoint rather than the line's start.
+   */
   positionToByteOffset(position: Position): number {
     const line = this.lineAt(position.line);
 
-    let byteAcc = 0;
-    let utf16Acc = 0;
-    for (const ch of line.text) {
+    const checkpoint = nearestCheckpoint(line.checkpoints, position.character, 'utf16');
+    let byteAcc = checkpoint.byte;
+    let utf16Acc = checkpoint.utf16;
+    for (const ch of line.text.slice(checkpoint.utf16)) {
       if (utf16Acc >= position.character) break;
       byteAcc += utf8ByteLength(ch.codePointAt(0)!);
       utf16Acc += ch.length;
