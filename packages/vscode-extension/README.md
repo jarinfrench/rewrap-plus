@@ -5,27 +5,31 @@ limit — preserving formatted structure (lists, doc-comment sections,
 fenced code, tables) and emitting language-valid concatenation syntax
 when a string literal has to split across lines.
 
-**Language support: Python, JavaScript, TypeScript, and TSX.** The three
-wrap commands gray themselves out automatically in any other language.
-This isn't a permanent ceiling — the engine's adapter interface is
-deliberately data-first (a language is a declarative descriptor plus
+**Language support: Python, JavaScript, TypeScript, TSX, and C++.** The
+three wrap commands gray themselves out automatically in any other
+language. This isn't a permanent ceiling — the engine's adapter interface
+is deliberately data-first (a language is a declarative descriptor plus
 fixtures, not new engine code — see the repo root [README](../../README.md)
-and `docs/adapters.md`), and C++ and others are on the roadmap.
+and `docs/adapters.md`), and more languages are on the roadmap.
 
 ## Features
 
 - **Comments.** Python line comments (`#`), grouped by contiguous
-  same-indent blocks; JavaScript/TypeScript/TSX `//` line comments and
-  `/**...*/` JSDoc-shaped block comments. Directive comments (`# noqa`,
-  `# type:`, `# pylint:`, `// eslint-disable`, `// @ts-expect-error`,
-  shebangs, encoding declarations) and anything that looks like
-  commented-out code are left untouched rather than reflowed.
+  same-indent blocks; JavaScript/TypeScript/TSX/C++ `//` line comments and
+  `/**...*/` doc-shaped block comments (JSDoc for JS/TS/TSX, Doxygen for
+  C++). Directive comments (`# noqa`, `# type:`, `# pylint:`,
+  `// eslint-disable`, `// @ts-expect-error`, `// NOLINT`,
+  `// clang-format on/off`, shebangs, encoding declarations) and anything
+  that looks like commented-out code are left untouched rather than
+  reflowed.
 - **Docstrings and doc comments**, with structure-preserving reflow
-  across four documentation dialects plus plain paragraph reflow:
+  across five documentation dialects plus plain paragraph reflow:
   - **Google** — `Args:` / `Returns:` / `Raises:` sections, indented entries. (Python)
   - **NumPy** — `Parameters` + `----------` underline sections. (Python)
   - **Sphinx/reST** — `:param x:` / `:returns:` / `:rtype:` field lists. (Python)
   - **JSDoc** — `@param` / `@returns` / `@throws` tags. (JavaScript/TypeScript/TSX)
+  - **Doxygen** — `\param` / `@param`, `\return` / `@return`, `\brief`,
+    and other tags, either prefix accepted per tag. (C++)
   - **Plain** — paragraph reflow only, no section structure.
 
   Dialect is detected **per docstring/comment**, not per file — mixed
@@ -38,15 +42,18 @@ and `docs/adapters.md`), and C++ and others are on the roadmap.
   literals are split across multiple lines using whatever concatenation
   form the language actually needs: adjacent-literal implicit
   concatenation for Python (`"foo " "bar"`, adding enclosing parentheses
-  when the surrounding syntax doesn't already provide grouping), or `+`
+  when the surrounding syntax doesn't already provide grouping) and
+  always for C++ (`"foo " "bar"`, which never needs its own grouping
+  either way — C++ has no valid `+` string concatenation at all); or `+`
   operators for Python (when that's how the literal was already joined)
-  and always for JavaScript/TypeScript/TSX (which never needs its own
-  grouping either way). Gated by a conservative **prose heuristic**
+  and always for JavaScript/TypeScript/TSX (which likewise never needs
+  its own grouping). Gated by a conservative **prose heuristic**
   (`rewrapPlus.stringPolicy`, default `prose`) so paths, URLs, regexes,
   dict/object keys, SQL, and `logging.info("%s failed", x)`-style format
   strings are left alone by default — see
   [What this won't touch](#what-this-wont-touch). Template literals
-  (`` `...` ``) aren't wrapped in JavaScript/TypeScript/TSX yet.
+  (`` `...` ``) aren't wrapped in JavaScript/TypeScript/TSX yet, and raw
+  string literals (`R"(...)"`) aren't wrapped in C++.
 - **Directive comments** for per-region opt-in/opt-out, honored
   alongside comment wrapping and string wrapping alike:
   - `# rewrap: off` / `# rewrap: on` — toggle a range.
@@ -78,7 +85,7 @@ overrides work).
 | `rewrapPlus.wrapComments` | `true` | Wrap line and block comments. |
 | `rewrapPlus.wrapStrings` | `true` | Wrap eligible string literals, subject to `stringPolicy`. |
 | `rewrapPlus.stringPolicy` | `prose` | `off` never wraps strings. `prose` (the conservative default) wraps only strings that score as prose-like under the heuristic. `all` wraps every eligible string, ignoring the heuristic. |
-| `rewrapPlus.docDialect` | `auto` | `auto` detects the dialect per docstring/doc comment. `google` / `numpy` / `sphinx` / `jsdoc` / `plain` forces that dialect regardless of its own shape. |
+| `rewrapPlus.docDialect` | `auto` | `auto` detects the dialect per docstring/doc comment. `google` / `numpy` / `sphinx` / `jsdoc` / `doxygen` / `plain` forces that dialect regardless of its own shape. |
 | `rewrapPlus.preserveIndentedBlocks` | `true` | Treat an already-indented block inside a comment/docstring (beyond a paragraph's first line) as verbatim rather than reflowing it. |
 | `rewrapPlus.respectEditorConfig` | `true` | Consult `.editorconfig`'s `max_line_length` as a precedence tier, parsed directly by this extension — independent of whether the separate EditorConfig extension is installed. |
 | `rewrapPlus.balancedWrapping` | `false` | Use minimum-raggedness (balanced) line breaking instead of greedy first-fit. Often visibly nicer for short comments/docstrings, at the cost of more computation. |
@@ -135,9 +142,12 @@ setting, same as it would for any formatter.
 
 Left byte-identical, deliberately, rather than risk mangling behavior:
 
-- **Raw strings** (`r"..."`) and **byte strings** (`b"..."`) — escapes
-  can't be safely normalized in the former, and the latter is rarely
-  prose. A concatenation run with mixed prefixes is treated the same way.
+- **Raw strings** — Python's `r"..."`/byte strings `b"..."`, and C++'s
+  `R"(...)"` — escapes can't be safely normalized in the former, and the
+  latter is rarely prose (Python), or is simply a different grammar node
+  the wrap engine never looks at in the first place (C++). A
+  concatenation run with mixed prefixes (Python's `r`/`b`/`f`, or C++'s
+  `L`/`u`/`U`/`u8` encoding prefixes) is treated the same way.
 - **Paths, URLs, regexes, SQL, dict/object/i18n keys, and format-call
   arguments** (`logging.info("%s failed", x)`, the sole argument to
   `re.compile`/`open`/`Path`/`subprocess.*`) — the prose heuristic scores
@@ -149,9 +159,15 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
 - **Template literals** (`` `...` ``) in JavaScript/TypeScript/TSX —
   deferred the same way Python's own triple-quoted non-docstring strings
   are, given `${}` interpolation and significant internal whitespace.
-- **A plain single-star `/* ... */` block comment** (no JSDoc `/**`
-  marker) in JavaScript/TypeScript/TSX — discovered but not wrapped; only
-  the JSDoc form is, today.
+- **A plain single-star `/* ... */` block comment** (no `/**` marker) in
+  JavaScript/TypeScript/TSX/C++ — discovered but not wrapped; only the
+  JSDoc/Doxygen form is, today.
+- **`///`-style triple-slash comments** in C++ — a genuinely different
+  Doxygen convention (no single open/close delimiter pair) from the
+  supported `/** ... */` form; use the latter for anything beyond a
+  one-line comment.
+- **Anything inside a C++ `#define` macro body** — never reflowed, since
+  the parser itself treats a macro's body as opaque, unparsed text.
 - **Any region overlapping a parse error** — skipped with a reason
   (visible via the output channel), never partially edited.
 - **File-final newline, trailing whitespace, and line endings** (LF vs
@@ -176,12 +192,12 @@ of the others instead of filing a bug here.
 | Capability | [Rewrap](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap) (stkb) | [Rewrap Revived](https://marketplace.visualstudio.com/items?itemName=dnut.rewrap-revived) (dnut) | [Reflow Markdown](https://marketplace.visualstudio.com/items?itemName=marvhen.reflow-markdown) | **Rewrap+** |
 |---|---|---|---|---|
 | Wrap line/block comments | Yes | Yes | No | Yes |
-| Wrap doc comments (dialect-aware sections) | Yes | Yes | No | Yes (Python: Google/NumPy/Sphinx; JS/TS/TSX: JSDoc) |
+| Wrap doc comments (dialect-aware sections) | Yes | Yes | No | Yes (Python: Google/NumPy/Sphinx; JS/TS/TSX: JSDoc; C++: Doxygen) |
 | **Wrap string literals** | **No** | **No** | **No** | **Yes** |
 | **Language-valid concatenation on split** | **No** | **No** | **No** | **Yes** |
 | **Prose-vs-code string heuristic** | **No** | **No** | **No** | **Yes** |
 | Parser | Line/regex-based | Line/regex-based | Markdown-aware | **tree-sitter AST** |
-| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX |
+| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++ |
 | Markdown / LaTeX / plain-text files | Yes | Yes | Yes | **No** |
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |

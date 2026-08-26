@@ -331,3 +331,129 @@ a language with genuinely new shapes this phase never exercised — raw
 strings, wide/UTF prefixes, preprocessor line continuations — and should
 expect its own round of this same kind of finding, not assume the
 adapter seam is now fully proven just because four languages pass.
+
+---
+
+# Phase 12c: C++ — full adapter
+
+Unlike JavaScript's canary-then-real path (Phase 6b, then extended in
+12b) or TypeScript/TSX (born full in 12b), C++ had no thin precursor —
+`cppAdapter` is a real adapter, with strings and a Doxygen documentation
+dialect, from its first commit. The short answer, as with every earlier
+phase's version of this same question: the adapter interface held with
+**zero engine changes**, though only because two of C++'s genuinely new
+shapes turned out to be handled *for free* by the grammar's own
+structure rather than by new adapter code — see below. Full grammar
+findings are in `docs/parsing.md`'s Finding 6; this section covers what
+they meant for the descriptor/adapter design.
+
+## Two hazards the plan named that needed no code at all
+
+- **"Raw strings ... (never wrap)."** `R"(...)"` parses as a wholly
+  separate `raw_string_literal` node, never matched by
+  `queries.strings`'s `(string_literal) @string` — so raw strings are
+  excluded from discovery by construction, the identical mechanism that
+  already kept JS/TS template literals out (`docs/adapters.md`'s Phase
+  12b section: "not a special-case refusal anywhere"). No `isSafeToWrap`
+  check was needed for this one at all.
+- **"Preprocessor line continuations ... skip strings inside macro
+  definitions in the first pass."** A `#define` macro body is never
+  parsed as C++ syntax — its argument is one opaque `preproc_arg` leaf
+  carrying raw, unparsed text (confirmed by probing a multi-line macro
+  with a backslash-newline continuation). Neither `comment` nor
+  `string_literal` nodes are ever produced inside one, so this hazard
+  was already resolved before any adapter code was written.
+
+## A hazard the plan didn't name: no valid `+` concatenation exists
+
+Every other adapter in this package (`python`, `javascript`, `typescript`,
+`typescriptreact`) declares an `@concat.operator` pattern alongside
+`@concat.implicit`. C++ declares **only** `@concat.implicit` — `"a" + "b"`
+between two string literals is not valid C++ (`const char*` has no
+`operator+`; adding two pointers is a compile error). The only real way
+`+` ever appears near a string literal is with a `std::string` operand on
+one side, and probing `std::string("a") + "b" + "c"` confirmed the chain's
+`left` operand bottoms out at a `call_expression`, never a second
+`string_literal` leaf — exactly the shape `discoverRegions`'s own
+concatenation grouper already bails on for every language's `"a" + name`
+case. Simply not declaring the operator pattern is the correct,
+semantically honest choice, not a missing feature — see
+`languages/cpp/descriptor.ts`'s own doc comment for the full reasoning.
+This is also why `strings.concatenation` needs no `operator`/
+`operatorPlacement`/`requiresGrouping` fields at all: bare adjacency is
+valid wherever a single string literal already is, the same "no grouping
+ever needed" shape ECMAScript's `'operator'` style has, just via
+`'implicit'` instead.
+
+## A genuinely new adapter-level check: mixed encoding-prefix concatenation
+
+C++ string literals carry an encoding prefix (`L`, `u`, `U`, `u8`) baked
+into the same token as the opening quote. Real, standards-legal C++
+allows an unprefixed literal to merge with a prefixed one in a
+concatenation run (`"abc" L"def"` takes on `L`'s encoding) — but
+`strings/dissolve-string.ts`'s shared `dissolveString` always reuses the
+*first* part's own prefix as the sole representative for the whole
+merged run (see that module's own "Representative prefix/quote choice"
+doc comment). Merging `"abc" L"def"` under that design would silently
+drop the `L` the moment the unprefixed first part was chosen to
+represent the whole run — a real value change (a narrow vs. wide
+string), not a cosmetic one. `languages/cpp/adapter.ts`'s `isSafeToWrap`
+refuses *any* prefix mismatch across a run's parts, including empty vs.
+non-empty, mirroring Python's own strictness for its own prefix letters
+(`../python/adapter.ts`) rather than teaching shared emit code a new
+representative-prefix-selection rule no other adapter needs.
+
+## Deliberate scope limits (not leaks)
+
+- **`///` (Doxygen's repeated-line-marker doc-comment style) is excluded
+  from discovery entirely**, the same "bias toward verbatim/skip when
+  uncertain" call already made for plain `/* */` in Phase 6b/12b, but for
+  a different underlying reason: `///` is a genuinely different
+  delimiter *shape* than `/** ... */` — no single open/close pair
+  `dissolveBlockCommentText`/`emitBlockComments` (and therefore
+  `wrapDocComment`) can express, since both are built entirely around
+  one open delimiter, one close delimiter, and an optional per-line
+  continuation marker. Merging consecutive `///` lines into a region and
+  running them through that unchanged machinery would either silently
+  rewrite a user's `///` style into `/** */` on emit, or fail to strip
+  the marker at all. Building genuine `///` support is real, separate
+  engine work (a repeated-marker dissolve/emit pair alongside the
+  existing open/close one) that nothing in this phase's plan text
+  demands — Doxygen documentation is still fully supported via the
+  `/** ... */` form, which is the more common convention for anything
+  beyond a one-line comment anyway.
+- **A plain single-star `/* ... */` block comment is excluded from
+  discovery**, for the identical reason every earlier phase's descriptor
+  already chose this: `comments.block` is one delimiter shape, already
+  spoken for by the Doxygen `/**`/`*`-continuation form.
+- **No `groupRegions` override for C++** — consecutive `//` lines aren't
+  merged into one logical block, the same open question Phase 6b/12b
+  already deferred for JavaScript/TypeScript's own `//` comments.
+- **No `c` alias.** `LanguageDescriptor.aliases`' own doc comment names
+  `'cpp'` vs `'c'` as a hypothetical example, but C is a genuinely
+  different grammar (`tree-sitter-c`), not a superset/subset relationship
+  the way `javascriptreact` truly is an alias of `javascript` — a future
+  `c` adapter is separate work, not a same-descriptor alias, the same
+  distinction TSX already established against plain TypeScript.
+- **`strings.rawForms` is populated but functionally inert**, the same
+  shape `docs/adapters.md`'s Phase 6b section already noted for
+  `strings` in general: real, valid descriptor data (`RawFormSpec`'s own
+  canonical example, `../../types/adapter.ts`), but nothing in the
+  engine reads it at runtime — raw strings are already excluded from
+  discovery by the query itself (see above), so this field currently
+  documents a scope decision rather than driving one.
+
+## What this means for future adapters
+
+Five adapters now pass the identical `runAdapterConformance` suite:
+Python, JavaScript, TypeScript, TSX, C++. Unlike every phase before it,
+12c required no fix to shared engine code at all — both of its
+plan-named hazards (raw strings, macro line continuations) turned out to
+be free consequences of how `tree-sitter-cpp` itself parses, and its one
+genuinely new correctness question (mixed-prefix concatenation) was
+resolved entirely inside `languages/cpp/`'s own `isSafeToWrap`, the same
+adapter-local pattern Python's raw/byte-prefix check already
+established. That's a useful data point, not a promise: a future
+C-family adapter (plain C, Objective-C, Java) should still expect its
+own round of grammar-specific findings, the same caution 12b's own
+closing note already gave 12c.

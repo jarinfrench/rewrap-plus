@@ -83,18 +83,36 @@ the GitHub Release for whichever tag eventually ships this.
   existing three. TSX registers as its own adapter (a genuinely separate
   tree-sitter grammar from plain TypeScript, not an alias); `.jsx` files
   are supported via `javascript`'s own alias.
+- **C++ support** (Phase 12c), a full adapter from its first commit
+  (unlike JavaScript's canary-then-real path): `//`/`///`/`/* */`/`/** */`
+  comment discovery (only `//` and `/**...*/` are wrapped — see Known
+  limitations), bare-adjacency string-literal concatenation (`"foo "
+  "bar"`, never requiring inserted grouping — C++ has no valid `+`
+  string concatenation at all, unlike every other adapter), and a new
+  Doxygen documentation dialect (`\param`/`@param`, `\return`/`@return`,
+  `\brief`, ... — either prefix accepted per tag) detected per doc
+  comment. `rewrapPlus.docDialect` gains a `doxygen` option. Raw strings
+  (`R"(...)"`), wide/UTF-prefixed strings (`L`/`u`/`U`/`u8`), and
+  `#define` macro bodies are all handled correctly without any wrap
+  engine changes — see `docs/adapters.md`'s Phase 12c section for why.
 
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
   Python defers triple-quoted non-docstring strings; a plain
-  single-star `/* ... */` block comment (no JSDoc marker) is discovered
-  but not wrapped, for JavaScript/TypeScript/TSX.
+  single-star `/* ... */` block comment (no JSDoc/Doxygen marker) is
+  discovered but not wrapped, for JavaScript/TypeScript/TSX/C++.
+- C++'s `///`-style triple-slash Doxygen comments are discovered but not
+  wrapped — a genuinely different delimiter shape (no single open/close
+  pair) from the supported `/** ... */` form; use the latter instead.
+- C++ raw string literals (`R"(...)"`) are never wrapped — excluded from
+  discovery entirely, since they parse as a separate grammar node the
+  wrap engine never queries for.
 - Split-string continuation-line indent is always the enclosing
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.
 - `rewrapPlus.stringWrapInclude` is declared but not yet consumed.
-- Markdown/LaTeX/plain-text support, a C++ adapter, a CLI, and
+- Markdown/LaTeX/plain-text support, a plain-C adapter, a CLI, and
   Marketplace/OpenVSX publishing are not yet implemented — see
-  `docs/implementation-plan.md`'s Phase 12 roadmap (12c–12e; 12a and 12b
-  are now done).
+  `docs/implementation-plan.md`'s Phase 12 roadmap (12d–12e; 12a, 12b,
+  and 12c are now done).
