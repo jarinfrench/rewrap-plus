@@ -585,3 +585,134 @@ useful data point: a plain-data config contract and an edit-application
 function with no editor-host awareness baked in really do transfer to an
 entirely different runtime shape (batch CLI vs. live editor) with no
 engine-side changes at all.
+
+---
+
+# Triple-quoted non-docstring string literals
+
+This section covers a case region discovery originally scoped out — "a
+triple-quoted string anywhere else [outside a docstring position]... is
+an ordinary `stringLiteral`" — which string-literal wrapping then
+hard-refused outright by name (`isSafeToWrap`'s own `TRIPLE_QUOTE_BODY`
+comment called it out as real, separate work). Unlike every adapter
+section above, this isn't a new language adapter — it's a new *shape* of
+region inside the existing Python adapter — so there's no
+grammar-probing section here; the finding is about reuse and
+safety-gate design instead.
+
+## The pipeline is reused verbatim, not forked
+
+`dissolveDocstring`/`emitDocstring` (`languages/python/dissolve-docstring.ts`,
+`emit-docstring.ts`) turned out to have never actually depended on
+docstring *position* — both operate purely on a triple-quoted literal's own
+text shape (prefix, quote delimiter, PEP-257 physical-line/indentation
+structure). `wrapCodeString` (`languages/python/wrap-code-string.ts`) calls
+both directly, unchanged, for a non-docstring triple-quoted
+`'stringLiteral'` — the same "promote once a second real consumer needs
+it" pattern this document's JavaScript-canary, JavaScript/TypeScript/TSX,
+and C++ sections already establish repeatedly, except here the second
+consumer needed the literally identical
+functions, not a copy with one field swapped. The one deliberate
+divergence from `wrapDocstring`: segmentation always uses `plainDialect`
+directly, never `cfg.docDialect`'s Google/NumPy/Sphinx choice — those
+dialects parse a *documentation* convention (`Args:`, a NumPy underline, a
+Sphinx field marker) that has no business being scanned for inside an
+arbitrary program value.
+
+## The safety gate had to become stricter than every other `'stringLiteral'`
+
+This is the one genuinely new design question this work raised, not
+answered by precedent. Every other `'stringLiteral'` wrap in this package
+is value-preserving by construction — concatenation-splitting a string
+inserts zero characters into its runtime value
+(`strings/dissolve-string.ts`'s own doc comment) — so gating it behind
+`stringPolicy: 'prose'` is purely a *stylistic* default: `'all'` or a
+`# rewrap: force` directive can reasonably bypass it, because doing so
+can't corrupt anything, only wrap text a human might not have wanted
+wrapped. `wrapCodeString` breaks that property on purpose — it applies the
+same PEP-257 indent-stripping and paragraph-whitespace normalization a
+docstring already accepts (and this project has accepted since docstring
+wrapping was first added) — which means `looksLikeProse` can't be left as a stylistic default for this
+one shape without also handing `stringPolicy: 'all'` a real corruption
+path it doesn't have for any other string. The fix: `isSafeToWrap`
+(`languages/python/adapter.ts`) calls `looksLikeProse` itself, directly,
+for a single-part triple-quoted literal — unconditionally, before
+`../../wrap.ts`'s own policy-gated prose branch ever runs, and not
+bypassable by `force` either, matching the same "never bypass a hard
+structural refusal" posture raw/byte-prefix strings already establish in
+the same function. A multi-part triple-quoted concatenation run (`"""a"""
+"""b"""`) stays unsafe regardless — genuinely separate work, since neither
+`wrapCodeString` nor the concatenation-based pipeline is built for that
+shape.
+
+## Two pre-existing bugs found while building this work's own fixtures, fixed as their own follow-up
+
+Both were first sidestepped in this work's own 009 fixture (different
+fixture wording; keeping the summary on the opening delimiter's line
+rather than exercising the "quote alone" convention) rather than fixed
+inline, since neither is specific to triple-quoted non-docstring strings
+— fixing either under this section's own commit would have been scope
+creep into docstring- and string-wrapping territory well outside it. Both
+were then fixed separately, recorded here rather than as their own new
+section since neither changed anything about this work's own feature —
+009's fixture still uses its sidestepped wording; it didn't need to go
+back to exercising the bug now that the bug is gone.
+
+- **`looksLikeProse`'s `SQL_KEYWORDS` regex matched ordinary English.** A
+  hand-written prose paragraph containing the word "from" (`"...separated
+  from the first by..."`) scored +4 on every positive signal but was
+  driven to a final score of exactly 0 (not eligible) by the same -4
+  SQL-keyword penalty meant for `SELECT ... FROM ...`. `FROM`/`WHERE`/
+  `JOIN`/`VALUES` are common enough as ordinary English words that
+  matching any one of them alone was a real false-positive risk;
+  `SELECT`/`INSERT INTO`/`DELETE FROM`/`CREATE TABLE`/`DROP TABLE` are not.
+  **Fix:** split into `SQL_STRONG_KEYWORDS` (any one alone still counts)
+  and `SQL_WEAK_KEYWORDS` (only counts once at least two *distinct* ones
+  co-occur — the shape a real query almost always has and a stray English
+  sentence almost never does). `prose-heuristic.ts`'s own doc comment on
+  the two regexes has the full reasoning; `prose-heuristic.test.ts` gained
+  a dedicated regression suite (prose containing "from"/"where" now
+  accepted; a query built only from co-occurring weak keywords, and every
+  strong keyword alone, still rejected).
+- **Docstring wrapping was not idempotent for "quote alone on its own
+  line" + "more than one paragraph."** Reproduced identically through the
+  ordinary `wrapDocstring` path for a real `'docstring'` region — nothing
+  to do with `wrapCodeString` — so it was a latent bug in docstring
+  wrapping itself, not one this work introduced. Wrapping such a
+  docstring once was correct; wrapping the result a second time inserted
+  an additional spurious blank line after the opening delimiter, and
+  repeated on every subsequent wrap. **Root cause:** `emit-docstring.ts`'s
+  `rest` (the physical lines after the very first one) was computed as
+  `openingHasSummary ? contentLines.slice(1) : contentLines` — when the
+  opening line had no summary (a leading `blank` block, `contentLines[0]
+  === ''`), the *whole* `contentLines` array was kept instead of dropping
+  its already-consumed first element, so that blank line got emitted a
+  second time. An existing `emit-docstring.test.ts` case had, in effect,
+  asserted the bug as intended behavior (its expected output had the same
+  spurious extra blank line) — corrected alongside the fix. **Fix:**
+  `rest` is now always `contentLines.slice(1)`, matching what the
+  function's own "Opening and closing placement" doc comment already said
+  the intended behavior was ("line 0's own (empty) content becomes its
+  own following blank physical line" turned out to describe the bug, not
+  the fix — reworded). New coverage: a regression case in
+  `emit-docstring.test.ts` (two paragraphs after a leading blank — one
+  paragraph alone didn't expose the duplication clearly enough to have
+  caught this originally) and a new end-to-end gold fixture,
+  `docstrings/008-quote-alone-multi-paragraph`.
+
+## What this means going forward
+
+This work didn't need a new adapter hook, a new region kind, or any
+change to `../../wrap.ts`'s generic dispatch — the entire feature lives
+inside `languages/python/`, gated by `isSafeToWrap` the same way every
+other Python-specific string refusal already is. That's a data point in
+the same direction as every section above: the seams this project drew
+early (dissolve/emit per-language, safety gating owned by the adapter,
+generic dispatch knowing nothing about quote styles) keep paying off for
+a case none of them were designed with in mind. It's also the first
+entry in this document where the interesting finding isn't "did the
+interface hold" but
+"how much of an existing pipeline can be reused as-is for a shape it
+wasn't originally written for" — the answer here being all of it, with the
+safety story adjusted at the one call site (`isSafeToWrap`) that actually
+needed to know the difference.
