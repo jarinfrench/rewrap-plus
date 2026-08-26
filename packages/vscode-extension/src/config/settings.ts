@@ -20,7 +20,7 @@ export interface ExtensionSettings {
   readonly wrapComments: boolean;
   readonly wrapStrings: boolean;
   readonly stringPolicy: 'prose' | 'all' | 'off';
-  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain';
+  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';
   readonly preserveIndentedBlocks: boolean;
   readonly respectEditorConfig: boolean;
   readonly balancedWrapping: boolean;
@@ -40,7 +40,7 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // conservative default".
     wrapStrings: config.get<boolean>('wrapStrings', true),
     stringPolicy: config.get<'prose' | 'all' | 'off'>('stringPolicy', 'prose'),
-    docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'plain'>(
+    docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain'>(
       'docDialect',
       'auto',
     ),

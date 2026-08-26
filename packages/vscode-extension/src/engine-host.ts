@@ -125,7 +125,10 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
  * make `.jsx` files supported here too, with no separate registration
  * needed for it the way `.tsx` needs one (a genuinely different grammar,
  * not an alias — `../../engine/src/languages/typescript/descriptor.ts`'s
- * own doc comment explains why).
+ * own doc comment explains why). Phase 12c adds `cppAdapter` (`'cpp'`)
+ * alongside them — a real adapter from the start, unlike JavaScript's
+ * canary-then-real path, since C++ had no Phase-6b-equivalent thin
+ * precursor to extend.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -150,6 +153,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.javascriptAdapter);
   registry.register(engine.typescriptAdapter);
   registry.register(engine.typescriptReactAdapter);
+  registry.register(engine.cppAdapter);
   return registry;
 }
 

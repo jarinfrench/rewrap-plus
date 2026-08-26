@@ -100,18 +100,19 @@
         },
         "rewrapPlus.docDialect": {
           "type": "string",
-          "enum": ["auto", "google", "numpy", "sphinx", "jsdoc", "plain"],
+          "enum": ["auto", "google", "numpy", "sphinx", "jsdoc", "doxygen", "plain"],
           "enumDescriptions": [
             "Detect the dialect per docstring/doc comment.",
             "Google-style (Args:/Returns:/Raises: sections).",
             "NumPy-style (Parameters + ---------- underline).",
             "Sphinx/reST field lists (:param x:/:returns:).",
             "JSDoc-style (@param/@returns/@throws tags).",
+            "Doxygen-style (\\param/@param, \\return/@return, \\brief, ...).",
             "Plain paragraph reflow only, no section structure."
           ],
           "default": "auto",
           "scope": "resource",
-          "markdownDescription": "Documentation dialect for Python docstrings and JS/TS JSDoc comments. `auto` (the default) detects per docstring/comment rather than per file, since mixed conventions in one codebase are common; any other value forces that dialect regardless of its own shape."
+          "markdownDescription": "Documentation dialect for Python docstrings, JS/TS JSDoc comments, and C++ Doxygen comments. `auto` (the default) detects per docstring/comment rather than per file, since mixed conventions in one codebase are common; any other value forces that dialect regardless of its own shape."
         },
         "rewrapPlus.preserveIndentedBlocks": {
           "type": "boolean",
