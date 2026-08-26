@@ -155,6 +155,68 @@ describe('wrapRegions', () => {
     }
   });
 
+  it('skips a region disabled by a rewrap:off .. on directive range', async () => {
+    const source =
+      '# rewrap: off\n' + '# ' + 'word '.repeat(20).trim() + '\n' + '# rewrap: on\n';
+    const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
+    expect(result.edits).toEqual([]);
+    expect(result.skipped).toHaveLength(1);
+    expect(result.skipped[0]!.reason).toMatch(/rewrap:off/);
+  });
+
+  it('skips a region disabled by a fmt:off .. on directive range', async () => {
+    const source = '# fmt: off\n' + '# ' + 'word '.repeat(20).trim() + '\n' + '# fmt: on\n';
+    const result = await wrapRegions(source, 'python', 'all', config(), parserManager);
+    expect(result.edits).toEqual([]);
+    expect(result.skipped).toHaveLength(1);
+  });
+
+  it('skips a region immediately preceded by a rewrap:ignore directive', async () => {
+    // A target on its own statement (a string literal), not another
+    // comment line — an ignore directive followed by *another* `#`
+    // comment at the same indent would instead merge with it into one
+    // region (Phase 6's own consecutive-comment grouping), which is a
+    // different, already-covered interaction, not what this test means
+    // to isolate.
+    const source =
+      '# rewrap: ignore\n' +
+      'x = "' +
+      'word '.repeat(20).trim() +
+      '"\n';
+    const result = await wrapRegions(
+      source,
+      'python',
+      'all',
+      config({ wrapStrings: true, stringPolicy: 'all' }),
+      parserManager,
+    );
+    expect(result.edits).toEqual([]);
+    expect(result.skipped.some((s) => s.reason.includes('rewrap:ignore'))).toBe(true);
+  });
+
+  it('a rewrap:force directive bypasses the prose heuristic for that string', async () => {
+    // An identifier-shaped key with no spaces scores well below the
+    // eligibility threshold under stringPolicy 'prose' on its own.
+    const source = 'x = "some_identifier_shaped_key_without_any_spaces_at_all"  # rewrap: force\n';
+    const withoutForce = await wrapRegions(
+      source.replace('  # rewrap: force', ''),
+      'python',
+      'all',
+      config({ wrapStrings: true, stringPolicy: 'prose' }),
+      parserManager,
+    );
+    expect(withoutForce.edits).toEqual([]);
+
+    const withForce = await wrapRegions(
+      source,
+      'python',
+      'all',
+      config({ wrapStrings: true, stringPolicy: 'prose' }),
+      parserManager,
+    );
+    expect(withForce.edits).toHaveLength(1);
+  });
+
   it('skips a region overlapping a parse error rather than throwing', async () => {
     const source = '# a fine comment\ndef broken(:\n    pass\n';
     const result = await wrapRegions(

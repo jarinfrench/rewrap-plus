@@ -13,6 +13,7 @@ import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
 import { emitBlockComments } from './comments/emit-block-comments.js';
 import { looksLikeProse } from './prose-heuristic.js';
+import { scanDirectives } from './directives.js';
 
 /**
  * One region that was found but not wrapped, and why — surfaced so a
@@ -121,12 +122,31 @@ export async function wrapRegions(
       ? allRegions
       : allRegions.filter((region) => overlapsAny(region.span, targets));
 
+  const directives = scanDirectives(source);
   const edits: TextEdit[] = [];
   const skipped: SkippedRegion[] = [];
 
   for (const region of candidates) {
     if (errorSpans.some((errorSpan) => spansOverlap(region.span, errorSpan))) {
       skipped.push({ region, reason: 'region overlaps a parse error' });
+      continue;
+    }
+
+    // Directive comments (`# rewrap: off/on/ignore/force`, `# fmt: off/on`
+    // — `./directives.ts`) are a cross-cutting, region-kind-agnostic
+    // override, checked ahead of every kind-specific gate below: a region
+    // disabled or ignored by one never reaches the string-specific
+    // wrapStrings/isSafeToWrap/prose checks or the comment-specific
+    // wrapComments check at all. `isForcedAt` is consulted further down,
+    // inline with the one gate it's actually meant to bypass (the
+    // 'prose' policy's eligibility check) rather than here, since forcing
+    // isn't itself a reason to skip.
+    if (directives.isDisabledAt(region.span.startRow)) {
+      skipped.push({ region, reason: 'region disabled by a rewrap:off/fmt:off directive' });
+      continue;
+    }
+    if (directives.isIgnoredAt(region.span.startRow)) {
+      skipped.push({ region, reason: 'region skipped by a rewrap:ignore directive' });
       continue;
     }
 
@@ -159,7 +179,12 @@ export async function wrapRegions(
         skipped.push({ region, reason: 'string is not safe to wrap' });
         continue;
       }
-      if (cfg.stringPolicy === 'prose') {
+      if (cfg.stringPolicy === 'prose' && !directives.isForcedAt(region.span.startRow)) {
+        // A `# rewrap: force` directive is specifically "the escape hatch
+        // that makes a conservative default acceptable" (the plan's own
+        // words) for *this* gate — it bypasses the heuristic, not the
+        // wrapStrings/stringPolicy master switch or isSafeToWrap's hard
+        // structural refusals above, which stay in effect regardless.
         const eligible =
           looksLikeProse(sliceSpanText(source, region.span)) &&
           (adapter.isProseEligible?.(region, source, tree, cfg) ?? true);
