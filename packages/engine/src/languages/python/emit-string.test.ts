@@ -78,6 +78,28 @@ describe('emitString', () => {
     }
   });
 
+  it('is idempotent across the needsParens transition a real first-wrap/re-wrap causes', () => {
+    // Regression: a bare assignment's first wrap has needsParens=true and
+    // indentColumn pointing at the bare string's own column. Once wrapped,
+    // the SAME logical text sits inside its own freshly-inserted parens —
+    // a re-wrap sees needsParens=false and an indentColumn one column
+    // further right (the string now starts just past the inserted `(`).
+    // Both the reflowed line breaks and the physical text must come out
+    // identical either way; a naive per-pass width budget can drift by
+    // exactly the one column the paren itself occupies. See
+    // `closingReserve`'s own doc comment in emit-string.ts for the full
+    // story of why the fix is asymmetric (closing side unconditional,
+    // opening side still gated on needsParens).
+    const text = 'This message is intentionally long so that it exceeds the limit and must be wrapped.';
+    const first = emitString(text, '', '"', 10, 4, true, 'implicit', 60);
+    // Re-wrapping: the string's own column shifts right by one (the `(`
+    // now precedes it on the same line, unchanged from the first pass —
+    // the surrounding parens are never part of what emitString itself
+    // returns, only the region between them), and it's already grouped.
+    const second = emitString(text, '', '"', 11, 4, false, 'implicit', 60);
+    expect(first).toBe('(' + second + ')');
+  });
+
   it('never produces a line over columnLimit for any split fixture above', () => {
     const cases: Array<[string, string, string, number, number, boolean, 'implicit' | 'operator', number]> = [
       ['hello there wonderful world today', '', '"', 4, 4, true, 'implicit', 20],

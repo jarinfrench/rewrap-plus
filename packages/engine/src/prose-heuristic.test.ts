@@ -69,5 +69,18 @@ describe('looksLikeProse', () => {
     it('rejects a str.format placeholder-dominated key', () => {
       expect(looksLikeProse('{0}:{1}')).toBe(false);
     });
+
+    it('rejects a SQL query with its surrounding quote characters included', () => {
+      // Regression: `wrap.ts` scores whatever text an adapter's
+      // `proseText` hook returns, which for a language with no such hook
+      // (or a hook that doesn't strip quotes) could include the literal
+      // delimiter characters. A weight of -3 here once let this exact
+      // query flip from correctly-rejected to incorrectly-accepted purely
+      // because the leading `"` defeated the dictionary-word-shape check
+      // on the first token — see the categorical negative signals' own
+      // comment in prose-heuristic.ts for the full story.
+      const query = `"SELECT id, name FROM users WHERE active = 1 AND created_at > '2020-01-01'"`;
+      expect(looksLikeProse(query)).toBe(false);
+    });
   });
 });

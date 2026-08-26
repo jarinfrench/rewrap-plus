@@ -41,16 +41,22 @@ import type { ConcatenationStyle } from './emit-context.js';
  * bracket rather than giving it a dedicated line the way a human,
  * or Black, typically would.
  *
- * Every width reserves 1 column for a possible closing `)`, 1 more for a
- * possible trailing split-point space (see "Preserving the space at a
- * split point" below), and, for `'operator'` style, 2 more for a possible
- * trailing ` +` — uniformly, even on the one line that won't actually
- * carry any of these — rather than trying to special-case "only the last
- * line skips this." That costs up to 4 columns of slack on non-qualifying
- * lines; the alternative is `reflowBlock` growing a "reserve extra on the
- * last line" concept it has no other user for. The same trade-off
- * `emitDocstring` already makes and documents for its own first-line
- * budget ("always correct, occasionally a few columns short of optimal").
+ * Every line's width reserves 1 column for a possible glued-on closing
+ * `)` (unconditionally — see the doc comment directly on `closingReserve`
+ * below for the idempotency bug this fixes), 1 more for a possible
+ * trailing split-point space (see "Preserving the space at a split
+ * point" below), and, for `'operator'` style, 2 more for a possible
+ * trailing ` +` — uniformly, even on lines that won't actually carry all
+ * of these — rather than trying to special-case exactly which line needs
+ * which. The first line additionally reserves 1 column for a glued-on
+ * opening `(`, but only when `needsParens` is set — see the same doc
+ * comment for why that one *is* conditional. The combined cost is up to
+ * 4 columns of slack on non-qualifying lines; the alternative is
+ * `reflowBlock` growing a "reserve extra on this specific line" concept
+ * it has no other user for. The same trade-off `emitDocstring` already
+ * makes and documents for its own first-line budget ("always correct,
+ * occasionally a few
+ * columns short of optimal").
  *
  * ## Preserving the space at a split point
  *
@@ -65,7 +71,7 @@ import type { ConcatenationStyle } from './emit-context.js';
  * plan's own named central risk for this phase: "Preserve the trailing
  * space at split points — `"foo " "bar"` not `"foo" "bar"`. This is the
  * single most likely source of silent behavior change; test it hard."
- * `reflowSplitPoints` below re-derives, from the original text itself
+ * `reinsertSplitSpaces` below re-derives, from the original text itself
  * (not from `Atom.glue`, which `reflowBlock`'s returned `string[]` no
  * longer carries), whether each line boundary consumed a real space, and
  * reinserts it as a trailing space on the line before the break — the
@@ -91,7 +97,34 @@ export function emitString(
   columnLimit: number,
   reflowOptions: ReflowOptions = {},
 ): string {
-  const closingReserve = needsParens ? 1 : 0;
+  // `closingReserve` is *unconditional* — not `needsParens ? 1 : 0` —
+  // despite only `needsParens: true` ever having this function insert a
+  // literal `)` itself. Found necessary, not just conservative, by a real
+  // idempotency failure while generating this phase's own gold fixtures:
+  // a bare assignment's first wrap (`needsParens: true`) and wrapping
+  // that *same wrapped output again* (now sitting inside its own
+  // freshly-inserted parens, so `needsParens: false` the second time)
+  // used different `contentWidth` for the exact same physical lines —
+  // because a closing `)` glued onto the last line is *never* actually
+  // part of `region.span` (it belongs to the surrounding
+  // `parenthesized_expression` or call's own `argument_list`, not the
+  // string region itself), so it consumes a real column against every
+  // line's true width whether *this* call is the one that inserted it or
+  // a previous wrap already did. Reserving unconditionally makes
+  // `contentWidth` depend only on `columnLimit`/`hangingIndentColumns`/
+  // the text itself — never on which pass this is.
+  //
+  // The opening side does *not* get the same unconditional treatment,
+  // and deliberately so: unlike the closing `)`, an opening `(` that
+  // already exists from a previous wrap *is* reflected in `indentColumn`
+  // (the string's own column shifts right by one once a `(` sits in
+  // front of it) — reserving for it *again* here on top of that would
+  // double-count exactly the width `indentColumn` already accounts for,
+  // reintroducing the same idempotency mismatch from the other
+  // direction. `needsParens` is the right, and only, signal for whether
+  // *this* call is the one inserting a `(` that `indentColumn` doesn't
+  // know about yet.
+  const closingReserve = 1;
   const operatorReserve = style === 'operator' ? 2 : 0;
   const spaceReserve = 1;
   const perLineOverhead =

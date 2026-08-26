@@ -185,8 +185,11 @@ export async function wrapRegions(
         // words) for *this* gate — it bypasses the heuristic, not the
         // wrapStrings/stringPolicy master switch or isSafeToWrap's hard
         // structural refusals above, which stay in effect regardless.
+        const textToScore = adapter.proseText
+          ? adapter.proseText(region, source)
+          : sliceSpanText(source, region.span);
         const eligible =
-          looksLikeProse(sliceSpanText(source, region.span)) &&
+          looksLikeProse(textToScore) &&
           (adapter.isProseEligible?.(region, source, tree, cfg) ?? true);
         if (!eligible) {
           skipped.push({ region, reason: "string doesn't score as prose under stringPolicy 'prose'" });

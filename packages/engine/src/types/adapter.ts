@@ -207,6 +207,27 @@ export interface LanguageAdapter {
   isProseEligible?(region: WrappableRegion, source: string, tree: Tree, cfg: WrapConfig): boolean;
 
   /**
+   * Override the text `../prose-heuristic.ts`'s shared `looksLikeProse`
+   * scores for a region. Defaults to the region's own raw source text
+   * (`sliceSpanText(source, region.span)` — quote delimiters, prefix
+   * letters, and all) when this hook is absent.
+   *
+   * That default is wrong for a language whose string syntax has real
+   * quote/prefix characters at the edges: a `looksLikeProse` check that
+   * anchors to the *whole* trimmed text (e.g. "is this a single dotted
+   * identifier, start to end") is defeated by a literal `"`/`'` sitting
+   * right at each end, since the anchored pattern no longer matches
+   * across the whole string. Found via this phase's own dict/i18n-key
+   * gold fixture: `"errors.validation.some_key"` (with its quotes)
+   * scored as prose — the identifier-shape check's `^...$` anchors
+   * couldn't match through the surrounding quote characters — while the
+   * same text with its quotes stripped correctly scored as not-prose.
+   * Python's implementation returns `dissolveString`'s own logical text
+   * (`../languages/python/dissolve-string.ts`) for exactly this reason.
+   */
+  proseText?(region: WrappableRegion, source: string): string;
+
+  /**
    * Compute emit-time context for a region, e.g. whether enclosing
    * grouping already exists and parentheses must be added.
    *

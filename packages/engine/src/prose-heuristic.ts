@@ -48,20 +48,36 @@ export function looksLikeProse(text: string): boolean {
   }
 
   // --- Negative signals --------------------------------------------------
+  //
+  // The five checks below are near-definitive disqualifiers, not soft
+  // signals (a path, a URL, a regex, a SQL keyword, or a single
+  // identifier-shaped token essentially never coexists with genuine
+  // prose) — each is weighted -4, strictly more than the +4 every
+  // positive signal above could sum to at most, so one of these always
+  // wins regardless of how many positive signals also happen to fire.
+  // Found necessary, not just tidy, by this phase's own SQL-query gold
+  // fixture: quoted (`"SELECT ... FROM ..."`) it correctly scored
+  // negative, but the identical text *without* its surrounding quote
+  // characters scored positive at the originally-chosen -3 weight — the
+  // quote characters were incidentally defeating the dictionary-word-shape
+  // check on the first/last token, which was just enough to tip the
+  // unweighted balance despite the SQL match. `-4` closes that gap
+  // structurally rather than chasing the specific coincidence that
+  // exposed it.
   if (/^[A-Za-z]:[\\/]/.test(trimmed) || /[\\/][\w.-]+[\\/]/.test(trimmed)) {
-    score -= 2; // drive-letter or slash-delimited path shape
+    score -= 4; // drive-letter or slash-delimited path shape
   }
   if (/\w+:\/\/\S/.test(trimmed)) {
-    score -= 3; // URL
+    score -= 4; // URL
   }
   if (/[[\]$^]|\{\d+,?\d*\}/.test(trimmed)) {
-    score -= 2; // regex-shaped punctuation (character classes, anchors, {n,m})
+    score -= 4; // regex-shaped punctuation (character classes, anchors, {n,m})
   }
   if (SQL_KEYWORDS.test(trimmed)) {
-    score -= 3;
+    score -= 4;
   }
   if (spaceCount === 0 && words.length <= 1 && /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i.test(trimmed)) {
-    score -= 2; // a single snake_case/dotted identifier-shaped token — a key, not prose
+    score -= 4; // a single snake_case/dotted identifier-shaped token — a key, not prose
   }
   const symbolCount = (trimmed.match(/[^A-Za-z0-9\s]/g) ?? []).length;
   if (symbolCount / trimmed.length > 0.3) {

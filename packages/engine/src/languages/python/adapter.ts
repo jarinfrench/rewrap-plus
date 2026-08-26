@@ -9,6 +9,7 @@ import { classifyPrefix, extractPrefix } from './prefix.js';
 import { wrapDocstring } from './wrap-docstring.js';
 import { emitContext } from './emit-context.js';
 import { wrapString } from './wrap-string.js';
+import { dissolveString } from './dissolve-string.js';
 
 /**
  * Python's `isProseEligible` override: `false` for a `'stringLiteral'`
@@ -27,6 +28,22 @@ function isProseEligible(region: WrappableRegion, _source: string, tree: Tree, c
     return true;
   }
   return !emitContext(region, tree, cfg).isDictKey;
+}
+
+/**
+ * Python's `proseText` override: the dissolved logical text (quote
+ * delimiters and prefix letters stripped, per `./dissolve-string.ts`)
+ * rather than the raw source slice `LanguageAdapter.proseText`'s own doc
+ * comment names as the (wrong, for Python) default.
+ *
+ * Only ever called by `wrap.ts` for `'stringLiteral'` regions that have
+ * already passed `isSafeToWrap` (never raw/byte/mixed-prefix/triple-
+ * quoted/line-continuation/irregular-whitespace), so `dissolveString`'s
+ * own preconditions are already satisfied here — this never needs its own
+ * fallback for a region kind it wasn't built to handle.
+ */
+function proseText(region: WrappableRegion, source: string): string {
+  return dissolveString(region, source).text;
 }
 
 /**
@@ -320,6 +337,7 @@ export const pythonAdapter: LanguageAdapter = {
   groupRegions,
   isSafeToWrap,
   isProseEligible,
+  proseText,
   emitContext,
   wrapDocstring,
   wrapString,
