@@ -1,6 +1,6 @@
 {
   "name": "@rewrap-plus/engine",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "description": "Pure wrapping engine for Rewrap+: parsing, region discovery, reflow, and emit. Must never depend on vscode.",

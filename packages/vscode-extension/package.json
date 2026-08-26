@@ -1,7 +1,7 @@
 {
   "name": "rewrap-plus",
   "displayName": "Rewrap+",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Rewraps comments, docstrings, and string literals to a configured column limit, preserving formatted structure and emitting language-valid concatenation.",
   "publisher": "jarinfrench",

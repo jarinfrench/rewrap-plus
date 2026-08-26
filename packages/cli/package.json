@@ -1,6 +1,6 @@
 {
   "name": "@rewrap-plus/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "description": "Command-line and pre-commit interface for Rewrap+, consuming @rewrap-plus/engine unchanged.",
