@@ -120,6 +120,61 @@ convention), with no setting yet to choose "align to the opening
 delimiter" instead; and `rewrapPlus.stringWrapInclude` (above) is
 declared but not yet consumed.
 
+## Language coverage and related extensions
+
+The table below compares Rewrap+ against the other actively-installable
+general-purpose comment/text wrappers on the Marketplace, as of this
+writing. It's deliberately not all wins for Rewrap+ — a table that only
+lists advantages reads as marketing, and the honest gaps are exactly
+what should steer a Markdown/LaTeX-heavy or non-Python user toward one
+of the others instead of filing a bug here.
+
+| Capability | [Rewrap](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap) (stkb) | [Rewrap Revived](https://marketplace.visualstudio.com/items?itemName=dnut.rewrap-revived) (dnut) | [Reflow Markdown](https://marketplace.visualstudio.com/items?itemName=marvhen.reflow-markdown) | **Rewrap+** |
+|---|---|---|---|---|
+| Wrap line/block comments | Yes | Yes | No | Yes |
+| Wrap doc comments (dialect-aware sections) | Yes | Yes | No | Yes (Python: Google/NumPy/Sphinx) |
+| **Wrap string literals** | **No** | **No** | **No** | **Yes** |
+| **Language-valid concatenation on split** | **No** | **No** | **No** | **Yes** |
+| **Prose-vs-code string heuristic** | **No** | **No** | **No** | **Yes** |
+| Parser | Line/regex-based | Line/regex-based | Markdown-aware | **tree-sitter AST** |
+| Language coverage | Many | Many | Markdown only | Python only (v1) |
+| Markdown / LaTeX / plain-text files | Yes | Yes | Yes | **No (v1)** |
+| Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
+| `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
+| Format-on-save | No | No | — | Planned |
+
+¹ Neither reads `.editorconfig` directly in VS Code; both fall back to
+`editor.rulers`/`editor.wordWrapColumn`, which a user (or a separate
+editorconfig-syncing extension) has to populate themselves. Rewrap's
+Visual Studio build (not its VS Code build) can pick up rulers generated
+from `.editorconfig` by a third extension, Editor Guidelines — a
+narrower, VS-only, third-extension-dependent path worth naming precisely
+rather than folding into a blanket "indirect support" claim.
+
+Rewrap+ is also the newest and least battle-tested of the four by a wide
+margin — Rewrap and its Rewrap Revived fork both have a long track
+record across many languages; that maturity is a real advantage this
+table's feature rows don't capture. This project's actual differentiator
+is narrower and deeper: string-literal wrapping with language-valid
+concatenation, which none of the alternatives above attempt at all
+(hence the risk-management framing throughout this README's [What this
+won't touch](#what-this-wont-touch) section — string wrapping is the
+one feature here with no prior art to lean on).
+
+Two related, deliberately-excluded items, worth a mention rather than a
+row: [farre/rewrapper](https://github.com/farre/rewrapper) is a range
+formatter for Wattsi (HTML Standard) formatting specifications, not a
+general comment wrapper, and
+[NextFaze/vscode-comment-wrap](https://github.com/NextFaze/vscode-comment-wrap)
+is deprecated by its own author, whose README redirects users to Rewrap
+— neither is a real alternative for the same job, so a comparison row
+would just be padding this table with straw men.
+
+Also worth tracking: [microsoft/vscode#237357](https://github.com/microsoft/vscode/issues/237357),
+a request for native text reflow in VSCode itself, closed as "not
+planned" — if that ever changes, it would overlap the comment/docstring
+side of this extension's feature set, though not string wrapping.
+
 ## Development
 
 See the repo root [README](../../README.md) for the monorepo layout,
