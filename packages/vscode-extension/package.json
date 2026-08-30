@@ -156,7 +156,8 @@
     "test:integration": "node ./out-test/runTest.js",
     "typecheck": "tsc -b tsconfig.json",
     "prepackage": "npm run build",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "postpackage": "node ./scripts/verify-vsix-contents.mjs"
   },
   "dependencies": {
     "@rewrap-plus/engine": "*",
