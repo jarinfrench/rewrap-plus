@@ -870,6 +870,16 @@ Sequenced by value-to-risk ratio.
 - Concatenation: `operator` style, `+`, no implicit adjacency, no grouping requirement.
 - **Expected engine changes: zero.** If the descriptor can't express it, that's a
   finding to fix in the engine, not to work around in the adapter.
+- **Actual outcome: this prediction didn't hold.** Four real fixes to shared/engine
+  code were needed — `directives.ts` hardcoding Python's `#` marker, `strings/`
+  dissolve/emit/escape-quote-collisions promoted out of `languages/python/`, a
+  silent trailing-space-dropping bug in shared `emitString`, and
+  `AdapterRegistry.supportedLanguages()` dropping aliases. All four are engine-level
+  fixes, not adapter-local workarounds — the right response per this phase's own
+  stated rule ("that's a finding to fix in the engine") — just not the "zero"
+  outcome predicted above. Full writeup: `docs/adapters.md`, "JavaScript/TypeScript/
+  TSX — full adapters" section. 12c (C++), by contrast, *did* land at zero engine
+  changes — see the same document's C++ section.
 
 ### 12c - C++ adapter
 - Grammar: `tree-sitter-cpp`. Comments `//`, `/* */`, Doxygen (`///`, `/** */`, `\param`).
