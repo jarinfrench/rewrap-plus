@@ -110,10 +110,11 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * `createRegistry()` (below) registers five adapters — `pythonAdapter`,
- * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`, and
- * `cppAdapter` — and this list is the one deliberate place deciding what's
- * actually user-facing, since `getSupportedLanguages()` (below) drives
+ * `createRegistry()` (below) registers six adapters — `pythonAdapter`,
+ * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`,
+ * `cppAdapter`, and `javaAdapter` — and this list is the one deliberate
+ * place deciding what's actually user-facing, since
+ * `getSupportedLanguages()` (below) drives
  * which documents the extension's commands and formatters activate for.
  * The engine's `javascriptAdapter` didn't start out registered here: it
  * began as a conformance canary proving the adapter interface generalizes
@@ -129,9 +130,10 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
  * here too, with no separate registration needed for it the way `.tsx`
  * needs one (a genuinely different grammar, not an alias —
  * `../../engine/src/languages/typescript/descriptor.ts`'s own doc comment
- * explains why). `cppAdapter` (`'cpp'`) is a real adapter from the start,
- * unlike JavaScript's canary-then-real path, since C++ had no equivalent
- * thin precursor to extend.
+ * explains why). `cppAdapter` (`'cpp'`) and `javaAdapter` (`'java'`) are
+ * each real adapters from the start, unlike JavaScript's canary-then-real
+ * path, since neither C++ nor Java had an equivalent thin precursor to
+ * extend.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -157,6 +159,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.typescriptAdapter);
   registry.register(engine.typescriptReactAdapter);
   registry.register(engine.cppAdapter);
+  registry.register(engine.javaAdapter);
   return registry;
 }
 

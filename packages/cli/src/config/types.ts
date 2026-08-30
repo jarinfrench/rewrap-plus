@@ -21,7 +21,15 @@ export interface PartialCliConfig {
   readonly wrapComments?: boolean;
   readonly wrapStrings?: boolean;
   readonly stringPolicy?: 'prose' | 'all' | 'off';
-  readonly docDialect?: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';
+  readonly docDialect?:
+    | 'auto'
+    | 'google'
+    | 'numpy'
+    | 'sphinx'
+    | 'jsdoc'
+    | 'doxygen'
+    | 'javadoc'
+    | 'plain';
   readonly preserveIndentedBlocks?: boolean;
   readonly balancedWrapping?: boolean;
   readonly respectEditorConfig?: boolean;

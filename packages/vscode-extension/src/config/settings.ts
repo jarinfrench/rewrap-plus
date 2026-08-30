@@ -20,7 +20,15 @@ export interface ExtensionSettings {
   readonly wrapComments: boolean;
   readonly wrapStrings: boolean;
   readonly stringPolicy: 'prose' | 'all' | 'off';
-  readonly docDialect: 'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain';
+  readonly docDialect:
+    | 'auto'
+    | 'google'
+    | 'numpy'
+    | 'sphinx'
+    | 'jsdoc'
+    | 'doxygen'
+    | 'javadoc'
+    | 'plain';
   readonly preserveIndentedBlocks: boolean;
   readonly respectEditorConfig: boolean;
   readonly balancedWrapping: boolean;
@@ -39,10 +47,9 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // flag — 'prose' is the conservative default.
     wrapStrings: config.get<boolean>('wrapStrings', true),
     stringPolicy: config.get<'prose' | 'all' | 'off'>('stringPolicy', 'prose'),
-    docDialect: config.get<'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'plain'>(
-      'docDialect',
-      'auto',
-    ),
+    docDialect: config.get<
+      'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'javadoc' | 'plain'
+    >('docDialect', 'auto'),
     // Default true: the guiding principle here is "bias toward
     // verbatim when uncertain" — an indented block inside a
     // comment/docstring is exactly the kind of structure a wrong guess

@@ -50,6 +50,8 @@ const EXTENSION_TO_LANGUAGE: ReadonlyMap<string, string> = new Map([
   // silent corruption — an acceptable default given `--language` exists
   // to override it per invocation.
   ['.h', 'cpp'],
+
+  ['.java', 'java'],
 ]);
 
 /**

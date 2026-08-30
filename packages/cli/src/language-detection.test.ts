@@ -22,6 +22,7 @@ describe('detectLanguageFromPath', () => {
     ['lib/thing.hxx', 'cpp'],
     ['lib/thing.h++', 'cpp'],
     ['lib/thing.h', 'cpp'],
+    ['src/Greeter.java', 'java'],
   ])('detects %s as %s', (path, expected) => {
     expect(detectLanguageFromPath(path)).toBe(expected);
   });
