@@ -5,6 +5,7 @@ import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
 import { javascriptAdapter } from '../../src/languages/javascript/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
+import { extractConcatenatedStringValue } from '../support/decode-js-string.js';
 
 import longProseIn from '../fixtures/javascript/strings/001-long-prose-message.in.js?raw';
 import longProseOut from '../fixtures/javascript/strings/001-long-prose-message.out.js?raw';
@@ -18,6 +19,14 @@ import negUrlIn from '../fixtures/javascript/strings/neg-002-url.in.js?raw';
 import negUrlOut from '../fixtures/javascript/strings/neg-002-url.out.js?raw';
 import negPathIn from '../fixtures/javascript/strings/neg-003-path-literal.in.js?raw';
 import negPathOut from '../fixtures/javascript/strings/neg-003-path-literal.out.js?raw';
+import negRegexIn from '../fixtures/javascript/strings/neg-004-regex-pattern.in.js?raw';
+import negRegexOut from '../fixtures/javascript/strings/neg-004-regex-pattern.out.js?raw';
+import negDictKeyIn from '../fixtures/javascript/strings/neg-005-dict-key.in.js?raw';
+import negDictKeyOut from '../fixtures/javascript/strings/neg-005-dict-key.out.js?raw';
+import negI18nIn from '../fixtures/javascript/strings/neg-006-i18n-key.in.js?raw';
+import negI18nOut from '../fixtures/javascript/strings/neg-006-i18n-key.out.js?raw';
+import negLoggingIn from '../fixtures/javascript/strings/neg-007-logging-format-string.in.js?raw';
+import negLoggingOut from '../fixtures/javascript/strings/neg-007-logging-format-string.out.js?raw';
 
 /**
  * String-wrapping gold fixtures for the now-full JavaScript adapter —
@@ -54,6 +63,15 @@ const fixtures: readonly Fixture[] = [
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
   { name: 'neg-002-url', input: negUrlIn, expected: negUrlOut, positive: false },
   { name: 'neg-003-path-literal', input: negPathIn, expected: negPathOut, positive: false },
+  { name: 'neg-004-regex-pattern', input: negRegexIn, expected: negRegexOut, positive: false },
+  { name: 'neg-005-dict-key', input: negDictKeyIn, expected: negDictKeyOut, positive: false },
+  { name: 'neg-006-i18n-key', input: negI18nIn, expected: negI18nOut, positive: false },
+  {
+    name: 'neg-007-logging-format-string',
+    input: negLoggingIn,
+    expected: negLoggingOut,
+    positive: false,
+  },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -126,6 +144,27 @@ describe('JavaScript string-literal wrapping — end-to-end gold fixtures', () =
       for (const edit of result.edits) {
         expect(edit.newText).not.toMatch(/^\(/);
       }
+    }
+  });
+
+  it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
+    // The stated Phase 9 acceptance criterion, generalized past Python:
+    // "eval the string expression before and after and assert equality."
+    // `extractConcatenatedStringValue` literally evals the extracted string
+    // tokens (real JS, unlike Python's oracle) — see that module's own doc
+    // comment.
+    for (const fixture of fixtures.filter((f) => f.positive)) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
+    }
+  });
+
+  it('negative fixtures also round-trip through the decoder unchanged (a sanity check on the oracle itself)', () => {
+    for (const fixture of fixtures.filter((f) => !f.positive)) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
     }
   });
 });

@@ -5,6 +5,7 @@ import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
 import { cppAdapter } from '../../src/languages/cpp/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
+import { extractConcatenatedStringValue } from '../support/decode-cpp-string.js';
 
 import longProseIn from '../fixtures/cpp/strings/001-long-prose-message.in.cpp?raw';
 import longProseOut from '../fixtures/cpp/strings/001-long-prose-message.out.cpp?raw';
@@ -16,6 +17,18 @@ import negSqlIn from '../fixtures/cpp/strings/neg-001-sql-query.in.cpp?raw';
 import negSqlOut from '../fixtures/cpp/strings/neg-001-sql-query.out.cpp?raw';
 import negRawIn from '../fixtures/cpp/strings/neg-002-raw-string.in.cpp?raw';
 import negRawOut from '../fixtures/cpp/strings/neg-002-raw-string.out.cpp?raw';
+import negUrlIn from '../fixtures/cpp/strings/neg-003-url.in.cpp?raw';
+import negUrlOut from '../fixtures/cpp/strings/neg-003-url.out.cpp?raw';
+import negPathIn from '../fixtures/cpp/strings/neg-004-path-literal.in.cpp?raw';
+import negPathOut from '../fixtures/cpp/strings/neg-004-path-literal.out.cpp?raw';
+import negRegexIn from '../fixtures/cpp/strings/neg-005-regex-pattern.in.cpp?raw';
+import negRegexOut from '../fixtures/cpp/strings/neg-005-regex-pattern.out.cpp?raw';
+import negDictKeyIn from '../fixtures/cpp/strings/neg-006-dict-key.in.cpp?raw';
+import negDictKeyOut from '../fixtures/cpp/strings/neg-006-dict-key.out.cpp?raw';
+import negI18nIn from '../fixtures/cpp/strings/neg-007-i18n-key.in.cpp?raw';
+import negI18nOut from '../fixtures/cpp/strings/neg-007-i18n-key.out.cpp?raw';
+import negLoggingIn from '../fixtures/cpp/strings/neg-008-logging-format-string.in.cpp?raw';
+import negLoggingOut from '../fixtures/cpp/strings/neg-008-logging-format-string.out.cpp?raw';
 
 /**
  * String-wrapping gold fixtures for the C++ adapter — mirrors
@@ -52,6 +65,17 @@ const fixtures: readonly Fixture[] = [
   },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
   { name: 'neg-002-raw-string', input: negRawIn, expected: negRawOut, positive: false },
+  { name: 'neg-003-url', input: negUrlIn, expected: negUrlOut, positive: false },
+  { name: 'neg-004-path-literal', input: negPathIn, expected: negPathOut, positive: false },
+  { name: 'neg-005-regex-pattern', input: negRegexIn, expected: negRegexOut, positive: false },
+  { name: 'neg-006-dict-key', input: negDictKeyIn, expected: negDictKeyOut, positive: false },
+  { name: 'neg-007-i18n-key', input: negI18nIn, expected: negI18nOut, positive: false },
+  {
+    name: 'neg-008-logging-format-string',
+    input: negLoggingIn,
+    expected: negLoggingOut,
+    positive: false,
+  },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -133,6 +157,28 @@ describe('C++ string-literal wrapping — end-to-end gold fixtures', () => {
       for (const edit of result.edits) {
         expect(edit.newText).not.toMatch(/^\(/);
       }
+    }
+  });
+
+  it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
+    // C++'s counterpart to `./python-string-wrap-fixtures.test.ts`'s own
+    // eval-equivalence check. No C++ compiler is available in this
+    // project's toolchain (nor should one need to be) —
+    // `extractConcatenatedStringValue` reimplements just enough of C++'s
+    // own escape decoding as a test-only oracle; see
+    // `../support/decode-cpp-string.ts` for the full rationale.
+    for (const fixture of fixtures.filter((f) => f.positive)) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
+    }
+  });
+
+  it('negative fixtures also round-trip through the decoder unchanged (a sanity check on the oracle itself)', () => {
+    for (const fixture of fixtures.filter((f) => !f.positive && f.name !== 'neg-002-raw-string')) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
     }
   });
 });

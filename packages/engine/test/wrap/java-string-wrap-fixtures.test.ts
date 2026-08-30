@@ -5,6 +5,7 @@ import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
 import { javaAdapter } from '../../src/languages/java/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
+import { extractConcatenatedStringValue } from '../support/decode-java-string.js';
 
 import longProseIn from '../fixtures/java/strings/001-long-prose-message.in.java?raw';
 import longProseOut from '../fixtures/java/strings/001-long-prose-message.out.java?raw';
@@ -20,6 +21,14 @@ import negPathIn from '../fixtures/java/strings/neg-003-path-literal.in.java?raw
 import negPathOut from '../fixtures/java/strings/neg-003-path-literal.out.java?raw';
 import negTextBlockIn from '../fixtures/java/strings/neg-004-text-block.in.java?raw';
 import negTextBlockOut from '../fixtures/java/strings/neg-004-text-block.out.java?raw';
+import negRegexIn from '../fixtures/java/strings/neg-005-regex-pattern.in.java?raw';
+import negRegexOut from '../fixtures/java/strings/neg-005-regex-pattern.out.java?raw';
+import negDictKeyIn from '../fixtures/java/strings/neg-006-dict-key.in.java?raw';
+import negDictKeyOut from '../fixtures/java/strings/neg-006-dict-key.out.java?raw';
+import negI18nIn from '../fixtures/java/strings/neg-007-i18n-key.in.java?raw';
+import negI18nOut from '../fixtures/java/strings/neg-007-i18n-key.out.java?raw';
+import negLoggingIn from '../fixtures/java/strings/neg-008-logging-format-string.in.java?raw';
+import negLoggingOut from '../fixtures/java/strings/neg-008-logging-format-string.out.java?raw';
 
 /**
  * String-wrapping gold fixtures for the Java adapter — mirrors
@@ -64,6 +73,15 @@ const fixtures: readonly Fixture[] = [
   { name: 'neg-002-url', input: negUrlIn, expected: negUrlOut, positive: false },
   { name: 'neg-003-path-literal', input: negPathIn, expected: negPathOut, positive: false },
   { name: 'neg-004-text-block', input: negTextBlockIn, expected: negTextBlockOut, positive: false },
+  { name: 'neg-005-regex-pattern', input: negRegexIn, expected: negRegexOut, positive: false },
+  { name: 'neg-006-dict-key', input: negDictKeyIn, expected: negDictKeyOut, positive: false },
+  { name: 'neg-007-i18n-key', input: negI18nIn, expected: negI18nOut, positive: false },
+  {
+    name: 'neg-008-logging-format-string',
+    input: negLoggingIn,
+    expected: negLoggingOut,
+    positive: false,
+  },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -142,6 +160,28 @@ describe('Java string-literal wrapping — end-to-end gold fixtures', () => {
       for (const edit of result.edits) {
         expect(edit.newText).not.toMatch(/^\(/);
       }
+    }
+  });
+
+  it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
+    // Java's counterpart to `./python-string-wrap-fixtures.test.ts`'s own
+    // eval-equivalence check. No Java toolchain is available in this
+    // project's toolchain (nor should one need to be) —
+    // `extractConcatenatedStringValue` reimplements just enough of Java's
+    // own escape decoding as a test-only oracle; see
+    // `../support/decode-java-string.ts` for the full rationale.
+    for (const fixture of fixtures.filter((f) => f.positive)) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
+    }
+  });
+
+  it('negative fixtures also round-trip through the decoder unchanged (a sanity check on the oracle itself)', () => {
+    for (const fixture of fixtures.filter((f) => !f.positive && f.name !== 'neg-004-text-block')) {
+      const before = extractConcatenatedStringValue(fixture.input);
+      const after = extractConcatenatedStringValue(fixture.expected);
+      expect(after).toBe(before);
     }
   });
 });
