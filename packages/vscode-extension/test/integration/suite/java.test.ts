@@ -1,7 +1,13 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 import { fixturePath } from './fixtures.js';
-import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from './helpers.js';
+import {
+  closeAllEditors,
+  extractReturnedStringValue,
+  openFixture,
+  resetRewrapPlusSettings,
+  settle,
+} from './helpers.js';
 
 /**
  * The real-host proof for Java — the same loop `./cpp.test.ts` closes for
@@ -37,6 +43,10 @@ describe('rewrapPlus.wrapDocument on a Java file', () => {
     );
     assert.ok(text.includes('@param name'), 'the Javadoc @param tag should survive wrapping');
     assert.ok(text.includes('@return'), 'the Javadoc @return tag should survive wrapping');
-    assert.ok(text.includes('"Hello, "'), 'the trailing space before "Hello, " must be preserved');
+    assert.strictEqual(
+      extractReturnedStringValue(text),
+      'Hello, there! Welcome to the application, we hope you enjoy your stay here today.',
+      'no character (including a trailing space right at a concatenation split point) should be lost when the string is wrapped',
+    );
   });
 });
