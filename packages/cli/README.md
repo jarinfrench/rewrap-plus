@@ -36,7 +36,7 @@ rewrap-plus --check src/
 | `--wrap-comments` / `--no-wrap-comments` | |
 | `--wrap-strings` / `--no-wrap-strings` | |
 | `--string-policy <prose\|all\|off>` | |
-| `--doc-dialect <auto\|google\|numpy\|sphinx\|jsdoc\|doxygen\|plain>` | |
+| `--doc-dialect <auto\|google\|numpy\|sphinx\|jsdoc\|doxygen\|javadoc\|plain>` | |
 | `--preserve-indented-blocks` / `--no-preserve-indented-blocks` | |
 | `--balanced-wrapping` / `--no-balanced-wrapping` | |
 | `--editorconfig` / `--no-editorconfig` | Enable/disable the `.editorconfig` `max_line_length` tier. |
@@ -45,10 +45,10 @@ rewrap-plus --check src/
 
 ### Supported languages
 
-The same five the VSCode extension registers: Python (`.py`, `.pyi`),
+The same six the VSCode extension registers: Python (`.py`, `.pyi`),
 JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`), TypeScript (`.ts`, `.mts`,
-`.cts`), TSX (`.tsx`), and C++ (`.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`,
-`.hh`, `.hxx`, `.h++`, `.h`). See
+`.cts`), TSX (`.tsx`), C++ (`.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`,
+`.hh`, `.hxx`, `.h++`, `.h`), and Java (`.java`). See
 [`src/language-detection.ts`](src/language-detection.ts) for the exact
 table, including the `.h` ambiguity note (there's no separate C adapter,
 so a plain `.h` file is assumed to be C++).

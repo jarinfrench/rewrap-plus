@@ -106,6 +106,23 @@ eventually ships this.
   adjacency merge shared with Python's own line-comment grouping, plus a
   second dissolve/emit path for the repeated-marker delimiter shape).
 
+- **Java support**, a full adapter from its first commit (unlike
+  JavaScript's canary-then-real path): `//`/`/* */`/`/** */` comment
+  discovery — Java's grammar produces two distinct comment node types
+  (`line_comment`, `block_comment`), the first adapter in this project
+  needing more than one `queries.comments` pattern — `+`-operator
+  string-literal concatenation (no grouping/parens ever required, the
+  same shape JS/TS use), and a new Javadoc documentation dialect
+  (`@param`/`@return`/`@throws`/... — inline `{@link ...}`/`{@code ...}`
+  tags kept intact automatically) detected per doc comment.
+  `rewrapPlus.docDialect` gains a `javadoc` option. Text blocks
+  (`"""..."""`, Java 15+) are never wrapped — unlike every other
+  excluded string form in this project, a text block shares its grammar
+  node type with an ordinary string rather than being a separate node
+  the query never captures, so the exclusion happens in `classify`
+  rather than at the query level — see `docs/adapters.md`'s Java section
+  for the full finding.
+
 - **CLI and pre-commit support**: `packages/cli`, a new
   `@rewrap-plus/cli` package (bin name `rewrap-plus`) consuming
   `packages/engine` completely unchanged — no engine changes were needed
@@ -137,6 +154,9 @@ eventually ships this.
 - C++ raw string literals (`R"(...)"`) are never wrapped — excluded from
   discovery entirely, since they parse as a separate grammar node the
   wrap engine never queries for.
+- Java text blocks (`"""..."""`) are never wrapped — a real future
+  feature (common-indentation stripping, a trailing-newline convention),
+  not yet attempted; see `docs/adapters.md`'s Java section.
 - Split-string continuation-line indent is always the enclosing
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.

@@ -805,3 +805,131 @@ interface hold" but
 wasn't originally written for" — the answer here being all of it, with the
 safety story adjusted at the one call site (`isSafeToWrap`) that actually
 needed to know the difference.
+
+---
+
+# Java — full adapter
+
+Phase 12f's first stretch language (of four surveyed — Rust, Go, Java,
+Ruby — all confirmed to ship a prebuilt, MIT-licensed grammar WASM before
+picking one to go deep on). Like C++, `javaAdapter` is a real adapter —
+strings, concatenation, a documentation dialect — from its first commit,
+with no thin-canary precursor. The short answer, as with every earlier
+adapter: the interface held with **zero engine changes**, confirmed by
+`test/conformance/java-conformance.test.ts` passing on the first real
+run. Two grammar shapes below are genuinely new relative to every
+adapter before it, though — neither is a "free consequence" the way
+C++'s two hazards were; both needed real adapter-level handling.
+
+## A genuinely new shape: two comment node types, not one
+
+Every C-family or ECMAScript-family grammar vendored so far — Python
+excepted, which has no block comments at all — produces exactly *one*
+comment node type (`comment`) covering every form (`//`, plain
+`/* ... */`, JSDoc/Doxygen-marked `/** ... */`), told apart afterward by
+the node's own text. Probed directly against `tree-sitter-java@0.23.5`:
+Java's grammar produces **two** — `line_comment` for `//`, a wholly
+separate `block_comment` node for both block forms. `queries.comments`
+needed two patterns sharing one capture name
+(`(line_comment) @comment (block_comment) @comment`), confirmed to
+compile and capture both types correctly with no `discoverRegions`
+change — multi-pattern queries sharing a capture name turn out to be
+ordinary, well-supported tree-sitter query syntax, not something this
+project's existing single-pattern queries had exercised yet.
+`languages/java/adapter.ts`'s `classify` branches on `node.type` first,
+text second — the reverse of `classifyEcmaScriptNode`'s text-only
+branching, since only `block_comment` can ever be Javadoc-shaped in the
+first place.
+
+## A genuinely new hazard: a text block shares its node type with an ordinary string
+
+Java 15+ text blocks (`"""..."""`) are not a separate grammar node the
+way JS/TS template literals (`template_string`) or C++ raw strings
+(`raw_string_literal`) are — probed directly, a text block parses as the
+*same* `string_literal` node an ordinary `"..."` string does, distinguished
+only by its own delimiter text being `"""` rather than `"`. This means
+`queries.strings`'s `(string_literal) @string` pattern captures both
+forms indiscriminately; excluding a text block is `classify`'s job
+(returning `null` for a `string_literal` whose text starts with `"""`),
+not something a query-level exclusion or an `isSafeToWrap` refusal could
+express — the first case in this project's history where "excluded by
+construction, the query itself never captures it" (the mechanism every
+earlier raw-string/template-literal exclusion relied on) genuinely
+doesn't apply, and a `classify`-level exclusion was the only available
+tool.
+
+The exclusion itself is a deliberate scope limit, the direct Java
+counterpart to Python's deferred triple-quoted non-docstring strings: a
+text block's common-indentation-stripping and trailing-newline
+conventions have no representation in `strings/dissolve-string.ts`'s
+"strip syntax, concatenate bodies verbatim" model, the same reasoning
+that deferred Python's own case. Unlike that Python work (which later
+built real support, see "Triple-quoted non-docstring string literals"
+above), no such follow-up exists yet for Java's text blocks — a real
+future feature, tracked as an open scope limit, not attempted here.
+Covered by its own negative gold fixture
+(`test/fixtures/java/strings/neg-004-text-block`) asserting *zero edits
+and zero skipped regions* — proving the exclusion happens at discovery,
+never as a declined wrap the way `neg-001`/`neg-002`/`neg-003`'s
+prose-heuristic refusals do.
+
+## Everything else: established precedent, confirmed rather than assumed
+
+- **`+`-only operator concatenation, no grouping requirement** — the
+  identical shape JS/TS already declare. `binary_expression` exposes
+  `left`/`operator`/`right` fields, probed directly with a 4-literal
+  chain (`"a" + "b" + name + "c"`) to confirm left-associative nesting
+  and a bail-out at the first non-literal operand, the same shape
+  `discoverRegions`'s concatenation grouper already expects.
+- **The CRLF trailing-`\r` quirk, confirmed present for `line_comment`,
+  absent for `block_comment`** — the identical Python-grammar finding
+  this document's "CRLF handling" section already made, re-verified
+  directly against Java's own grammar rather than assumed to transfer.
+  Already handled by `discoverRegions`'s existing `trimTrailingCR`
+  safeguard; no adapter-specific fix needed.
+- **`isSafeToWrap`/`emitContext`/`proseText`/`wrapString` written as
+  Java's own local functions**, not imported from
+  `languages/ecmascript/adapter-support.ts` despite near-identical logic
+  (operator style, no grouping, the same line-continuation/irregular-
+  whitespace refusals) — Java isn't an ECMAScript-family grammar, and
+  `languages/cpp/wrap-string.ts` already established the precedent of
+  keeping a language's thin wrapper local rather than risking a change to
+  already-hardened JS/TS code for a purely cosmetic dedup.
+- **The `javadoc` documentation dialect** mirrors `jsdoc.ts`/`doxygen.ts`'s
+  field-list shape exactly (a flush-left `@tag` marker, `groupFieldEntries`
+  folding continuation lines) — kept as its own dialect id rather than
+  reusing `'jsdoc'` directly, matching how `'doxygen'` already earned its
+  own id despite comparable overlap, since `@return`/`@param`'s exact
+  vocabulary is Javadoc's own, not JSDoc's borrowed. Inline `{@link ...}`/
+  `{@code ...}` tags needed no dedicated handling at all: the existing
+  generic brace-placeholder unbreakable-span mechanism (`{...}`, already
+  exercised by `jsdoc.test.ts`'s own `{Type}`-annotation case) keeps them
+  intact for free, since it applies to every comment/docstring reflow
+  generically, not just string literals.
+- **No `///`-repeated-marker doc-comment form** — probed directly: a
+  `///`-prefixed comment parses as an ordinary `line_comment`, no special
+  node or marker, unlike C++'s Doxygen `///`. (Java 23's JEP 467
+  "Markdown documentation comments" introduces exactly this convention,
+  but `tree-sitter-java@0.23.5` predates it — also probed directly and
+  confirmed absent.) `comments.doc` declares no `repeatedMarker`; worth
+  revisiting once a grammar release adds real support.
+- **No `groupRegions` override** — Java's `//` comments aren't merged
+  across adjacent lines, the same open question left for JS/TS's and
+  C++'s own ordinary `//` comments, and Java has no `///` form needing
+  the adjacency merge C++'s own `groupRegions` exists for.
+
+## What this means for future adapters
+
+Six adapters now pass the identical `runAdapterConformance` suite:
+Python, JavaScript, TypeScript, TSX, C++, Java. Unlike C++ (whose two
+anticipated hazards both turned out to be free consequences of the
+grammar's own structure), Java's two genuinely new shapes — two comment
+node types, and a text block sharing its node type with an ordinary
+string — both needed real adapter-level code, not zero-cost query
+exclusions. That's the more representative case, and the more useful
+data point for whichever of Rust/Go/Ruby (Phase 12f's remaining stretch
+languages) comes next: "no engine change needed" continues to hold, but
+"needs no adapter-level thought either" was never a safe assumption to
+begin with, and Java's own two findings are the concrete evidence for
+why a real probe-first pass — not a template copy from the nearest
+similar-looking adapter — stays the right way to add one.

@@ -151,14 +151,20 @@ gray themselves out in) that doesn't actually work yet.
 
 - Decide the language's actual comment/string syntax — that's step 3,
   and it's the part every step above depends on being right.
-- Add a documentation dialect (Doxygen, JSDoc, …) — dialects are a
-  separate, pluggable layer (`DialectRegistry`), decoupled from language
-  adapters specifically so Doxygen (C/C++/Java) or JSDoc (JS/TS/Flow)
-  become available to every adapter that declares support for them, not
-  reimplemented per language.
+- Add a documentation dialect (Doxygen, JSDoc, Javadoc, …) — dialects are
+  a separate, pluggable layer (`DialectRegistry`), decoupled from
+  language adapters specifically so Doxygen (C/C++), JSDoc (JS/TS/Flow),
+  or Javadoc (Java) become available to every adapter that declares
+  support for them, not reimplemented per language. Two languages'
+  ecosystems using the same *shape* of tag list (a flush-left `@tag`
+  marker) doesn't mean they share a dialect id, though — `'doxygen'`,
+  `'jsdoc'`, and `'javadoc'` are each their own id despite near-identical
+  parsing logic, since each names a real, distinct convention its own
+  ecosystem actually uses (see `docs/adapters.md`'s Java section for why
+  Javadoc got its own id rather than reusing `'jsdoc'`).
 - Add string-literal wrapping support — `wrapRegions` only dissolves and
   emits `'stringLiteral'`/`'docstring'` regions for adapters that
-  implement it (Python, JavaScript, TypeScript, TSX, and C++ all do); a
-  new adapter's strings are reported as skipped, same as an adapter with
-  no string support at all, until its own `wrapString`/`wrapDocstring`
-  hooks are written.
+  implement it (Python, JavaScript, TypeScript, TSX, C++, and Java all
+  do); a new adapter's strings are reported as skipped, same as an
+  adapter with no string support at all, until its own `wrapString`/
+  `wrapDocstring` hooks are written.
