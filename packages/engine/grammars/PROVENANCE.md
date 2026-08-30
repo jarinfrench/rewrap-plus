@@ -164,3 +164,35 @@ than Python/JavaScript's `15`, still inside the supported range.
 
 Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
 above documents, substituting `tree-sitter-cpp` throughout.
+
+## `tree-sitter-java.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-java`](https://www.npmjs.com/package/tree-sitter-java) |
+| Package version | `0.23.5` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-java |
+| Upstream commit | `94703d5a6bed02b98e438d7cad1136c01a60ba2c` |
+| npm tarball shasum | `fb150fdaa9c852b3d71ba3144109008ac6a47ac2` |
+| npm tarball integrity | `sha512-Yju7oQ0Xx7GcUT01mUglPP+bYfvqjNCGdxqigTnew9nLGoII42PNVP3bHrYeMxswiCRM0yubWmN5qk+zsg0zMA==` |
+| Vendored file sha256 | `4fdeac4ca6ca089f06c6f7e562abcac1733cd465728cc7031ebb73c2019122c4` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `java` language adapter (`../src/languages/java/`) —
+Phase 12f's first stretch language. `0.23.5` is this package's newest
+release as of this vendoring, one behind Python/JavaScript's `0.25.0` and
+Go's `0.25.0`, level with `tree-sitter-ruby`'s `0.23.1` — same "check per
+grammar, don't assume" finding every earlier vendoring here already made.
+`0.23.5` publishes a prebuilt `tree-sitter-java.wasm` at its package root,
+same as every other grammar vendored so far — no local Emscripten/Docker
+build step needed here either.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+(`MIN_COMPATIBLE_VERSION` 13, `LANGUAGE_VERSION` 15) — this grammar's own
+`abiVersion` is `14`, the same as `tree-sitter-typescript`'s and
+`tree-sitter-cpp`'s, one older than Python/JavaScript's `15`, still inside
+the supported range.
+
+Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
+above documents, substituting `tree-sitter-java` throughout.
