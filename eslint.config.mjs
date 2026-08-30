@@ -63,6 +63,14 @@ export default tseslint.config(
     // Hard rule (decision of record): packages/engine must never import
     // `vscode`. This mechanically enforces it rather than relying on
     // discipline — see README.md and CONTRIBUTING.md.
+    //
+    // Two rules, not one: `no-restricted-imports`'s `paths` option only
+    // inspects static `import`/`export ... from` declarations (including
+    // type-only ones) — verified directly by probing it with an
+    // `await import('vscode')` dynamic import, which it let through with
+    // zero errors. `no-restricted-syntax` closes that gap by matching the
+    // `ImportExpression` AST node itself, which covers a dynamic import
+    // regardless of static/type-only-ness.
     files: ['packages/engine/**/*.ts'],
     rules: {
       'no-restricted-imports': [
@@ -75,6 +83,14 @@ export default tseslint.config(
                 'packages/engine must stay editor-agnostic. Put vscode-dependent code in packages/vscode-extension instead.',
             },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ImportExpression[source.value='vscode']",
+          message:
+            'packages/engine must stay editor-agnostic. Put vscode-dependent code in packages/vscode-extension instead.',
         },
       ],
     },
