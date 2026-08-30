@@ -29,16 +29,22 @@ concatenation syntax on split.
 
 ## Conventions — treat these as non-negotiable
 
-- **CRLF line endings throughout the project**, enforced by `.gitattributes`
-  (`* -text`). This bit us hard once: an editing tool that inserts new
-  content into an existing CRLF file using bare `\n` (common when a tool's
-  own string-replacement writes plain `\n` internally) leaves that file with
-  *mixed* line endings — valid-looking, tests may even still pass, but it
-  breaks anything that diffs the file expecting uniform CRLF, and is easy to
-  miss because `file <name>` reports "CRLF line terminators" even when only
-  *some* lines are. Before committing, especially after editing an existing
-  file, it's worth spot-checking: a text file's `\n` count should equal its
-  `\r\n` count.
+- **LF line endings throughout the project**, enforced by `.gitattributes`
+  (`* text=auto eol=lf`). Originally CRLF; switched project-wide once the
+  repo turned out to already be split roughly evenly between the two (every
+  JS/TS/C++/Java adapter added after the original decision was written in
+  plain `\n`, never CRLF, and nothing caught the drift) — LF is also the
+  more standard convention outside Windows-specific tooling. The risk the
+  original CRLF policy was defending against is symmetric either way and
+  still applies now that LF is the standard: an editing tool that inserts
+  new content into an existing file using the *other* line ending than the
+  rest of that file leaves it with *mixed* line endings — valid-looking,
+  tests may even still pass, but it breaks anything that diffs the file
+  expecting one uniform convention, and is easy to miss because `file
+  <name>` reports the file's *majority* ending even when only *some* lines
+  match it. Before committing, especially after editing an existing file,
+  it's worth spot-checking: a text file should be either all `\n` or all
+  `\r\n`, never a mix of both.
 - Commit style: short imperative subject (≤ 72 chars), optional `scope:`
   prefix where it aids scanning (`engine:`, `python:`, `ext:`, `ci:`,
   `canary:`). Body explains non-obvious rationale, in real depth — this
