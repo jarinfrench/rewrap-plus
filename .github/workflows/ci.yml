@@ -42,7 +42,7 @@ jobs:
         run: npm run build
 
   package:
-    name: Package .vsix and attach to GitHub Release
+    name: Package .vsix, attach to GitHub Release, and publish
     # Only on a version tag push (v*), and only once every `ci` matrix
     # leg has passed on that exact tagged commit — packaging a build
     # that hasn't cleared the same gate every other commit has to is
@@ -93,3 +93,16 @@ jobs:
             --title "${{ github.ref_name }}" \
             --generate-notes \
             --repo "${{ github.repository }}"
+
+      # Publish the exact .vsix already attached to the release above,
+      # rather than repackaging — what a user downloads from the release
+      # and what ships to each registry should be byte-identical.
+      - name: Publish to Visual Studio Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx vsce publish --packagePath packages/vscode-extension/*.vsix
+
+      - name: Publish to Open VSX Registry
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: npx ovsx publish packages/vscode-extension/*.vsix -p "$OVSX_PAT"

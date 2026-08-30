@@ -123,6 +123,13 @@ eventually ships this.
   extension's own copy (two independent glue-layer peers of the engine,
   not a shared dependency between them).
 
+- **Marketplace and Open VSX publishing** on tagged releases: the CI
+  packaging job now runs `vsce publish` and `ovsx publish` against the
+  exact `.vsix` already attached to the GitHub Release, authenticated via
+  the `VSCE_PAT`/`OVSX_PAT` repo secrets, so the artifact a user downloads
+  from the release and what ships to each registry are byte-identical
+  rather than independently rebuilt.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
@@ -137,5 +144,5 @@ eventually ships this.
 - The CLI has no `.gitignore` awareness beyond a fixed default-ignored
   directory list, and doesn't follow symlinked directories during a
   recursive walk.
-- Markdown/LaTeX/plain-text support, a plain-C adapter, and
-  Marketplace/OpenVSX publishing are not yet implemented.
+- Markdown/LaTeX/plain-text support and a plain-C adapter are not yet
+  implemented.
