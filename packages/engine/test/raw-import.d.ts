@@ -42,3 +42,9 @@ declare module '*.cpp?raw' {
   const content: string;
   export default content;
 }
+
+// The Java fixtures — same rationale as the `.py?raw` declaration above.
+declare module '*.java?raw' {
+  const content: string;
+  export default content;
+}

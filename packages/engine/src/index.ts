@@ -89,6 +89,8 @@ export { typescriptAdapter, typescriptReactAdapter } from './languages/typescrip
 export { typescriptDescriptor, typescriptReactDescriptor } from './languages/typescript/descriptor.js';
 export { cppAdapter } from './languages/cpp/adapter.js';
 export { cppDescriptor } from './languages/cpp/descriptor.js';
+export { javaAdapter } from './languages/java/adapter.js';
+export { javaDescriptor } from './languages/java/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';
