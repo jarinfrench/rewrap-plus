@@ -48,3 +48,19 @@ declare module '*.java?raw' {
   const content: string;
   export default content;
 }
+
+// `import.meta.glob` (used by `test/wrap/idempotency-all-fixtures.test.ts`
+// to pick up every gold fixture in a language's directory without a
+// hand-maintained list of named imports) isn't typed without pulling in
+// the full `vite/client` ambient types — which this package deliberately
+// doesn't depend on, matching the "no @types/node either" minimalism
+// `position-mapper.test.ts` already established. This narrows the
+// declaration to exactly the one call shape this package actually uses:
+// `{ eager: true, query: '?raw', import: 'default' }`, which resolves
+// every match to its raw text content synchronously.
+interface ImportMeta {
+  glob(
+    pattern: string,
+    options: { eager: true; query: '?raw'; import: 'default' },
+  ): Record<string, string>;
+}
