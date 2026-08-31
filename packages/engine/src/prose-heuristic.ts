@@ -67,10 +67,42 @@ export function looksLikeProse(text: string): boolean {
   if (/^[A-Za-z]:[\\/]/.test(trimmed) || /[\\/][\w.-]+[\\/]/.test(trimmed)) {
     score -= 4; // drive-letter or slash-delimited path shape
   }
-  if (/\w+:\/\/\S/.test(trimmed)) {
+  // `\w{1,32}`, not `\w+`: an unbounded quantifier immediately followed
+  // by a required literal (`://`) that never appears anywhere in the
+  // text costs `O(k)` for a run of `k` word characters at *each* of the
+  // `k` positions the regex tries starting inside that run — `\w+`
+  // greedily consumes the rest of the run, backtracks one character at a
+  // time looking for the `:` that isn't there, gives up, and the next
+  // starting position repeats the same backtrack over one-shorter a run.
+  // Confirmed directly: a 200,000-character run of plain digits or
+  // letters with no colon anywhere took ~28 seconds on this `.test()`
+  // call alone — found while re-checking every regex in this file after
+  // fixing the two adjacent-quantifier cases below, not by inspection
+  // alone. Real URL schemes are short (`http`, `https`, `ftp`,
+  // `mailto`, even a generous custom one) — 32 characters is far more
+  // than any real scheme needs, and bounding the quantifier caps the
+  // backtrack cost at each starting position to a constant, which is
+  // what removes the quadratic blowup (the same fix shape as
+  // `../segmentation/unbreakable-spans.ts`'s own `URL` pattern, which
+  // has the identical hazard for the identical reason).
+  if (/\w{1,32}:\/\/\S/.test(trimmed)) {
     score -= 4; // URL
   }
-  if (/[[\]$^]|\{\d+,?\d*\}/.test(trimmed)) {
+  // `\d+(?:,\d*)?`, not `\d+,?\d*`: the original wrote the optional comma
+  // and the optional trailing digits as two independent quantifiers
+  // sitting directly next to `\d+`'s own — since `,` is optional, that
+  // left `\d+\d*` with no fixed boundary between them, so a run of digits
+  // could be split between the two quantifiers in `O(n)` different ways
+  // for a backtracking engine to try. Confirmed directly, not just
+  // suspected: a `{` followed by ~80,000 digits and no closing `}` (a
+  // single oversized string literal is exactly the "one crafted file"
+  // shape this heuristic runs on) took several seconds on this `.test()`
+  // call alone, growing quadratically with input length. Requiring the
+  // comma before any second run of digits (`(?:,\d*)?` as one unit)
+  // removes the ambiguity — there is now exactly one way to partition any
+  // given input between the two quantifiers — without changing which
+  // `{n}`/`{n,}`/`{n,m}` shapes count as regex-looking.
+  if (/[[\]$^]|\{\d+(?:,\d*)?\}/.test(trimmed)) {
     score -= 4; // regex-shaped punctuation (character classes, anchors, {n,m})
   }
   const weakSqlMatches = trimmed.match(SQL_WEAK_KEYWORDS) ?? [];
@@ -114,4 +146,18 @@ export function looksLikeProse(text: string): boolean {
 const SQL_STRONG_KEYWORDS = /\b(SELECT|INSERT\s+INTO|UPDATE|DELETE\s+FROM|CREATE\s+TABLE|DROP\s+TABLE)\b/i;
 const SQL_WEAK_KEYWORDS = /\b(FROM|WHERE|JOIN|VALUES)\b/gi;
 
-const PLACEHOLDER_PATTERN = /\{[^{}]*\}|%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]*\d*(\.\d+)?[a-zA-Z%]|%[-+ #0]*\d*(\.\d+)?[a-zA-Z%]/g;
+// The flags class is bounded (`{0,5}`, not `*`): printf-style flags
+// (`-`, `+`, ` `, `#`, `0`) never realistically repeat more than a
+// couple of times, but `0` is also a digit, so an unbounded `[-+
+// #0]*` directly followed by `\d*` let a run of `0` characters be
+// split between the two quantifiers in exponentially many ways — the
+// same catastrophic-backtracking shape as `{n,m}`'s own fix just
+// above, confirmed the same way (a `%` followed by ~80,000 `0`
+// characters and no valid conversion character took over 13 seconds on
+// this pattern alone). Five flag characters is already far more than
+// any real format string uses; bounding it turns the ambiguous split
+// into a small constant number of cases regardless of input length,
+// which is what actually removes the blowup (the digits afterward stay
+// an ordinary, unbounded `\d*` — safe on its own, since nothing else
+// adjacent to it shares its character class).
+const PLACEHOLDER_PATTERN = /\{[^{}]*\}|%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]{0,5}\d*(\.\d+)?[a-zA-Z%]|%[-+ #0]{0,5}\d*(\.\d+)?[a-zA-Z%]/g;

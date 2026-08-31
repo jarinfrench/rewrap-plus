@@ -126,4 +126,30 @@ describe('looksLikeProse', () => {
       expect(looksLikeProse('DROP TABLE temp_import_staging')).toBe(false);
     });
   });
+
+  describe('quadratic-backtracking regressions (a crafted string must never hang)', () => {
+    // Both confirmed directly while auditing this module: an unclosed
+    // `{`-plus-digits run and an unclosed `%`-plus-flag-characters run
+    // each drove their respective regex to quadratic-time backtracking —
+    // seconds at 80,000 characters, extrapolating to minutes-or-more on a
+    // multi-MB single-line string literal, which is exactly the "one
+    // crafted file" shape this heuristic runs on for every string/
+    // docstring under the default `stringPolicy: 'prose'`. These don't
+    // assert a particular true/false verdict — a heuristic's exact
+    // boundary on adversarial input isn't the point — only that the call
+    // returns promptly.
+    it('stays fast on an unclosed {-digit run with no closing brace', () => {
+      const input = '{' + '1'.repeat(200_000);
+      const start = Date.now();
+      looksLikeProse(input);
+      expect(Date.now() - start).toBeLessThan(1000);
+    });
+
+    it('stays fast on an unclosed %-flag run with no conversion character', () => {
+      const input = '%' + '0'.repeat(200_000);
+      const start = Date.now();
+      looksLikeProse(input);
+      expect(Date.now() - start).toBeLessThan(1000);
+    });
+  });
 });
