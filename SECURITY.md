@@ -1,10 +1,14 @@
 # Security Policy
 
-Rewrap+ is a local VSCode extension that parses and rewrites source
-files inside the editor. It has no server component and no
+Rewrap+ is local tooling that parses and rewrites source files: a
+VSCode extension (`packages/vscode-extension`) that does this inside
+the editor, and a standalone CLI (`packages/cli`) that does the same
+thing in a terminal/CI pipeline, both built on the shared
+`packages/engine` core. Neither has a server component or an
 account/auth surface, so this document is less about "how to report a
-breach" and more about **stating the trust boundary explicitly** and
-tracking the hardening work that backs it up.
+breach" and more about **stating the trust boundary explicitly** for
+each of the two consumers and tracking the hardening work that backs
+it up.
 
 <!--
   Fill in bracketed sections as hardening passes complete. Where a
@@ -59,7 +63,7 @@ Things that are **not** security issues (report as regular bugs
 instead): incorrect wrapping decisions, dialect misdetection, style
 disagreements, performance that's merely slow rather than hung.
 
-## Trust model / what this extension does and doesn't do
+## Trust model — the VSCode extension (`packages/vscode-extension`)
 
 State each of these explicitly once verified — don't leave a line
 unchecked without either fixing it or removing the claim.
@@ -117,18 +121,42 @@ unchecked without either fixing it or removing the claim.
       test-only tooling evaluating a string literal to compare values,
       never shipped in the extension, and never given untrusted input
       beyond what the test itself constructs.)
-- [ ] **Workspace Trust respected.** `capabilities.untrustedWorkspaces`
-      is declared deliberately in `package.json` (not left to default),
-      and `[list which commands, if any, are disabled/limited in
-      untrusted workspaces]`.
+- [x] **Workspace Trust respected.** `capabilities.untrustedWorkspaces.supported`
+      is declared `true` deliberately in `package.json` (not left to
+      VSCode's own default, which otherwise shows an unverified-extension
+      warning). Verified by auditing every workspace-controllable input
+      this extension reads: all nine `rewrapPlus.*` settings are typed as
+      `boolean`, `number`, a fixed string `enum`, or (for the
+      not-yet-implemented `stringWrapInclude`) a glob-string array — never
+      a path, command, or anything the extension would execute — and
+      `.editorconfig`'s only consulted property, `max_line_length`, is a
+      single integer. Per this document's own "Workspace-trust bypass"
+      category (a workspace causing behavior *beyond configuring the
+      wrap itself*), nothing reachable from an untrusted workspace's
+      settings or `.editorconfig` can do more than change wrap
+      parameters — there's no elevated-trust behavior to gate, so full
+      support is the honest declaration rather than an unverified
+      default. `activationEvents: []` also means opening an untrusted
+      workspace alone triggers no extension code at all; every command
+      requires explicit user action first.
 - [ ] **Bounded resource use on adversarial input.** Parsing/wrapping
       has `[caps on file size / nesting depth / region count, or a
       documented absence of caps and why that's acceptable]`, tested
       against pathological fixtures.
-- [ ] **Grammar provenance is pinned and documented.** Each vendored
-      `.wasm` grammar (Python, JavaScript, C++) has a recorded upstream
-      version, commit SHA, and hash in `docs/parsing.md`, checked
-      against the committed binary.
+- [x] **Grammar provenance is pinned and documented, and enforced in CI.**
+      All six vendored `.wasm` grammars (Python, JavaScript, TypeScript,
+      TSX, C++, Java) have a recorded source package/version, upstream
+      repo and commit, npm tarball shasum/integrity, and vendored-file
+      sha256 in `packages/engine/grammars/PROVENANCE.md` (referenced from
+      `docs/parsing.md`). `scripts/verify-grammar-provenance.mjs`,
+      wired in as a root `pretest` hook so it runs as part of every
+      `npm test` (every CI run, every commit's local gate), recomputes
+      each vendored file's sha256 and diffs it against `PROVENANCE.md`
+      in both directions — a swapped/tampered binary, a doc entry edited
+      without the binary changing, an undocumented new grammar, or a
+      stale entry for a removed one, all fail the build now rather than
+      going unnoticed. Previously the hash was recorded but never
+      re-checked; this closes that gap.
 - [x] **Dependencies pinned; CI hardened.** `package-lock.json`
       (`lockfileVersion: 3`) is committed and installed via `npm ci` in
       every CI job; all 657 third-party entries resolve from
@@ -163,6 +191,68 @@ unchecked without either fixing it or removing the claim.
       run confirming its diff-output rendering still works against
       `diff@9`.
 
+## Trust model — the CLI (`packages/cli`)
+
+The CLI is a different consumer of `packages/engine` with a different
+job: it's meant to rewrite files on disk directly, in bulk, so several
+of the extension's claims above don't apply to it and shouldn't be
+read as if they did. Stated explicitly here rather than left implicit.
+
+- [x] **Writes files directly, by design — not a gap.**
+      `packages/cli/src/apply.ts`'s `processFile` reads a file, wraps it,
+      and (in the default `write` mode) calls `writeFileSync` straight
+      back to the same path — there's no undo/edit system for a CLI to
+      route through the way the extension routes every change through
+      `WorkspaceEdit`. `--check` (`mode: 'check'`) exists as the
+      read-only alternative: it reports which files *would* change
+      without touching disk, for anyone who wants to review before
+      trusting `--write`/the default mode against a target they haven't
+      inspected — the same pattern `black --check`/`prettier --check`
+      use.
+- [x] **Only ever touches paths it was explicitly pointed at.**
+      `file-discovery.ts`'s `discoverFiles` resolves each positional
+      argument via `path.resolve` and, for a directory argument,
+      recursively walks it (`walkDirectory`) — no path is ever read from
+      file content, config values, or anything other than the CLI's own
+      argv. Config resolution (`.rewraprc`/`.rewraprc.json`,
+      `pyproject.toml`) walks upward from each target file's directory
+      toward the filesystem root looking for the nearest match, the same
+      "nearest ancestor config" convention Black/ESLint/Prettier all use
+      — worth stating plainly since it means running this CLI from a
+      deeply nested directory with no project-root marker can pick up a
+      config file above the directory you actually pointed it at.
+- [x] **Config values are strictly typed and allow-listed, never paths or
+      code.** `.rewraprc`'s `pickKnownFields` and `pyproject.toml`'s
+      `numberField`/`booleanField`/`stringField` helpers each check a
+      known key against an expected primitive type or a fixed string
+      `enum` before accepting it; an unrecognized key or wrong-shaped
+      value is silently dropped, never coerced or evaluated. `.rewraprc`
+      is parsed with `JSON.parse`; `pyproject.toml` with this project's
+      own minimal `toml-subset.ts` parser (not a general TOML
+      implementation, only the value shapes this feature needs) — neither
+      path involves `eval`, `Function()`, or any other code execution.
+      The worst a malicious `.rewraprc`/`pyproject.toml`/`.editorconfig`
+      can do is set a bad column limit or wrap policy, the same
+      "workspace-trust bypass" ceiling the extension's settings are held
+      to above.
+- [x] **Symlinks are not followed during a directory walk.**
+      `walkDirectory` uses `readdirSync(dir, { withFileTypes: true })`
+      and only recurses into / wraps entries whose `Dirent` reports
+      `isDirectory()`/`isFile()` true; a `Dirent`'s type reflects the raw
+      directory entry itself, not a followed symlink, so a symlinked file
+      or directory inside a walked tree is silently skipped — avoiding
+      both an unbounded/cyclic walk from a symlink loop and a walk
+      escaping the target directory tree via a symlink pointing outside
+      it. Documented in that file's own "Known limitations" comment.
+- [x] **Not `.gitignore`-aware — a fixed ignore list only.**
+      `DEFAULT_IGNORED_DIR_NAMES` (`node_modules`, `dist`, `out`,
+      `coverage`) plus any dot-directory are the only names a directory
+      walk skips; a project-specific `.gitignore` rule beyond that isn't
+      consulted. Not a vulnerability — the CLI never touches a file
+      outside the target(s) it was given regardless — but worth knowing
+      before pointing `--write` at a whole repository root rather than a
+      specific subtree.
+
 ## Known limitations (documented, not hidden)
 
 Be honest here — this list is what keeps a security-conscious user
@@ -174,8 +264,15 @@ from assuming more than is actually guaranteed.
   wraps in time proportional to its own size, with no upper bound and no
   separate worker thread — a large-enough adversarial file will still be
   slow even after the specific quadratic-time regexes fixed 2026-08-30
-  (see Hardening changelog) are no longer the bottleneck. Not tracked in
-  an issue yet.
+  (see Hardening changelog) are no longer the bottleneck. Cancellation
+  (the "Cancel" action on the large-file progress notification) and
+  format-on-save's 1500ms timeout do now actually interrupt an
+  in-progress wrap, within about one yield interval (~50ms) of being
+  requested (fixed 2026-08-30, see Hardening changelog) — before that fix
+  the guardrail was inert against a computation already underway, since
+  the per-region loop never yielded to the event loop on its own. Neither
+  path caps how much work can be requested before the first yield,
+  though. Not tracked in an issue yet.
 - `LanguageDescriptor.strings.escapes.sequences` (declared per-language
   in every `languages/*/descriptor.ts`, e.g. C++'s correctly
   variable-length `\x` hex escape) is descriptive data only — nothing at
@@ -215,4 +312,7 @@ stay honest over time rather than becoming stale claims.
 | 2026-08-30 | The same unbounded-quantifier-plus-required-literal URL-detection bug, independently, in `packages/engine/src/segmentation/unbreakable-spans.ts`'s `URL` pattern — a hotter path than the prose heuristic, since this runs on every comment/docstring/string line `atomizeWords` ever segments, not once per string. | Bounded the URL scheme quantifier the same way (`{0,31}` after the required first letter). | `packages/engine/src/segmentation/unbreakable-spans.test.ts` ("stays fast on a long letter run with no colon anywhere") |
 | 2026-08-30 | Silent string-value corruption: `unbreakable-spans.ts`'s shared `ESCAPE_SEQUENCE` pattern (used by every language) was shaped after Python's own escape grammar specifically, so C++'s variable-length `\x` hex escape (`\x1234`) only had its first 2 digits recognized — a wrap could split it into `\x12` + literal `34`, changing the string's value. JavaScript/TypeScript's ES2015 `\u{1F600}`-style code-point escape had no representation at all — a split there produces a `SyntaxError`, not just a wrong value. Both reproduced directly against the real `wrapCppString`/`wrapEcmaScriptString` pipelines; `isSafeToWrap` does not gate either shape. | Widened `ESCAPE_SEQUENCE` into a deliberately generous union of every supported language's real escape grammar (unbounded `\x` hex, 1-3-digit octal, `\u{...}` code-point form, `\?`) — see that constant's own doc comment for why over-recognizing is always the safe direction. | `packages/engine/test/wrap/cpp-string-wrap-fixtures.test.ts` (`004-multi-digit-hex-escape`) and `packages/engine/test/wrap/javascript-string-wrap-fixtures.test.ts` (`004-codepoint-escape`), each confirmed to fail against the pre-fix code by temporarily reverting it; also `packages/engine/src/segmentation/unbreakable-spans.test.ts` |
 | 2026-08-30 | Dependency/build-chain audit: high-severity RCE in `serialize-javascript` (GHSA-5c6j-r48x-rmvq, CVSS 8.1) plus a moderate DoS in the same package and a low DoS in `diff`, all transitive through the `mocha` devDependency (`test:integration` only, never shipped in the `.vsix`). GitHub Actions in `ci.yml` were pinned to mutable version tags (`@v5`, `@v4`) rather than commit SHAs. The `ci` job had no explicit `permissions:` block, inheriting whatever the repo's default `GITHUB_TOKEN` scope was while running `npm ci` against PR-supplied `package.json`/lockfile content. No automated mechanism (Dependabot/Renovate) surfaced new advisories between manual audits. | Pinned `diff@^9.0.0`/`serialize-javascript@^7.1.1` via root `package.json`'s `overrides` field (mocha's own stable releases cap those ranges below the patched versions). Repinned all three actions in `ci.yml` to commit SHAs with a `# vX.Y.Z` comment. Added `permissions: contents: read` to the `ci` job. Added `.github/dependabot.yml` covering both the `npm` and `github-actions` ecosystems on a weekly schedule. | `npm audit` (`found 0 vulnerabilities` after a clean reinstall), full CI gate (`typecheck && test && lint && build`), and a direct `mocha` smoke run confirming diff-output rendering against `diff@9` |
-| 2026-08-30 | Exponential ReDoS in `packages/cli/src/config/editorconfig.ts`'s glob matching — the same bug as the `.editorconfig` finding above, independently, in the CLI's own copy of this module. `packages/cli` and `packages/vscode-extension` deliberately keep separate, non-shared copies of this `.editorconfig` parser (see that module's own doc comment for why), so the earlier fix to the extension's copy never propagated to this one. Directly confirmed by timing the CLI's own pre-fix `globToRegExpSource` against a run of consecutive stars: 15 stars ~0.56s, 20 stars ~9.8s, growing exponentially — 25 stars didn't finish within a 30s cap. Reachable from any `.editorconfig` found while walking upward from a file the CLI is pointed at. | Applied the identical fix: `globToRegExpSource` now collapses an entire run of `*` into exactly one quantifier, eliminating the adjacent-quantifier ambiguity. | `packages/cli/src/config/editorconfig.test.ts` ("treats a run of 3+ stars the same as \*\*, not as adjacent quantifiers") |
+| 2026-08-30 | Inert cancellation guardrail: `wrapRegions`' per-region loop (`packages/engine/src/wrap.ts`) checked `cancellation.isCancellationRequested` once per iteration, but the loop body was 100% synchronous with no `await`, so it never yielded to the event loop on its own — the flag could only ever be true if it was already set *before* the call started. Clicking "Cancel" on the large-file progress notification, or `format-on-save.ts`'s 1500ms timeout firing, delivers the signal asynchronously and could never actually interrupt a computation already in progress, defeating the one guardrail meant to bound a long/adversarial wrap. Found while auditing every `TextEdit`/`WorkspaceEdit`-producing path for edit-safety. | The loop now yields via a macrotask (`setTimeout(resolve, 0)`, deliberately not a microtask) every 50ms of elapsed computation, but only when a caller passes a `cancellation` signal — scoping the added overhead to the two callers that already opt into cancellation (`wrap-document.ts`, `format-on-save.ts`) with zero behavior change for callers that never pass a token (e.g. the CLI's bulk-apply loop). | `packages/engine/test/hardening/cancellation.test.ts`; existing `large-file-performance.test.ts` (no token passed) still passing unchanged |
+| 2026-08-30 | Stale-wrap corruption: once cancellation can actually interrupt mid-computation, the live document can genuinely change while `wrapRegions` is still running against an earlier text snapshot. `vscode.workspace.applyEdit` has no document-version check of its own — it applies a `WorkspaceEdit`'s row/column positions to whatever the document currently contains — so a wrap computed before a concurrent edit landed could apply misaligned positions on top of it, silently corrupting or misplacing text the user just typed. A "writes outside the intended scope" issue by this document's own definition. Found as the direct corollary of the cancellation fix above, same audit pass. | Added `WrapOutcome.documentVersionChanged`, computed by comparing `document.version` immediately before/after `wrapRegions`. Every consumer (`apply-wrap.ts`, both formatting providers, `format-on-save.ts`, `report-wrap-outcome.ts`) now treats it identically to the existing `result.cancelled` case: nothing is applied or returned, and the status bar/output channel reports "document changed during wrap" rather than stale edit/skip counts. Not configurable — same fixed-safety-default treatment as `cancelled`. | `packages/vscode-extension/src/test/suite/wrap-document-concurrent-edit.test.ts`, run in a real Extension Development Host: started a wrap on a 50,000-line file, edited the same document 1.5s into the computation, confirmed the concurrent edit survived and the rest of the document came back byte-for-byte identical to the pre-wrap original |
+| 2026-08-30 | Grammar provenance was recorded in `PROVENANCE.md` but never re-verified — nothing recomputed a vendored `.wasm` file's sha256 and compared it against the doc on any run, so a swapped/tampered binary or a stale/falsified doc entry would go unnoticed indefinitely (this document's own "supply-chain integrity" category). | Added `scripts/verify-grammar-provenance.mjs` (dependency-free, matching `packages/vscode-extension/scripts/verify-vsix-contents.mjs`'s style): parses every `## \`filename\`` section's "Vendored file sha256" row out of `PROVENANCE.md`, recomputes each file's actual sha256, and fails on any mismatch or on a file/entry existing without its counterpart. Wired in as a root `pretest` hook so `npm test` runs it automatically, everywhere it already runs. | Ran directly against the current tree (all 6 grammars match); sanity-checked all three failure modes (hash mismatch, orphaned doc entry, undocumented file) against a throwaway copy before wiring it in |
+| 2026-08-30 | `capabilities.untrustedWorkspaces` was left undeclared in `packages/vscode-extension/package.json`, leaving VSCode's own unverified-extension default in place instead of a deliberate, audited statement. | Audited every workspace-controllable input the extension reads (all `rewrapPlus.*` settings, `.editorconfig`'s `max_line_length`) and confirmed none can cause behavior beyond configuring the wrap itself; declared `capabilities.untrustedWorkspaces.supported: true`. | Manual audit recorded in this document's VSCode-extension trust-model checklist above |
