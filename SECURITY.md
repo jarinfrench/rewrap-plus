@@ -64,9 +64,25 @@ disagreements, performance that's merely slow rather than hung.
 State each of these explicitly once verified — don't leave a line
 unchecked without either fixing it or removing the claim.
 
-- [ ] **No network access.** Rewrap+ makes no HTTP/network calls at
-      any point, including transitively. Verified by: `[grep/CI check
-      reference]`.
+- [x] **No network access.** Rewrap+ makes no HTTP/network calls at
+      any point, including transitively. Verified by: grepping
+      `packages/engine/src` and `packages/vscode-extension/src` for
+      `fetch(`, `XMLHttpRequest`, `http(s).request`/`.get`, `WebSocket`,
+      `axios`, `node-fetch` (2026-08-30) — no matches (the only hits were
+      literal URL *strings* inside test fixture files used by the prose
+      heuristic, not executable code). The one runtime dependency that
+      could reach the network, `web-tree-sitter`'s Emscripten-generated
+      WASM loader, does contain browser-only `fetch`/`XMLHttpRequest`
+      fallback paths for loading grammar binaries, but they're gated
+      behind `ENVIRONMENT_IS_WEB`/`ENVIRONMENT_IS_WORKER` checks in
+      `node_modules/web-tree-sitter/web-tree-sitter.cjs`; this extension
+      declares no `browser` entry point in `package.json` (desktop-only,
+      Node-based extension host), so `ENVIRONMENT_IS_NODE` is always true
+      at runtime and grammar loading always resolves through
+      `fs.readFileSync` instead — the fetch/XHR paths are unreachable
+      dead code in the shipped product, not merely uncalled today. See
+      `packages/vscode-extension/README.md`'s "Privacy" section for the
+      user-facing version of this claim.
 - [ ] **No filesystem access outside the active document/workspace.**
       All reads/writes go through VSCode's document and
       `WorkspaceEdit` APIs — no direct `fs.writeFile` calls, no
@@ -113,11 +129,39 @@ unchecked without either fixing it or removing the claim.
       `.wasm` grammar (Python, JavaScript, C++) has a recorded upstream
       version, commit SHA, and hash in `docs/parsing.md`, checked
       against the committed binary.
-- [ ] **Dependencies pinned; CI hardened.** Lockfile pins exact
-      versions; `npm audit` is run in CI; third-party GitHub Actions
-      are pinned to commit SHAs, not mutable tags; the packaging
-      workflow does not run untrusted PR content with secrets
-      available.
+- [x] **Dependencies pinned; CI hardened.** `package-lock.json`
+      (`lockfileVersion: 3`) is committed and installed via `npm ci` in
+      every CI job; all 657 third-party entries resolve from
+      `registry.npmjs.org` with `resolved`/`integrity` fields (0
+      git/tarball-URL dependencies). Third-party GitHub Actions in
+      `.github/workflows/ci.yml` are pinned to commit SHAs (with a
+      trailing `# vX.Y.Z` comment for readability), not mutable tags;
+      `.github/dependabot.yml` keeps both the npm tree and those pins
+      current. The `ci` job declares `permissions: contents: read`
+      explicitly rather than inheriting repo-default token permissions.
+      The `package` job (which holds the publish secrets and
+      `contents: write`) only ever runs on a `v*` tag push
+      (`if: startsWith(github.ref, 'refs/tags/v')`) and never on
+      `pull_request`, so untrusted PR content is never evaluated with
+      secrets available — and the workflow uses the safe `pull_request`
+      trigger, not `pull_request_target`, so forked-PR runs get no
+      secrets regardless.
+
+      `npm audit` is not yet wired into CI as an automated gate — run
+      manually as of 2026-08-30, it found 3 vulnerabilities (1 high: RCE
+      in `serialize-javascript` via CVSS 8.1 GHSA-5c6j-r48x-rmvq; 1
+      moderate: `serialize-javascript` DoS; 1 low: `diff`/jsdiff DoS),
+      all transitive through `mocha` (devDependency, drives
+      `test:integration` only — never bundled into the packaged
+      `.vsix`, and not part of the `npm test` CI actually runs). Fixed
+      by pinning `diff@^9.0.0`/`serialize-javascript@^7.1.1` via root
+      `package.json`'s `overrides` field, since `mocha`'s own stable
+      releases cap those transitive ranges below the patched versions
+      (only the `12.0.0` pre-release line bumped them) — verified with a
+      full clean reinstall (`found 0 vulnerabilities`), the full CI gate
+      (`typecheck && test && lint && build`), and a direct `mocha` smoke
+      run confirming its diff-output rendering still works against
+      `diff@9`.
 
 ## Known limitations (documented, not hidden)
 
@@ -170,3 +214,4 @@ stay honest over time rather than becoming stale claims.
 | 2026-08-30 | Quadratic-backtracking ReDoS in the prose heuristic (`packages/engine/src/prose-heuristic.ts`): three regexes (`{n,m}` detection, printf-flag placeholder detection, URL detection) each had either two adjacent quantifiers over overlapping character classes or one unbounded quantifier immediately followed by a required-but-possibly-absent literal — confirmed to take seconds-to-tens-of-seconds against ~100-200K-character adversarial single-line strings, with no size cap anywhere in the engine and no worker thread to isolate the hang. Reachable via any string/docstring's own text under the default `stringPolicy: 'prose'`. | Rewrote the ambiguous quantifier sequences to remove the overlap (`\d+(?:,\d*)?` instead of `\d+,?\d*`), bounded the printf-flag quantifier (`{0,5}` instead of `*`), and bounded the URL scheme quantifier (`{1,32}`/`\w{1,32}` instead of unbounded). | `packages/engine/src/prose-heuristic.test.ts` ("quadratic-backtracking regressions") |
 | 2026-08-30 | The same unbounded-quantifier-plus-required-literal URL-detection bug, independently, in `packages/engine/src/segmentation/unbreakable-spans.ts`'s `URL` pattern — a hotter path than the prose heuristic, since this runs on every comment/docstring/string line `atomizeWords` ever segments, not once per string. | Bounded the URL scheme quantifier the same way (`{0,31}` after the required first letter). | `packages/engine/src/segmentation/unbreakable-spans.test.ts` ("stays fast on a long letter run with no colon anywhere") |
 | 2026-08-30 | Silent string-value corruption: `unbreakable-spans.ts`'s shared `ESCAPE_SEQUENCE` pattern (used by every language) was shaped after Python's own escape grammar specifically, so C++'s variable-length `\x` hex escape (`\x1234`) only had its first 2 digits recognized — a wrap could split it into `\x12` + literal `34`, changing the string's value. JavaScript/TypeScript's ES2015 `\u{1F600}`-style code-point escape had no representation at all — a split there produces a `SyntaxError`, not just a wrong value. Both reproduced directly against the real `wrapCppString`/`wrapEcmaScriptString` pipelines; `isSafeToWrap` does not gate either shape. | Widened `ESCAPE_SEQUENCE` into a deliberately generous union of every supported language's real escape grammar (unbounded `\x` hex, 1-3-digit octal, `\u{...}` code-point form, `\?`) — see that constant's own doc comment for why over-recognizing is always the safe direction. | `packages/engine/test/wrap/cpp-string-wrap-fixtures.test.ts` (`004-multi-digit-hex-escape`) and `packages/engine/test/wrap/javascript-string-wrap-fixtures.test.ts` (`004-codepoint-escape`), each confirmed to fail against the pre-fix code by temporarily reverting it; also `packages/engine/src/segmentation/unbreakable-spans.test.ts` |
+| 2026-08-30 | Dependency/build-chain audit: high-severity RCE in `serialize-javascript` (GHSA-5c6j-r48x-rmvq, CVSS 8.1) plus a moderate DoS in the same package and a low DoS in `diff`, all transitive through the `mocha` devDependency (`test:integration` only, never shipped in the `.vsix`). GitHub Actions in `ci.yml` were pinned to mutable version tags (`@v5`, `@v4`) rather than commit SHAs. The `ci` job had no explicit `permissions:` block, inheriting whatever the repo's default `GITHUB_TOKEN` scope was while running `npm ci` against PR-supplied `package.json`/lockfile content. No automated mechanism (Dependabot/Renovate) surfaced new advisories between manual audits. | Pinned `diff@^9.0.0`/`serialize-javascript@^7.1.1` via root `package.json`'s `overrides` field (mocha's own stable releases cap those ranges below the patched versions). Repinned all three actions in `ci.yml` to commit SHAs with a `# vX.Y.Z` comment. Added `permissions: contents: read` to the `ci` job. Added `.github/dependabot.yml` covering both the `npm` and `github-actions` ecosystems on a weekly schedule. | `npm audit` (`found 0 vulnerabilities` after a clean reinstall), full CI gate (`typecheck && test && lint && build`), and a direct `mocha` smoke run confirming diff-output rendering against `diff@9` |

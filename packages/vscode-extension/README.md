@@ -240,6 +240,23 @@ a request for native text reflow in VSCode itself, closed as "not
 planned" — if that ever changes, it would overlap the comment/docstring
 side of this extension's feature set, though not string wrapping.
 
+## Privacy
+
+Rewrap+ makes no network calls of any kind, at any point — grammar
+parsing runs entirely offline against `.wasm` binaries vendored in the
+extension package (see
+[`packages/engine/grammars/PROVENANCE.md`](../engine/grammars/PROVENANCE.md)
+for their provenance). This is verified, not just claimed: neither
+package's source calls `fetch`/`XMLHttpRequest`/`http(s).request` or
+similar, and the one runtime dependency that could reach the network —
+`web-tree-sitter`'s Emscripten-generated WASM loader, which does contain
+browser-only `fetch`/`XMLHttpRequest` fallback code for loading grammar
+binaries — never takes that path here, because this extension has no
+`browser` entry point (desktop-only, Node-based extension host), so the
+loader's own `ENVIRONMENT_IS_NODE` check routes grammar loading through
+`fs.readFileSync` instead. See `SECURITY.md`'s trust-model checklist in
+the repo root for the full verification methodology.
+
 ## Development
 
 See the repo root [README](../../README.md) for the monorepo layout,
