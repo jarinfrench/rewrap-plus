@@ -106,4 +106,22 @@ describe('matchesEditorConfigGlob', () => {
     expect(matchesEditorConfigGlob('[!_]*.py', dir, 'C:/project/a.py')).toBe(true);
     expect(matchesEditorConfigGlob('[!_]*.py', dir, 'C:/project/_a.py')).toBe(false);
   });
+
+  it('treats a run of 3+ stars the same as **, not as adjacent quantifiers', () => {
+    // Regression for a confirmed catastrophic-backtracking hang: before
+    // `globToRegExpSource` collapsed a whole run of `*` into one
+    // quantifier, `***`/`****`/... compiled to several adjacent
+    // `[^/]*`/`.*` fragments back to back, and a pattern with ~25
+    // consecutive stars took over two minutes to fail one match against a
+    // non-matching path (timed directly while diagnosing this). A run of
+    // 3+ stars is semantically just "any depth" the same as `**`, so this
+    // also checks the collapsed form still matches correctly, not only
+    // that it's fast.
+    expect(matchesEditorConfigGlob('***.py', dir, 'C:/project/a/b/c.py')).toBe(true);
+
+    const manyStars = '*'.repeat(200) + '.py';
+    const start = Date.now();
+    expect(matchesEditorConfigGlob(manyStars, dir, 'C:/project/a/b/c.txt')).toBe(false);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });

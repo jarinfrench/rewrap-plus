@@ -204,6 +204,29 @@ export function matchesEditorConfigGlob(pattern: string, sectionDir: string, fil
  * optional-any-depth fragment ahead of the anchors). Supports `*`,
  * `**`, `?`, `[seq]`/`[!seq]`, and single-level `{a,b,c}` alternation —
  * see "Known limitations" for what's not covered.
+ *
+ * ## Every maximal run of `*` collapses to exactly one quantifier
+ *
+ * A pattern is workspace-supplied — a `.editorconfig` from a cloned repo
+ * is exactly as untrusted as any other file content this project parses
+ * (`SECURITY.md`'s "workspace-trust bypass" category). The previous
+ * version only special-cased a *pair* of stars (`**` → `.*`, anything
+ * else one `*` at a time → `[^/]*`), so three or more consecutive stars
+ * compiled to several adjacent `[^/]*`/`.*` quantifiers back to back —
+ * e.g. `****` became `[^/]*[^/]*` (after one `**` pair and two lone
+ * `*`s). Multiple adjacent quantifiers over overlapping character
+ * classes is the textbook catastrophic-backtracking shape: confirmed
+ * directly (not just suspected) by timing the compiled regex against a
+ * non-matching path — a `[glob]` header with ~25 consecutive `*`
+ * characters took over two minutes to fail one match, and the growth
+ * curve was exponential in star count. Since a run of two-or-more stars
+ * already means "any depth, including zero characters" under both this
+ * module's own EditorConfig-`**`-across-separators semantics and every
+ * real specification's redundant-star handling, collapsing an *entire*
+ * run (however long) into the single widest quantifier it implies is
+ * both a strict semantic no-op for well-formed patterns and what removes
+ * the adjacent-quantifier ambiguity that made the blowup possible: a run
+ * is now always exactly one `RegExp` quantifier, never several in a row.
  */
 function globToRegExpSource(pattern: string): string {
   let re = '';
@@ -213,13 +236,13 @@ function globToRegExpSource(pattern: string): string {
     const ch = pattern[i]!;
 
     if (ch === '*') {
-      if (pattern[i + 1] === '*') {
-        re += '.*';
-        i += 2;
-      } else {
-        re += '[^/]*';
-        i += 1;
+      let j = i + 1;
+      while (pattern[j] === '*') {
+        j += 1;
       }
+      const isGlobstar = j - i >= 2;
+      re += isGlobstar ? '.*' : '[^/]*';
+      i = j;
       continue;
     }
 
