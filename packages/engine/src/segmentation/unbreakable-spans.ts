@@ -36,10 +36,91 @@ export interface UnbreakableSpan {
  * earlier alternative wins (JS regex alternation semantics) — reST role
  * is listed before inline code so `:func:`x`` is captured whole rather
  * than being torn at the leading `:func:` prefix.
+ *
+ * ## `ESCAPE_SEQUENCE` is one shared pattern for every language, not one per adapter
+ *
+ * This module has no per-language hook — `atomizeWords` (its one real
+ * caller) runs on plain text with no `LanguageDescriptor` in reach, for
+ * comments/docstrings/strings across every adapter alike. `ESCAPE_SEQUENCE`
+ * was originally shaped after Python's own escape grammar specifically
+ * (`\x` exactly 2 hex digits, `\u`/`\U` fixed 4/8), and stayed that way
+ * even after C++, Java, and JavaScript/TypeScript adapters were added —
+ * each of which declares its own, more accurate
+ * `LanguageDescriptor.strings.escapes.sequences` (see e.g.
+ * `../languages/cpp/descriptor.ts`), but nothing ever actually reads that
+ * field at runtime; it's descriptive data only, the same as `RawFormSpec`.
+ *
+ * That gap was a real, confirmed string-corruption bug, not just a missed
+ * nicety: C++'s `\x` consumes however many hex digits follow (unlike
+ * Python's fixed 2), so `\x1234` in a C++ string only had its first two
+ * digits (`\x12`) recognized as the escape span here. A `wrapCppString`
+ * split landing between the recognized `\x12` and the unrecognized
+ * trailing `34` produced `"...\x12" "34..."` — a different *character*
+ * (`0x12`, then two literal digit characters) than the original single
+ * `0x1234` character, reproduced directly against the real `emitString`
+ * pipeline while auditing this module. JavaScript/TypeScript's ES2015
+ * `\u{1F600}`-style codepoint escape (used for emoji and any character
+ * outside the BMP) had no representation here at all — only the fixed
+ * 4-digit `\uXXXX` form — so a split there is worse than a wrong value:
+ * `"...\u"` with the codepoint's digits and closing brace pushed onto a
+ * new concatenated literal is a `SyntaxError`, also reproduced directly
+ * the same way.
+ *
+ * The fix is a deliberately generous *union* of every escape shape any
+ * supported language actually uses, rather than plumbing
+ * `strings.escapes.sequences` through `atomizeWords`'s call sites (many,
+ * language-agnostic by design, not worth an interface change for this).
+ * Recognizing a shape that happens not to be a real escape in whatever
+ * language the current text came from is always safe here — the *only*
+ * thing a span means to this module is "never split inside this," and
+ * refusing to split somewhere a split would in fact have been fine is a
+ * missed cosmetic opportunity, never a correctness bug (the same
+ * asymmetry `../comments/looks-like-code.ts`'s own doc comment leans on).
+ * Erring toward recognizing more, not less, is therefore strictly the
+ * safe direction:
+ *
+ * - `x[0-9A-Fa-f]+` (was `x[0-9A-Fa-f]{2}`): C++'s unbounded-hex-digit
+ *   `\x` now stays one span regardless of how many digits follow, at the
+ *   cost of also over-consuming past Python's fixed-2-digit boundary in
+ *   the rare case a `\x41` is immediately followed by more hex digits
+ *   meant as separate literal text — over-grouping, not corruption.
+ * - `[0-7]{1,3}` (replaces the old bare `0` in the leading
+ *   single-character class): C++/Java/Python octal escapes (`\101`,
+ *   `\12`, ...) all use 1-3 octal digits. The old code's total
+ *   non-recognition of any octal digit but `0` didn't itself cause a
+ *   split (a wholly-unrecognized escape simply merges into the ordinary
+ *   surrounding non-whitespace atom, never creating a false split
+ *   boundary on its own) but is incidentally now also exact.
+ * - `u\{[0-9A-Fa-f]+\}` (new): JavaScript/TypeScript's ES2015 code-point
+ *   escape. Unambiguous next to the existing fixed-width
+ *   `u[0-9A-Fa-f]{4}` alternative — the character right after `u` is
+ *   either `{` or a hex digit, never both, so trying either order finds
+ *   the same match.
+ * - `\?` (new, folded into the leading single-character class as `?`):
+ *   C++'s escaped question mark (`\?`, historically for trigraph
+ *   avoidance) — cheap to add, and `../languages/cpp/descriptor.ts`
+ *   already declares it as real C++ grammar.
+ *
+ * None of these additions introduces its own catastrophic-backtracking
+ * risk: each is either a single bounded quantifier (`{1,3}`) or a single
+ * unbounded quantifier immediately followed by a required literal
+ * terminator (`+` then `\}`), never two adjacent quantifiers over
+ * overlapping character classes — the shape that made
+ * `../prose-heuristic.ts`'s own regexes a confirmed quadratic-blowup
+ * hazard (see that module's own doc comments on
+ * `REGEX_SHAPED`/`PLACEHOLDER_PATTERN` for the sibling finding and fix).
  */
 const REST_ROLE = /:[A-Za-z][\w-]*:`[^`\n]*`/;
 const INLINE_CODE = /`[^`\n]*`/;
-const URL = /[a-zA-Z][a-zA-Z0-9+.-]*:\/\/\S+/;
+// `{0,31}`, not `*`: the same quadratic-backtracking hazard as
+// `../prose-heuristic.ts`'s own URL check (see that module's doc comment
+// on the fix there for the full mechanism), confirmed directly here too —
+// a 150,000-character run of plain letters with no `:` anywhere took
+// ~20 seconds on this `.test()` call alone, and this pattern runs on
+// every comment/docstring/string line `atomizeWords` ever segments, a far
+// hotter path than the prose heuristic's one-call-per-string gate. Bounded
+// to the same generous 32-character total scheme length.
+const URL = /[a-zA-Z][a-zA-Z0-9+.-]{0,31}:\/\/\S+/;
 // f-string interpolations and `str.format`/f-string placeholders share
 // one brace-balanced pattern (one level of nesting — enough for a
 // nested format spec like `{value:{width}}` — is as far as a regex can
@@ -48,7 +129,7 @@ const URL = /[a-zA-Z][a-zA-Z0-9+.-]*:\/\/\S+/;
 const BRACE_PLACEHOLDER = /\{(?:[^{}]|\{[^{}]*\})*\}/;
 const PERCENT_PLACEHOLDER = /%(?:\([^)\n]*\))?[#0\- +]?\d*(?:\.\d+)?[diouxXeEfFgGcrsa%]/;
 const ESCAPE_SEQUENCE =
-  /\\(?:[\\'"abfnrtv0]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|N\{[^}\n]*\})/;
+  /\\(?:[\\'"abfnrtv?]|[0-7]{1,3}|x[0-9A-Fa-f]+|u\{[0-9A-Fa-f]+\}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|N\{[^}\n]*\})/;
 
 const UNBREAKABLE_PATTERN = new RegExp(
   [REST_ROLE, INLINE_CODE, URL, BRACE_PLACEHOLDER, PERCENT_PLACEHOLDER, ESCAPE_SEQUENCE]

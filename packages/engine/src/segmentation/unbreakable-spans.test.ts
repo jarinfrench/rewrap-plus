@@ -41,6 +41,36 @@ describe('findUnbreakableSpans', () => {
     expect(spanTexts('named \\N{BULLET}')).toEqual(['\\N{BULLET}']);
   });
 
+  it('finds a C++/C-style multi-digit hex escape whole, not just its first 2 digits', () => {
+    // Regression for a confirmed string-corruption bug: unlike Python's
+    // fixed-2-digit `\x`, C++'s `\x` consumes every following hex digit.
+    // Recognizing only `\x12` out of `\x1234` let a wrap split land
+    // between the escape and its remaining digits, silently turning one
+    // character (0x1234) into a different character plus two literal
+    // digit characters — reproduced directly against `emitString` while
+    // auditing this module.
+    expect(spanTexts('wide \\x1234 char')).toEqual(['\\x1234']);
+  });
+
+  it('finds octal escapes of 1-3 digits, not just a bare \\0', () => {
+    expect(spanTexts('octal \\101 escape')).toEqual(['\\101']);
+    expect(spanTexts('octal \\12 escape')).toEqual(['\\12']);
+    expect(spanTexts('null \\0 byte')).toEqual(['\\0']);
+  });
+
+  it('finds a JS/TS ES2015 \\u{...} code-point escape whole', () => {
+    // Regression: this form had no representation at all before, so a
+    // wrap could split between `\u` and `{1F600}` — not merely a wrong
+    // value but invalid JavaScript/TypeScript syntax (`\u` not followed
+    // by 4 hex digits or `{...}` is a SyntaxError), reproduced directly
+    // against `emitString` while auditing this module.
+    expect(spanTexts('emoji \\u{1F600} here')).toEqual(['\\u{1F600}']);
+  });
+
+  it('finds a C++ escaped question mark', () => {
+    expect(spanTexts('trigraph \\? guard')).toEqual(['\\?']);
+  });
+
   it('finds an inline code span containing internal whitespace', () => {
     expect(spanTexts('run `git commit -m msg` first')).toEqual(['`git commit -m msg`']);
   });
@@ -55,5 +85,18 @@ describe('findUnbreakableSpans', () => {
 
   it('finds multiple non-overlapping spans in one line', () => {
     expect(spanTexts('{greeting}, %s! see `here` now')).toEqual(['{greeting}', '%s', '`here`']);
+  });
+
+  it('stays fast on a long letter run with no colon anywhere (quadratic-backtracking regression)', () => {
+    // Confirmed directly while auditing this module: the `URL` pattern's
+    // unbounded `[a-zA-Z0-9+.-]*` scheme, followed by a required `://`
+    // that never appears, cost `O(k)` per starting position within a
+    // `k`-character run — a 150,000-character run of plain letters took
+    // ~20 seconds on this pattern alone. This runs on every comment/
+    // docstring/string line `atomizeWords` segments, a hot path.
+    const input = 'a'.repeat(200_000);
+    const start = Date.now();
+    findUnbreakableSpans(input);
+    expect(Date.now() - start).toBeLessThan(1000);
   });
 });

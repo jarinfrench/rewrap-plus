@@ -13,6 +13,8 @@ import rebalancedIn from '../fixtures/cpp/strings/002-existing-concat-rebalanced
 import rebalancedOut from '../fixtures/cpp/strings/002-existing-concat-rebalanced.out.cpp?raw';
 import alreadyWrappedIn from '../fixtures/cpp/strings/003-already-correctly-wrapped-byte-identical.in.cpp?raw';
 import alreadyWrappedOut from '../fixtures/cpp/strings/003-already-correctly-wrapped-byte-identical.out.cpp?raw';
+import hexEscapeIn from '../fixtures/cpp/strings/004-multi-digit-hex-escape.in.cpp?raw';
+import hexEscapeOut from '../fixtures/cpp/strings/004-multi-digit-hex-escape.out.cpp?raw';
 import negSqlIn from '../fixtures/cpp/strings/neg-001-sql-query.in.cpp?raw';
 import negSqlOut from '../fixtures/cpp/strings/neg-001-sql-query.out.cpp?raw';
 import negRawIn from '../fixtures/cpp/strings/neg-002-raw-string.in.cpp?raw';
@@ -61,6 +63,25 @@ const fixtures: readonly Fixture[] = [
     name: '003-already-correctly-wrapped-byte-identical',
     input: alreadyWrappedIn,
     expected: alreadyWrappedOut,
+    positive: true,
+  },
+  {
+    // Regression for a confirmed string-corruption bug: C++'s `\x` hex
+    // escape consumes however many hex digits follow (unlike Python's
+    // fixed 2), and `findUnbreakableSpans`'s escape pattern only
+    // recognized the first 2 before this fixture existed — a wrap
+    // landing right after those 2 digits split `\x1234` (one character,
+    // value 0x1234) into `\x12` (0x12) concatenated with literal `34`,
+    // silently changing the string's value. The padding in this
+    // fixture's input is deliberately tuned so the greedy wrap boundary
+    // lands exactly inside the escape under the old (buggy) pattern —
+    // confirmed directly by temporarily reverting the fix and observing
+    // this exact input produce `L"...\x12" L"34..."`. See
+    // `../../src/segmentation/unbreakable-spans.ts`'s own doc comment on
+    // `ESCAPE_SEQUENCE` for the full writeup.
+    name: '004-multi-digit-hex-escape',
+    input: hexEscapeIn,
+    expected: hexEscapeOut,
     positive: true,
   },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },

@@ -13,6 +13,8 @@ import rebalancedIn from '../fixtures/javascript/strings/002-existing-concat-reb
 import rebalancedOut from '../fixtures/javascript/strings/002-existing-concat-rebalanced.out.js?raw';
 import alreadyWrappedIn from '../fixtures/javascript/strings/003-already-correctly-wrapped-byte-identical.in.js?raw';
 import alreadyWrappedOut from '../fixtures/javascript/strings/003-already-correctly-wrapped-byte-identical.out.js?raw';
+import codepointEscapeIn from '../fixtures/javascript/strings/004-codepoint-escape.in.js?raw';
+import codepointEscapeOut from '../fixtures/javascript/strings/004-codepoint-escape.out.js?raw';
 import negSqlIn from '../fixtures/javascript/strings/neg-001-sql-query.in.js?raw';
 import negSqlOut from '../fixtures/javascript/strings/neg-001-sql-query.out.js?raw';
 import negUrlIn from '../fixtures/javascript/strings/neg-002-url.in.js?raw';
@@ -58,6 +60,25 @@ const fixtures: readonly Fixture[] = [
     name: '003-already-correctly-wrapped-byte-identical',
     input: alreadyWrappedIn,
     expected: alreadyWrappedOut,
+    positive: true,
+  },
+  {
+    // Regression for a confirmed bug worse than the C++ hex-escape one
+    // (`../../src/segmentation/unbreakable-spans.ts`'s own doc comment on
+    // `ESCAPE_SEQUENCE`): the ES2015 `\u{...}` code-point escape (used for
+    // emoji and any character outside the BMP) had no representation at
+    // all in `findUnbreakableSpans` before this fixture existed, so a wrap
+    // could land between `\u` and `{1F600}`. That doesn't just change the
+    // string's value — `"...\u"` is a `SyntaxError` (`\u` not followed by
+    // 4 hex digits or `{...}`), so the real `eval`-based oracle below
+    // would have thrown, not merely disagreed. The padding in this
+    // fixture's input is tuned so the greedy wrap boundary lands exactly
+    // inside the escape under the old (buggy) pattern — confirmed
+    // directly by temporarily reverting the fix and observing this exact
+    // input produce `"...emoji \u" + "{1F600}..."`.
+    name: '004-codepoint-escape',
+    input: codepointEscapeIn,
+    expected: codepointEscapeOut,
     positive: true,
   },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
