@@ -42,6 +42,20 @@ export function reportWrapOutcome(document: vscode.TextDocument, outcome: WrapOu
     return;
   }
 
+  if (outcome.documentVersionChanged) {
+    // Checked ahead of the normal-path reporting below for the same reason
+    // `cancelled` is: `result.edits` here describes a document that no
+    // longer exists (see `WrapOutcome.documentVersionChanged`'s own doc
+    // comment), so reporting it as a completed wrap would be actively
+    // misleading, not just incomplete.
+    channel.appendLine('  document changed while wrapping — no changes applied');
+    vscode.window.setStatusBarMessage(
+      'Rewrap+: document changed during wrap, no changes applied',
+      STATUS_BAR_MESSAGE_TIMEOUT_MS,
+    );
+    return;
+  }
+
   const wrapped = result.edits.length;
   const skipped = result.skipped.length;
   vscode.window.setStatusBarMessage(

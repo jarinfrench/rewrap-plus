@@ -31,7 +31,7 @@ export function createRangeFormattingProvider(): vscode.DocumentRangeFormattingE
       const target = rangeTargetSpan(mapper, document, range);
 
       const outcome = await computeWrapResult(document, [target]);
-      if (!outcome) {
+      if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged) {
         return [];
       }
       return toVSCodeTextEdits(outcome.result.edits);

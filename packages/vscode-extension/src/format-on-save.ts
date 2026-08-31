@@ -80,7 +80,7 @@ async function computeFormatOnSaveEdits(document: vscode.TextDocument): Promise<
 
   try {
     const outcome = await computeWrapResult(document, 'all', cancellationSource.token);
-    if (!outcome || outcome.result.cancelled) {
+    if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged) {
       return [];
     }
     return toVSCodeTextEdits(outcome.result.edits);

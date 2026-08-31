@@ -22,6 +22,23 @@ import { reportWrapOutcome } from '../report-wrap-outcome.js';
 export interface WrapOutcome {
   readonly result: WrapResult;
   readonly resolvedConfig: ResolvedWrapConfig;
+  /**
+   * `true` when `document.version` at the end of the `wrapRegions` call
+   * differs from what it was when `wrapRegions` started — meaning the live
+   * document was edited while this wrap was still computing (now possible
+   * for a large document, since the engine yields to the event loop
+   * periodically once a cancellation signal is in play; see `wrap.ts`'s own
+   * `YIELD_INTERVAL_MS`). `result.edits` in that case is a snapshot of a
+   * document that no longer exists: its spans were computed against text
+   * that's since changed underneath it, and `vscode.workspace.applyEdit`
+   * has no document-version check of its own to catch that — it would
+   * apply those (possibly now-misaligned) positions to whatever the
+   * document currently contains. Every consumer of `WrapOutcome` must treat
+   * this exactly like `result.cancelled`: nothing to apply or return,
+   * consistent with the project's "single atomic edit, never a partial or
+   * stale one" policy.
+   */
+  readonly documentVersionChanged: boolean;
 }
 
 /**
@@ -76,6 +93,7 @@ export async function computeWrapResult(
 
   const engine = await getEngine();
   const parserManager = await getParserManager();
+  const capturedVersion = document.version;
   const result = await engine.wrapRegions(
     document.getText(),
     document.languageId,
@@ -84,8 +102,9 @@ export async function computeWrapResult(
     parserManager,
     cancellation,
   );
+  const documentVersionChanged = document.version !== capturedVersion;
 
-  const outcome: WrapOutcome = { result, resolvedConfig };
+  const outcome: WrapOutcome = { result, resolvedConfig, documentVersionChanged };
   reportWrapOutcome(document, outcome);
   return outcome;
 }
@@ -138,7 +157,11 @@ export async function applyWrapEdits(
  * would otherwise become "a *partial*, silently-incomplete wrap of the
  * document," which is a worse outcome than doing nothing — the user
  * asked to cancel specifically because they didn't want to wait for the
- * whole thing.
+ * whole thing. A result where `outcome.documentVersionChanged` is `true`
+ * applies nothing for the same reason, but a different cause: the document
+ * itself changed while this wrap was still computing, so `edits`' spans no
+ * longer describe the document as it currently exists (see
+ * `WrapOutcome.documentVersionChanged`'s own doc comment).
  */
 export async function computeAndApplyWrap(
   document: vscode.TextDocument,
@@ -149,7 +172,7 @@ export async function computeAndApplyWrap(
   if (!outcome) {
     return undefined;
   }
-  if (!outcome.result.cancelled) {
+  if (!outcome.result.cancelled && !outcome.documentVersionChanged) {
     await applyWrapEdits(document, outcome.result.edits);
   }
   return outcome;

@@ -35,7 +35,7 @@ export function createDocumentFormattingProvider(): vscode.DocumentFormattingEdi
   return {
     async provideDocumentFormattingEdits(document: vscode.TextDocument): Promise<vscode.TextEdit[]> {
       const outcome = await computeWrapResult(document, 'all');
-      if (!outcome || outcome.result.cancelled) {
+      if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged) {
         return [];
       }
       return toVSCodeTextEdits(outcome.result.edits);
