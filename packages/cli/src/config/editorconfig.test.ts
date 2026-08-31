@@ -96,4 +96,23 @@ describe('matchesEditorConfigGlob', () => {
     expect(matchesEditorConfigGlob('[!_]*.py', dir, 'C:/project/a.py')).toBe(true);
     expect(matchesEditorConfigGlob('[!_]*.py', dir, 'C:/project/_a.py')).toBe(false);
   });
+
+  it('treats a run of 3+ stars the same as **, not as adjacent quantifiers', () => {
+    // Regression for a confirmed catastrophic-backtracking hang, mirroring
+    // `packages/vscode-extension/src/config/editorconfig.ts`'s own
+    // identical regression test: before `globToRegExpSource` collapsed a
+    // whole run of `*` into one quantifier, `***`/`****`/... compiled to
+    // several adjacent `[^/]*`/`.*` fragments back to back — confirmed
+    // directly here (not just suspected) by timing this file's *own*
+    // pre-fix implementation: 20 consecutive stars took ~9.8s, growing
+    // exponentially in star count. A run of 3+ stars is semantically just
+    // "any depth" the same as `**`, so this also checks the collapsed
+    // form still matches correctly, not only that it's fast.
+    expect(matchesEditorConfigGlob('***.py', dir, 'C:/project/a/b/c.py')).toBe(true);
+
+    const manyStars = '*'.repeat(200) + '.py';
+    const start = Date.now();
+    expect(matchesEditorConfigGlob(manyStars, dir, 'C:/project/a/b/c.txt')).toBe(false);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });
