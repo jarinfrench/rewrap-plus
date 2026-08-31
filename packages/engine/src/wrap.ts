@@ -63,6 +63,38 @@ export interface CancellationSignal {
 }
 
 /**
+ * How often (in wall-clock ms of computation) `wrapRegions`' loop yields to
+ * the event loop when a `cancellation` signal is present — see the call site
+ * below for why this only happens when one is. Sized against
+ * `docs/benchmarks.md`'s worst measured case (50,000 lines / 10,000 regions,
+ * ~7.3s, ~0.73ms/region): a 50ms interval yields roughly every ~68 regions
+ * there (~146 yields total), adding on the order of 100-300ms of `setTimeout`
+ * overhead to a 7.3s computation while keeping a cancellation request
+ * responsive to within about 50ms of being set — well inside normal
+ * UI-feedback expectations, and a small enough tax to not need its own
+ * regression guard the way the quadratic-cost bugs `docs/benchmarks.md`
+ * documents did.
+ */
+const YIELD_INTERVAL_MS = 50;
+
+/**
+ * Hand control back to the event loop once. Deliberately a macrotask
+ * (`setTimeout`), not a microtask (`queueMicrotask`/`Promise.resolve().then`):
+ * a caller's cancellation signal (in the VSCode extension, a
+ * `vscode.CancellationToken` flipped by a UI event delivered over IPC to the
+ * extension host) arrives on the same footing as other I/O, which only gets
+ * a chance to run between event-loop turns, not between microtasks — a
+ * microtask-only yield would drain immediately without ever letting that
+ * delivery happen, silently fixing nothing. `setTimeout` (unlike `setImmediate`)
+ * exists in both Node and browser-like environments, keeping this
+ * `vscode`-free and portable, consistent with `CancellationSignal`'s own
+ * minimal, framework-agnostic design just above.
+ */
+function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
  * Dissolve, reflow, and emit every wrappable region in `source` that
  * falls within `targets` (or every region, for `'all'`), producing the
  * `TextEdit`s needed to apply the wrap plus a reason for every region
@@ -171,10 +203,24 @@ export async function wrapRegions(
   const directives = scanDirectives(source, descriptor.comments.line?.marker);
   const edits: TextEdit[] = [];
   const skipped: SkippedRegion[] = [];
+  let lastYieldAt = Date.now();
 
   for (const region of candidates) {
     if (cancellation?.isCancellationRequested) {
       return { edits, skipped, cancelled: true };
+    }
+
+    // Only yield when a caller actually passed a cancellation signal —
+    // gating on that keeps this loop's hot path unchanged (no `Date.now()`
+    // calls, no macrotask overhead) for callers that never opted into
+    // cancellation, most importantly the CLI (`packages/cli/src/apply.ts`),
+    // which calls `wrapRegions` with no token in a loop over potentially
+    // thousands of files, and for whom periodic `setTimeout` yields would be
+    // pure cumulative cost with no benefit (no cancellation UI, no
+    // concurrent editor to interleave with).
+    if (cancellation && Date.now() - lastYieldAt >= YIELD_INTERVAL_MS) {
+      await yieldToEventLoop();
+      lastYieldAt = Date.now();
     }
 
     if (errorSpans.some((errorSpan) => spansOverlap(region.span, errorSpan))) {
