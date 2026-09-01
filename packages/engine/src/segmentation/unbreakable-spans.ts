@@ -110,8 +110,27 @@ export interface UnbreakableSpan {
  * hazard (see that module's own doc comments on
  * `REGEX_SHAPED`/`PLACEHOLDER_PATTERN` for the sibling finding and fix).
  */
-const REST_ROLE = /:[A-Za-z][\w-]*:`[^`\n]*`/;
-const INLINE_CODE = /`[^`\n]*`/;
+// `[^`\n]+`, not `[^`\n]*`: a bare Markdown code-fence delimiter
+// (```` ``` ````, three-plus consecutive backticks with nothing between
+// them) is not itself a meaningful inline code span, but `*` let it be
+// misread as one anyway — starting at the first backtick, `` ` `` then
+// zero-width `[^`\n]*` then a closing `` ` `` matches just the first two
+// backticks as an *empty* span, stranding the third as its own ordinary,
+// separately-breakable atom. Confirmed directly while building a
+// docstring fixture with a fenced code sample inside a Google-style
+// field-entry description (where fenced-code detection never applies —
+// `../docs/field-entries.ts`'s own doc comment on why — so the fence
+// delimiter reaches `atomizeWords` as ordinary text): reflow placed a
+// line break between the stray third backtick and the following word,
+// rendering ` `` \ndeploy(...)` `` ` — two backticks, a real line break,
+// then a lone backtick glued to unrelated text. Requiring at least one
+// character of real content between the backticks is enough: with `+`, a
+// bare `` ``` `` no longer matches this pattern at any starting position,
+// so it falls through to the ordinary non-whitespace-run atom instead —
+// still not preserved as a *fence*, but no longer torn into a fake empty
+// span plus a stray glued backtick either.
+const REST_ROLE = /:[A-Za-z][\w-]*:`[^`\n]+`/;
+const INLINE_CODE = /`[^`\n]+`/;
 // `{0,31}`, not `*`: the same quadratic-backtracking hazard as
 // `../prose-heuristic.ts`'s own URL check (see that module's doc comment
 // on the fix there for the full mechanism), confirmed directly here too —

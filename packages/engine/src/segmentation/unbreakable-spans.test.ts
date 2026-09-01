@@ -75,6 +75,17 @@ describe('findUnbreakableSpans', () => {
     expect(spanTexts('run `git commit -m msg` first')).toEqual(['`git commit -m msg`']);
   });
 
+  it('does not misread a bare code-fence delimiter as an empty inline code span', () => {
+    // Regression: `` `[^`\n]*` `` (zero-or-more) matched the first two
+    // backticks of a bare ` ``` ` as an empty span, stranding the third
+    // backtick as its own separately-breakable atom — confirmed directly
+    // while building a docstring fixture with a fenced code sample inside
+    // a field-entry description. See `../segmentation/unbreakable-spans.ts`'s
+    // own comment on the `INLINE_CODE`/`REST_ROLE` fix.
+    expect(spanTexts('```')).toEqual([]);
+    expect(spanTexts('before ``` after')).toEqual([]);
+  });
+
   it('finds a reST role whole, including its leading colon prefix', () => {
     expect(spanTexts('see :func:`do the thing` for details')).toEqual([':func:`do the thing`']);
   });
