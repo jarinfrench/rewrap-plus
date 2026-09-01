@@ -96,6 +96,54 @@ describe('reflowBlock — greedy fill for paragraph', () => {
     expect(reflowBlock(block, 9, 0)).toEqual(['aaaaaaaab']);
   });
 
+  it('never strands a glue: none atom alone at the start of a continuation line', () => {
+    // "aaaaaaaaaaaa" (12) + "b" glued (0) = 13, which doesn't fit in 10 —
+    // both must move to the next line together, not just "b" alone.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('short'), atom('aaaaaaaaaaaa'), atom('b', { glue: 'none' })],
+    };
+    expect(reflowBlock(block, 10, 0)).toEqual(['short', 'aaaaaaaaaaaab']);
+  });
+
+  it('treats a whole glued cluster as one overflow-rule unit when it alone exceeds the budget', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('short'), atom('aaaaaaaaaaaa'), atom('b', { glue: 'none' }), atom('ok')],
+    };
+    expect(reflowBlock(block, 10, 0)).toEqual(['short', 'aaaaaaaaaaaab', 'ok']);
+  });
+
+  it('an atom tagged glue: double joins with two spaces', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('End.'), atom('Next.', { glue: 'double' })],
+    };
+    expect(reflowBlock(block, 80, 0)).toEqual(['End.  Next.']);
+  });
+
+  it('a glue: double join counts two columns against the budget', () => {
+    // "aaaaaaaa" (8) + "  " (2) + "b" (1) = 11 > 10 -> wraps, unlike a
+    // plain space join of the same atoms which would fit at exactly 10.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('aaaaaaaa'), atom('b', { glue: 'double' })],
+    };
+    expect(reflowBlock(block, 10, 0)).toEqual(['aaaaaaaa', 'b']);
+    expect(reflowBlock(block, 11, 0)).toEqual(['aaaaaaaa  b']);
+  });
+
+  it('a line break at a glue: double boundary drops the double space, same as an ordinary break', () => {
+    // "End." (4) + "  " (2) + "Next." (5) = 11 > 5, forcing a break right
+    // at the double-spaced boundary; the continuation line starts flush
+    // with the word, not with a leading gap.
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('End.'), atom('Next.', { glue: 'double' })],
+    };
+    expect(reflowBlock(block, 5, 0)).toEqual(['End.', 'Next.']);
+  });
+
   it('an atom with breakBefore forces a new line even when the current one has room', () => {
     const block: Block = {
       type: 'paragraph',
@@ -279,6 +327,14 @@ describe('reflowBlock — balanced (minimum-raggedness) mode', () => {
     // Both must still reproduce the same words in order.
     const words_ = (lines: string[]): string => lines.join(' ').replace(/\s+/g, ' ').trim();
     expect(words_(balancedLines)).toBe(words_(greedyLines));
+  });
+
+  it('never strands a glue: none atom alone at the start of a continuation line', () => {
+    const block: Block = {
+      type: 'paragraph',
+      atoms: [atom('short'), atom('aaaaaaaaaaaa'), atom('b', { glue: 'none' })],
+    };
+    expect(reflowBlock(block, 10, 0, { mode: 'balanced' })).toEqual(['short', 'aaaaaaaaaaaab']);
   });
 
   it('still applies the overflow rule: a too-wide atom gets its own line', () => {

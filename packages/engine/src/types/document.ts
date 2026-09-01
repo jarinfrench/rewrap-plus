@@ -14,7 +14,18 @@ export interface Atom {
    */
   readonly width: number;
   readonly breakBefore: boolean;
-  readonly glue?: 'none' | 'space';
+  /**
+   * How this atom joins to the one before it when both land on the same
+   * reflowed line: `'none'` — no space (glued: a placeholder followed
+   * immediately by punctuation, an inline-code span, etc). `'double'` —
+   * two spaces, because the *original* source had two-or-more spaces
+   * here immediately after a sentence-ending `.`/`!`/`?` on the previous
+   * atom (`../segmentation/atomize-words.ts` is the one place that sets
+   * this — see its own doc comment for why the detection is scoped that
+   * narrowly rather than preserving any run of 2+ spaces anywhere).
+   * Absent (or `'space'`) — the ordinary case, one space.
+   */
+  readonly glue?: 'none' | 'space' | 'double';
 }
 
 /**

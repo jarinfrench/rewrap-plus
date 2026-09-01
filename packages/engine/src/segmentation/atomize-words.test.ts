@@ -97,6 +97,51 @@ describe('atomizeWords', () => {
     }
   });
 
+  it('tags an atom glue: double when it follows two spaces after a sentence-ending period', () => {
+    const atoms = atomizeWords('End of one.  Start of next.');
+    expect(atoms.map((a) => [a.text, a.glue])).toEqual([
+      ['End', undefined],
+      ['of', undefined],
+      ['one.', undefined],
+      ['Start', 'double'],
+      ['of', undefined],
+      ['next.', undefined],
+    ]);
+  });
+
+  it('also preserves double spacing after ! and ?', () => {
+    expect(atomizeWords('Really!  Yes.').map((a) => a.glue)).toEqual([undefined, 'double']);
+    expect(atomizeWords('Sure?  Okay.').map((a) => a.glue)).toEqual([undefined, 'double']);
+  });
+
+  it('does not tag glue: double after a single space, even following sentence-ending punctuation', () => {
+    const atoms = atomizeWords('End of one. Start of next.');
+    for (const atom of atoms) {
+      expect(atom.glue).toBeUndefined();
+    }
+  });
+
+  it('does not tag glue: double for a double space that does not follow sentence-ending punctuation', () => {
+    // Two spaces after "one" (no trailing punctuation) is exactly the
+    // kind of incidental whitespace prose reflow is meant to normalize
+    // away, not a sentence boundary to preserve.
+    const atoms = atomizeWords('End of one  and then more');
+    for (const atom of atoms) {
+      expect(atom.glue).toBeUndefined();
+    }
+  });
+
+  it('does not tag glue: double for three-or-more spaces after sentence-ending punctuation', () => {
+    // Still collapses to the ordinary single join, same as any other
+    // over-two-space run elsewhere in a line — "double" means exactly
+    // "the source had a deliberate two-space sentence gap here", not
+    // "the source had extra whitespace here".
+    const atoms = atomizeWords('End of one.    Start of next.');
+    for (const atom of atoms) {
+      expect(atom.glue).toBeUndefined();
+    }
+  });
+
   it('handles a run made of several adjacent unbreakable spans', () => {
     // "Value:" + "{x}" glued, with no space anywhere in the run.
     const atoms = atomizeWords('Value:{x}.');

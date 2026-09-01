@@ -128,11 +128,61 @@ export function reflowBlock(
 }
 
 /**
+ * Group an atom stream into clusters: a cluster is one atom plus every
+ * atom immediately after it tagged `glue: 'none'` — i.e. a maximal run
+ * joined with no space in between. Both fill algorithms below break
+ * lines only *between* clusters, never inside one, so a `glue: 'none'`
+ * atom can never be stranded alone at the start of a continuation line.
+ *
+ * A `glue: 'none'` atom exists specifically to record "no whitespace
+ * separated this from what came before it" (`../segmentation/atomize-words.ts`'s
+ * own doc comment: a placeholder or inline-code span glued directly to
+ * trailing punctuation, e.g. `` `code`. ``). Line-breaking atom-by-atom
+ * treated that glue purely as a same-line rendering hint — it decided
+ * whether to print a space, not whether a break could fall there — so
+ * the greedy/balanced fitters could still split a cluster across two
+ * lines the moment it didn't quite fit, leaving the glued half (often a
+ * single trailing character) orphaned alone on its own continuation
+ * line. Clustering first makes "never break inside a glued run" a
+ * structural property of the atom stream both fitters walk, rather than
+ * a case either one has to remember to check.
+ */
+function groupIntoClusters(atoms: readonly Atom[]): Atom[][] {
+  const clusters: Atom[][] = [];
+  for (const atom of atoms) {
+    if (atom.glue === 'none' && clusters.length > 0) {
+      clusters[clusters.length - 1]!.push(atom);
+    } else {
+      clusters.push([atom]);
+    }
+  }
+  return clusters;
+}
+
+/** Sum of a cluster's atom widths — internal joins are all `glue: 'none'`, so no gap columns. */
+function clusterWidth(cluster: readonly Atom[]): number {
+  return cluster.reduce((sum, atom) => sum + atom.width, 0);
+}
+
+/**
+ * Columns a join contributes to a line's width: 0 for `'none'` (glued),
+ * 2 for `'double'` (a preserved double space after a sentence — see
+ * `../segmentation/atomize-words.ts`), 1 otherwise (the ordinary case).
+ */
+function glueWidth(glue: Atom['glue']): number {
+  if (glue === 'none') {
+    return 0;
+  }
+  return glue === 'double' ? 2 : 1;
+}
+
+/**
  * Greedy first-fit line breaking (matches the stated goal: "match
- * Rewrap's behavior and user expectation"). Walks the atom stream once,
- * adding each atom to the current line if it fits and starting a new
- * line otherwise; never looks ahead or reconsiders a placed atom (that's
- * what distinguishes this from `balancedFill`, below).
+ * Rewrap's behavior and user expectation"). Walks the atom stream, grouped
+ * into clusters (see `groupIntoClusters`) so a glued run is never split,
+ * adding each cluster to the current line if it fits and starting a new
+ * line otherwise; never looks ahead or reconsiders a placed cluster
+ * (that's what distinguishes this from `balancedFill`, below).
  */
 function greedyFill(
   atoms: readonly Atom[],
@@ -143,6 +193,7 @@ function greedyFill(
   if (atoms.length === 0) {
     return [''];
   }
+  const clusters = groupIntoClusters(atoms);
 
   const lines: string[] = [];
   let current: Atom[] = [];
@@ -160,32 +211,33 @@ function greedyFill(
     isFirstLine = false;
   };
 
-  for (const atom of atoms) {
+  for (const cluster of clusters) {
+    const width = clusterWidth(cluster);
+
     if (current.length === 0) {
-      // A line always takes at least one atom, however wide — the
+      // A line always takes at least one cluster, however wide — the
       // overflow rule. `breakBefore` is moot here: there's nothing on
       // this line yet to break away from.
-      current.push(atom);
-      currentWidth = atom.width;
+      current.push(...cluster);
+      currentWidth = width;
       continue;
     }
 
-    if (atom.breakBefore) {
+    if (cluster[0]!.breakBefore) {
       flush();
-      current.push(atom);
-      currentWidth = atom.width;
+      current.push(...cluster);
+      currentWidth = width;
       continue;
     }
 
-    const glueWidth = atom.glue === 'none' ? 0 : 1;
-    const projected = currentWidth + glueWidth + atom.width;
+    const projected = currentWidth + glueWidth(cluster[0]!.glue) + width;
     if (projected <= budget()) {
-      current.push(atom);
+      current.push(...cluster);
       currentWidth = projected;
     } else {
       flush();
-      current.push(atom);
-      currentWidth = atom.width;
+      current.push(...cluster);
+      currentWidth = width;
     }
   }
   flush();
@@ -226,9 +278,14 @@ function greedyFill(
  *   of a candidate line — mirroring greedy's forced line break — which
  *   also bounds the inner loop's extension.
  *
- * `O(n²)` in the number of atoms, which is fine at the scale this
+ * `O(n²)` in the number of clusters, which is fine at the scale this
  * operates on (one comment/docstring/string region's atoms, not a
  * whole file) — this is not the place for a segment-tree speedup.
+ *
+ * Operates over clusters (`groupIntoClusters`), not raw atoms, for the
+ * same reason `greedyFill` does — a `glue: 'none'` run must never be
+ * split across a line break, so `j` (a candidate line's exclusive end)
+ * only ever lands on a cluster boundary.
  */
 function balancedFill(
   atoms: readonly Atom[],
@@ -236,10 +293,11 @@ function balancedFill(
   hangingIndent: number,
   firstLineReserve: number,
 ): string[] {
-  const n = atoms.length;
-  if (n === 0) {
+  if (atoms.length === 0) {
     return [''];
   }
+  const clusters = groupIntoClusters(atoms);
+  const n = clusters.length;
 
   const budgetFor = (lineStart: number): number =>
     lineStart === 0 ? availableWidth - firstLineReserve : availableWidth - hangingIndent;
@@ -250,41 +308,41 @@ function balancedFill(
 
   for (let i = n - 1; i >= 0; i--) {
     const lineBudget = budgetFor(i);
-    let width = atoms[i]!.width;
+    let width = clusterWidth(clusters[i]!);
 
     for (let j = i + 1; j <= n; j++) {
       if (j > i + 1) {
-        const atom = atoms[j - 1]!;
-        if (atom.breakBefore) {
+        const cluster = clusters[j - 1]!;
+        if (cluster[0]!.breakBefore) {
           break; // this and every larger j would place it mid-line
         }
-        width += (atom.glue === 'none' ? 0 : 1) + atom.width;
+        width += glueWidth(cluster[0]!.glue) + clusterWidth(cluster);
       }
 
-      const isSingleAtomLine = j === i + 1;
+      const isSingleClusterLine = j === i + 1;
       const fits = width <= lineBudget;
-      if (!isSingleAtomLine && !fits) {
-        break; // multi-atom overflow is never a valid line; width only grows from here
+      if (!isSingleClusterLine && !fits) {
+        break; // multi-cluster overflow is never a valid line; width only grows from here
       }
 
       const isLastLine = j === n;
       // A line costs 0 if it's the last line (a ragged final line is
-      // normal, not penalized) or if it's a single atom that simply
+      // normal, not penalized) or if it's a single cluster that simply
       // can't fit no matter what (the overflow rule: unavoidable, so
-      // not penalized either). Otherwise — including a single atom that
-      // *does* fit — it's a real packing choice and costs its squared
-      // slack, exactly like a multi-atom line. Treating a fitting
-      // single atom as automatically free was the bug this comment
-      // replaces: it made the DP prefer one-atom-per-line over any
-      // merge, every time, regardless of actual raggedness.
+      // not penalized either). Otherwise — including a single cluster
+      // that *does* fit — it's a real packing choice and costs its
+      // squared slack, exactly like a multi-cluster line. Treating a
+      // fitting single cluster as automatically free was the bug this
+      // comment replaces: it made the DP prefer one-cluster-per-line
+      // over any merge, every time, regardless of actual raggedness.
       const cost = isLastLine || !fits ? 0 : (lineBudget - width) ** 2;
 
       const total = cost + dp[j]!;
       // `<=`, not `<`: prefer the *largest* valid `j` among ties (fewer,
       // fuller lines) rather than the first one found. Ties are common
-      // — every candidate ending at the final atom costs 0 regardless of
-      // its raggedness ("a ragged last line is normal"), so without this
-      // the DP would arbitrarily prefer the shortest last line it
+      // — every candidate ending at the final cluster costs 0 regardless
+      // of its raggedness ("a ragged last line is normal"), so without
+      // this the DP would arbitrarily prefer the shortest last line it
       // happened to consider first.
       if (total <= dp[i]!) {
         dp[i] = total;
@@ -299,7 +357,7 @@ function balancedFill(
   while (i < n) {
     const j = choice[i]!;
     const indent = isFirstLine ? '' : ' '.repeat(hangingIndent);
-    lines.push(indent + renderAtoms(atoms.slice(i, j)));
+    lines.push(indent + renderAtoms(clusters.slice(i, j).flat()));
     isFirstLine = false;
     i = j;
   }
@@ -308,15 +366,17 @@ function balancedFill(
 
 /**
  * Join a line's atoms back into text, respecting `glue`: `'none'` means
- * flush against the previous atom (no space), anything else — including
- * the ordinary `undefined` case — means one space.
+ * flush against the previous atom (no space), `'double'` means two
+ * spaces (a preserved sentence-spacing gap — see `glueWidth` above),
+ * anything else — including the ordinary `undefined` case — means one
+ * space.
  */
 function renderAtoms(atoms: readonly Atom[]): string {
   let out = '';
   for (let i = 0; i < atoms.length; i++) {
     const atom = atoms[i]!;
-    if (i > 0 && atom.glue !== 'none') {
-      out += ' ';
+    if (i > 0) {
+      out += ' '.repeat(glueWidth(atom.glue));
     }
     out += atom.text;
   }
