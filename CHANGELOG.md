@@ -53,7 +53,16 @@ eventually ships this.
 - The full `rewrapPlus.*` settings surface — `enable`, `columnLimit`,
   `rulerIndex`, `wrapComments`, `wrapStrings`, `stringPolicy`,
   `docDialect`, `preserveIndentedBlocks`, `respectEditorConfig`,
-  `balancedWrapping`, `stringWrapInclude` (declared, not yet consumed).
+  `balancedWrapping`.
+- **`rewrapPlus.stringWrapInclude`**: glob patterns (default `["**"]`)
+  scoping string-literal wrapping to specific paths, matched against
+  each file's path relative to its workspace folder — lets string
+  wrapping (which edits actual program values, not just formatting) be
+  trialled on one package or `docs/` before trusting it repo-wide. A
+  file matching none of the patterns has string wrapping disabled
+  regardless of `wrapStrings`; comment/docstring wrapping is unaffected.
+  Reuses the same hardened glob engine as `.editorconfig` section
+  matching (`packages/vscode-extension/src/config/glob.ts`).
 - **Hardening**: idempotency and round-trip property tests across every
   fixture and generated input; parse-error and pathological-input
   handling (single 100k-char string, deeply nested concatenation, no
@@ -160,7 +169,6 @@ eventually ships this.
 - Split-string continuation-line indent is always the enclosing
   statement's indent **+4** (matching Black's convention) — no setting
   yet to choose "align to the opening delimiter" instead.
-- `rewrapPlus.stringWrapInclude` is declared but not yet consumed.
 - The CLI has no `.gitignore` awareness beyond a fixed default-ignored
   directory list, and doesn't follow symlinked directories during a
   recursive walk.

@@ -52,7 +52,9 @@ async function showResolvedConfig(context: vscode.ExtensionContext): Promise<voi
     `  columnLimit: ${resolved.columnLimit.value} (source: ${resolved.columnLimit.source})`,
   );
   channel.appendLine(`  wrapComments: ${resolved.wrapConfig.wrapComments}`);
-  channel.appendLine(`  wrapStrings: ${resolved.wrapConfig.wrapStrings}`);
+  channel.appendLine(
+    `  wrapStrings: ${resolved.wrapConfig.wrapStrings} (stringWrapInclude matched: ${resolved.stringWrapIncludeMatched})`,
+  );
   channel.appendLine(`  stringPolicy: ${resolved.wrapConfig.stringPolicy}`);
   channel.appendLine(`  docDialect: ${resolved.wrapConfig.docDialect}`);
   channel.appendLine(`  preserveIndentedBlocks: ${resolved.wrapConfig.preserveIndentedBlocks}`);

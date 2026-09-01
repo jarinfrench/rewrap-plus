@@ -125,20 +125,29 @@ unchecked without either fixing it or removing the claim.
       is declared `true` deliberately in `package.json` (not left to
       VSCode's own default, which otherwise shows an unverified-extension
       warning). Verified by auditing every workspace-controllable input
-      this extension reads: all nine `rewrapPlus.*` settings are typed as
-      `boolean`, `number`, a fixed string `enum`, or (for the
-      not-yet-implemented `stringWrapInclude`) a glob-string array — never
-      a path, command, or anything the extension would execute — and
-      `.editorconfig`'s only consulted property, `max_line_length`, is a
-      single integer. Per this document's own "Workspace-trust bypass"
-      category (a workspace causing behavior *beyond configuring the
-      wrap itself*), nothing reachable from an untrusted workspace's
-      settings or `.editorconfig` can do more than change wrap
-      parameters — there's no elevated-trust behavior to gate, so full
-      support is the honest declaration rather than an unverified
-      default. `activationEvents: []` also means opening an untrusted
-      workspace alone triggers no extension code at all; every command
-      requires explicit user action first.
+      this extension reads: all twelve `rewrapPlus.*` settings are typed
+      as `boolean`, `number`, a fixed string `enum`, or (for
+      `stringWrapInclude`) a glob-string array — never a path, command,
+      or anything the extension would execute — and `.editorconfig`'s
+      only consulted property, `max_line_length`, is a single integer.
+      `stringWrapInclude`'s glob patterns are compiled through the same
+      hardened `globToRegExpSource` (`packages/vscode-extension/src/
+      config/glob.ts`, shared with `.editorconfig` section matching) that
+      closed a confirmed catastrophic-backtracking ReDoS, so a workspace
+      supplying an adversarial pattern here hits the same mitigation, not
+      a fresh unaudited regex-construction path; matching is also a pure
+      `RegExp#test` against the *already-open* document's own known path,
+      never a filesystem walk/glob-expansion, so it can't be used to
+      enumerate or probe paths the extension wouldn't otherwise touch.
+      Per this document's own "Workspace-trust bypass" category (a
+      workspace causing behavior *beyond configuring the wrap itself*),
+      nothing reachable from an untrusted workspace's settings or
+      `.editorconfig` can do more than change wrap parameters — there's
+      no elevated-trust behavior to gate, so full support is the honest
+      declaration rather than an unverified default. `activationEvents:
+      []` also means opening an untrusted workspace alone triggers no
+      extension code at all; every command requires explicit user action
+      first.
 - [ ] **Bounded resource use on adversarial input.** Parsing/wrapping
       has `[caps on file size / nesting depth / region count, or a
       documented absence of caps and why that's acceptable]`, tested

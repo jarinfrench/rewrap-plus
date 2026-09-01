@@ -17,6 +17,9 @@ export async function resetRewrapPlusSettings(): Promise<void> {
   await config.update('columnLimit', undefined, vscode.ConfigurationTarget.Global);
   await config.update('enable', undefined, vscode.ConfigurationTarget.Global);
   await config.update('formatOnSave', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('wrapStrings', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('stringPolicy', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('stringWrapInclude', undefined, vscode.ConfigurationTarget.Global);
 }
 
 export async function openFixture(absolutePath: string): Promise<vscode.TextEditor> {

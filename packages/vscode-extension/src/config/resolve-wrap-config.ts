@@ -20,6 +20,7 @@ import type { WrapConfig } from '@rewrap-plus/engine' with { 'resolution-mode': 
 import { resolveEditorConfigMaxLineLength } from './editorconfig.js';
 import { resolveColumnLimitForDocument } from './resolve-column-limit.js';
 import { readExtensionSettings } from './settings.js';
+import { matchesStringWrapInclude } from './string-wrap-include.js';
 import type { ResolvedColumnLimit } from './column-limit.js';
 
 export interface ResolvedWrapConfig {
@@ -28,6 +29,14 @@ export interface ResolvedWrapConfig {
   readonly wrapConfig: WrapConfig;
   /** The column limit actually used, plus which precedence tier it came from — for the output channel (commit 8) to explain "why did it wrap at N?". */
   readonly columnLimit: ResolvedColumnLimit;
+  /**
+   * Whether this document's path matched `rewrapPlus.stringWrapInclude`
+   * — already folded into `wrapConfig.wrapStrings` below (so nothing
+   * else needs to re-check it), kept here separately only so a
+   * diagnostic (`rewrapPlus.showResolvedConfig`) can explain *why*
+   * `wrapStrings` came out `false` even though the raw setting is `true`.
+   */
+  readonly stringWrapIncludeMatched: boolean;
 }
 
 export function resolveWrapConfigForDocument(document: vscode.TextDocument): ResolvedWrapConfig {
@@ -44,17 +53,27 @@ export function resolveWrapConfigForDocument(document: vscode.TextDocument): Res
 
   const columnLimit = resolveColumnLimitForDocument(document, editorConfigMaxLineLength);
   const tabSize = vscode.workspace.getConfiguration('editor', document).get<number>('tabSize', 4);
+  const stringWrapIncludeMatched = matchesStringWrapInclude(document, settings.stringWrapInclude);
 
   const wrapConfig: WrapConfig = {
     columnLimit: columnLimit.value,
     tabSize,
     wrapComments: settings.wrapComments,
-    wrapStrings: settings.wrapStrings,
+    // `stringWrapInclude` scopes string wrapping by path — folded in
+    // here, alongside the `wrapStrings` toggle it's meant to further
+    // restrict, rather than threaded into the engine as a separate
+    // concept: the engine's WrapConfig has no notion of a document path
+    // to glob-match against (nor should it — that's exactly the kind of
+    // vscode/filesystem-shaped concern packages/engine's "never import
+    // vscode" rule exists to keep out), so from the engine's point of
+    // view a path outside the include scope is indistinguishable from,
+    // and handled identically to, wrapStrings being off outright.
+    wrapStrings: settings.wrapStrings && stringWrapIncludeMatched,
     stringPolicy: settings.stringPolicy,
     docDialect: settings.docDialect,
     preserveIndentedBlocks: settings.preserveIndentedBlocks,
     balancedWrapping: settings.balancedWrapping,
   };
 
-  return { enable: settings.enable, wrapConfig, columnLimit };
+  return { enable: settings.enable, wrapConfig, columnLimit, stringWrapIncludeMatched };
 }
