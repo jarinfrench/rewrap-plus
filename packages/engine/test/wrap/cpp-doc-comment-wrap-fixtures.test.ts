@@ -12,6 +12,8 @@ import plainIn from '../fixtures/cpp/doc-comments/002-plain-narrative.in.cpp?raw
 import plainOut from '../fixtures/cpp/doc-comments/002-plain-narrative.out.cpp?raw';
 import tripleSlashIn from '../fixtures/cpp/doc-comments/003-triple-slash-param-return.in.cpp?raw';
 import tripleSlashOut from '../fixtures/cpp/doc-comments/003-triple-slash-param-return.out.cpp?raw';
+import markdownListIn from '../fixtures/cpp/doc-comments/004-doxygen-markdown-list.in.cpp?raw';
+import markdownListOut from '../fixtures/cpp/doc-comments/004-doxygen-markdown-list.out.cpp?raw';
 
 /**
  * Gold fixtures for `'docComment'` regions — the Doxygen dialect
@@ -26,6 +28,16 @@ import tripleSlashOut from '../fixtures/cpp/doc-comments/003-triple-slash-param-
  * not `emitBlockComments`'s open/close pair the way 001/002 do, so it's
  * exercising a genuinely different code path even though it produces the
  * same tag-aware Doxygen wrapping.
+ *
+ * 004 is a regression fixture for a bug reported against a different
+ * regex-based Doxygen wrapper (dnut/rewrap-revived#52): a `-`-bulleted
+ * markdown-style list immediately following prose, inside a `///`
+ * comment, got collapsed into one run-on paragraph instead of staying
+ * one list item per line. Confirmed non-reproducible here — the shared
+ * block splitter (`../../src/segmentation/split-blocks.ts`, list markers
+ * via `./list-item.ts`) detects `-` list markers independently of
+ * dialect, so Doxygen gets list-aware reflow for free rather than
+ * needing its own bullet-parsing logic.
  */
 const COLUMN_LIMIT = 60;
 
@@ -39,6 +51,7 @@ const fixtures: readonly Fixture[] = [
   { name: '001-doxygen-param-return', input: doxygenIn, expected: doxygenOut },
   { name: '002-plain-narrative', input: plainIn, expected: plainOut },
   { name: '003-triple-slash-param-return', input: tripleSlashIn, expected: tripleSlashOut },
+  { name: '004-doxygen-markdown-list', input: markdownListIn, expected: markdownListOut },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -100,6 +113,13 @@ describe('C++ docComment (Doxygen) wrapping — end-to-end gold fixtures', () =>
         expect(line.length).toBeLessThanOrEqual(COLUMN_LIMIT);
       }
     }
+  });
+
+  it('keeps each `-` list item on its own line rather than collapsing the list into one paragraph (dnut/rewrap-revived#52)', () => {
+    const listLines = markdownListOut.split(/\r?\n/).filter((line) => line.startsWith('/// -'));
+    expect(listLines).toHaveLength(2);
+    expect(listLines[0]).toMatch(/^\/\/\/ - `handle`/);
+    expect(listLines[1]).toMatch(/^\/\/\/ - `deleter`/);
   });
 
   it('is idempotent: re-wrapping the gold output produces no further edits', async () => {
