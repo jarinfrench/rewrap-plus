@@ -22,6 +22,22 @@ import multiRegionIn from '../fixtures/python/docstrings/007-module-class-attrib
 import multiRegionOut from '../fixtures/python/docstrings/007-module-class-attribute-docstrings.out.py?raw';
 import quoteAloneMultiParaIn from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.in.py?raw';
 import quoteAloneMultiParaOut from '../fixtures/python/docstrings/008-quote-alone-multi-paragraph.out.py?raw';
+import minimalGoogleIn from '../fixtures/python/docstrings/009-minimal-google.in.py?raw';
+import minimalGoogleOut from '../fixtures/python/docstrings/009-minimal-google.out.py?raw';
+import minimalNumpyIn from '../fixtures/python/docstrings/010-minimal-numpy.in.py?raw';
+import minimalNumpyOut from '../fixtures/python/docstrings/010-minimal-numpy.out.py?raw';
+import minimalSphinxIn from '../fixtures/python/docstrings/011-minimal-sphinx.in.py?raw';
+import minimalSphinxOut from '../fixtures/python/docstrings/011-minimal-sphinx.out.py?raw';
+import pathologicalGoogleIn from '../fixtures/python/docstrings/012-pathological-google.in.py?raw';
+import pathologicalGoogleOut from '../fixtures/python/docstrings/012-pathological-google.out.py?raw';
+import pathologicalNumpyIn from '../fixtures/python/docstrings/013-pathological-numpy.in.py?raw';
+import pathologicalNumpyOut from '../fixtures/python/docstrings/013-pathological-numpy.out.py?raw';
+import pathologicalSphinxIn from '../fixtures/python/docstrings/014-pathological-sphinx.in.py?raw';
+import pathologicalSphinxOut from '../fixtures/python/docstrings/014-pathological-sphinx.out.py?raw';
+import alreadyWrappedNumpyIn from '../fixtures/python/docstrings/015-already-wrapped-numpy-byte-identical.in.py?raw';
+import alreadyWrappedNumpyOut from '../fixtures/python/docstrings/015-already-wrapped-numpy-byte-identical.out.py?raw';
+import alreadyWrappedSphinxIn from '../fixtures/python/docstrings/016-already-wrapped-sphinx-byte-identical.in.py?raw';
+import alreadyWrappedSphinxOut from '../fixtures/python/docstrings/016-already-wrapped-sphinx-byte-identical.out.py?raw';
 
 /**
  * The stated acceptance criterion: "All docstring fixtures pass; no
@@ -33,12 +49,24 @@ import quoteAloneMultiParaOut from '../fixtures/python/docstrings/008-quote-alon
  *
  * Column limit is a fixed 50 for every fixture — wide enough that
  * Google/NumPy/Sphinx section structure stays legible in the gold files
- * while still forcing every fixture's content to actually wrap (all six
- * source docstrings were written specifically to overflow this limit),
+ * while still forcing every fixture's content to actually wrap (every
+ * source docstring was written specifically to overflow this limit),
  * except 006 (`006-doctest-preserved`), whose whole point is a doctest
- * line that overflows *regardless* of width, and 005
- * (`005-already-wrapped-byte-identical`), whose point is that wrapping
- * already-correct output changes nothing.
+ * line that overflows *regardless* of width, and 005/015/016 (the
+ * `*-already-wrapped-byte-identical` fixtures, one per dialect), whose
+ * point is that wrapping already-correct output changes nothing.
+ *
+ * 009-011 (`minimal-{google,numpy,sphinx}`) and 012-014
+ * (`pathological-{google,numpy,sphinx}`) round out each dialect's own
+ * fixture tier alongside its existing "typical" case (002/003/004): a
+ * minimal one-section instance, and a pathological one combining a very
+ * long field label (an extreme hanging indent, forcing the one-word-per-
+ * line overflow rule), a nested list inside a field-entry description, a
+ * fenced code sample inside a field-entry description, and non-ASCII
+ * content — see `../../src/docs/field-entries.ts`'s own "Known
+ * limitation" note on what the nested-list/code-fence cases actually
+ * degrade to (flattened prose, not preserved structure) and why that's
+ * the current, accepted output rather than a bug in these fixtures.
  */
 const COLUMN_LIMIT = 50;
 
@@ -68,6 +96,34 @@ const fixtures: readonly Fixture[] = [
     name: '008-quote-alone-multi-paragraph',
     input: quoteAloneMultiParaIn,
     expected: quoteAloneMultiParaOut,
+  },
+  { name: '009-minimal-google', input: minimalGoogleIn, expected: minimalGoogleOut },
+  { name: '010-minimal-numpy', input: minimalNumpyIn, expected: minimalNumpyOut },
+  { name: '011-minimal-sphinx', input: minimalSphinxIn, expected: minimalSphinxOut },
+  {
+    name: '012-pathological-google',
+    input: pathologicalGoogleIn,
+    expected: pathologicalGoogleOut,
+  },
+  {
+    name: '013-pathological-numpy',
+    input: pathologicalNumpyIn,
+    expected: pathologicalNumpyOut,
+  },
+  {
+    name: '014-pathological-sphinx',
+    input: pathologicalSphinxIn,
+    expected: pathologicalSphinxOut,
+  },
+  {
+    name: '015-already-wrapped-numpy-byte-identical',
+    input: alreadyWrappedNumpyIn,
+    expected: alreadyWrappedNumpyOut,
+  },
+  {
+    name: '016-already-wrapped-sphinx-byte-identical',
+    input: alreadyWrappedSphinxIn,
+    expected: alreadyWrappedSphinxOut,
   },
 ];
 
@@ -105,16 +161,45 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
   });
 
   it('produces no reflowed line over the column limit, except a lone unbreakable atom (006’s doctest)', async () => {
+    // Mirrors `./python-comment-wrap-fixtures.test.ts`'s own "only this
+    // phase's concern" scoping: a `def`/`return` code line untouched by
+    // docstring wrapping is free to be any length — this check is about
+    // the overflow rule for *reflowed docstring content*, not incidental
+    // code around it. A `"""` toggles whether subsequent lines are inside
+    // the docstring; the delimiter's own line counts as docstring content
+    // either way (it carries the summary or the closing quote).
     for (const fixture of fixtures) {
       const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
       const actual = applyTextEdits(fixture.input, result.edits);
+      let insideDocstring = false;
       for (const line of actual.split(/\r?\n/)) {
-        if (line.length <= COLUMN_LIMIT) {
+        const opensOrClosesHere = /"""/.test(line);
+        const isDocstringLine = insideDocstring || opensOrClosesHere;
+        if (opensOrClosesHere) {
+          insideDocstring = !insideDocstring;
+        }
+        if (!isDocstringLine || line.length <= COLUMN_LIMIT) {
           continue;
         }
-        // The doctest fixture's whole point is a `>>>` line that
-        // overflows regardless of width — verbatim, never reflowed.
-        expect(line.trimStart()).toMatch(/^(>>>|\.\.\.)/);
+        // Legitimate only as the overflow rule: a lone unbreakable
+        // token — the doctest fixture's `>>>`/`...` line, a field
+        // entry's continuation line under a hanging indent too deep to
+        // leave room for even one word, or a field entry's *first*
+        // line, where a structural label (`'name:'`, `':param x:'`)
+        // legitimately precedes that same lone overflowing token
+        // (`012-pathological-google.out.py`'s
+        // `really_long_deployment_target_identifier: A`, for example —
+        // the label is `decorateFirstLine`'s own prefix, not reflowed
+        // content, so its internal spacing doesn't count against "one
+        // token"). Stripping up to the first `':' + whitespace` removes
+        // any such label before checking; a continuation line with no
+        // label is unaffected, since nothing in it matches that pattern.
+        const trimmed = line.trimStart();
+        if (/^(>>>|\.\.\.)/.test(trimmed)) {
+          continue;
+        }
+        const content = trimmed.replace(/^.*?:\s/, '');
+        expect(content).not.toMatch(/\s/);
       }
     }
   });
@@ -126,8 +211,10 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('leaves the already-wrapped fixture byte-identical', () => {
+  it('leaves the already-wrapped fixtures byte-identical', () => {
     expect(alreadyWrappedIn).toBe(alreadyWrappedOut);
+    expect(alreadyWrappedNumpyIn).toBe(alreadyWrappedNumpyOut);
+    expect(alreadyWrappedSphinxIn).toBe(alreadyWrappedSphinxOut);
   });
 
   it('preserves the doctest block verbatim, including its over-limit line', () => {
@@ -139,10 +226,11 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
   it('covers the cases docstring wrapping is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases (minimal/plain, each of the
-    // three dialects, an already-correctly-wrapped case, doctest
-    // preservation, and module/class/attribute docstrings discovered
-    // and wrapped together) if a fixture were ever renamed or removed
-    // without a replacement.
+    // three dialects at its typical/minimal/pathological tiers, an
+    // already-correctly-wrapped case per dialect, doctest preservation,
+    // and module/class/attribute docstrings discovered and wrapped
+    // together) if a fixture were ever renamed or removed without a
+    // replacement.
     expect(fixtures.map((f) => f.name)).toEqual([
       '001-minimal-plain',
       '002-google-style',
@@ -152,6 +240,14 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
       '006-doctest-preserved',
       '007-module-class-attribute-docstrings',
       '008-quote-alone-multi-paragraph',
+      '009-minimal-google',
+      '010-minimal-numpy',
+      '011-minimal-sphinx',
+      '012-pathological-google',
+      '013-pathological-numpy',
+      '014-pathological-sphinx',
+      '015-already-wrapped-numpy-byte-identical',
+      '016-already-wrapped-sphinx-byte-identical',
     ]);
   });
 });
