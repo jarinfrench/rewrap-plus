@@ -142,7 +142,7 @@
           "items": { "type": "string" },
           "default": ["**"],
           "scope": "resource",
-          "markdownDescription": "Glob patterns scoping *string-literal* wrapping to specific paths, once implemented — lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. Does not affect comment wrapping. **Not yet implemented** — see `#rewrapPlus.wrapStrings#`."
+          "markdownDescription": "Glob patterns, matched against each file's path relative to its workspace folder (`**`, the default, matches every file), scoping *string-literal* wrapping to specific paths — lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. A file matching none of these patterns has string wrapping disabled regardless of `#rewrapPlus.wrapStrings#`. Does not affect comment or docstring wrapping (`#rewrapPlus.wrapComments#`). Use `#rewrapPlus.showResolvedConfig#` to check whether the current file is in scope."
         },
         "rewrapPlus.formatOnSave": {
           "type": "boolean",

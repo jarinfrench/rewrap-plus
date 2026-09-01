@@ -77,7 +77,7 @@ and `docs/adapters.md`), and more languages are on the roadmap.
 | **Rewrap+: Wrap at Cursor** (`rewrapPlus.wrapAtCursor`) | `Alt+Q` (`Opt+Q` on macOS) | Expands to the region containing the cursor. Multi-cursor wraps each region once, deduped. **Collides with stkb/Rewrap's own default `Alt+Q`** — rebind one of them (`Preferences: Open Keyboard Shortcuts`) if you have both installed. |
 | **Rewrap+: Wrap Selection** (`rewrapPlus.wrapSelection`) | — | Each selection expands outward to its encompassing region(s); a selection spanning several regions wraps all of them. Also reachable via `Format Selection`. |
 | **Rewrap+: Wrap Document** (`rewrapPlus.wrapDocument`) | — | Every wrappable region, applied as one atomic edit — a single undo reverts everything. Also reachable via `Format Document` when no other formatter is registered for the language. Shows a cancellable progress notification above 2000 lines. |
-| **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`) | — | Dumps the effective column limit (and which precedence tier it came from), active string/doc-dialect policy, and extension version for the current file to the "Rewrap+" output channel — a telemetry-free way to answer "why did it wrap at N?" or attach real diagnostics to a bug report. Works even in an unsupported language. |
+| **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`) | — | Dumps the effective column limit (and which precedence tier it came from), active string/doc-dialect policy (including whether `stringWrapInclude` matched the current file), and extension version for the current file to the "Rewrap+" output channel — a telemetry-free way to answer "why did it wrap at N?" or attach real diagnostics to a bug report. Works even in an unsupported language. |
 
 ## Settings
 
@@ -97,7 +97,7 @@ overrides work).
 | `rewrapPlus.preserveIndentedBlocks` | `true` | Treat an already-indented block inside a comment/docstring (beyond a paragraph's first line) as verbatim rather than reflowing it. |
 | `rewrapPlus.respectEditorConfig` | `true` | Consult `.editorconfig`'s `max_line_length` as a precedence tier, parsed directly by this extension — independent of whether the separate EditorConfig extension is installed. |
 | `rewrapPlus.balancedWrapping` | `false` | Use minimum-raggedness (balanced) line breaking instead of greedy first-fit. Often visibly nicer for short comments/docstrings, at the cost of more computation. |
-| `rewrapPlus.stringWrapInclude` | `["**"]` | **Not yet implemented.** Intended to scope string wrapping to specific path globs, letting it be trialled on one package before trusting it repo-wide; currently read but has no effect. |
+| `rewrapPlus.stringWrapInclude` | `["**"]` | Glob patterns, matched against each file's path relative to its workspace folder, scoping string-literal wrapping to specific paths — a file matching none of these has string wrapping disabled regardless of `wrapStrings`. Lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. Does not affect comment/docstring wrapping. |
 | `rewrapPlus.formatOnSave` | `false` | Wrap the whole document automatically before every save. See [Format on save](#format-on-save) below. |
 
 ### Column limit precedence
@@ -146,6 +146,31 @@ its ordering relative to other save-time actions (`editor
 .codeActionsOnSave`, for instance) follows VSCode's usual rules for that
 setting, same as it would for any formatter.
 
+### Scoping string wrapping by path
+
+String-literal wrapping edits actual program values, not just
+formatting, so it's reasonable to want it running somewhere narrower
+than the whole repository while you build confidence in it.
+`rewrapPlus.stringWrapInclude` (default `["**"]`, matching every file)
+restricts it to paths matching one of the given globs, relative to the
+file's workspace folder — comment and docstring wrapping are unaffected
+either way.
+
+```jsonc
+{
+  "rewrapPlus.wrapStrings": true,
+  "rewrapPlus.stringWrapInclude": ["docs_examples/**", "src/api_client/**"]
+}
+```
+
+With the above, `rewrapPlus.wrapDocument` (or format-on-save) wraps
+string literals in `docs_examples/` and `src/api_client/`, but leaves
+every string literal untouched everywhere else in the workspace — including
+`src/core/`, `tests/`, or any other path that isn't matched — while
+comments and docstrings still wrap normally throughout. Run **Rewrap+:
+Show Resolved Configuration** on any file to confirm whether it's
+currently in scope.
+
 ## What this won't touch
 
 Left byte-identical, deliberately, rather than risk mangling behavior:
@@ -178,12 +203,11 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
 - **File-final newline, trailing whitespace, and line endings** (LF vs
   CRLF, detected per region) — preserved exactly as found.
 
-Two things worth naming as **known, deliberate limitations** rather than
-bugs to report: continuation-line indentation for a split string literal
-always uses the enclosing statement's indent **+4** (matching Black's
-convention), with no setting yet to choose "align to the opening
-delimiter" instead; and `rewrapPlus.stringWrapInclude` (above) is
-declared but not yet consumed.
+One thing worth naming as a **known, deliberate limitation** rather than
+a bug to report: continuation-line indentation for a split string
+literal always uses the enclosing statement's indent **+4** (matching
+Black's convention), with no setting yet to choose "align to the opening
+delimiter" instead.
 
 ## Language coverage and related extensions
 
