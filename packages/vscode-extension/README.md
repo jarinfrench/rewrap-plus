@@ -74,7 +74,7 @@ and `docs/adapters.md`), and more languages are on the roadmap.
 
 | Command | Keybinding | Notes |
 |---|---|---|
-| **Rewrap+: Wrap at Cursor** (`rewrapPlus.wrapAtCursor`) | `Alt+Q` (`Cmd+Alt+Q` on macOS) | Expands to the region containing the cursor. Multi-cursor wraps each region once, deduped. **Collides with stkb/Rewrap's own default `Alt+Q`** — rebind one of them (`Preferences: Open Keyboard Shortcuts`) if you have both installed. |
+| **Rewrap+: Wrap at Cursor** (`rewrapPlus.wrapAtCursor`) | `Alt+Q` (`Opt+Q` on macOS) | Expands to the region containing the cursor. Multi-cursor wraps each region once, deduped. **Collides with stkb/Rewrap's own default `Alt+Q`** — rebind one of them (`Preferences: Open Keyboard Shortcuts`) if you have both installed. |
 | **Rewrap+: Wrap Selection** (`rewrapPlus.wrapSelection`) | — | Each selection expands outward to its encompassing region(s); a selection spanning several regions wraps all of them. Also reachable via `Format Selection`. |
 | **Rewrap+: Wrap Document** (`rewrapPlus.wrapDocument`) | — | Every wrappable region, applied as one atomic edit — a single undo reverts everything. Also reachable via `Format Document` when no other formatter is registered for the language. Shows a cancellable progress notification above 2000 lines. |
 | **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`) | — | Dumps the effective column limit (and which precedence tier it came from), active string/doc-dialect policy, and extension version for the current file to the "Rewrap+" output channel — a telemetry-free way to answer "why did it wrap at N?" or attach real diagnostics to a bug report. Works even in an unsupported language. |
