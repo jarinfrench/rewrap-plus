@@ -72,6 +72,18 @@ function matchSectionHeader(line: string): string | null {
  */
 const FIELD_ENTRY_LINE = /^[ \t]*(\*{0,2}[A-Za-z_][\w.]*(?:\s*\([^()]*\))?)\s*:\s?(.*)$/;
 
+/**
+ * This regex is applied per *physical* line of already-dissolved text,
+ * with no notion of "this line used to be the middle of a reflowed
+ * paragraph" — so a field entry's flattened description containing a
+ * `word:` substring (a nested bullet's own "label: description" shape,
+ * or just a sentence with a colon in it) could, before the fix
+ * described in `./field-entries.ts`'s `isEntryContinuation`, be misread
+ * as a brand-new entry if a later re-wrap happened to break a line
+ * right before that word. See that function's own doc comment for the
+ * fix and the confirmed idempotency bug it closes.
+ */
+
 function matchGoogleEntry(line: string): EntryStartMatch | null {
   const match = FIELD_ENTRY_LINE.exec(line);
   if (!match) {

@@ -30,6 +30,25 @@ export interface EntryStartMatch {
  * dialect's own `detect` wouldn't have routed well-formed input here in
  * the first place, but "assume paragraph" is a safer failure mode than
  * dropping the line outright.
+ *
+ * **Known limitation:** an entry's continuation lines are atomized
+ * directly (`atomizeWords`, below) rather than run back through
+ * `../segmentation/split-blocks.ts`, so a nested list or a fenced code
+ * sample inside a field-entry's own description (e.g. a Google `Args:`
+ * entry whose text includes a bulleted sub-list or a ` ``` ` example) is
+ * *not* recognized as such — it degrades to plain reflowed prose, its
+ * bullets and fence delimiters becoming ordinary words. This only ever
+ * flattens (see `test/fixtures/python/docstrings/012-pathological-google.*`
+ * and its NumPy/Sphinx siblings, `013`/`014`, for the current, accepted
+ * output); it does not corrupt, *provided* the description has no blank
+ * line before the nested content. A blank line *does* end the entry
+ * early (blank lines always end continuation, above): everything after
+ * it is no longer inside any entry at all, and reaches this function's
+ * fallback path one line at a time — each becomes its own top-level,
+ * unindented `paragraph` block, positioned as if it belonged to the
+ * section rather than the entry it was actually written under. Avoid a
+ * blank-line-separated example inside an entry description until this is
+ * addressed; an unbroken continuation (no blank line) is safe today.
  */
 export function groupFieldEntries(
   lines: readonly string[],
@@ -77,6 +96,42 @@ export function groupFieldEntries(
   return blocks;
 }
 
+/**
+ * A candidate line only ends the current entry's continuation if it
+ * matches `matchEntryStart` *and* sits at `entryIndent` or shallower —
+ * the depth every genuine sibling entry shares, since a dialect's own
+ * entries are always a flat list, never nested. A deeper match is
+ * folded into the current entry as ordinary continuation content
+ * instead, on the same "indented further than the label" basis as any
+ * other continuation line.
+ *
+ * **Regression, confirmed as a real idempotency bug while building
+ * `test/fixtures/python/docstrings/012-pathological-google.*`:** the
+ * indent check used to be applied only to a *non*-matching line, so any
+ * line matching `matchEntryStart` ended continuation outright,
+ * regardless of depth. A field entry's flattened description (this
+ * file's own "Known limitation" above) can legitimately contain a
+ * `word:` substring — a nested bullet's own "label: description"
+ * shape, or plain prose with a colon in it — and reflow is free to
+ * break a line right before that word on any given wrap. When it did,
+ * the old code read it as a brand-new sibling entry despite sitting at
+ * the *continuation* indent, not the entries' own shared indent —
+ * splitting one logical entry into several and, since the split
+ * doesn't happen at a section boundary, discarding everything after it
+ * into orphaned top-level `paragraph` blocks. Reproduced directly: a
+ * flattened nested list using `'- verbose: ...'`/`'- strict: ...'`-
+ * style colon-labeled bullets wrapped correctly once, but a *second*
+ * wrap of that first output relocated `'strict:'` to the start of a
+ * physical line at the continuation depth and misread it as a new
+ * entry there, breaking `wrap(wrap(x)) === wrap(x)` — caught by
+ * `test/wrap/idempotency-all-fixtures.test.ts`'s repo-wide property
+ * check, not by any single dialect's own narrower fixture suite.
+ * Requiring the match to *also* sit at `entryIndent` or shallower
+ * closes this precisely: a genuine sibling entry is unaffected (it's
+ * always written at the shared indent), while a coincidental `word:`
+ * anywhere deeper — wherever reflow happens to have broken a line —
+ * now stays part of the entry that's still open.
+ */
 function isEntryContinuation(
   line: string,
   entryIndent: number,
@@ -85,8 +140,9 @@ function isEntryContinuation(
   if (line.trim() === '') {
     return false;
   }
-  if (matchEntryStart(line)) {
-    return false; // a new entry always ends the previous one's continuation
+  const indent = leadingWhitespaceLength(line);
+  if (matchEntryStart(line) && indent <= entryIndent) {
+    return false; // a genuine sibling entry, at the entries' own shared indent
   }
-  return leadingWhitespaceLength(line) > entryIndent;
+  return indent > entryIndent;
 }

@@ -35,6 +35,33 @@ describe('groupFieldEntries', () => {
     expect(blocks.map((b) => (b.type === 'fieldEntry' ? b.label : null))).toEqual(['x:', 'y:']);
   });
 
+  it('starts a new entry when a matching line sits at a shallower indent than the current entry', () => {
+    const blocks = groupFieldEntries(['    x: one', '    y: two'], matchSimple);
+    expect(blocks).toHaveLength(2);
+    expect(blocks.map((b) => (b.type === 'fieldEntry' ? b.label : null))).toEqual(['x:', 'y:']);
+  });
+
+  it('does not start a new entry when a matching line is indented deeper than the current entry (regression)', () => {
+    // A real fix, not just a workaround for one fixture: `groupFieldEntries`
+    // used to end continuation on *any* line matching `matchEntryStart`,
+    // regardless of its indent. A field entry's flattened description can
+    // legitimately contain a `word:` substring (a nested bullet's own
+    // "label: description" shape, plain prose with a colon in it), and
+    // reflow is free to break a line right before that word on any given
+    // wrap — when it did, the deeper-indented match was misread as a new
+    // sibling entry despite sitting at the *continuation* indent, not the
+    // entries' own shared indent, breaking `wrap(wrap(x)) === wrap(x)` for
+    // `test/fixtures/python/docstrings/012-pathological-google.*` under
+    // `test/wrap/idempotency-all-fixtures.test.ts`. A deeper match must
+    // stay folded into the entry that's still open.
+    const blocks = groupFieldEntries(['x: one', '   y: two'], matchSimple);
+    expect(blocks).toHaveLength(1);
+    const entry = blocks[0];
+    if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+    expect(entry.label).toBe('x:');
+    expect(entry.atoms.map((a) => a.text)).toEqual(['one', 'y:', 'two']);
+  });
+
   it('emits a blank block for a blank line', () => {
     const blocks = groupFieldEntries(['x: one', '', 'y: two'], matchSimple);
     expect(blocks.map((b) => b.type)).toEqual(['fieldEntry', 'blank', 'fieldEntry']);
