@@ -5,6 +5,10 @@ function spanTexts(line: string): string[] {
   return findUnbreakableSpans(line).map((s) => line.slice(s.start, s.end));
 }
 
+function spanTextsWith(line: string, extraPatterns: readonly RegExp[]): string[] {
+  return findUnbreakableSpans(line, extraPatterns).map((s) => line.slice(s.start, s.end));
+}
+
 describe('findUnbreakableSpans', () => {
   it('finds no spans in plain prose', () => {
     expect(findUnbreakableSpans('just some ordinary words here')).toEqual([]);
@@ -96,6 +100,46 @@ describe('findUnbreakableSpans', () => {
 
   it('finds multiple non-overlapping spans in one line', () => {
     expect(spanTexts('{greeting}, %s! see `here` now')).toEqual(['{greeting}', '%s', '`here`']);
+  });
+
+  it('finds a span from an extra caller-supplied pattern, alongside the built-in set', () => {
+    // The `\verb`/`\lstinline` shape (`docs/planning/markdown-latex-plan.md`
+    // §4.3) — a delimiter-bounded raw span the built-in patterns know
+    // nothing about.
+    const verb = /\\verb\*?(.)[^\n]*?\1/;
+    expect(spanTextsWith('see \\verb|a b c| now', [verb])).toEqual(['\\verb|a b c|']);
+  });
+
+  it('prefers an extra pattern over a built-in one that would also match at the same start', () => {
+    // A `\verb`-delimited span that also happens to look URL-shaped
+    // inside it — the extra pattern must win, keeping the whole `\verb`
+    // span intact rather than the built-in `URL` pattern only grabbing
+    // part of it.
+    const verb = /\\verb\|[^\n|]*\|/;
+    const line = '\\verb|https://example.com| after';
+    const spans = findUnbreakableSpans(line, [verb]);
+    expect(spans).toHaveLength(1);
+    expect(line.slice(spans[0]!.start, spans[0]!.end)).toBe('\\verb|https://example.com|');
+  });
+
+  it('still finds built-in spans when extra patterns are given but do not match', () => {
+    const neverMatches = /NEVER_MATCHES_ANYTHING_XYZ/;
+    expect(spanTextsWith('see {x} now', [neverMatches])).toEqual(['{x}']);
+  });
+
+  it('does not carry extra patterns over into a call without them', () => {
+    // A fresh combined RegExp is built per call — an earlier call's
+    // extra patterns must never leak into a later call that didn't ask
+    // for them. "AAA" matches neither the built-in set nor anything but
+    // the extra pattern below, so any match on the second, plain call
+    // would have to be a leak from the first.
+    const shout = /AAA/;
+    findUnbreakableSpans('AAA', [shout]);
+    expect(findUnbreakableSpans('AAA bbb')).toEqual([]);
+  });
+
+  it('returns the same result as no extra patterns when given an empty array', () => {
+    expect(spanTextsWith('see {x} now', [])).toEqual(spanTexts('see {x} now'));
   });
 
   it('stays fast on a long letter run with no colon anywhere (quadratic-backtracking regression)', () => {

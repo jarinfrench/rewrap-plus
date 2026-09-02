@@ -142,6 +142,24 @@ describe('atomizeWords', () => {
     }
   });
 
+  it('does not split an extra caller-supplied unbreakable pattern at its internal whitespace', () => {
+    // The `\verb`/`\lstinline` shape (`docs/planning/markdown-latex-plan.md`
+    // §4.3) — real content the built-in pattern set knows nothing about.
+    const verb = /\\verb\*?(.)[^\n]*?\1/;
+    const atoms = atomizeWords('see \\verb|a b c| now', { extraUnbreakable: [verb] });
+    expect(atoms.map((a) => a.text)).toEqual(['see', '\\verb|a b c|', 'now']);
+  });
+
+  it('splits normally, ignoring extraUnbreakable, when the text does not match any extra pattern', () => {
+    const neverMatches = /NEVER_MATCHES_ANYTHING_XYZ/;
+    const atoms = atomizeWords('plain text here', { extraUnbreakable: [neverMatches] });
+    expect(atoms.map((a) => a.text)).toEqual(['plain', 'text', 'here']);
+  });
+
+  it('behaves identically to omitting options when extraUnbreakable is not given', () => {
+    expect(atomizeWords('Hello, world.', {})).toEqual(atomizeWords('Hello, world.'));
+  });
+
   it('handles a run made of several adjacent unbreakable spans', () => {
     // "Value:" + "{x}" glued, with no space anywhere in the run.
     const atoms = atomizeWords('Value:{x}.');

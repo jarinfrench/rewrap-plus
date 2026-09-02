@@ -161,18 +161,56 @@ const UNBREAKABLE_PATTERN = new RegExp(
  * Find every unbreakable span in `line`, left to right, non-overlapping
  * (the regex engine's own global-match cursor already guarantees this:
  * each match starts at or after the previous match's end).
+ *
+ * `extraPatterns` — a prose language's own never-split forms
+ * (`docs/planning/markdown-latex-plan.md` §4.3: LaTeX's `\verb`/
+ * `\lstinline`, whose *contents* the grammar itself doesn't protect from
+ * being torn at internal whitespace — see `docs/parsing.md` Finding 8) —
+ * are merged into the alternation *ahead of* the built-in patterns above,
+ * for this call only: a fresh combined `RegExp` is built per call rather
+ * than mutating the shared module-level `UNBREAKABLE_PATTERN`, so one
+ * caller's extra patterns can never leak into another's (or into a later
+ * call with none). "Ahead of" matters when two patterns could both match
+ * at the same starting index — JS regex alternation prefers the earlier
+ * alternative, so a caller-supplied pattern gets first refusal over a
+ * built-in one that happens to overlap it, matching how a `\verb|url|`
+ * argument should stay one unbreakable span even though its contents
+ * might otherwise look URL-shaped to the built-in `URL` pattern.
+ *
+ * Each pattern in `extraPatterns` must be self-contained and non-global
+ * (no `g` flag — this function always builds and drives its own combined
+ * `RegExp`, the same expectation every other regex-array consumer in this
+ * codebase already has of caller-supplied patterns, e.g.
+ * `LanguageDescriptor.comments.neverReflow`) and must respect this
+ * module's own no-adjacent-unbounded-quantifiers rule (see the
+ * `ESCAPE_SEQUENCE`/`URL` doc comments above for the catastrophic-
+ * backtracking hazard this guards against) — a required, bounded
+ * terminator like `\verb`'s own matching delimiter character keeps a
+ * `[^\n]*?` lazy quantifier safe the way an unanchored greedy one
+ * wouldn't be.
  */
-export function findUnbreakableSpans(line: string): UnbreakableSpan[] {
+export function findUnbreakableSpans(
+  line: string,
+  extraPatterns?: readonly RegExp[],
+): UnbreakableSpan[] {
+  const pattern =
+    extraPatterns && extraPatterns.length > 0
+      ? new RegExp(
+          [...extraPatterns, UNBREAKABLE_PATTERN].map((re) => re.source).join('|'),
+          'g',
+        )
+      : UNBREAKABLE_PATTERN;
+
   const spans: UnbreakableSpan[] = [];
-  UNBREAKABLE_PATTERN.lastIndex = 0;
+  pattern.lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = UNBREAKABLE_PATTERN.exec(line)) !== null) {
+  while ((match = pattern.exec(line)) !== null) {
     spans.push({ start: match.index, end: match.index + match[0].length });
     // A zero-length match would otherwise loop forever; none of the
     // patterns above can match empty, but guard anyway since this is a
     // `while` over mutable `lastIndex`.
     if (match[0].length === 0) {
-      UNBREAKABLE_PATTERN.lastIndex++;
+      pattern.lastIndex++;
     }
   }
   return spans;

@@ -4,6 +4,21 @@ import { findUnbreakableSpans } from './unbreakable-spans.js';
 
 const SENTENCE_END_CHARS = new Set(['.', '!', '?']);
 
+export interface AtomizeWordsOptions {
+  /**
+   * Extra never-split patterns for this call only, merged ahead of the
+   * shared built-in set (`./unbreakable-spans.ts`'s `UNBREAKABLE_PATTERN`)
+   * — see `findUnbreakableSpans`'s own doc comment for the merge order
+   * and the constraints a pattern here must satisfy (self-contained,
+   * non-global, no adjacent unbounded quantifiers). Used by
+   * `../prose/dissolve-prose.ts` for a prose language's own true
+   * never-split forms, e.g. LaTeX's `\verb`/`\lstinline`
+   * (`docs/planning/markdown-latex-plan.md` §4.3) — content the grammar
+   * itself doesn't protect from being torn at internal whitespace.
+   */
+  readonly extraUnbreakable?: readonly RegExp[];
+}
+
 /**
  * Split a line of text into `Atom`s, honoring unbreakable units.
  *
@@ -58,8 +73,8 @@ const SENTENCE_END_CHARS = new Set(['.', '!', '?']);
  * keeps the rule a clean yes/no rather than an arbitrary cutoff for how
  * many extra spaces still "count".
  */
-export function atomizeWords(line: string): Atom[] {
-  const unbreakable = findUnbreakableSpans(line);
+export function atomizeWords(line: string, options: AtomizeWordsOptions = {}): Atom[] {
+  const unbreakable = findUnbreakableSpans(line, options.extraUnbreakable);
   const atoms: Atom[] = [];
   const n = line.length;
   let i = 0;
