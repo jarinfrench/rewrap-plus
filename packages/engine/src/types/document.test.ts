@@ -49,16 +49,20 @@ describe('Block', () => {
     expect(block.text).toBe('Args:');
   });
 
-  it('models a field entry with a label and hanging indent', () => {
+  it('models a field entry with a label, hanging indent, and nested blocks', () => {
     const block: Block = {
       type: 'fieldEntry',
       label: 'x',
       hangingIndent: 4,
-      atoms: [atom('The'), atom('x'), atom('coordinate.')],
+      blocks: [{ type: 'paragraph', atoms: [atom('The'), atom('x'), atom('coordinate.')] }],
     };
 
     expect(block.label).toBe('x');
-    expect(block.atoms).toHaveLength(3);
+    expect(block.blocks).toHaveLength(1);
+    expect(block.blocks[0]).toEqual({
+      type: 'paragraph',
+      atoms: [atom('The'), atom('x'), atom('coordinate.')],
+    });
   });
 });
 
@@ -73,7 +77,7 @@ describe('LogicalDocument', () => {
           type: 'fieldEntry',
           label: 'name',
           hangingIndent: 4,
-          atoms: [atom('The'), atom('name.')],
+          blocks: [{ type: 'paragraph', atoms: [atom('The'), atom('name.')] }],
         },
       ],
       meta: { indentColumn: 4, dialect: 'google' },

@@ -183,18 +183,61 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     ]);
   });
 
-  it("reflows a fieldEntry's atoms without prepending its label", () => {
+  it("reflows a fieldEntry's nested paragraph without prepending its label", () => {
     const block: Block = {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 4,
-      atoms: words('The', 'x', 'coordinate,', 'in', 'pixels.'),
+      blocks: [{ type: 'paragraph', atoms: words('The', 'x', 'coordinate,', 'in', 'pixels.') }],
     };
     expect(reflowBlock(block, 15, block.hangingIndent)).toEqual([
       'The x',
       '    coordinate,',
       '    in pixels.',
     ]);
+  });
+
+  it("indents a fieldEntry's later nested blocks by hangingIndent and restores their own markers", () => {
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 4,
+      blocks: [
+        { type: 'paragraph', atoms: words('Opens', 'with', 'prose.') },
+        { type: 'blank' },
+        { type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('first') },
+        { type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('second') },
+      ],
+    };
+    expect(reflowBlock(block, 40, block.hangingIndent)).toEqual([
+      'Opens with prose.',
+      '    ',
+      '    - first',
+      '    - second',
+    ]);
+  });
+
+  it("passes a fieldEntry's nested verbatim block through untouched, indented by hangingIndent", () => {
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 4,
+      blocks: [
+        { type: 'paragraph', atoms: words('Example:') },
+        { type: 'verbatim', lines: ['```', 'code', '```'] },
+      ],
+    };
+    expect(reflowBlock(block, 40, block.hangingIndent)).toEqual([
+      'Example:',
+      '    ```',
+      '    code',
+      '    ```',
+    ]);
+  });
+
+  it('reflows an empty fieldEntry (no nested blocks) to a single empty line', () => {
+    const block: Block = { type: 'fieldEntry', label: ':param x:', hangingIndent: 4, blocks: [] };
+    expect(reflowBlock(block, 40, block.hangingIndent)).toEqual(['']);
   });
 });
 

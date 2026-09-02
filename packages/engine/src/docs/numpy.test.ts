@@ -48,7 +48,9 @@ describe('numpyDialect.segment', () => {
     const description = blocks[3];
     if (description?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
     expect(description.label).toBe('');
-    expect(description.atoms.map((a) => a.text)).toEqual(['Whether', 'it', 'worked.']);
+    const first = description.blocks[0];
+    if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+    expect(first.atoms.map((a) => a.text)).toEqual(['Whether', 'it', 'worked.']);
   });
 
   it('handles multiple entries in one section', () => {

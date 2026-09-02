@@ -8,6 +8,13 @@ function fieldEntry(blocks: readonly Block[], index: number) {
   return block;
 }
 
+/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+function entryAtomTexts(entry: ReturnType<typeof fieldEntry>): string[] {
+  const first = entry.blocks[0];
+  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+  return first.atoms.map((a) => a.text);
+}
+
 describe('jsdocDialect.detect', () => {
   it('scores plain prose with no @tags at 0', () => {
     expect(jsdocDialect.detect('Just a summary.\n\nMore description.')).toBe(0);
@@ -40,7 +47,7 @@ describe('jsdocDialect.segment', () => {
   it('folds a multi-line @tag continuation into one fieldEntry', () => {
     const text = ['@param name first part', '    continues here.'].join('\n');
     const blocks = jsdocDialect.segment(text, {});
-    expect(fieldEntry(blocks, 0).atoms.map((a) => a.text)).toEqual([
+    expect(entryAtomTexts(fieldEntry(blocks, 0))).toEqual([
       'name',
       'first',
       'part',
@@ -92,7 +99,7 @@ describe('jsdocDialect.segment', () => {
   it('keeps a {Type} annotation intact as one atom, never split by reflow', () => {
     const text = '@param {SomeReallyLongTypeAnnotationName} name description';
     const blocks = jsdocDialect.segment(text, {});
-    const atoms = fieldEntry(blocks, 0).atoms.map((a) => a.text);
+    const atoms = entryAtomTexts(fieldEntry(blocks, 0));
     expect(atoms[0]).toBe('{SomeReallyLongTypeAnnotationName}');
   });
 });

@@ -8,6 +8,13 @@ function fieldEntry(blocks: readonly Block[], index: number) {
   return block;
 }
 
+/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+function entryAtomTexts(entry: ReturnType<typeof fieldEntry>): string[] {
+  const first = entry.blocks[0];
+  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+  return first.atoms.map((a) => a.text);
+}
+
 describe('sphinxDialect.detect', () => {
   it('scores plain prose with no field markers at 0', () => {
     expect(sphinxDialect.detect('Just a summary.\n\nMore description.')).toBe(0);
@@ -34,7 +41,7 @@ describe('sphinxDialect.segment', () => {
   it('folds a multi-line field continuation into one fieldEntry', () => {
     const text = [':param x: first part', '    continues here.'].join('\n');
     const blocks = sphinxDialect.segment(text, {});
-    expect(fieldEntry(blocks, 0).atoms.map((a) => a.text)).toEqual([
+    expect(entryAtomTexts(fieldEntry(blocks, 0))).toEqual([
       'first',
       'part',
       'continues',

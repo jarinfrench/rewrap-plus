@@ -90,7 +90,12 @@ export function groupFieldEntries(
       atoms.push(...atomizeWords(lines[i]!));
       i++;
     }
-    blocks.push({ type: 'fieldEntry', label: entry.label, hangingIndent, atoms });
+    blocks.push({
+      type: 'fieldEntry',
+      label: entry.label,
+      hangingIndent,
+      blocks: [{ type: 'paragraph', atoms }],
+    });
   }
 
   return blocks;

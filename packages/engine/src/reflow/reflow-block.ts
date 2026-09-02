@@ -1,4 +1,5 @@
 import type { Atom, Block } from '../types/document.js';
+import { decorateFirstLine } from './decorate-block.js';
 
 /**
  * Options controlling `reflowBlock`'s line-breaking strategy.
@@ -70,16 +71,24 @@ export interface ReflowOptions {
  *   the NumPy dialect's own handling: "underline length re-synced to header
  *   length if the header is untouched").
  *
- * For `paragraph`/`listItem`/`fieldEntry`, this deliberately reflows
- * only the atom stream — it does **not** prepend a list marker or field
- * label. Those belong to the region's own dissolve/emit step
- * (per-language and, for doc dialects, per-dialect — see
- * `DocDialect.emit`), which is the only code that knows the marker's
- * *display* form (bullet character, renumbered ordinal, dialect-specific
- * field syntax like `:param x:`). Keeping that concern out of this
- * function is what keeps it shared and dependency-free: reflow doesn't
- * need to know anything about Markdown bullets or Sphinx field lists to
- * do its job.
+ * For `paragraph`/`listItem`, this deliberately reflows only the atom
+ * stream — it does **not** prepend a list marker or field label. Those
+ * belong to the region's own dissolve/emit step (per-language and, for
+ * doc dialects, per-dialect — see `DocDialect.emit`), which is the only
+ * code that knows the marker's *display* form (bullet character,
+ * renumbered ordinal, dialect-specific field syntax like `:param x:`).
+ * Keeping that concern out of this function is what keeps it shared and
+ * dependency-free: reflow doesn't need to know anything about Markdown
+ * bullets or Sphinx field lists to do its job. `fieldEntry` is the one
+ * exception, and only for its *nested* blocks (see `reflowFieldEntry`,
+ * below): a nested `listItem`'s own bullet has no other caller left to
+ * restore it (unlike a top-level block, nothing outside this function
+ * ever sees a `fieldEntry`'s inner `blocks`), so `reflowFieldEntry` calls
+ * `decorateFirstLine` on each one directly — that's still just replaying
+ * a marker already baked into the block's own `marker`/`label` field,
+ * the same dialect-agnostic operation every other caller performs, not
+ * new dialect knowledge living in this module. The *outer* `fieldEntry`
+ * block's own label is left to the caller exactly as before.
  *
  * `hangingIndent` is spent from the *same* `availableWidth` budget that
  * the first line uses in full by default — continuation lines get
@@ -120,11 +129,92 @@ export function reflowBlock(
       return [block.text];
     case 'paragraph':
     case 'listItem':
-    case 'fieldEntry':
       return options.mode === 'balanced'
         ? balancedFill(block.atoms, availableWidth, hangingIndent, firstLineReserve)
         : greedyFill(block.atoms, availableWidth, hangingIndent, firstLineReserve);
+    case 'fieldEntry':
+      return reflowFieldEntry(block.blocks, availableWidth, hangingIndent, firstLineReserve, options);
   }
+}
+
+/**
+ * Reflow a `fieldEntry`'s nested `blocks` (its description, possibly
+ * containing a nested list or a fenced sample rather than just flat
+ * prose — see `../types/document.ts`'s own doc comment on `fieldEntry`)
+ * into the entry's flat line output.
+ *
+ * `blocks[0]` shares its first physical line with the entry's own label
+ * (restored by the caller via `../reflow/decorate-block.ts`'s
+ * `decorateFirstLine`, applied to this function's *return value* — not
+ * here, since only the caller knows the label's display form), so it's
+ * reflowed at the *entry's* `firstLineReserve`/`hangingIndent`, exactly
+ * as a lone flat atom stream always has been — this is what keeps a
+ * single-`paragraph`-block entry (still the only shape any dialect
+ * actually produces today) byte-identical to the pre-nested-blocks
+ * behavior. Any further blocks are unambiguously past that shared first
+ * line, so each is reflowed as its own top-level unit (`reflowBlockSequence`,
+ * the same "one block, its own hanging indent, its own decoration" pass
+ * `../docs/dialect.ts`'s `reflowDocBlocks` uses for a document's own
+ * top-level blocks) at the width remaining inside the entry's
+ * `hangingIndent`, then that whole result is indented by `hangingIndent`
+ * literally, since none of it sits on the label's own line.
+ */
+function reflowFieldEntry(
+  blocks: readonly Block[],
+  availableWidth: number,
+  hangingIndent: number,
+  firstLineReserve: number,
+  options: ReflowOptions,
+): string[] {
+  if (blocks.length === 0) {
+    return [''];
+  }
+  const [first, ...rest] = blocks;
+  const lines = decorateFirstLine(
+    first!,
+    reflowBlock(first!, availableWidth, hangingIndent, { ...options, firstLineReserve }),
+  );
+  if (rest.length > 0) {
+    const indent = ' '.repeat(hangingIndent);
+    for (const line of reflowBlockSequence(rest, availableWidth - hangingIndent, options)) {
+      lines.push(indent + line);
+    }
+  }
+  return lines;
+}
+
+/**
+ * Reflow a flat sequence of blocks to plain content lines, restoring each
+ * block's own marker/label (`decorateFirstLine`) as it goes — one block,
+ * its own hanging indent, its own decoration, repeated. Shared by
+ * `../docs/dialect.ts`'s `reflowDocBlocks` (a `LogicalDocument`'s
+ * top-level block sequence) and `reflowFieldEntry` above (a field
+ * entry's nested description blocks *after* the one sharing the label's
+ * own line) — both are exactly this operation and differ only in what
+ * `availableWidth` that sequence sits at, which the caller already
+ * accounts for. Living here rather than in `dialect.ts` keeps the
+ * dependency direction one-way: this module (generic, `Block`-level
+ * reflow) has no reason to import anything from `../docs/`, but a
+ * `fieldEntry`'s own reflow case, right above, needs precisely this
+ * logic for its nested blocks — so it's defined once, here, and
+ * `dialect.ts` calls into it rather than the reverse.
+ */
+export function reflowBlockSequence(
+  blocks: readonly Block[],
+  availableWidth: number,
+  options: ReflowOptions = {},
+): string[] {
+  const lines: string[] = [];
+  for (const block of blocks) {
+    const hangingIndent =
+      block.type === 'listItem' || block.type === 'fieldEntry' ? block.hangingIndent : 0;
+    const reflowed = reflowBlock(block, availableWidth, hangingIndent, {
+      ...options,
+      firstLineReserve: hangingIndent,
+    });
+    lines.push(...decorateFirstLine(block, reflowed));
+  }
+  return lines;
 }
 
 /**

@@ -34,7 +34,7 @@ describe('decorateFirstLine', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 10, // label.length (9) + 1 separating space, no leading indent
-      atoms: [],
+      blocks: [],
     };
     expect(decorateFirstLine(block, ['desc', 'more'])).toEqual([':param x: desc', 'more']);
   });

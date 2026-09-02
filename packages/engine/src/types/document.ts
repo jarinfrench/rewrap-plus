@@ -53,7 +53,15 @@ export type Block =
       readonly type: 'fieldEntry';
       readonly label: string;
       readonly hangingIndent: number;
-      readonly atoms: readonly Atom[];
+      /**
+       * The entry's description, as nested blocks rather than a flat atom
+       * stream — `blocks[0]` is conventionally the description's own
+       * opening content (`paragraph`, or `listItem`/`verbatim` if the
+       * description opens directly with one), with any further structure
+       * (a nested list, a fenced sample) as later entries in the same
+       * array.
+       */
+      readonly blocks: readonly Block[];
     };
 
 /**

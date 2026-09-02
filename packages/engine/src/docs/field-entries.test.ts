@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Block } from '../types/document.js';
 import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 function matchSimple(line: string): EntryStartMatch | null {
@@ -6,6 +7,13 @@ function matchSimple(line: string): EntryStartMatch | null {
   if (!m) return null;
   const [, name = '', rest = ''] = m;
   return { label: `${name}:`, rest };
+}
+
+/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+function entryAtomTexts(entry: Extract<Block, { type: 'fieldEntry' }>): string[] {
+  const first = entry.blocks[0];
+  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+  return first.atoms.map((a) => a.text);
 }
 
 describe('groupFieldEntries', () => {
@@ -16,7 +24,9 @@ describe('groupFieldEntries', () => {
         type: 'fieldEntry',
         label: 'x:',
         hangingIndent: 4, // entry's own indent (0) + the default continuation width (4)
-        atoms: [{ text: 'description', width: 11, breakBefore: false }],
+        blocks: [
+          { type: 'paragraph', atoms: [{ text: 'description', width: 11, breakBefore: false }] },
+        ],
       },
     ]);
   });
@@ -26,7 +36,7 @@ describe('groupFieldEntries', () => {
     expect(blocks).toHaveLength(1);
     const entry = blocks[0];
     if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
-    expect(entry.atoms.map((a) => a.text)).toEqual(['first', 'line', 'continues', 'here']);
+    expect(entryAtomTexts(entry)).toEqual(['first', 'line', 'continues', 'here']);
   });
 
   it('starts a new entry when a new label line appears, even if indented no further', () => {
@@ -59,7 +69,7 @@ describe('groupFieldEntries', () => {
     const entry = blocks[0];
     if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
     expect(entry.label).toBe('x:');
-    expect(entry.atoms.map((a) => a.text)).toEqual(['one', 'y:', 'two']);
+    expect(entryAtomTexts(entry)).toEqual(['one', 'y:', 'two']);
   });
 
   it('emits a blank block for a blank line', () => {

@@ -8,6 +8,13 @@ function fieldEntry(blocks: readonly Block[], index: number) {
   return block;
 }
 
+/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+function entryAtomTexts(entry: ReturnType<typeof fieldEntry>): string[] {
+  const first = entry.blocks[0];
+  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+  return first.atoms.map((a) => a.text);
+}
+
 describe('googleDialect.detect', () => {
   it('scores plain prose with no headers at 0', () => {
     expect(googleDialect.detect('Just a summary.\n\nMore description.')).toBe(0);
@@ -47,7 +54,7 @@ describe('googleDialect.segment', () => {
     const text = ['Args:', '    x: first part', '        continues here.'].join('\n');
     const blocks = googleDialect.segment(text, {});
     const entry = fieldEntry(blocks, 1);
-    expect(entry.atoms.map((a) => a.text)).toEqual(['first', 'part', 'continues', 'here.']);
+    expect(entryAtomTexts(entry)).toEqual(['first', 'part', 'continues', 'here.']);
   });
 
   it('falls back to plain prose for a Returns section with no recognizable entry', () => {

@@ -8,6 +8,13 @@ function fieldEntry(blocks: readonly Block[], index: number) {
   return block;
 }
 
+/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+function entryAtomTexts(entry: ReturnType<typeof fieldEntry>): string[] {
+  const first = entry.blocks[0];
+  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
+  return first.atoms.map((a) => a.text);
+}
+
 describe('doxygenDialect.detect', () => {
   it('scores plain prose with no tags at 0', () => {
     expect(doxygenDialect.detect('Just a summary.\n\nMore description.')).toBe(0);
@@ -47,7 +54,7 @@ describe('doxygenDialect.segment', () => {
   it('folds a multi-line \\tag continuation into one fieldEntry', () => {
     const text = ['\\param name first part', '    continues here.'].join('\n');
     const blocks = doxygenDialect.segment(text, {});
-    expect(fieldEntry(blocks, 0).atoms.map((a) => a.text)).toEqual([
+    expect(entryAtomTexts(fieldEntry(blocks, 0))).toEqual([
       'name',
       'first',
       'part',

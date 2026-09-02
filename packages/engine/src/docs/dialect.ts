@@ -1,7 +1,6 @@
 import type { DocDialectId } from '../types/doc-dialect.js';
 import type { Block } from '../types/document.js';
-import { decorateFirstLine } from '../reflow/decorate-block.js';
-import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
+import { reflowBlockSequence, type ReflowOptions } from '../reflow/reflow-block.js';
 import { splitBlocks, type SplitBlocksOptions } from '../segmentation/split-blocks.js';
 
 /**
@@ -70,30 +69,16 @@ export interface DocDialect {
 
 /**
  * The shared `DocDialect.emit` implementation every dialect in this
- * package reuses as-is: reflow each block (`reflowBlock`) at
- * its own `hangingIndent`, restoring whatever marker/label
- * `reflowBlock` itself deliberately leaves out (`decorateFirstLine`,
- * `../reflow/decorate-block.ts`).
+ * package reuses as-is: reflow each block at its own `hangingIndent`,
+ * restoring whatever marker/label was left out along the way. A thin
+ * wrapper over `../reflow/reflow-block.ts`'s `reflowBlockSequence` — that
+ * module owns the actual "one block, its own hanging indent, its own
+ * decoration" loop (shared with a `fieldEntry` block's own reflow of its
+ * *nested* description blocks) so that generic, `Block`-level reflow code
+ * never has to depend on anything in `../docs/`.
  */
 export function reflowDocBlocks(blocks: readonly Block[], ctx: DocEmitContext): string[] {
-  const lines: string[] = [];
-  for (const block of blocks) {
-    const hangingIndent =
-      block.type === 'listItem' || block.type === 'fieldEntry' ? block.hangingIndent : 0;
-    // `firstLineReserve` matches `hangingIndent` here: `decorateFirstLine`
-    // is about to prepend exactly `hangingIndent` columns of marker/label
-    // text to line 1 (`../reflow/decorate-block.ts`'s `markerPrefix`
-    // always returns a string exactly `hangingIndent` columns wide), so
-    // `reflowBlock` needs to reserve that same width — see
-    // `ReflowOptions.firstLineReserve`'s own doc comment for why this
-    // isn't just `hangingIndent` reused directly.
-    const reflowed = reflowBlock(block, ctx.availableWidth, hangingIndent, {
-      ...ctx.reflowOptions,
-      firstLineReserve: hangingIndent,
-    });
-    lines.push(...decorateFirstLine(block, reflowed));
-  }
-  return lines;
+  return reflowBlockSequence(blocks, ctx.availableWidth, ctx.reflowOptions);
 }
 
 /**

@@ -130,7 +130,12 @@ function segmentFieldSection(body: readonly string[]): Block[] {
       i++;
     }
     if (atoms.length > 0) {
-      blocks.push({ type: 'fieldEntry', label: '', hangingIndent: descriptionIndent, atoms });
+      blocks.push({
+        type: 'fieldEntry',
+        label: '',
+        hangingIndent: descriptionIndent,
+        blocks: [{ type: 'paragraph', atoms }],
+      });
     }
   }
 
