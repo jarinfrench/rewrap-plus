@@ -218,8 +218,28 @@ function reflowFieldEntry(
   );
   if (rest.length > 0) {
     const indent = ' '.repeat(hangingIndent);
-    for (const line of reflowBlockSequence(rest, availableWidth - hangingIndent, options)) {
-      lines.push(indent + line);
+    for (const nested of rest) {
+      // A `blank` block stays a genuinely empty line, matching
+      // `reflowBlockSequence`'s own top-level convention (a `blank`
+      // block's `hangingIndent` is always computed as `0` there too) —
+      // *not* indented like every other block here would be. Handled as
+      // its own case rather than folded into the uniform indent below:
+      // that indent is applied per *line* of `reflowBlockSequence`'s
+      // flattened output, which has already lost track of which lines
+      // came from a `blank` block versus real content by the time it
+      // returns a plain `string[]`. Confirmed as a real bug, not
+      // hypothetical, by `test/wrap/nested-field-entry-idempotency.test.ts`
+      // (step 5): a blank line *inside* an entry's continuation — between
+      // its opening prose and a doctest/table further down — came out
+      // with `hangingIndent` columns of trailing whitespace, where the
+      // source had none.
+      if (nested.type === 'blank') {
+        lines.push('');
+        continue;
+      }
+      for (const line of reflowBlockSequence([nested], availableWidth - hangingIndent, options)) {
+        lines.push(indent + line);
+      }
     }
   }
   return lines;

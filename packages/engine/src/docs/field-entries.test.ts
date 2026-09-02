@@ -218,5 +218,64 @@ describe('groupFieldEntries', () => {
       if (item0?.type !== 'listItem') throw new Error('expected a listItem');
       expect(item0.hangingIndent).toBe(2);
     });
+
+    it('recognizes a doctest block inside a description — untested until step 5, only list/fenced content had coverage', () => {
+      const blocks = groupFieldEntries(
+        ['x: See below.', '    >>> f(1)', '    2'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'verbatim']);
+      const verbatim = entry.blocks[1];
+      if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
+      expect(verbatim.lines).toEqual(['>>> f(1)', '2']);
+    });
+
+    it('recognizes a Markdown table inside a description — untested until step 5', () => {
+      const blocks = groupFieldEntries(
+        ['x: See table.', '    | a | b |', '    |---|---|', '    | 1 | 2 |'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'verbatim']);
+      const verbatim = entry.blocks[1];
+      if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
+      expect(verbatim.lines).toEqual(['| a | b |', '|---|---|', '| 1 | 2 |']);
+    });
+
+    it('a Markdown-indented sub-bullet inside a fieldEntry becomes a sibling listItem at its own deeper hangingIndent, not nested inside the outer one', () => {
+      // Answers the plan's own "Open questions" entry, "how deep does
+      // nesting go?" — more favorably than expected: `listItem` was never
+      // given `fieldEntry`'s own nested-`blocks` treatment
+      // (`../types/document.ts`'s doc comment on `Block`, and this plan's
+      // "Scope: what's affected" section, both explicitly defer that as
+      // a separate decision), but a further-indented bullet doesn't
+      // *flatten* into the outer item's atoms either — `splitBlocks`'s
+      // own `matchListMarker`/`isListContinuation`
+      // (`../segmentation/list-item.ts`) recognize it as its *own*,
+      // separate `listItem`, at its own deeper `hangingIndent` reflecting
+      // exactly how much further-indented it was in the source (pre-
+      // existing `splitBlocks` behavior, unrelated to this plan, now
+      // exercised inside a `fieldEntry` for the first time). See
+      // `../reflow/reflow-block.test.ts`'s companion case for
+      // confirmation that this depth *delta* survives reflow as real
+      // visual nesting, not just survives segmentation.
+      const blocks = groupFieldEntries(
+        ['x:', '    - outer item', '        - inner item'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['listItem', 'listItem']);
+      const [outer, inner] = entry.blocks;
+      if (outer?.type !== 'listItem' || inner?.type !== 'listItem') {
+        throw new Error('expected two listItems');
+      }
+      expect(outer.hangingIndent).toBe(2); // '- ', at the entry's own baseline
+      expect(inner.hangingIndent).toBe(6); // '- ', 4 columns deeper — the source's own indent delta, preserved by dedentBody
+      expect(inner.atoms.map((a) => a.text)).toEqual(['inner', 'item']);
+    });
   });
 });

@@ -234,7 +234,15 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     expect(decorated[0]!.length).toBeLessThanOrEqual(availableWidth);
   });
 
-  it("indents a fieldEntry's later nested blocks by hangingIndent and restores their own markers", () => {
+  it("indents a fieldEntry's later nested blocks by hangingIndent and restores their own markers, leaving a blank block genuinely empty (regression)", () => {
+    // A `blank` block among `rest` must stay a truly empty line, not
+    // `hangingIndent` columns of trailing whitespace — matching
+    // `reflowBlockSequence`'s own top-level convention. Confirmed broken
+    // during step 5's idempotency pass
+    // (`test/wrap/nested-field-entry-idempotency.test.ts`): the source
+    // had a genuinely blank separator line inside a field entry's
+    // continuation, and it came out with trailing whitespace that wasn't
+    // there before.
     const block: Block = {
       type: 'fieldEntry',
       label: ':param x:',
@@ -248,7 +256,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     };
     expect(reflowBlock(block, 40, block.hangingIndent)).toEqual([
       'Opens with prose.',
-      '    ',
+      '',
       '    - first',
       '    - second',
     ]);
@@ -314,6 +322,36 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
   it('reflows an empty fieldEntry (no nested blocks) to a single empty line', () => {
     const block: Block = { type: 'fieldEntry', label: ':param x:', hangingIndent: 4, blocks: [] };
     expect(reflowBlock(block, 40, block.hangingIndent)).toEqual(['']);
+  });
+
+  it('preserves the depth delta between sibling listItems at different hangingIndents as real visual nesting', () => {
+    // Companion to `../docs/field-entries.test.ts`'s "Markdown-indented
+    // sub-bullet" case: confirms the depth delta `groupFieldEntries`
+    // preserves through segmentation also survives reflow, not just
+    // segmentation. `outer` sits at the entry's own baseline (its own
+    // `hangingIndent`, 2, folded into the shared first line via
+    // `firstOwnIndent`); `inner`, a `rest` block, is reflowed at its own
+    // deeper `hangingIndent` (6) and then the *entry's* `hangingIndent`
+    // (4) is added on top, uniformly — so `inner`'s marker should land
+    // exactly `inner.hangingIndent - outer.hangingIndent` (4) columns to
+    // the right of `outer`'s.
+    const block: Block = {
+      type: 'fieldEntry',
+      label: 'x:',
+      hangingIndent: 4,
+      blocks: [
+        { type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('outer', 'item') },
+        { type: 'listItem', marker: '-', hangingIndent: 6, atoms: words('inner', 'item') },
+      ],
+    };
+    const decorated = decorateFirstLine(
+      block,
+      reflowBlock(block, 40, block.hangingIndent, { firstLineReserve: block.hangingIndent }),
+    );
+    expect(decorated).toEqual([' x: - outer item', `${' '.repeat(8)}- inner item`]);
+    const outerMarkerColumn = decorated[0]!.indexOf('-');
+    const innerMarkerColumn = decorated[1]!.indexOf('-');
+    expect(innerMarkerColumn - outerMarkerColumn).toBe(4);
   });
 });
 
