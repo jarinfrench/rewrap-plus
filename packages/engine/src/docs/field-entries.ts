@@ -37,18 +37,17 @@ export interface EntryStartMatch {
  * sample inside a field-entry's own description (e.g. a Google `Args:`
  * entry whose text includes a bulleted sub-list or a ` ``` ` example) is
  * *not* recognized as such — it degrades to plain reflowed prose, its
- * bullets and fence delimiters becoming ordinary words. This only ever
- * flattens (see `test/fixtures/python/docstrings/012-pathological-google.*`
- * and its NumPy/Sphinx siblings, `013`/`014`, for the current, accepted
- * output); it does not corrupt, *provided* the description has no blank
- * line before the nested content. A blank line *does* end the entry
- * early (blank lines always end continuation, above): everything after
- * it is no longer inside any entry at all, and reaches this function's
- * fallback path one line at a time — each becomes its own top-level,
- * unindented `paragraph` block, positioned as if it belonged to the
- * section rather than the entry it was actually written under. Avoid a
- * blank-line-separated example inside an entry description until this is
- * addressed; an unbroken continuation (no blank line) is safe today.
+ * bullets and fence delimiters becoming ordinary words, and a blank line
+ * that was structurally meaningful (separating two bullets, surrounding a
+ * fenced block) atomizes to nothing and simply vanishes, silently
+ * merging what were two visually-separated chunks into one continuous
+ * run of prose. This only ever flattens (see
+ * `test/fixtures/python/docstrings/012-pathological-google.*` and its
+ * NumPy/Sphinx siblings, `013`/`014`, for the current, accepted output);
+ * it does not corrupt, and does not require avoiding a blank line inside
+ * the description — a blank line no longer ends the entry early
+ * (`collectEntryBody`, below, collects it as long as further entry
+ * content follows), only a genuine dedent or a new sibling entry does.
  */
 export function groupFieldEntries(
   lines: readonly string[],
@@ -86,10 +85,11 @@ export function groupFieldEntries(
       entryIndent + Math.max(continuationIndentWidth, entry.label.length + 1);
     const atoms: Atom[] = atomizeWords(entry.rest);
     i++;
-    while (i < lines.length && isEntryContinuation(lines[i]!, entryIndent, matchEntryStart)) {
-      atoms.push(...atomizeWords(lines[i]!));
-      i++;
+    const { body, nextIndex } = collectEntryBody(lines, i, entryIndent, matchEntryStart);
+    for (const bodyLine of body) {
+      atoms.push(...atomizeWords(bodyLine));
     }
+    i = nextIndex;
     blocks.push({
       type: 'fieldEntry',
       label: entry.label,
@@ -99,6 +99,51 @@ export function groupFieldEntries(
   }
 
   return blocks;
+}
+
+/**
+ * Collect an entry's continuation lines starting at `start`, look-ahead
+ * style rather than stopping at the first blank line: a blank line is
+ * tentatively included, but only actually kept if some later line still
+ * satisfies `isEntryContinuation` — mirroring
+ * `../segmentation/verbatim.ts`'s `matchIndentedRun` ("blank lines inside
+ * are fine, trailing blanks aren't"), the same shape of look-ahead scan,
+ * just walked against `isEntryContinuation`'s dedent/sibling-entry rule
+ * instead of `matchIndentedRun`'s flat "indent above zero" one. This is
+ * what lets a blank-line-separated nested list or fenced sample inside a
+ * description stay part of the entry instead of ending it the moment the
+ * first blank line appears — see this file's own "Known limitation"
+ * above for what still happens to that content once collected (it still
+ * flattens; only *which* lines get collected changes here).
+ *
+ * Trailing blank lines are deliberately excluded from `body` (and so
+ * never atomized) and instead left where the caller's own top-level loop
+ * will pick them up as ordinary `blank` blocks between entries — the
+ * *entry* doesn't own the blank line that merely separates it from
+ * whatever comes next, only blank lines genuinely nested inside its own
+ * continuation.
+ */
+function collectEntryBody(
+  lines: readonly string[],
+  start: number,
+  entryIndent: number,
+  matchEntryStart: (line: string) => EntryStartMatch | null,
+): { body: readonly string[]; nextIndex: number } {
+  let end = start;
+  for (; end < lines.length; end++) {
+    const line = lines[end]!;
+    if (line.trim() === '') {
+      continue; // tentatively included; trimmed below if trailing
+    }
+    if (!isEntryContinuation(line, entryIndent, matchEntryStart)) {
+      break;
+    }
+  }
+  let trimmedEnd = end;
+  while (trimmedEnd > start && lines[trimmedEnd - 1]!.trim() === '') {
+    trimmedEnd--;
+  }
+  return { body: lines.slice(start, trimmedEnd), nextIndex: trimmedEnd };
 }
 
 /**

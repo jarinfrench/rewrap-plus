@@ -91,4 +91,52 @@ describe('groupFieldEntries', () => {
     // entry's own indent (4) + the default continuation width (4)
     expect(entry.hangingIndent).toBe(8);
   });
+
+  describe('look-ahead body collection (blank lines inside continuation)', () => {
+    it('does not end the entry at a blank line followed by more continuation', () => {
+      const blocks = groupFieldEntries(
+        ['x: first', '    continues', '', '    more after blank'],
+        matchSimple,
+      );
+      // A strict per-line "blank always ends continuation" loop would have
+      // produced 3 blocks here (fieldEntry, blank, a paragraph for the
+      // trailing line) — see this file's own "Known limitation" doc
+      // comment. One fieldEntry, with the blank line contributing zero
+      // atoms, confirms the look-ahead collection kept it all together.
+      expect(blocks).toHaveLength(1);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entryAtomTexts(entry)).toEqual(['first', 'continues', 'more', 'after', 'blank']);
+    });
+
+    it('tolerates more than one consecutive blank line inside continuation', () => {
+      const blocks = groupFieldEntries(
+        ['x: first', '    continues', '', '', '    more'],
+        matchSimple,
+      );
+      expect(blocks).toHaveLength(1);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entryAtomTexts(entry)).toEqual(['first', 'continues', 'more']);
+    });
+
+    it('still ends the entry at a genuinely trailing blank line (no further continuation)', () => {
+      const blocks = groupFieldEntries(['x: first', '    continues', ''], matchSimple);
+      expect(blocks.map((b) => b.type)).toEqual(['fieldEntry', 'blank']);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entryAtomTexts(entry)).toEqual(['first', 'continues']);
+    });
+
+    it('still ends the entry at a blank line followed by a new sibling entry, unchanged from before', () => {
+      const blocks = groupFieldEntries(
+        ['x: first', '    continues', '', 'y: two'],
+        matchSimple,
+      );
+      expect(blocks.map((b) => b.type)).toEqual(['fieldEntry', 'blank', 'fieldEntry']);
+      const first = blocks[0];
+      if (first?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entryAtomTexts(first)).toEqual(['first', 'continues']);
+    });
+  });
 });
