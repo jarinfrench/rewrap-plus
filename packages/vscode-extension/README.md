@@ -227,10 +227,10 @@ of the others instead of filing a bug here.
 | **Prose-vs-code string heuristic** | **No** | **No** | **No** | **Yes** |
 | Parser | Line/regex-based | Line/regex-based | Markdown-aware | **tree-sitter AST** |
 | Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++, Java |
-| Markdown / LaTeX / plain-text files | Yes | Yes | Yes | **No** |
+| Markdown / LaTeX / plain-text files | Yes | Yes | Markdown only | **No** |
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
-| Format-on-save | No | No | — | Yes |
+| Format-on-save | No | Yes (`Run rewrap on save`, added v17.7) | — | Yes |
 
 ¹ Neither reads `.editorconfig` directly in VS Code; both fall back to
 `editor.rulers`/`editor.wordWrapColumn`, which a user (or a separate
