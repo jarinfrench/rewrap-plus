@@ -118,6 +118,22 @@ describe('emitString', () => {
     expect(parts.join('')).toBe(text);
   });
 
+  it('re-wraps quotes around empty content rather than dropping them', () => {
+    // Regression: a naive `atomizeWords('')` → zero atoms → zero reflowed
+    // lines path would make `lines.length <= 1` return
+    // `prefix + quoteDelimiter + (lines[0] ?? '') + quoteDelimiter` with
+    // `lines` itself `[]` rather than `['']` — the `lines[0] ?? ''` still
+    // saves it, but `reflowBlock`'s own `atoms.length === 0` guard
+    // (`../reflow/reflow-block.ts`) is the first line of defense, and is
+    // what's actually being exercised here. An empty string literal like
+    // `""` must never lose its delimiters and become a bare `""`-less
+    // sequence — that's invalid syntax in every language this engine
+    // supports (e.g. Python's `x = ""` must never re-emit as `x =`).
+    expect(emitString('', '', '"', 4, 8, false, 'implicit', 80)).toBe('""');
+    expect(emitString('', 'f', '"', 4, 8, false, 'implicit', 80)).toBe('f""');
+    expect(emitString('', '', "'", 4, 8, true, 'operator', 80)).toBe("''");
+  });
+
   it('never produces a line over columnLimit for any split fixture above', () => {
     const cases: Array<[string, string, string, number, number, boolean, 'implicit' | 'operator', number]> = [
       ['hello there wonderful world today', '', '"', 4, 4, true, 'implicit', 20],

@@ -80,6 +80,19 @@ const wordArb = fc.constantFrom(...WORD_BANK);
 const sentenceArb = fc
   .array(wordArb, { minLength: 1, maxLength: 40 })
   .map((words) => words.join(' '));
+/**
+ * `sentenceArb` widened to include the zero-word case, for the
+ * string-literal property only (not line comments/docstrings, where an
+ * empty body isn't the failure mode this guards). A sibling
+ * implementation once rewrapped an empty string literal (`x = ""`) into a
+ * bare, delimiter-less `x =` — invalid syntax. `stringPolicy: 'all'`
+ * (this suite's config, below) already bypasses the prose gate that would
+ * otherwise keep an empty string from ever reaching `wrapString` at all,
+ * so this generator just needs to actually produce `''` sometimes; the
+ * existing "re-parses cleanly" and "string value unchanged" assertions in
+ * the property below do the rest.
+ */
+const stringSentenceArb = fc.oneof({ arbitrary: fc.constant(''), weight: 1 }, { arbitrary: sentenceArb, weight: 9 });
 const columnLimitArb = fc.integer({ min: 20, max: 100 });
 const depthArb = fc.integer({ min: 0, max: 3 });
 
@@ -325,7 +338,7 @@ describe.each(LANGUAGE_SETS)(
 
     it('string literals: idempotent, within-limit, re-parse cleanly, and the string value never changes', async () => {
       await fc.assert(
-        fc.asyncProperty(sentenceArb, columnLimitArb, async (sentence, columnLimit) => {
+        fc.asyncProperty(stringSentenceArb, columnLimitArb, async (sentence, columnLimit) => {
           const source = buildStringSource(sentence);
           const cfg = config({ columnLimit });
 

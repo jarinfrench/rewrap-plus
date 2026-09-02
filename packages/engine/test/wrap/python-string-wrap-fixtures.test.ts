@@ -271,6 +271,32 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
+  it('an empty string literal keeps its delimiters even when forced to wrap (regression)', async () => {
+    // Under the default `stringPolicy: 'prose'` config every other test in
+    // this file runs under, an empty string never even reaches
+    // `wrapString`: `looksLikeProse('')` is false (`../../src/prose-
+    // heuristic.ts`), so it's skipped at the gate. That's real protection,
+    // but it isn't what protects against the actual bug — a sibling
+    // implementation once rewrapped `x = ""` into the invalid `x =`,
+    // silently deleting the string entirely. Forcing `stringPolicy: 'all'`
+    // here bypasses the prose gate so this exercises the real guard:
+    // `emitString`'s `lines[0] ?? ''` and `reflowBlock`'s own
+    // `atoms.length === 0` fallback (`../../src/strings/emit-string.ts`,
+    // `../../src/reflow/reflow-block.ts`) never letting `''`/`""`/`f""`
+    // collapse to a bare, delimiter-less region.
+    for (const source of ['x = ""\n', "x = ''\n", 'x = f""\n', 'x = rb""\n']) {
+      const result = await wrapRegions(
+        source,
+        'python',
+        'all',
+        config({ stringPolicy: 'all' }),
+        parserManager,
+      );
+      const actual = applyTextEdits(source, result.edits);
+      expect(actual).toBe(source);
+    }
+  });
+
   it('covers the cases string wrapping is meant to handle', () => {
     // Not a behavioral assertion — a guard against silently losing
     // coverage of one of these named cases if a fixture were ever

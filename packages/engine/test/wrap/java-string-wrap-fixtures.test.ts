@@ -184,4 +184,24 @@ describe('Java string-literal wrapping — end-to-end gold fixtures', () => {
       expect(after).toBe(before);
     }
   });
+
+  it('an empty string literal keeps its delimiters even when forced to wrap (regression)', async () => {
+    // See `./python-string-wrap-fixtures.test.ts`'s identical regression
+    // test for the full rationale: a sibling implementation once
+    // rewrapped an empty string literal into a bare, delimiter-less
+    // sequence, deleting it entirely and producing invalid syntax.
+    // `stringPolicy: 'all'` bypasses the prose gate (`''` never scores as
+    // prose, so it'd otherwise never reach `wrapString` at all) to
+    // exercise the real guard in the shared `strings/emit-string.ts`.
+    const source = 'class C {\n  String x = "";\n}\n';
+    const result = await wrapRegions(
+      source,
+      'java',
+      'all',
+      config({ stringPolicy: 'all' }),
+      parserManager,
+    );
+    const actual = applyTextEdits(source, result.edits);
+    expect(actual).toBe(source);
+  });
 });
