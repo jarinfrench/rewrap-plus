@@ -117,8 +117,15 @@ export function groupFieldEntries(
  * entry's own continuation" delta that `reflowFieldEntry`
  * (`../reflow/reflow-block.ts`) actually needs to reproduce the nesting
  * relative to wherever the entry itself ends up.
+ *
+ * Exported for `./numpy.ts`'s own `segmentFieldSection` to reuse: this
+ * particular piece has nothing dialect-specific about it (unlike the
+ * entry-*recognition* loop above, which NumPy deliberately reimplements
+ * on its own — see `groupFieldEntries`'s own doc comment for why), so
+ * there's no reason for NumPy to duplicate this exact "compute common
+ * indentation, strip it" logic just because its collection loop differs.
  */
-function dedentBody(body: readonly string[]): readonly string[] {
+export function dedentBody(body: readonly string[]): readonly string[] {
   let commonIndent: number | null = null;
   for (const line of body) {
     if (line.trim() === '') {

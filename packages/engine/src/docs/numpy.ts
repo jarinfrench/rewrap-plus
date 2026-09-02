@@ -1,9 +1,10 @@
-import type { Atom, Block } from '../types/document.js';
+import type { Block } from '../types/document.js';
 import { atomizeWords } from '../segmentation/atomize-words.js';
 import type { SplitBlocksOptions } from '../segmentation/split-blocks.js';
 import { toLines } from '../segmentation/to-lines.js';
 import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
 import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } from './dialect.js';
+import { dedentBody } from './field-entries.js';
 
 /**
  * Sections whose body is a list of `name : type` entries, each followed
@@ -94,8 +95,19 @@ function splitIntoSections(lines: readonly string[]): {
  * blank prefix, which is exactly the indentation NumPy's description
  * lines need with no visible marker in front of them, unlike Google's
  * entries where description starts glued to the label on the same line.
+ *
+ * A description is segmented for real structure the same way
+ * `./field-entries.ts`'s `groupFieldEntries` does — look-ahead body
+ * collection (`collectDescriptionBody`, below, tolerating a blank line
+ * as long as more description follows), `dedentBody`, then
+ * `segmentLines`/`splitBlocks` — but as its own, separate implementation
+ * (see `groupFieldEntries`'s own doc comment for why): NumPy recognizes
+ * an entry's *end* purely by indent depth, with no `matchEntryStart`-style
+ * regex or "matched but deeper stays in" nuance to account for, since a
+ * `name : type` header is never mistakeable for prose the way a
+ * flattened nested bullet's `word:` substring could be.
  */
-function segmentFieldSection(body: readonly string[]): Block[] {
+function segmentFieldSection(body: readonly string[], options: SplitBlocksOptions): Block[] {
   const firstContent = body.find((line) => line.trim() !== '');
   if (firstContent === undefined) {
     return body.map((): Block => ({ type: 'blank' }));
@@ -124,22 +136,53 @@ function segmentFieldSection(body: readonly string[]): Block[] {
 
     blocks.push({ type: 'sectionHeader', text: line.replace(/[ \t]+$/, '') });
     i++;
-    const atoms: Atom[] = [];
-    while (i < body.length && body[i]!.trim() !== '' && leadingWhitespaceLength(body[i]!) > baseIndent) {
-      atoms.push(...atomizeWords(body[i]!));
-      i++;
-    }
-    if (atoms.length > 0) {
+    const { body: descriptionLines, nextIndex } = collectDescriptionBody(body, i, baseIndent);
+    i = nextIndex;
+    if (descriptionLines.length > 0) {
       blocks.push({
         type: 'fieldEntry',
         label: '',
         hangingIndent: descriptionIndent,
-        blocks: [{ type: 'paragraph', atoms }],
+        blocks: segmentLines(dedentBody(descriptionLines), options),
       });
     }
   }
 
   return blocks;
+}
+
+/**
+ * Collect one entry's description lines starting at `start`, look-ahead
+ * style — mirroring `./field-entries.ts`'s `collectEntryBody` (see that
+ * function's own doc comment for the "blank lines inside are fine,
+ * trailing blanks aren't" rationale, shared verbatim here): a blank line
+ * is tentatively included, but only actually kept if some later line is
+ * still deeper than `baseIndent`. NumPy's own stop condition is simpler
+ * than `field-entries.ts`'s `isEntryContinuation` — no
+ * `matchEntryStart`/sibling-entry check, since a `name : type` header
+ * line is recognized purely by sitting at `baseIndent` or shallower, not
+ * by matching any particular shape.
+ */
+function collectDescriptionBody(
+  body: readonly string[],
+  start: number,
+  baseIndent: number,
+): { body: readonly string[]; nextIndex: number } {
+  let end = start;
+  for (; end < body.length; end++) {
+    const line = body[end]!;
+    if (line.trim() === '') {
+      continue; // tentatively included; trimmed below if trailing
+    }
+    if (leadingWhitespaceLength(line) <= baseIndent) {
+      break;
+    }
+  }
+  let trimmedEnd = end;
+  while (trimmedEnd > start && body[trimmedEnd - 1]!.trim() === '') {
+    trimmedEnd--;
+  }
+  return { body: body.slice(start, trimmedEnd), nextIndex: trimmedEnd };
 }
 
 /**
@@ -178,7 +221,7 @@ export const numpyDialect: DocDialect = {
       blocks.push({ type: 'sectionHeader', text: '-'.repeat(section.name.length) });
       blocks.push(
         ...(FIELD_SECTIONS.has(section.name)
-          ? segmentFieldSection(section.body)
+          ? segmentFieldSection(section.body, options)
           : segmentLines(section.body, options)),
       );
     }

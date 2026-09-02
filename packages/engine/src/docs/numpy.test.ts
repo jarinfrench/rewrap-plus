@@ -76,4 +76,69 @@ describe('numpyDialect.segment', () => {
     expect(blocks[0]?.type).toBe('paragraph');
     expect(blocks[1]?.type).toBe('blank');
   });
+
+  it('recognizes a nested list and a fenced sample inside a description, end to end through segment()', () => {
+    // `segmentFieldSection`'s own parallel fix to `groupFieldEntries`'s
+    // (`../field-entries.ts`) — a separate implementation (NumPy
+    // recognizes entries by indent position, not a `matchEntryStart`
+    // regex), confirmed here through the real dialect entry point.
+    const text = [
+      'Parameters',
+      '----------',
+      'dry_run : bool',
+      '    Options include:',
+      '    - verbose mode',
+      '    - strict mode',
+      '    Example:',
+      '    ```',
+      '    deploy(dry_run=True)',
+      '    ```',
+    ].join('\n');
+    const blocks = numpyDialect.segment(text, {});
+    expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'sectionHeader', 'sectionHeader', 'fieldEntry']);
+    const entry = blocks[3];
+    if (entry?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
+    expect(entry.blocks.map((b) => b.type)).toEqual([
+      'paragraph',
+      'listItem',
+      'listItem',
+      'paragraph',
+      'verbatim',
+    ]);
+    const item0 = entry.blocks[1];
+    if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+    expect(item0.marker).toBe('-');
+    expect(item0.atoms.map((a) => a.text)).toEqual(['verbose', 'mode']);
+    const verbatim = entry.blocks[4];
+    if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
+    expect(verbatim.lines).toEqual(['```', 'deploy(dry_run=True)', '```']);
+  });
+
+  it('recognizes a nested list when the description opens directly with a bullet (no leading prose)', () => {
+    // NumPy's entries never have an inline "rest" the way Google/Sphinx
+    // do (the header and description are never on the same physical
+    // line) — `blocks[0]` being a `listItem` here isn't gated on an
+    // empty-`entry.rest` special case the way `../field-entries.ts`'s
+    // is, it's simply what the description's first collected line was.
+    const text = ['Parameters', '----------', 'x : int', '    - first', '    - second'].join('\n');
+    const blocks = numpyDialect.segment(text, {});
+    const entry = blocks[3];
+    if (entry?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
+    expect(entry.blocks.map((b) => b.type)).toEqual(['listItem', 'listItem']);
+  });
+
+  it('does not end a description at a blank line followed by more description (look-ahead collection)', () => {
+    const text = [
+      'Parameters',
+      '----------',
+      'x : int',
+      '    First part.',
+      '',
+      '    More after blank.',
+    ].join('\n');
+    const blocks = numpyDialect.segment(text, {});
+    const entry = blocks[3];
+    if (entry?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
+    expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'paragraph']);
+  });
 });

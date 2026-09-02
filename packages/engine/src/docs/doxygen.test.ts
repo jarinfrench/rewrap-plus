@@ -93,4 +93,20 @@ describe('doxygenDialect.segment', () => {
     const blocks = doxygenDialect.segment(text, {});
     expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'fieldEntry']);
   });
+
+  it('recognizes a nested list inside a \\param description, end to end through segment()', () => {
+    // Mechanical once Google worked (both share `groupFieldEntries`),
+    // per the plan's own framing — confirmed directly rather than
+    // assumed.
+    const text = ['\\param opts Options include:', '    - verbose mode', '    - strict mode'].join(
+      '\n',
+    );
+    const blocks = doxygenDialect.segment(text, {});
+    const entry = fieldEntry(blocks, 0);
+    expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'listItem', 'listItem']);
+    const item0 = entry.blocks[1];
+    if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+    expect(item0.marker).toBe('-');
+    expect(item0.atoms.map((a) => a.text)).toEqual(['verbose', 'mode']);
+  });
 });

@@ -102,6 +102,22 @@ describe('javadocDialect.segment', () => {
     expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'fieldEntry']);
   });
 
+  it('recognizes a nested list inside a @tag description, end to end through segment()', () => {
+    // Mechanical once Google worked (both share `groupFieldEntries`),
+    // per the plan's own framing — confirmed directly rather than
+    // assumed.
+    const text = ['@param opts Options include:', '    - verbose mode', '    - strict mode'].join(
+      '\n',
+    );
+    const blocks = javadocDialect.segment(text, {});
+    const entry = fieldEntry(blocks, 0);
+    expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'listItem', 'listItem']);
+    const item0 = entry.blocks[1];
+    if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+    expect(item0.marker).toBe('-');
+    expect(item0.atoms.map((a) => a.text)).toEqual(['verbose', 'mode']);
+  });
+
   it('keeps an inline {@link ...} tag intact as one atom, never split by reflow', () => {
     const text = '@param name see {@link SomeReallyLongClassName#someMethod} for details';
     const blocks = javadocDialect.segment(text, {});
