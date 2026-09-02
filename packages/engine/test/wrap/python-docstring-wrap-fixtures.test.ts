@@ -38,6 +38,10 @@ import alreadyWrappedNumpyIn from '../fixtures/python/docstrings/015-already-wra
 import alreadyWrappedNumpyOut from '../fixtures/python/docstrings/015-already-wrapped-numpy-byte-identical.out.py?raw';
 import alreadyWrappedSphinxIn from '../fixtures/python/docstrings/016-already-wrapped-sphinx-byte-identical.in.py?raw';
 import alreadyWrappedSphinxOut from '../fixtures/python/docstrings/016-already-wrapped-sphinx-byte-identical.out.py?raw';
+import blankLineSeparatedGoogleIn from '../fixtures/python/docstrings/017-blank-line-separated-google.in.py?raw';
+import blankLineSeparatedGoogleOut from '../fixtures/python/docstrings/017-blank-line-separated-google.out.py?raw';
+import blankLineSeparatedNumpyIn from '../fixtures/python/docstrings/018-blank-line-separated-numpy.in.py?raw';
+import blankLineSeparatedNumpyOut from '../fixtures/python/docstrings/018-blank-line-separated-numpy.out.py?raw';
 
 /**
  * The stated acceptance criterion: "All docstring fixtures pass; no
@@ -63,10 +67,31 @@ import alreadyWrappedSphinxOut from '../fixtures/python/docstrings/016-already-w
  * long field label (an extreme hanging indent, forcing the one-word-per-
  * line overflow rule), a nested list inside a field-entry description, a
  * fenced code sample inside a field-entry description, and non-ASCII
- * content — see `../../src/docs/field-entries.ts`'s own "Known
- * limitation" note on what the nested-list/code-fence cases actually
- * degrade to (flattened prose, not preserved structure) and why that's
- * the current, accepted output rather than a bug in these fixtures.
+ * content. As of
+ * `docs/planning/nested-field-entry-structure-plan.md`'s step 3/4, both
+ * the nested list and the fenced sample in 012-014 reflow as real,
+ * preserved structure (a `listItem`/`verbatim` `Block`, per
+ * `../../src/types/document.ts`'s `fieldEntry.blocks`) — they used to
+ * flatten to plain reflowed prose (`../../src/docs/field-entries.ts`'s
+ * "Known limitation" note documented that degradation; it's since been
+ * rewritten to describe the current, much narrower residual gap). 012-014
+ * deliberately still have no blank line *inside* the nested content,
+ * though (unbroken continuation only) — that's what 017-018 add, below.
+ *
+ * 017-018 (`blank-line-separated-{google,numpy}`) cover the case 012-014
+ * were deliberately written to avoid until now: a genuine blank line
+ * *inside* a field entry's description (separating prose from a nested
+ * list, and the list from a fenced sample) — historically the highest-risk
+ * shape, since a blank line used to end an entry's continuation outright
+ * (the flat-collection loop's own "known limitation," fixed by the
+ * look-ahead collection in step 2) and, before *that*, was the exact
+ * pattern implicated in the idempotency bug `docs: fix field-entry
+ * misparsing that broke docstring wrap idempotency` closed. One fixture
+ * per genuinely distinct implementation, not one per dialect: Google
+ * exercises the shared `groupFieldEntries` path (Sphinx/JSDoc/Doxygen/
+ * Javadoc all reuse it unchanged, already covered at the `segment()` unit
+ * level in their own test files), NumPy exercises its own separate
+ * `segmentFieldSection`.
  */
 const COLUMN_LIMIT = 50;
 
@@ -124,6 +149,16 @@ const fixtures: readonly Fixture[] = [
     name: '016-already-wrapped-sphinx-byte-identical',
     input: alreadyWrappedSphinxIn,
     expected: alreadyWrappedSphinxOut,
+  },
+  {
+    name: '017-blank-line-separated-google',
+    input: blankLineSeparatedGoogleIn,
+    expected: blankLineSeparatedGoogleOut,
+  },
+  {
+    name: '018-blank-line-separated-numpy',
+    input: blankLineSeparatedNumpyIn,
+    expected: blankLineSeparatedNumpyOut,
   },
 ];
 
@@ -246,9 +281,10 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
     // coverage of one of these named cases (minimal/plain, each of the
     // three dialects at its typical/minimal/pathological tiers, an
     // already-correctly-wrapped case per dialect, doctest preservation,
-    // and module/class/attribute docstrings discovered and wrapped
-    // together) if a fixture were ever renamed or removed without a
-    // replacement.
+    // module/class/attribute docstrings discovered and wrapped together,
+    // and a blank-line-separated nested example per genuinely distinct
+    // field-entry implementation) if a fixture were ever renamed or
+    // removed without a replacement.
     expect(fixtures.map((f) => f.name)).toEqual([
       '001-minimal-plain',
       '002-google-style',
@@ -266,6 +302,8 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
       '014-pathological-sphinx',
       '015-already-wrapped-numpy-byte-identical',
       '016-already-wrapped-sphinx-byte-identical',
+      '017-blank-line-separated-google',
+      '018-blank-line-separated-numpy',
     ]);
   });
 });
