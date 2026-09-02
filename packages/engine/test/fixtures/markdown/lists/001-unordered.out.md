@@ -1,0 +1,3 @@
+- This is a fairly long paragraph inside
+  an unordered list item that needs
+  wrapping under the limit.
