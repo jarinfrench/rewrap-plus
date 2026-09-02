@@ -9,6 +9,7 @@ import { javascriptAdapter } from '../../src/languages/javascript/adapter.js';
 import { typescriptAdapter } from '../../src/languages/typescript/adapter.js';
 import { cppAdapter } from '../../src/languages/cpp/adapter.js';
 import { javaAdapter } from '../../src/languages/java/adapter.js';
+import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
@@ -97,6 +98,12 @@ const javaFixtures = import.meta.glob('../fixtures/java/**/*.in.java', {
   import: 'default',
 }) as Record<string, string>;
 
+const markdownFixtures = import.meta.glob('../fixtures/markdown/**/*.in.md', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as Record<string, string>;
+
 /**
  * One entry per adapter with its own end-to-end gold-fixture directory —
  * mirrors the set of adapters `docs/adapters.md` records as passing
@@ -104,6 +111,13 @@ const javaFixtures = import.meta.glob('../fixtures/java/**/*.in.java', {
  * fixture directory of its own by design (`docs/adapters.md`'s "TSX gets
  * a full duplicate gold-fixture set only at the unit-test level" note) so
  * it isn't listed here either — nothing to glob.
+ *
+ * Markdown's own fixtures are all zero-edit as of this addition
+ * (`docs/planning/markdown-latex-plan.md` Phase C commit 9 — discovery
+ * only, `markdownAdapter.wrapProse` doesn't exist until commit 10), so
+ * this suite exercises them trivially for now; they become a real
+ * idempotency check, not just a discovery-exclusion one, the moment real
+ * wrapping fixtures land alongside the negative ones already here.
  */
 const LANGUAGE_SETS: readonly LanguageFixtureSet[] = [
   { languageId: 'python', adapter: pythonAdapter, fixtures: pythonFixtures },
@@ -111,6 +125,7 @@ const LANGUAGE_SETS: readonly LanguageFixtureSet[] = [
   { languageId: 'typescript', adapter: typescriptAdapter, fixtures: typescriptFixtures },
   { languageId: 'cpp', adapter: cppAdapter, fixtures: cppFixtures },
   { languageId: 'java', adapter: javaAdapter, fixtures: javaFixtures },
+  { languageId: 'markdown', adapter: markdownAdapter, fixtures: markdownFixtures },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {

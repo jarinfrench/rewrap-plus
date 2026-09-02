@@ -49,6 +49,13 @@ declare module '*.java?raw' {
   export default content;
 }
 
+// The Markdown fixtures — same rationale as the `.py?raw` declaration
+// above.
+declare module '*.md?raw' {
+  const content: string;
+  export default content;
+}
+
 // `import.meta.glob` (used by `test/wrap/idempotency-all-fixtures.test.ts`
 // to pick up every gold fixture in a language's directory without a
 // hand-maintained list of named imports) isn't typed without pulling in
