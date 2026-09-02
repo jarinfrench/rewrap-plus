@@ -36,13 +36,33 @@ export interface EntryStartMatch {
  * An entry's description is segmented for real structure — a nested
  * list, a fenced sample, a table — via `../segmentation/split-blocks.ts`,
  * not flattened into one atom stream (see `dedentBody` and the
- * `segmentLines` call, below, for exactly how). `entry`'s own residual
- * limitation, now that nested structure is recognized: `splitBlocks`
- * still can't do anything for a description that merely *looks*
- * structured to a human but doesn't match any of its recognized shapes
- * (a hand-drawn ASCII diagram with no fence around it, say) — that was
- * never in scope here, and still degrades to reflowed prose, same as it
- * would at the top level of any other section body.
+ * `segmentLines` call, below, for exactly how; `./numpy.ts`'s
+ * `segmentFieldSection` is the same idea, independently implemented,
+ * for NumPy's own entries).
+ *
+ * **Known limitation, now much narrower than before this file's own
+ * `splitBlocks` wiring landed:** `splitBlocks` recognizes a fixed,
+ * specific set of structured shapes — a fenced/indented code block, a
+ * doctest, a Markdown table, a `-`/`*`/ordered-marker list — and nothing
+ * outside that set, however visually structured it looks to a human (a
+ * hand-drawn ASCII diagram with no fence around it, an indented-but-
+ * unmarked outline that isn't quite a recognized list). That was never
+ * in scope for this plan, isn't a field-entry-specific gap (the exact
+ * same set of recognized shapes applies at the top level of any other
+ * section body), and still degrades to reflowed prose exactly as it
+ * always has. The other residual gap is genuinely field-entry-specific,
+ * not shared with top-level content: a `listItem` recognized *inside* a
+ * description has no nested-`blocks` field of its own (unlike
+ * `fieldEntry`) — a further Markdown-indented sub-bullet still becomes
+ * its own sibling `listItem` at a deeper `hangingIndent` (not a
+ * flattening; confirmed in `./field-entries.test.ts`'s own
+ * "Markdown-indented sub-bullet" case), but anything that *isn't* itself
+ * a recognized list-marker line, nested inside a `listItem`'s own
+ * continuation, folds into that item's flat `atoms` same as it always
+ * has (see `../types/document.ts`'s own doc comment on `Block`, and
+ * `docs/planning/nested-field-entry-structure-plan.md`'s "Scope"
+ * section, for why `listItem` was deliberately left out of this
+ * change).
  */
 export function groupFieldEntries(
   lines: readonly string[],
