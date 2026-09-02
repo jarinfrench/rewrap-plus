@@ -340,3 +340,139 @@ Phase A blocker — no fixture in this repo's own corpus exercises it — but
 flag it explicitly for the Phase C hard-break implementation and give it
 a fixture there (count the trailing backslash run's length and use its
 parity, rather than the single-character lookbehind as written).
+
+## Finding 8: `tree-sitter-latex` (built from `@pfoerster/tree-sitter-latex@0.6.0`) — wasi-sdk auto-download works on Windows, several new node shapes, zero errors on a real document
+
+Probed via `docs/spikes/tree-sitter-latex-probe.mjs`, per
+`docs/planning/markdown-latex-plan.md` §9 Phase A commit 2.
+
+**The build.** `npm pack @pfoerster/tree-sitter-latex@0.6.0` produced a
+tarball matching every value the plan recorded in advance: `gitHead
+7e0ecdc02926c7b9b2e0c76003d4fe7b0944f957` (the `v0.6.0` tag), shasum
+`a51fd660b8f17b4619457e0570df5bc759d589ff`, and a 43.9 MB `src/parser.c`
+already present (no `generate` step needed). `npx --package
+tree-sitter-cli@0.26.13 tree-sitter build --wasm <extracted dir> -o
+tree-sitter-latex.wasm` **succeeded on this Windows machine on the first
+try** — this was the single biggest open question in the plan (§2.2/§3.1:
+no `emcc`/Docker/cargo/`tree-sitter` on `PATH`, wasi-sdk auto-download
+"the path to test first"). It downloaded `wasi-sdk-29.0-x86_64-windows`
+(≈510 MB, ~30s on this connection) to
+`%LOCALAPPDATA%\tree-sitter\wasi-sdk`, extracted it, and compiled
+`parser.c` + `scanner.c` straight through with no further intervention.
+**The `.github/workflows/grammar-wasm.yml` Linux-builder fallback (§3.1)
+is not needed** — noted here so it isn't built speculatively; add it only
+if a future machine's wasi-sdk download actually fails.
+
+**Output size — the other open question.** The resulting
+`tree-sitter-latex.wasm` is **3,710,264 bytes (3.54 MB)** — despite the
+43.9 MB `parser.c` input, this lands in the same range as the already-
+vendored `tree-sitter-cpp.wasm` (3.4 MB), not the "several MB, maybe much
+larger" the plan flagged as a risk. sha256:
+`4178504425e5576092735bed9190f2bf5f127ba3573988c016e086ae76d01855`. Grammar
+ABI: `14` (same as C++/Java/TypeScript's — inside `web-tree-sitter@0.26.13`'s
+supported `[13, 15]` range). `Language.load()` took ~11 ms on this
+machine, and a second parse of the same content dropped to ~0.1 ms —
+ordinary JIT/instantiate warmup, nothing unusual for a WASM module this
+size.
+
+**No release attestation exists for this grammar (confirmed, matching
+§2.1's advance finding):** `latex-lsp/tree-sitter-latex`'s GitHub releases
+attach no assets at all, so there is nothing to attest either — this
+`.wasm` is *self-built* provenance (npm tarball hash + pinned CLI version
++ pinned wasi-sdk version + this build's own output hash), which
+`PROVENANCE.md`/`SECURITY.md` need to record as a different trust story
+from the Markdown asset's GitHub-attested one, exactly as §3.1 specifies.
+
+**§6.1/§6.2 node shapes, all probed directly:**
+
+- `\\` parses as a `generic_command` whose `command_name` text is the
+  literal two-character string `\\` — confirmed, not a dedicated node
+  type, resolving the plan's one **verify** item here.
+- Environment classification: `align`, `equation`, `gather`, `multline`,
+  `displaymath`, and `math` all arrive as `math_environment` — exactly
+  Rewrap's own preserved-environment list, and exactly the plan's
+  prediction. `alltt`, `tabular`, `tikzpicture`, `abstract`, and
+  `itemize` arrive as `generic_environment`. `verbatim` gets its **own**
+  dedicated `verbatim_environment` node type, not `generic_environment`
+  — worth being explicit about in the Phase D masking list rather than
+  assuming it falls under the generic case.
+- `generic_environment`'s `begin` field shape confirmed exactly as
+  described: `begin.command` → `\begin`, `begin.name` →
+  `curly_group_text` (text *includes* the braces, e.g. `{myenv}` — strip
+  them when comparing environment names), `begin.options` →
+  `brack_group` when a `[...]` is present.
+- `line_comment` on CRLF input: the comment node's own text never
+  includes a trailing `\r`, confirmed across both a single comment line
+  and two consecutive CRLF comment lines — the grammar's `%[^\r\n]*`
+  regex behaves exactly as advertised, so `trimTrailingCR` is confirmed
+  to be a no-op for this adapter, not merely assumed.
+- `enum_item`'s `command`/`label` fields confirmed: `command` → the
+  `\item` node; `label` → the `brack_group_text` node (`[label]`,
+  brackets included) when present, absent otherwise.
+- **Sectioning node extent — the one the plan called out as
+  load-bearing:** confirmed the section node's span *does* include its
+  entire body (through the next same-or-higher-level sectioning command),
+  not just its header line. A two-paragraph body separated by a blank
+  line inside one `\section{...}` parsed as a single flat `text` node
+  spanning both paragraphs *with the blank line inside it* — there is no
+  paragraph-level node anywhere in this grammar, confirming §1's claim
+  that LaTeX paragraph boundaries must come from a source-line scan, not
+  the tree, with the tree supplying only spans to mask out.
+- **New node type the plan didn't anticipate:** `\newtheorem{name}[counter]{text}`
+  parses as its own dedicated `theorem_definition` node, not a generic
+  `generic_command` — one more example (alongside `enum_item`,
+  `block_comment`, the environment family) of this grammar giving
+  semantically-named nodes to common macros rather than leaving
+  everything as `generic_command`. Doesn't change anything in the plan
+  (whole-line-command detection is line-scan-based per §6.2 regardless),
+  but worth knowing the commandRegex-vs-tree fallback in §6.2 ("when the
+  regex and the tree disagree, prefer the tree's `generic_command`/
+  sectioning node extent") needs to check for other named command nodes
+  too, not just assume unrecognized commands are always `generic_command`.
+- Nested braces resolve correctly through the tree:
+  `\section{Title with \emph{nested} braces}` parses with the inner
+  `\emph{nested}` as a proper nested `generic_command` inside the
+  section's `curly_group`, confirming the tree — not a brace-counting
+  regex — is the right tool when §6.2's `commandRegex` and the tree
+  disagree.
+- **`\verb`/`\lstinline` are genuinely unprotected by this grammar** —
+  confirmed, not merely assumed: `\verb|some code here|` parses as an
+  ordinary `generic_command` (`\verb`) followed by plain `text`/`word`
+  nodes, with the verbatim content fragmented at its internal spaces
+  exactly like ordinary prose. §4.3's `extraUnbreakable` regex for
+  `\verb`/`\lstinline` is therefore load-bearing, not defensive — without
+  it, a reflow could legally split verbatim content and change what it
+  typesets to.
+- **`\par` has no special tree signal** — confirmed: alone on its own
+  line, `\par` parses as an ordinary `generic_command` embedded inside
+  the same flat `text` run as the surrounding prose, with no paragraph
+  break of any kind in the tree. §6.2's line-scan-based
+  structural-line detection is doing all the real work here; the tree
+  contributes nothing extra for this case.
+- **Trailing `%` comment mid-line — the one real semantic hazard (§6.4)**
+  confirmed handled correctly by the grammar: `aaa bbb % note` produces a
+  `line_comment` node as a sibling *within* the same flat `text` node,
+  positioned exactly at the `%` column, with `more text` on the next
+  source line resolving to ordinary `word` nodes after it (not swallowed
+  into the comment). The companion escaping case also confirmed:
+  `\%` produces **zero** `line_comment` nodes (it parses as a
+  `generic_command` named `\%` instead) — this is the exact case Rewrap's
+  own `[^\\]%` regex is documented to get wrong, and the grammar gets it
+  right for free, which is the whole argument in §6.2 for using
+  `line_comment` node spans rather than reimplementing TeX's `%`-lexing.
+- `$…$` parses as `inline_formula` with real internal structure
+  (`superscript`, `operator`, nested `text`/`word`), not opaque raw text;
+  `\[…\]` and `$$…$$` both parse as the **same** `displayed_equation`
+  node type, simplifying the Phase D masking list (one type covers both
+  shortcut forms, not two).
+
+**Error rate and performance on real content:** `latex-lsp/tree-sitter-latex`'s
+own `examples/texlab.tex` (2,584 bytes, a real README-style project
+document with packages, sectioning, links, and inline macros) parsed with
+**zero** `ERROR`/missing nodes in 13.3 ms. A synthetic 129,200-byte
+document (that file repeated 50×) also parsed with zero errors, in 39.8 ms
+— performance scales roughly linearly over this range, nothing
+pathological observed. This is one file, not the broader real-corpus
+check §8.4 calls for against multiple real papers (that's explicitly
+Phase D work), but it's a clean data point for the Phase A gate: nothing
+here suggests the grammar chokes on ordinary, non-adversarial LaTeX.
