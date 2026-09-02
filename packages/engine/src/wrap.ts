@@ -159,6 +159,17 @@ function yieldToEventLoop(): Promise<void> {
  * (a dict key, for Python) — see the loop body below rather than
  * `cfg.wrapComments`'s gate, which `'stringLiteral'` does not share.
  *
+ * `'prose'` regions (not to be confused with `cfg.stringPolicy === 'prose'`
+ * above, a same-named but unrelated setting governing *string* eligibility)
+ * dispatch to `adapter.wrapProse` when present, gated on **neither**
+ * `cfg.wrapComments` nor `cfg.wrapStrings` — only parse-error overlap and
+ * directives apply, the same as every other kind, but no kind-specific
+ * config switch. For a language whose `discoverProse` ever produces one
+ * (Markdown, LaTeX — see `docs/planning/markdown-latex-plan.md`), the
+ * document *is* the prose; `wrapComments`/`wrapStrings` describe code
+ * files' comment/string wrapping and have no natural reading as "should
+ * this language's actual document content wrap."
+ *
  * Every candidate region is checked against `errorSpans` before anything
  * else: a region overlapping a parse error is skipped outright (this
  * project's "skip region, warn, never block" posture), regardless of kind,
@@ -200,7 +211,10 @@ export async function wrapRegions(
       ? allRegions
       : allRegions.filter((region) => overlapsAny(region.span, targets));
 
-  const directives = scanDirectives(source, descriptor.comments.line?.marker);
+  const directives = scanDirectives(
+    source,
+    descriptor.directives?.marker ?? descriptor.comments.line?.marker,
+  );
   const edits: TextEdit[] = [];
   const skipped: SkippedRegion[] = [];
   let lastYieldAt = Date.now();
@@ -251,7 +265,8 @@ export async function wrapRegions(
       region.kind !== 'blockComment' &&
       !(region.kind === 'docComment' && descriptor.comments.doc) &&
       !(region.kind === 'docstring' && adapter.wrapDocstring) &&
-      !(region.kind === 'stringLiteral' && adapter.wrapString)
+      !(region.kind === 'stringLiteral' && adapter.wrapString) &&
+      !(region.kind === 'prose' && adapter.wrapProse)
     ) {
       skipped.push({
         region,
@@ -293,12 +308,20 @@ export async function wrapRegions(
           continue;
         }
       }
-    } else if (!cfg.wrapComments) {
+    } else if (region.kind !== 'prose' && !cfg.wrapComments) {
       // Docstrings share this gate rather than getting a separate config
       // key: they're Python's own form of documentation comment
       // ("docstrings get rich treatment," as opposed to an arbitrary
       // string), and `WrapConfig` has no dedicated `wrapDocstrings` field
       // for the extension's settings schema to expose one through.
+      //
+      // `'prose'` deliberately shares neither this gate nor
+      // `'stringLiteral'`'s above — see this function's own doc comment's
+      // "prose is gated on neither" paragraph. For a prose language the
+      // document *is* the prose; `wrapComments`/`wrapStrings` describe
+      // code files, and a user who turns comment wrapping off in a
+      // Python/JavaScript/etc. file must not thereby lose Markdown/LaTeX
+      // paragraph wrapping the next time they open one.
       skipped.push({ region, reason: 'comment wrapping disabled (wrapComments is false)' });
       continue;
     }
@@ -313,7 +336,9 @@ export async function wrapRegions(
             ? wrapDocComment(region, source, descriptor, cfg, reflowOptions)
             : region.kind === 'stringLiteral'
               ? adapter.wrapString!(region, source, cfg, tree)
-              : adapter.wrapDocstring!(region, source, cfg);
+              : region.kind === 'prose'
+                ? adapter.wrapProse!(region, source, cfg, tree)
+                : adapter.wrapDocstring!(region, source, cfg);
 
     // `emitLineComments`/`emitBlockComments` always join their own
     // output lines with a bare `\n` (see each function's own doc

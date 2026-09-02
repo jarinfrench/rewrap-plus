@@ -14,6 +14,7 @@ describe('RegionKind', () => {
       'docComment',
       'docstring',
       'stringLiteral',
+      'prose',
     ];
 
     expect(new Set(kinds).size).toBe(kinds.length);
@@ -49,6 +50,28 @@ describe('WrappableRegion', () => {
     };
 
     expect(region.parts).toHaveLength(2);
+    expect(region.span.endByte).toBe(region.parts[1]!.endByte);
+  });
+
+  it('models a multi-part prose region — one part per physical line', () => {
+    // A `'prose'` region's `parts` are its physical lines, per-line prefix
+    // (block-quote marker, list hanging indent, …) excluded from each
+    // part's own span — the same per-line contract `'lineComment'`
+    // regions already follow, per `docs/planning/markdown-latex-plan.md`
+    // §3.2.
+    const first = span(0, 11);
+    const second = span(14, 25);
+    const region: WrappableRegion = {
+      kind: 'prose',
+      span: span(0, 25),
+      parts: [first, second],
+      rawText: 'hello world\nsecond line',
+      indentColumn: 0,
+      languageId: 'markdown',
+    };
+
+    expect(region.parts).toHaveLength(2);
+    expect(region.span.startByte).toBe(region.parts[0]!.startByte);
     expect(region.span.endByte).toBe(region.parts[1]!.endByte);
   });
 });

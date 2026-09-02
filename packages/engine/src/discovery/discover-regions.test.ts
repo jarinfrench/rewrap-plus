@@ -178,6 +178,112 @@ describe('discoverRegions', () => {
   });
 });
 
+describe('discoverRegions — discoverProse', () => {
+  // A `'prose'` region's own shape isn't exercised through the real
+  // Python grammar here (that's Phase C/D's Markdown/LaTeX adapters,
+  // `docs/planning/markdown-latex-plan.md`) — these tests only prove the
+  // generic wiring: the hook is called with the right arguments, its
+  // results are merged with the query-driven passes and sorted
+  // correctly, and query-driven discovery keeps working when a
+  // descriptor omits `queries.comments`/`queries.strings` entirely.
+  function proseRegion(startByte: number, endByte: number, languageId: string): WrappableRegion {
+    const span = {
+      startByte,
+      endByte,
+      startRow: 0,
+      startColumn: startByte,
+      endRow: 0,
+      endColumn: endByte,
+    };
+    return {
+      kind: 'prose',
+      span,
+      parts: [span],
+      rawText: 'a fabricated prose region',
+      indentColumn: 0,
+      languageId,
+    };
+  }
+
+  it('appends discoverProse results to the query-driven regions', () => {
+    const source = '# a comment\nx = "hello"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = {
+      descriptor: minimalDescriptor(),
+      discoverProse: () => [proseRegion(0, 5, 'python')],
+    };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(byKind(regions, 'lineComment')).toHaveLength(1);
+    expect(byKind(regions, 'stringLiteral')).toHaveLength(1);
+    expect(byKind(regions, 'prose')).toHaveLength(1);
+  });
+
+  it('passes tree, source, languageId, and options straight through to discoverProse', () => {
+    const source = 'x = 1\n';
+    const tree = parseSource(source);
+    let received: unknown[] = [];
+    const adapter: LanguageAdapter = {
+      descriptor: minimalDescriptor(),
+      discoverProse: (...args) => {
+        received = args;
+        return [];
+      },
+    };
+
+    discoverRegions(adapter, tree, source, 'python', { tabSize: 2 });
+
+    expect(received).toEqual([tree, source, 'python', { tabSize: 2 }]);
+  });
+
+  it('sorts discoverProse results into position order alongside query-driven regions', () => {
+    const source = 'x = "first"\ny = "second"\n';
+    const tree = parseSource(source);
+    // A prose region placed *between* the two query-discovered strings by
+    // byte offset — proves the final sort covers both sources together,
+    // not just each independently.
+    const adapter: LanguageAdapter = {
+      descriptor: minimalDescriptor(),
+      discoverProse: () => [proseRegion(12, 13, 'python')],
+    };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(regions.map((r) => r.kind)).toEqual(['stringLiteral', 'prose', 'stringLiteral']);
+  });
+
+  it('defaults to no prose regions when discoverProse is absent', () => {
+    const source = 'x = "hello"\n';
+    const tree = parseSource(source);
+    const adapter: LanguageAdapter = { descriptor: minimalDescriptor() };
+
+    const regions = discoverRegions(adapter, tree, source, 'python');
+
+    expect(byKind(regions, 'prose')).toHaveLength(0);
+  });
+
+  it('discovers only prose regions when queries.comments and queries.strings are both absent', () => {
+    const source = 'anything at all, never parsed as Python comments/strings\n';
+    const tree = parseSource(source);
+    const descriptor: LanguageDescriptor = {
+      id: 'prose-probe',
+      grammarWasm: grammarPath,
+      queries: {},
+      comments: { neverReflow: [] },
+    };
+    const adapter: LanguageAdapter = {
+      descriptor,
+      discoverProse: () => [proseRegion(0, 8, 'prose-probe')],
+    };
+
+    const regions = discoverRegions(adapter, tree, source, 'prose-probe');
+
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.kind).toBe('prose');
+  });
+});
+
 describe('discoverRegions — concatenation grouping', () => {
   function descriptorWithConcatenations(): LanguageDescriptor {
     return {

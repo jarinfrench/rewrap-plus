@@ -3,6 +3,23 @@ import type { WrapConfig } from './config.js';
 import type { DocDialectId } from './doc-dialect.js';
 import type { SyntaxNode, Tree } from './tree-sitter-types.js';
 
+/**
+ * Options threaded through region discovery. Defined here, rather than in
+ * `../discovery/discover-regions.ts` where it's consumed, so that
+ * `LanguageAdapter.discoverProse` below can reference it without that
+ * file importing back from this one — `discover-regions.ts` already
+ * imports `LanguageAdapter` from this module, so the reverse import would
+ * be circular.
+ */
+export interface DiscoverRegionsOptions {
+  /**
+   * Tab width used to compute `WrappableRegion.indentColumn`. Defaults to
+   * 4 — see `../discovery/visual-indent-column.ts` for why a real
+   * `WrapConfig.tabSize` isn't threaded through yet.
+   */
+  readonly tabSize?: number;
+}
+
 /** One recognized quote form, e.g. Python's `'`, `"`, `'''`, `"""`. */
 export interface QuoteSpec {
   /** Opening delimiter as it appears in source. */
@@ -77,12 +94,41 @@ export interface LanguageDescriptor {
   readonly grammarWasm: string;
 
   readonly queries: {
-    /** tree-sitter query source matching comment nodes. */
-    readonly comments: string;
-    /** tree-sitter query source matching string literal nodes. */
-    readonly strings: string;
+    /**
+     * tree-sitter query source matching comment nodes. Optional as of the
+     * `'prose'` region kind (`docs/planning/markdown-latex-plan.md` §3.2):
+     * a prose language with nothing comment-shaped worth wrapping (e.g.
+     * Markdown, which leaves HTML comments verbatim) omits this rather
+     * than declaring a query that's structurally present but captures
+     * nothing — the JavaScript canary's own inert-but-valid `strings`
+     * block (see `strings` below) was exactly this workaround for
+     * `queries.strings`, and this project decided not to repeat the
+     * pattern a second time now that there's a real reason not to.
+     */
+    readonly comments?: string;
+    /**
+     * tree-sitter query source matching string literal nodes. Optional
+     * for the same reason `comments` above is — a language with no
+     * string-literal syntax at all (Markdown, LaTeX) omits it, along with
+     * `strings` below.
+     */
+    readonly strings?: string;
     /** tree-sitter query source matching concatenation constructs, if the language has any beyond bare adjacency. */
     readonly concatenations?: string;
+    /**
+     * tree-sitter query source matching `'prose'` regions — one capture
+     * per paragraph-shaped unit, e.g. Markdown's `(paragraph) @prose`.
+     * Optional even for a prose language: LaTeX has no paragraph node at
+     * all (`docs/planning/markdown-latex-plan.md` §3.2), so its
+     * `discoverProse` hook does a masked line scan instead of running a
+     * query. When present, `discoverProse` is expected to read it via
+     * `../discovery/capture.js`'s `captureNodes`/`captureNodesByName`
+     * rather than re-implementing query running — declaring it as
+     * descriptor data (instead of hardcoding the pattern inside the
+     * hook) keeps it covered by the conformance kit's "every declared
+     * query compiles against the grammar" check.
+     */
+    readonly prose?: string;
   };
 
   readonly comments: {
@@ -157,7 +203,17 @@ export interface LanguageDescriptor {
     readonly codeLikeKeywords?: RegExp;
   };
 
-  readonly strings: {
+  /**
+   * String-literal syntax: quote forms, prefixes, raw-form delimiters,
+   * escapes, placeholders, and concatenation style. Optional as of the
+   * `'prose'` region kind (`docs/planning/markdown-latex-plan.md` §3.2):
+   * Markdown and LaTeX have no string-literal concept at all, so this —
+   * and `queries.strings` above — is simply omitted rather than
+   * populated with a structurally-valid-but-meaningless value.
+   * `validateDescriptor` (`../adapter-registry.ts`) requires this field
+   * and `queries.strings` to be declared together, or not at all.
+   */
+  readonly strings?: {
     readonly quotes: readonly QuoteSpec[];
     readonly prefixes: readonly PrefixSpec[];
     readonly rawForms: readonly RawFormSpec[];
@@ -171,6 +227,25 @@ export interface LanguageDescriptor {
       readonly requiresGrouping?: boolean;
       readonly operatorPlacement?: 'leading' | 'trailing';
     };
+  };
+
+  /**
+   * The comment marker `../directives.ts`'s `scanDirectives` should look
+   * for when scanning this language's source for `rewrap: off`/`on`/
+   * `ignore`/`force` directives, consulted by `../wrap.ts` ahead of
+   * `comments.line?.marker`. Most languages leave this unset — their
+   * line-comment marker already *is* the right directive marker, which is
+   * what the `comments.line?.marker` fallback covers. It exists
+   * separately because a prose language's natural directive marker isn't
+   * always its line-comment marker: Markdown has no line comment at all
+   * but writes directives as `<!-- rewrap: off -->` (an HTML comment,
+   * left verbatim otherwise — see `docs/planning/markdown-latex-plan.md`
+   * §3.2), so it declares `directives: { marker: '<!--' }`. LaTeX's `%`
+   * line-comment marker already doubles as its directive marker, so it
+   * needs no override.
+   */
+  readonly directives?: {
+    readonly marker: string;
   };
 }
 
@@ -306,4 +381,56 @@ export interface LanguageAdapter {
    * lookup actually does.
    */
   wrapString?(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string;
+
+  /**
+   * Produce every `'prose'` region in `tree` — one paragraph-shaped unit
+   * per region, `parts` = the region's physical lines with their
+   * container prefix (block-quote marker, list hanging indent, …)
+   * excluded from each part's span, the same per-line contract
+   * `'lineComment'` regions already follow.
+   *
+   * A whole-pipeline discovery hook rather than descriptor query data
+   * alone, for the same reason `wrapDocstring`/`wrapString` are
+   * whole-pipeline *wrap* hooks: Markdown's discovery is expressible as a
+   * `queries.prose` capture plus straightforward exclusion logic, but
+   * LaTeX's isn't — there's no paragraph node in that grammar at all, so
+   * its prose regions come from a line scan masked by other tree spans
+   * (see `docs/planning/markdown-latex-plan.md` §3.2/§6.2). One
+   * mechanism that covers both shapes beats a query-only mechanism that
+   * only covers one.
+   *
+   * `discoverRegions` (`../discovery/discover-regions.ts`) calls this
+   * *in addition to* its own query-driven comment/string discovery — an
+   * adapter can (and Markdown does) still omit `queries.comments`/
+   * `queries.strings` entirely and rely on this alone.
+   *
+   * Returns `[]` (the default when this hook is absent) for a language
+   * with no prose to discover, e.g. every existing comment/string
+   * language — none of them override this.
+   */
+  discoverProse?(
+    tree: Tree,
+    source: string,
+    languageId: string,
+    options: DiscoverRegionsOptions,
+  ): WrappableRegion[];
+
+  /**
+   * Dissolve, reflow, and emit one `'prose'` region, returning its
+   * replacement source text — or `undefined` if this adapter doesn't
+   * support `'prose'` regions at all (the default: every comment/string
+   * language, which never produces one via `discoverProse` in the first
+   * place).
+   *
+   * A whole-pipeline hook, like `wrapDocstring`/`wrapString`: a prose
+   * region's continuation prefix is derived from its container ancestry
+   * (a block quote's `>`, a list item's hanging indent, …), which needs
+   * real tree access the same way a string's paren-insertion rules do —
+   * hence the `tree` parameter, unlike the generic `'lineComment'`/
+   * `'blockComment'` dissolve/emit pair `../wrap.ts` drives itself from
+   * `LanguageDescriptor` data alone. See
+   * `docs/planning/markdown-latex-plan.md` §3.2/§4.2 for the shared
+   * `prose/` dissolve/emit machinery this is expected to be built on.
+   */
+  wrapProse?(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string;
 }

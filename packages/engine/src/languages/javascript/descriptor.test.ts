@@ -18,8 +18,8 @@ describe('javascriptDescriptor', () => {
   });
 
   it('declares queries that compile against the vendored grammar', () => {
-    expect(() => new Query(language, javascriptDescriptor.queries.comments)).not.toThrow();
-    expect(() => new Query(language, javascriptDescriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, javascriptDescriptor.queries.comments!)).not.toThrow();
+    expect(() => new Query(language, javascriptDescriptor.queries.strings!)).not.toThrow();
   });
 
   it('declares a concatenation query for +-style string wrapping', () => {

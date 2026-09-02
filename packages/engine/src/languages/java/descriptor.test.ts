@@ -16,8 +16,8 @@ describe('javaDescriptor', () => {
   });
 
   it('declares queries that compile against its own vendored grammar', () => {
-    expect(() => new Query(language, javaDescriptor.queries.comments)).not.toThrow();
-    expect(() => new Query(language, javaDescriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, javaDescriptor.queries.comments!)).not.toThrow();
+    expect(() => new Query(language, javaDescriptor.queries.strings!)).not.toThrow();
     expect(() => new Query(language, javaDescriptor.queries.concatenations!)).not.toThrow();
   });
 
@@ -26,7 +26,7 @@ describe('javaDescriptor', () => {
     parser.setLanguage(language);
     const source = '// line\n/* block */\n/** doc */\nclass Foo {}\n';
     const tree = parser.parse(source)!;
-    const query = new Query(language, javaDescriptor.queries.comments);
+    const query = new Query(language, javaDescriptor.queries.comments!);
     const matches = query.matches(tree.rootNode);
     const texts = matches.flatMap((m) => m.captures.map((c) => c.node.text));
     expect(texts).toEqual(['// line', '/* block */', '/** doc */']);
@@ -40,7 +40,7 @@ describe('javaDescriptor', () => {
   });
 
   it('declares operator (+) concatenation with no grouping requirement', () => {
-    expect(javaDescriptor.strings.concatenation).toEqual({
+    expect(javaDescriptor.strings!.concatenation).toEqual({
       style: 'operator',
       operator: '+',
       operatorPlacement: 'trailing',
@@ -48,11 +48,11 @@ describe('javaDescriptor', () => {
   });
 
   it('declares only a double-quote form, no single-quote (character_literal is a separate node type)', () => {
-    expect(javaDescriptor.strings.quotes).toEqual([{ delimiter: '"', multiline: false, escapes: true }]);
+    expect(javaDescriptor.strings!.quotes).toEqual([{ delimiter: '"', multiline: false, escapes: true }]);
   });
 
   it('declares no string-literal prefixes (Java has no r/b/f-style prefix concept)', () => {
-    expect(javaDescriptor.strings.prefixes).toEqual([]);
+    expect(javaDescriptor.strings!.prefixes).toEqual([]);
   });
 
   it('flags common Java tooling directives as never-reflow', () => {
@@ -76,7 +76,7 @@ describe('javaDescriptor', () => {
     parser.setLanguage(language);
     const source = 'class Foo { String a = "plain"; String b = """\n  text block\n  """; }\n';
     const tree = parser.parse(source)!;
-    const query = new Query(language, javaDescriptor.queries.strings);
+    const query = new Query(language, javaDescriptor.queries.strings!);
     const matches = query.matches(tree.rootNode);
     const nodeTypes = matches.flatMap((m) => m.captures.map((c) => c.node.type));
     expect(nodeTypes).toEqual(['string_literal', 'string_literal']);

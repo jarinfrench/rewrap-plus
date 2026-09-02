@@ -16,8 +16,8 @@ describe('cppDescriptor', () => {
   });
 
   it('declares queries that compile against its own vendored grammar', () => {
-    expect(() => new Query(language, cppDescriptor.queries.comments)).not.toThrow();
-    expect(() => new Query(language, cppDescriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, cppDescriptor.queries.comments!)).not.toThrow();
+    expect(() => new Query(language, cppDescriptor.queries.strings!)).not.toThrow();
     expect(() => new Query(language, cppDescriptor.queries.concatenations!)).not.toThrow();
   });
 
@@ -30,7 +30,7 @@ describe('cppDescriptor', () => {
   });
 
   it('declares implicit (bare-adjacency) concatenation with no grouping requirement', () => {
-    expect(cppDescriptor.strings.concatenation).toEqual({ style: 'implicit' });
+    expect(cppDescriptor.strings!.concatenation).toEqual({ style: 'implicit' });
   });
 
   it('declares only bare-adjacency concatenation, no + operator pattern', () => {
@@ -41,7 +41,7 @@ describe('cppDescriptor', () => {
   });
 
   it('declares only a double-quote form, no single-quote (char_literal is a separate node type)', () => {
-    expect(cppDescriptor.strings.quotes).toEqual([{ delimiter: '"', multiline: false, escapes: true }]);
+    expect(cppDescriptor.strings!.quotes).toEqual([{ delimiter: '"', multiline: false, escapes: true }]);
   });
 
   it('flags common C++ tooling directives as never-reflow', () => {

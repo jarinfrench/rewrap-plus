@@ -23,8 +23,8 @@ describe.each([
   it('declares queries that compile against its own vendored grammar', () => {
     const descriptor = getDescriptor();
     const language = getLanguage();
-    expect(() => new Query(language, descriptor.queries.comments)).not.toThrow();
-    expect(() => new Query(language, descriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, descriptor.queries.comments!)).not.toThrow();
+    expect(() => new Query(language, descriptor.queries.strings!)).not.toThrow();
     expect(() => new Query(language, descriptor.queries.concatenations!)).not.toThrow();
   });
 
@@ -33,7 +33,7 @@ describe.each([
   });
 
   it('declares operator-style concatenation with no grouping requirement', () => {
-    expect(getDescriptor().strings.concatenation).toEqual({
+    expect(getDescriptor().strings!.concatenation).toEqual({
       style: 'operator',
       operator: '+',
       operatorPlacement: 'trailing',

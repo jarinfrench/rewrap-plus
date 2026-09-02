@@ -1,5 +1,4 @@
-import { Query } from 'web-tree-sitter';
-import type { LanguageAdapter } from '../types/adapter.js';
+import type { DiscoverRegionsOptions, LanguageAdapter } from '../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../types/region.js';
 import type { SourceSpan } from '../types/span.js';
 import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
@@ -7,15 +6,7 @@ import { PositionMapper } from '../types/position-mapper.js';
 import { spanFromNode } from '../parser/span-from-node.js';
 import { normalizeRawText } from './normalize-raw-text.js';
 import { visualIndentColumn } from './visual-indent-column.js';
-
-export interface DiscoverRegionsOptions {
-  /**
-   * Tab width used to compute `WrappableRegion.indentColumn`. Defaults to
-   * 4 — see `./visual-indent-column.ts` for why a real `WrapConfig.tabSize`
-   * isn't threaded through yet.
-   */
-  readonly tabSize?: number;
-}
+import { captureNodes, captureNodesByName } from './capture.js';
 
 /**
  * Find every wrappable region in `tree`, driven entirely by `adapter`'s
@@ -23,14 +14,22 @@ export interface DiscoverRegionsOptions {
  *
  * This function is deliberately language-agnostic: it runs
  * `descriptor.queries.comments` and `descriptor.queries.strings` against
- * the tree, classifies each captured node via `adapter.classify` (falling
- * back to the obvious default — `'lineComment'` / `'stringLiteral'` — for
- * an adapter that doesn't override it), and hands the resulting flat
- * region list to `adapter.groupRegions` for any language-specific
- * merging. Nothing here references Python, or any other language, by
- * name — that's what keeps this reusable once a second adapter exists
- * (the JavaScript canary adapter is what actually proves that; this is
- * the code the canary exercises).
+ * the tree (skipping either pass entirely when the corresponding query is
+ * absent — a prose-only language like Markdown declares neither), classifies
+ * each captured node via `adapter.classify` (falling back to the obvious
+ * default — `'lineComment'` / `'stringLiteral'` — for an adapter that
+ * doesn't override it), and hands the resulting flat region list to
+ * `adapter.groupRegions` for any language-specific merging. Nothing here
+ * references Python, or any other language, by name — that's what keeps
+ * this reusable once a second adapter exists (the JavaScript canary
+ * adapter is what actually proves that; this is the code the canary
+ * exercises).
+ *
+ * `adapter.discoverProse?.(tree, source, languageId, options)` runs
+ * *in addition to* the query-driven passes above, appending every
+ * `'prose'` region it returns before grouping and the final sort — see
+ * `../types/adapter.ts`'s own doc comment on `discoverProse` for why this
+ * is a whole-pipeline hook rather than descriptor query data alone.
  *
  * `adapter.classify` returning `null` for a captured node excludes it
  * from discovery entirely (per its own doc comment on
@@ -127,7 +126,9 @@ export function discoverRegions(
   const classify = (node: SyntaxNode, fallback: RegionKind): RegionKind | null =>
     adapter.classify ? adapter.classify(node, source) : fallback;
 
-  const stringNodes = captureNodes(tree, descriptor.queries.strings, 'string');
+  const stringNodes = descriptor.queries.strings
+    ? captureNodes(tree, descriptor.queries.strings, 'string')
+    : [];
   const stringNodeIds = new Set(stringNodes.map((n) => n.id));
 
   const regions: WrappableRegion[] = [];
@@ -169,10 +170,12 @@ export function discoverRegions(
     }
   }
 
-  for (const node of captureNodes(tree, descriptor.queries.comments, 'comment')) {
-    const kind = classify(node, 'lineComment');
-    if (kind !== null) {
-      regions.push(buildRegion(node, kind));
+  if (descriptor.queries.comments) {
+    for (const node of captureNodes(tree, descriptor.queries.comments, 'comment')) {
+      const kind = classify(node, 'lineComment');
+      if (kind !== null) {
+        regions.push(buildRegion(node, kind));
+      }
     }
   }
 
@@ -185,6 +188,8 @@ export function discoverRegions(
       regions.push(buildRegion(node, kind));
     }
   }
+
+  regions.push(...(adapter.discoverProse?.(tree, source, languageId, options) ?? []));
 
   const grouped = adapter.groupRegions ? adapter.groupRegions(regions) : regions;
   return sortByPosition(grouped);
@@ -235,46 +240,6 @@ function collectOperatorChainLeaves(
     return null; // a non-literal operand disqualifies the whole chain
   }
   return leaves;
-}
-
-/**
- * Run `querySource` against `tree` and return the nodes captured under
- * `captureName`, in the order tree-sitter reports them.
- *
- * `descriptor.queries.comments`/`.strings` are expected to use exactly
- * one capture name each (`@comment`, `@string` by convention — see every
- * shipped descriptor) — this filters by name defensively rather than
- * assuming a query has no other captures, so a future descriptor with
- * predicates or helper captures alongside the main one doesn't silently
- * pull in the wrong nodes.
- */
-function captureNodes(tree: Tree, querySource: string, captureName: string): SyntaxNode[] {
-  return captureNodesByName(tree, querySource).get(captureName) ?? [];
-}
-
-/**
- * Run `querySource` against `tree` and group the resulting nodes by
- * capture name, in the order tree-sitter reports them within each group.
- * Used directly (rather than through `captureNodes`) by the concatenation
- * handling above, which needs to distinguish `@concat.implicit` from
- * `@concat.operator` captures produced by one query.
- */
-function captureNodesByName(tree: Tree, querySource: string): Map<string, SyntaxNode[]> {
-  const query = new Query(tree.language, querySource);
-  try {
-    const byName = new Map<string, SyntaxNode[]>();
-    for (const capture of query.captures(tree.rootNode)) {
-      const existing = byName.get(capture.name);
-      if (existing) {
-        existing.push(capture.node);
-      } else {
-        byName.set(capture.name, [capture.node]);
-      }
-    }
-    return byName;
-  } finally {
-    query.delete();
-  }
 }
 
 /**

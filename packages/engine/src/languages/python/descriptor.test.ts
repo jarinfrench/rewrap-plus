@@ -18,8 +18,8 @@ describe('pythonDescriptor', () => {
   });
 
   it('declares queries that compile against the vendored grammar', () => {
-    expect(() => new Query(language, pythonDescriptor.queries.comments)).not.toThrow();
-    expect(() => new Query(language, pythonDescriptor.queries.strings)).not.toThrow();
+    expect(() => new Query(language, pythonDescriptor.queries.comments!)).not.toThrow();
+    expect(() => new Query(language, pythonDescriptor.queries.strings!)).not.toThrow();
     expect(() => new Query(language, pythonDescriptor.queries.concatenations!)).not.toThrow();
   });
 
@@ -59,14 +59,14 @@ describe('pythonDescriptor', () => {
   });
 
   it('declares canonical, lowercase prefix forms only', () => {
-    const prefixes = pythonDescriptor.strings.prefixes.map((p) => p.prefix);
+    const prefixes = pythonDescriptor.strings!.prefixes.map((p) => p.prefix);
 
     expect(prefixes).toEqual(['', 'u', 'r', 'f', 'b', 'rf', 'rb']);
     expect(prefixes.every((p) => p === p.toLowerCase())).toBe(true);
   });
 
   it('flags exactly the prefixes that are raw or bytes', () => {
-    const byPrefix = new Map(pythonDescriptor.strings.prefixes.map((p) => [p.prefix, p]));
+    const byPrefix = new Map(pythonDescriptor.strings!.prefixes.map((p) => [p.prefix, p]));
 
     expect(byPrefix.get('r')?.raw).toBe(true);
     expect(byPrefix.get('rb')?.raw).toBe(true);
@@ -78,11 +78,11 @@ describe('pythonDescriptor', () => {
   });
 
   it('declares no separate raw-form delimiters — Python has none', () => {
-    expect(pythonDescriptor.strings.rawForms).toEqual([]);
+    expect(pythonDescriptor.strings!.rawForms).toEqual([]);
   });
 
   it('recognizes every standard Python escape sequence', () => {
-    const sequences = pythonDescriptor.strings.escapes.sequences;
+    const sequences = pythonDescriptor.strings!.escapes.sequences;
     const matches = (text: string): boolean => sequences.some((re) => re.test(text));
 
     for (const escape of ['\\n', '\\t', '\\\\', "\\'", '\\"', '\\x41', '\\u1234', '\\U0001F600']) {
@@ -93,7 +93,7 @@ describe('pythonDescriptor', () => {
   });
 
   it('treats format placeholders and %-format specifiers as atomic', () => {
-    const placeholders = pythonDescriptor.strings.placeholders;
+    const placeholders = pythonDescriptor.strings!.placeholders;
     const matches = (text: string): boolean => placeholders.some((re) => re.test(text));
 
     expect(matches('{name!r:>10}')).toBe(true);
@@ -103,8 +103,8 @@ describe('pythonDescriptor', () => {
   });
 
   it('defaults to implicit adjacency concatenation with trailing + as the alternative', () => {
-    expect(pythonDescriptor.strings.concatenation.style).toBe('implicit');
-    expect(pythonDescriptor.strings.concatenation.operator).toBe('+');
-    expect(pythonDescriptor.strings.concatenation.requiresGrouping).toBe(true);
+    expect(pythonDescriptor.strings!.concatenation.style).toBe('implicit');
+    expect(pythonDescriptor.strings!.concatenation.operator).toBe('+');
+    expect(pythonDescriptor.strings!.concatenation.requiresGrouping).toBe(true);
   });
 });

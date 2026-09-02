@@ -67,6 +67,7 @@ export type {
   RawFormSpec,
   EscapeSpec,
   EmitContext,
+  DiscoverRegionsOptions,
 } from './types/adapter.js';
 export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';
 export type { Atom, Block, DocMeta, LogicalDocument } from './types/document.js';
@@ -78,7 +79,7 @@ export { parseWithErrors } from './parser/parse-result.js';
 export type { ParseResult } from './parser/parse-result.js';
 export { spanFromNode } from './parser/span-from-node.js';
 export { discoverRegions } from './discovery/discover-regions.js';
-export type { DiscoverRegionsOptions } from './discovery/discover-regions.js';
+export { captureNodes, captureNodesByName } from './discovery/capture.js';
 export { sliceSpanText } from './discovery/slice-span.js';
 export { visualIndentColumn } from './discovery/visual-indent-column.js';
 export { pythonAdapter } from './languages/python/adapter.js';

@@ -131,7 +131,11 @@ function resolveConcatenationStyle(
       return 'implicit';
     }
   }
-  return pythonDescriptor.strings.concatenation.style;
+  // Non-null: `strings` is optional on `LanguageDescriptor` only for a
+  // prose-only language with no string-literal syntax at all (Markdown,
+  // LaTeX — `docs/planning/markdown-latex-plan.md` §3.2); Python always
+  // declares it.
+  return pythonDescriptor.strings!.concatenation.style;
 }
 
 /**

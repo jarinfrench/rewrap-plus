@@ -102,8 +102,23 @@ export function runAdapterConformance(
       const language = parser.language;
       expect(language).not.toBeNull();
 
-      expect(() => new Query(language!, descriptor.queries.comments).delete()).not.toThrow();
-      expect(() => new Query(language!, descriptor.queries.strings).delete()).not.toThrow();
+      // `queries.comments`/`.strings`/`.prose` are each optional as of the
+      // `'prose'` region kind (`docs/planning/markdown-latex-plan.md`
+      // §3.2) — each compiled only when declared. A prose-only adapter's
+      // own query (`queries.prose`) isn't compiled here yet; teaching this
+      // kit about prose adapters more fully (this, source-shape wording,
+      // and the line-length/trailing-whitespace checks below) is
+      // deliberately deferred to that plan's Phase B commit 6, once a
+      // real prose adapter exists to test it against — this is just the
+      // minimal change needed to keep every existing comment/string
+      // adapter's own check compiling and passing under the new optional
+      // types.
+      if (descriptor.queries.comments) {
+        expect(() => new Query(language!, descriptor.queries.comments!).delete()).not.toThrow();
+      }
+      if (descriptor.queries.strings) {
+        expect(() => new Query(language!, descriptor.queries.strings!).delete()).not.toThrow();
+      }
       if (descriptor.queries.concatenations) {
         expect(() => new Query(language!, descriptor.queries.concatenations!).delete()).not.toThrow();
       }

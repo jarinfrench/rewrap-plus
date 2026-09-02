@@ -64,7 +64,7 @@ describe('LanguageDescriptor', () => {
 
     expect(descriptor.id).toBe('plaintext-probe');
     expect(descriptor.comments.line?.marker).toBe('#');
-    expect(descriptor.strings.quotes).toHaveLength(1);
+    expect(descriptor.strings!.quotes).toHaveLength(1);
   });
 
   it('supports operator-style concatenation with a placement setting', () => {
@@ -79,8 +79,28 @@ describe('LanguageDescriptor', () => {
       },
     });
 
-    expect(descriptor.strings.concatenation.style).toBe('operator');
-    expect(descriptor.strings.rawForms[0]?.open).toBe('R"(');
+    expect(descriptor.strings!.concatenation.style).toBe('operator');
+    expect(descriptor.strings!.rawForms[0]?.open).toBe('R"(');
+  });
+});
+
+describe('LanguageDescriptor — prose-shaped (no comments/strings queries or strings block)', () => {
+  it('is valid data with queries.comments, queries.strings, and strings all omitted', () => {
+    // The shape a prose-only language (Markdown) actually declares — see
+    // `docs/planning/markdown-latex-plan.md` §3.2/§5.1. No `!`/`as never`
+    // needed anywhere here: this is what makes these fields genuinely
+    // optional on the type, not just optional-with-a-cast.
+    const descriptor: LanguageDescriptor = {
+      id: 'markdown-probe',
+      grammarWasm: 'grammars/tree-sitter-markdown.wasm',
+      queries: { prose: '(paragraph) @prose' },
+      comments: { neverReflow: [] },
+    };
+
+    expect(descriptor.queries.comments).toBeUndefined();
+    expect(descriptor.queries.strings).toBeUndefined();
+    expect(descriptor.queries.prose).toBe('(paragraph) @prose');
+    expect(descriptor.strings).toBeUndefined();
   });
 });
 
@@ -89,6 +109,8 @@ describe('LanguageAdapter', () => {
     const adapter: LanguageAdapter = { descriptor: minimalDescriptor() };
 
     expect(adapter.classify).toBeUndefined();
+    expect(adapter.discoverProse).toBeUndefined();
+    expect(adapter.wrapProse).toBeUndefined();
     expect(adapter.descriptor.id).toBe('plaintext-probe');
   });
 

@@ -85,6 +85,79 @@ describe('validateDescriptor', () => {
       ),
     ).toThrow(/concatenation\.operator/);
   });
+
+  it('accepts a prose-shaped descriptor with no comments/strings queries and no strings block', () => {
+    // The Markdown shape (`docs/planning/markdown-latex-plan.md` §5.1) —
+    // built as a full literal, not through `makeDescriptor`'s override
+    // merge, since `exactOptionalPropertyTypes` distinguishes an omitted
+    // `strings` key from one explicitly set to `undefined`.
+    const descriptor: LanguageDescriptor = {
+      id: 'markdown-probe',
+      grammarWasm: 'grammars/tree-sitter-markdown.wasm',
+      queries: { prose: '(paragraph) @prose' },
+      comments: { neverReflow: [] },
+    };
+
+    expect(() => validateDescriptor(descriptor)).not.toThrow();
+  });
+
+  it('rejects a descriptor that declares none of queries.comments/strings/prose and has no discoverProse hook', () => {
+    const descriptor: LanguageDescriptor = {
+      id: 'nothing-probe',
+      grammarWasm: 'grammars/tree-sitter-markdown.wasm',
+      queries: {},
+      comments: { neverReflow: [] },
+    };
+
+    expect(() => validateDescriptor(descriptor)).toThrow(/discover nothing/);
+  });
+
+  it('accepts a descriptor with no queries at all when hasDiscoverProse is true', () => {
+    // The LaTeX shape (`docs/planning/markdown-latex-plan.md` §6.2): prose
+    // discovery is a masked line scan, not a query, so `queries.prose`
+    // itself can be absent too — only the `discoverProse` hook's
+    // *presence*, passed by the caller (normally `AdapterRegistry.register`,
+    // which has the adapter in hand), satisfies the "discovers something"
+    // requirement.
+    const descriptor: LanguageDescriptor = {
+      id: 'latex-probe',
+      grammarWasm: 'grammars/tree-sitter-latex.wasm',
+      queries: {},
+      comments: { neverReflow: [] },
+    };
+
+    expect(() => validateDescriptor(descriptor, true)).not.toThrow();
+  });
+
+  it('rejects queries.strings declared without a strings block', () => {
+    const descriptor: LanguageDescriptor = {
+      id: 'mismatched-probe',
+      grammarWasm: 'grammars/tree-sitter-python.wasm',
+      queries: { strings: '(string) @string' },
+      comments: { neverReflow: [] },
+    };
+
+    expect(() => validateDescriptor(descriptor)).toThrow(/queries\.strings and strings/);
+  });
+
+  it('rejects a strings block declared without queries.strings', () => {
+    const descriptor: LanguageDescriptor = {
+      id: 'mismatched-probe',
+      grammarWasm: 'grammars/tree-sitter-python.wasm',
+      queries: { comments: '(comment) @comment' },
+      comments: { neverReflow: [] },
+      strings: {
+        quotes: [{ delimiter: '"', multiline: false, escapes: true }],
+        prefixes: [],
+        rawForms: [],
+        escapes: { sequences: [] },
+        placeholders: [],
+        concatenation: { style: 'implicit' },
+      },
+    };
+
+    expect(() => validateDescriptor(descriptor)).toThrow(/queries\.strings and strings/);
+  });
 });
 
 describe('AdapterRegistry', () => {
