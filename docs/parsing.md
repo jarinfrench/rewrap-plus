@@ -235,3 +235,108 @@ See `docs/adapters.md`'s C++ section for how each of these shaped
   `SourceSpan` conversion from finding 3.
 - `packages/engine/src/parser/parse-result.ts` — error/missing node
   detection from finding 4.
+
+## Finding 7: `tree-sitter-markdown` (block grammar) — geometry mostly holds, one real tree-shape surprise, and a clean error-overlap rate
+
+Probed via `docs/spikes/tree-sitter-markdown-probe.mjs`, per
+`docs/planning/markdown-latex-plan.md` §9 Phase A commit 1, against the
+`v0.5.3` release asset (`tree-sitter-markdown.wasm`, 421,574 bytes —
+matches the plan's recorded size exactly).
+
+**Attestation.** `gh` is not installed on this machine (as the plan's own
+toolchain inventory already noted), so verification went two routes
+instead: (1) `GET /repos/tree-sitter-grammars/tree-sitter-markdown/attestations/sha256:<hash>`
+returned HTTP 200 with one attestation bundle for the exact downloaded
+file's sha256; decoding the Fulcio certificate's SAN extensions by hand
+(no tooling needed — they're plain ASN.1 UTF8Strings) confirmed the
+workflow identity: `https://github.com/tree-sitter/workflows/.github/workflows/release.yml@refs/heads/main`,
+source repo `tree-sitter-grammars/tree-sitter-markdown`, tag
+`refs/tags/v0.5.3`, and source commit `f969cd3ae3f9fbd4e43205431d0ae286014c05b5`
+— all four matching the plan's independently-recorded values exactly. (2)
+`pip install sigstore` and `sigstore verify identity` got as far as
+validating the Fulcio certificate chain and its OIDC identity/issuer
+policy match ("Successfully verified signing certificate validity...")
+but then failed at the Rekor transparency-log checkpoint-signature step
+with `Signature not found for log ID c0d23d6a…` — the client's current
+public-good trust root doesn't recognize the log key this checkpoint was
+signed with, even after clearing the local TUF cache and re-fetching. This
+reads as a sigstore-python/trust-root freshness gap (the cert chain itself
+verified cleanly, and its embedded identity data is internally consistent
+with route (1)'s findings), not evidence against authenticity — `gh
+attestation verify`, which talks to GitHub's own verification service
+rather than a locally-cached public trust root, is still the recommended
+tool and remains a residual gap on this machine specifically, exactly as
+the plan flagged in advance.
+
+**Geometry (§5.2 assumptions):**
+
+- `paragraph.startPosition` is confirmed to be the content start on line
+  1, after any `block_quote_marker`/list/task marker — verified across
+  single quote, nested (`>>`) quote, ordered/unordered/task lists, and
+  quote-in-list/list-in-quote combinations.
+- **One real discrepancy from the plan's own node-types.json reading:**
+  `block_continuation` is a child of the paragraph's `inline` node, not a
+  direct child of `paragraph` itself (e.g. `paragraph → inline →
+  block_continuation`, not `paragraph → [inline, block_continuation]`).
+  This doesn't change anything downstream, because §5.2 already hedged
+  exactly this uncertainty: "parts are built from source lines and the
+  paragraph's row range, not from `inline.text`" — that's the approach to
+  keep, now confirmed necessary rather than merely cautious.
+- A lazy continuation line (no `>` prefix on line 2 of a quoted
+  paragraph) produces no `block_continuation` node at all for that line,
+  confirmed directly — matches the plan's expectation.
+- Tabs in container prefixes (`-\t`, `>\t`) are preserved verbatim in both
+  the marker node and the corresponding `block_continuation` text — no
+  normalization by the grammar, so the adapter's own tab-preservation
+  logic (§5.3) is the only thing that will handle this.
+- CRLF: a paragraph's own span (and its `inline` child's span) reproduces
+  every interior `\r\n` pair verbatim, not just the last one — confirmed
+  across a 3-line block-quoted paragraph. `paragraph.endPosition` lands
+  one row *past* the last content row (column 0 of the following line),
+  i.e. it includes the trailing line terminator; building `parts[i]`'s end
+  from "end of that source line's content, `\r` excluded" (as §5.2
+  already specifies) is the correct approach, not the node's own
+  `endPosition`.
+
+**Extension defaults confirmed active in the release asset:** pipe tables
+(`pipe_table` node, full header/delimiter-row/row structure), YAML front
+matter (`minus_metadata`), TOML front matter (`plus_metadata`), and
+strikethrough at least doesn't produce a block-level parse error (its
+resolution is an inline-grammar concern we're deliberately not vendoring).
+All four were open questions in §2.1; all four now verified rather than
+inferred from the README.
+
+**Setext heading exclusion (§3.3 item 3):** confirmed trivial —
+`setext_heading`'s children are exactly `[paragraph, setext_h1_underline]`
+(or `h2`), so `paragraph.parent.type === 'setext_heading'` is a complete,
+correct exclusion check.
+
+**Paragraph terminators:** a pipe table immediately following a text line
+with no blank line between them correctly ends the paragraph at the table
+boundary in the tree itself (`paragraph` node stops one row early,
+`pipe_table` starts where it stops) — nothing for `discoverProse` to
+special-case; the grammar already resolved it, which is the entire reason
+this project chose a tree-sitter grammar Markdown adapter over
+re-deriving CommonMark block structure from text.
+
+**Real-corpus error-overlap rate (the Phase A gate's central number):**
+parsing every `.md` file under this repo's own `docs/` (7 files, 732
+paragraph nodes total) found **0 paragraphs overlapping an `ERROR`
+node** — 0.00%. "Skip on parse error" is a footnote here, not the
+experience, on ordinary hand-written documentation Markdown.
+
+**Hard-break backslash nuance for §5.4, worth carrying into Phase C:** the
+block grammar's `inline` node does tokenize backslashes individually as
+leaf `\` nodes even without the vendored inline grammar (confirmed: an
+escaped `\\` at line end produces two adjacent `\` leaves; a single
+trailing `\` produces one) — informative, but not needed, since the raw
+regex `/(?<!\\)\\$/` the plan already specifies gets both of these cases
+right by itself. What it does *not* get right on its own: three or more
+trailing backslashes, where CommonMark's actual rule is escape-pair
+parity (an odd trailing run ends in one real, unescaped backslash = hard
+break; an even run doesn't), not "is the immediately preceding character
+a backslash." The plan's regex only looks one character back. Not a
+Phase A blocker — no fixture in this repo's own corpus exercises it — but
+flag it explicitly for the Phase C hard-break implementation and give it
+a fixture there (count the trailing backslash run's length and use its
+parity, rather than the single-character lookbehind as written).
