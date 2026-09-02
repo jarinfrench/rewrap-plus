@@ -35,10 +35,16 @@ export interface ConformanceFixtures {
 
   /**
    * One or more realistic source snippets, each containing at least one
-   * line-comment block that overflows `columnLimit` and so actually
-   * needs wrapping. Every wrap-based invariant (idempotency, re-parse
-   * cleanliness, line-length, line-ending preservation) runs once per
-   * entry — a conformance failure names which source it was found in.
+   * *region* — a line-comment block, a string literal, a `'prose'`
+   * paragraph, whichever kind(s) this adapter actually produces — that
+   * overflows `columnLimit` and so actually needs wrapping. Every
+   * wrap-based invariant (idempotency, re-parse cleanliness, line-length,
+   * line-ending preservation) runs once per entry — a conformance
+   * failure names which source it was found in. Generalized from an
+   * earlier "at least one line-comment block" wording once a `'prose'`
+   * adapter's own sources (Markdown/LaTeX paragraphs, with no
+   * line-comment concept at all for Markdown) needed to satisfy the same
+   * contract.
    *
    * Deliberately plural: a single snippet can't exercise both a CRLF
    * and an LF source's line-ending preservation in one pass, and a
@@ -93,7 +99,7 @@ export function runAdapterConformance(
 
     /** "Descriptor validates" */
     it('descriptor passes structural validation', () => {
-      expect(() => validateDescriptor(descriptor)).not.toThrow();
+      expect(() => validateDescriptor(descriptor, adapter.discoverProse !== undefined)).not.toThrow();
     });
 
     /** "All tree-sitter queries compile against the grammar" */
@@ -104,20 +110,20 @@ export function runAdapterConformance(
 
       // `queries.comments`/`.strings`/`.prose` are each optional as of the
       // `'prose'` region kind (`docs/planning/markdown-latex-plan.md`
-      // §3.2) — each compiled only when declared. A prose-only adapter's
-      // own query (`queries.prose`) isn't compiled here yet; teaching this
-      // kit about prose adapters more fully (this, source-shape wording,
-      // and the line-length/trailing-whitespace checks below) is
-      // deliberately deferred to that plan's Phase B commit 6, once a
-      // real prose adapter exists to test it against — this is just the
-      // minimal change needed to keep every existing comment/string
-      // adapter's own check compiling and passing under the new optional
-      // types.
+      // §3.2) — a prose-only adapter (Markdown) declares `queries.prose`
+      // and neither of the other two; a masked-line-scan prose adapter
+      // (LaTeX) declares none of the three query fields at all and relies
+      // entirely on its own `discoverProse` hook, which has no query
+      // source for this test to compile in the first place. Each is
+      // therefore compiled only when actually declared.
       if (descriptor.queries.comments) {
         expect(() => new Query(language!, descriptor.queries.comments!).delete()).not.toThrow();
       }
       if (descriptor.queries.strings) {
         expect(() => new Query(language!, descriptor.queries.strings!).delete()).not.toThrow();
+      }
+      if (descriptor.queries.prose) {
+        expect(() => new Query(language!, descriptor.queries.prose!).delete()).not.toThrow();
       }
       if (descriptor.queries.concatenations) {
         expect(() => new Query(language!, descriptor.queries.concatenations!).delete()).not.toThrow();
@@ -173,7 +179,11 @@ export function runAdapterConformance(
               if (line.length <= fixtures.columnLimit) {
                 continue;
               }
-              const stripped = stripKnownCommentDecoration(line, descriptor);
+              const stripped = stripKnownCommentDecoration(
+                line,
+                descriptor,
+                adapter.discoverProse !== undefined,
+              );
               if (stripped === null) {
                 continue; // a bare delimiter-only line (e.g. block open/close alone) — never content, never the concern here
               }
@@ -205,6 +215,29 @@ export function runAdapterConformance(
           }
         });
 
+        /**
+         * Deliberately kept strict, with **no** carve-out for a `'prose'`
+         * region's own two-space hard break
+         * (`docs/planning/markdown-latex-plan.md` §4.2/§4.6) — a
+         * Markdown paragraph line ending in exactly two spaces is real,
+         * intentional trailing whitespace that must survive a wrap
+         * (`../prose/dissolve-prose.ts` glues it onto the preceding
+         * atom's own text for exactly this reason). Rather than loosen
+         * this invariant to tolerate it, this kit's own conformance
+         * *sources* are expected to avoid two-space hard breaks
+         * entirely — the one legitimate trailing whitespace in the whole
+         * project is tested for real in the Markdown adapter's own gold
+         * fixtures (`docs/planning/markdown-latex-plan.md` §8.2's
+         * `paragraphs` fixture directory, "each hard-break form"), where
+         * a `WrappableRegion`-aware test can assert *which* line is
+         * allowed to carry it, rather than this kit's own flat
+         * before/after string comparison, which has no way to
+         * distinguish "expected" trailing whitespace from a real
+         * regression. Decided here rather than deferred, since the
+         * alternative (loosening this check) would have silently
+         * widened what every *other* language's conformance run
+         * tolerates too.
+         */
         it('never introduces trailing whitespace on a changed line', async () => {
           const result = await wrapRegions(source, descriptor.id, 'all', cfg, parserManager);
           const wrapped = applyTextEdits(source, result.edits);
@@ -228,23 +261,28 @@ export function runAdapterConformance(
 }
 
 /**
- * Strip whatever comment decoration `descriptor` says a wrapped line
- * should carry — the line-comment marker, or a block comment's
- * continuation prefix — leaving just the content the reflow algorithm
- * actually chose to place there. Returns `null` for a line that's
- * nothing but a bare delimiter (a block comment's open or close line
- * alone), which is never itself "content" and so never the concern of
- * the over-limit check this feeds.
+ * Strip whatever comment (or, for a prose-capable adapter, prose
+ * continuation-prefix) decoration a wrapped line should carry, leaving
+ * just the content the reflow algorithm actually chose to place there.
+ * Returns `null` for a line that's nothing but a bare delimiter (a block
+ * comment's open or close line alone), which is never itself "content"
+ * and so never the concern of the over-limit check this feeds.
  *
  * Tries the line-comment marker first, then the block continuation
  * prefix, then the block open/close delimiters — whichever the
- * descriptor actually declares. A line matching none of them (shouldn't
- * happen for anything `wrapRegions` itself produces, but this is
- * defensive rather than assumed) is returned as-is, whitespace-trimmed,
- * so the check still has *something* meaningful to assert against
- * rather than silently skipping.
+ * descriptor actually declares — then, for a prose-capable adapter, a
+ * `'prose'` region's own continuation prefix (see `isProseCapable`'s own
+ * doc comment below). A line matching none of them (shouldn't happen for
+ * anything `wrapRegions` itself produces, but this is defensive rather
+ * than assumed) is returned as-is, whitespace-trimmed, so the check
+ * still has *something* meaningful to assert against rather than
+ * silently skipping.
  */
-function stripKnownCommentDecoration(line: string, descriptor: LanguageAdapter['descriptor']): string | null {
+function stripKnownCommentDecoration(
+  line: string,
+  descriptor: LanguageAdapter['descriptor'],
+  isProseCapable: boolean,
+): string | null {
   const trimmedStart = line.replace(/^\s*/, '');
 
   const marker = descriptor.comments.line?.marker;
@@ -265,6 +303,31 @@ function stripKnownCommentDecoration(line: string, descriptor: LanguageAdapter['
     if (trimmedStart.startsWith(block.open)) {
       return trimmedStart.slice(block.open.length).trim();
     }
+  }
+
+  if (isProseCapable) {
+    // `docs/planning/markdown-latex-plan.md` §4.6: this kit has no
+    // `WrappableRegion` in hand at this point, only a flat already-
+    // wrapped line, so it can't know the exact per-region
+    // `continuationPrefix` a real `wrapProse` call computed (§5.3's
+    // block-quote/list-hanging-indent derivation, which varies by
+    // container nesting within one region, let alone across regions).
+    // Loosened, rather than exact, on purpose: strip a maximal leading
+    // run of `>` and horizontal whitespace, which covers every real
+    // continuation-prefix shape that derivation produces (`>`, `>> `,
+    // list hanging indent, a LaTeX `\item`'s own indent, ...) without
+    // reconstructing it here. `isProseCapable` — "does this adapter
+    // implement `discoverProse`," passed by the caller, which has the
+    // adapter — rather than a descriptor-only signal like
+    // `queries.prose`, since LaTeX's prose discovery declares no
+    // `queries.prose` at all (`docs/planning/markdown-latex-plan.md`
+    // §3.2/§6.2: no paragraph node exists to query) and would otherwise
+    // fall through this check for the one adapter it's also needed for.
+    // Revisit for the exact "run discoverRegions and match by region"
+    // approach the plan's own §4.6 names as the fallback, if this
+    // heuristic ever proves visibly wrong against a real fixture — not
+    // before, since no real prose adapter exists yet to test it against.
+    return trimmedStart.replace(/^[> \t]*/, '');
   }
 
   return trimmedStart;
