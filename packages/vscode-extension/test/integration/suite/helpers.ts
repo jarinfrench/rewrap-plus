@@ -20,10 +20,26 @@ export async function resetRewrapPlusSettings(): Promise<void> {
   await config.update('wrapStrings', undefined, vscode.ConfigurationTarget.Global);
   await config.update('stringPolicy', undefined, vscode.ConfigurationTarget.Global);
   await config.update('stringWrapInclude', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('autoWrap.enabled', undefined, vscode.ConfigurationTarget.Global);
+  await config.update('autoWrap.notification', undefined, vscode.ConfigurationTarget.Global);
 }
 
 export async function openFixture(absolutePath: string): Promise<vscode.TextEditor> {
   const document = await vscode.workspace.openTextDocument(absolutePath);
+  return vscode.window.showTextDocument(document);
+}
+
+/**
+ * An in-memory (`untitled`) document with `content` already in it — no
+ * checked-in fixture file needed. `resolveWrapConfigForDocument` already
+ * skips `.editorconfig` lookup for any non-`file` URI scheme, so this is
+ * safe to use anywhere a test only needs to control `rewrapPlus.*`
+ * settings, not on-disk file behavior (`../suite/format-on-save.test.ts`'s
+ * real-file-per-test setup is what a `document.save()`-driven test still
+ * needs instead).
+ */
+export async function openScratchDocument(content: string, language = 'plaintext'): Promise<vscode.TextEditor> {
+  const document = await vscode.workspace.openTextDocument({ content, language });
   return vscode.window.showTextDocument(document);
 }
 

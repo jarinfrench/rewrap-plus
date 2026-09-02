@@ -34,6 +34,19 @@ export interface ExtensionSettings {
   readonly balancedWrapping: boolean;
   readonly stringWrapInclude: readonly string[];
   readonly formatOnSave: boolean;
+  readonly autoWrap: AutoWrapSettings;
+}
+
+export interface AutoWrapSettings {
+  /**
+   * `rewrapPlus.autoWrap.enabled` — the setting-level default. The
+   * *effective* on/off state for a given document also factors in
+   * `rewrapPlus.toggleAutoWrap`'s session-scoped per-document override
+   * (`../auto-wrap.ts` owns that; it isn't part of VSCode configuration
+   * at all, so it can't live here).
+   */
+  readonly enabled: boolean;
+  readonly notification: 'icon' | 'text';
 }
 
 export function readExtensionSettings(document: vscode.TextDocument): ExtensionSettings {
@@ -69,5 +82,13 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     // doc comment for why this needs its own setting rather than reusing
     // `editor.formatOnSave` + `editor.defaultFormatter` alone.
     formatOnSave: config.get<boolean>('formatOnSave', false),
+    // `config` is already scoped to the `rewrapPlus` section, so a
+    // dotted sub-key (`autoWrap.enabled`) reads the nested
+    // `rewrapPlus.autoWrap.enabled` value directly — `WorkspaceConfiguration.get`
+    // supports this the same way it supports any other section-relative key.
+    autoWrap: {
+      enabled: config.get<boolean>('autoWrap.enabled', false),
+      notification: config.get<'icon' | 'text'>('autoWrap.notification', 'icon'),
+    },
   };
 }

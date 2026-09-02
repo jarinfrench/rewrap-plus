@@ -13,6 +13,7 @@ import type {
   PositionMapper,
   SourceSpan,
   TextEdit as EngineTextEdit,
+  WrapConfig,
   WrapResult,
 } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 import { getEngine, getParserManager, getSupportedLanguages } from '../engine-host.js';
@@ -76,10 +77,41 @@ export interface WrapOutcome {
  * (see `wrap-document.ts`'s own `LARGE_DOCUMENT_LINE_THRESHOLD` for the
  * one caller that does pass one, and why only it needs to).
  */
+export interface ComputeWrapResultOptions {
+  /**
+   * Whether to log this call's outcome to the output channel and flash
+   * a status-bar summary via `reportWrapOutcome`. Defaults to `true` for
+   * every existing caller (command, format-on-save, formatting
+   * providers) — each of those is one discrete, user-initiated event
+   * worth reporting on. `../auto-wrap.ts` is the one caller that passes
+   * `false`: it calls this once per triggering keystroke while the user
+   * types, so both halves of `reportWrapOutcome` (an output-channel line
+   * *and* a status-bar flash) would fire continuously rather than for a
+   * single discrete action — noise, not diagnostics, at that frequency.
+   * `rewrapPlus.showResolvedConfig` remains the right tool for
+   * inspecting what auto-wrap resolved for a document.
+   */
+  readonly report?: boolean;
+
+  /**
+   * When set, overrides `resolveWrapConfigForDocument`'s own
+   * `wrapConfig.wrapStrings` for this call only — the resolved
+   * `rewrapPlus.wrapStrings`/`stringWrapInclude` settings are left
+   * completely untouched (and still what `rewrapPlus.showResolvedConfig`
+   * reports); only what actually gets passed to `wrapRegions` changes.
+   * `../auto-wrap.ts` passes `false` unconditionally: it's
+   * comment/docstring-only by design (see its own module doc comment for
+   * why), independent of whatever the user has `wrapStrings` set to for
+   * the explicit wrap commands.
+   */
+  readonly wrapStrings?: boolean;
+}
+
 export async function computeWrapResult(
   document: vscode.TextDocument,
   targets: readonly SourceSpan[] | 'all',
   cancellation?: vscode.CancellationToken,
+  options?: ComputeWrapResultOptions,
 ): Promise<WrapOutcome | undefined> {
   const resolvedConfig = resolveWrapConfigForDocument(document);
   if (!resolvedConfig.enable) {
@@ -91,6 +123,11 @@ export async function computeWrapResult(
     return undefined;
   }
 
+  const wrapConfig: WrapConfig =
+    options?.wrapStrings === undefined
+      ? resolvedConfig.wrapConfig
+      : { ...resolvedConfig.wrapConfig, wrapStrings: options.wrapStrings };
+
   const engine = await getEngine();
   const parserManager = await getParserManager();
   const capturedVersion = document.version;
@@ -98,14 +135,25 @@ export async function computeWrapResult(
     document.getText(),
     document.languageId,
     targets,
-    resolvedConfig.wrapConfig,
+    wrapConfig,
     parserManager,
     cancellation,
   );
   const documentVersionChanged = document.version !== capturedVersion;
 
-  const outcome: WrapOutcome = { result, resolvedConfig, documentVersionChanged };
-  reportWrapOutcome(document, outcome);
+  // `resolvedConfig.wrapConfig` is replaced with the actual `wrapConfig`
+  // just passed to `wrapRegions` above, so `WrapOutcome` never disagrees
+  // with what really produced `result` — `resolvedConfig.enable` and
+  // `.columnLimit` (the fields every existing consumer actually reads)
+  // are untouched either way.
+  const outcome: WrapOutcome = {
+    result,
+    resolvedConfig: { ...resolvedConfig, wrapConfig },
+    documentVersionChanged,
+  };
+  if (options?.report ?? true) {
+    reportWrapOutcome(document, outcome);
+  }
   return outcome;
 }
 

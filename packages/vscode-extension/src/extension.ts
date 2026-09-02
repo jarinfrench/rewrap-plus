@@ -15,6 +15,7 @@ import { registerShowResolvedConfigCommand } from './commands/show-resolved-conf
 import { createRangeFormattingProvider } from './range-formatting-provider.js';
 import { createDocumentFormattingProvider } from './document-formatting-provider.js';
 import { registerFormatOnSave } from './format-on-save.js';
+import { registerAutoWrap } from './auto-wrap.js';
 import { getOutputChannel } from './output-channel.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -44,6 +45,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   registerWrapDocumentCommand(context);
   registerShowResolvedConfigCommand(context);
   registerFormatOnSave(context);
+  registerAutoWrap(context);
 
   const selector: vscode.DocumentSelector = languages.map((language) => ({ language }));
   context.subscriptions.push(

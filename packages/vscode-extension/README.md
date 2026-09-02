@@ -78,6 +78,7 @@ and `docs/adapters.md`), and more languages are on the roadmap.
 | **Rewrap+: Wrap Selection** (`rewrapPlus.wrapSelection`) | — | Each selection expands outward to its encompassing region(s); a selection spanning several regions wraps all of them. Also reachable via `Format Selection`. |
 | **Rewrap+: Wrap Document** (`rewrapPlus.wrapDocument`) | — | Every wrappable region, applied as one atomic edit — a single undo reverts everything. Also reachable via `Format Document` when no other formatter is registered for the language. Shows a cancellable progress notification above 2000 lines. |
 | **Rewrap+: Show Resolved Configuration** (`rewrapPlus.showResolvedConfig`) | — | Dumps the effective column limit (and which precedence tier it came from), active string/doc-dialect policy (including whether `stringWrapInclude` matched the current file), and extension version for the current file to the "Rewrap+" output channel — a telemetry-free way to answer "why did it wrap at N?" or attach real diagnostics to a bug report. Works even in an unsupported language. |
+| **Rewrap+: Toggle Auto Wrap** (`rewrapPlus.toggleAutoWrap`) | — | Flips auto-wrap on/off for the current file only, regardless of `rewrapPlus.autoWrap.enabled`. Session-scoped — not remembered across a window reload, same as upstream Rewrap's own toggle. See [Auto-wrap](#auto-wrap) below. |
 
 ## Settings
 
@@ -99,6 +100,8 @@ overrides work).
 | `rewrapPlus.balancedWrapping` | `false` | Use minimum-raggedness (balanced) line breaking instead of greedy first-fit. Often visibly nicer for short comments/docstrings, at the cost of more computation. |
 | `rewrapPlus.stringWrapInclude` | `["**"]` | Glob patterns, matched against each file's path relative to its workspace folder, scoping string-literal wrapping to specific paths — a file matching none of these has string wrapping disabled regardless of `wrapStrings`. Lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. Does not affect comment/docstring wrapping. |
 | `rewrapPlus.formatOnSave` | `false` | Wrap the whole document automatically before every save. See [Format on save](#format-on-save) below. |
+| `rewrapPlus.autoWrap.enabled` | `false` | Wrap the comment/docstring the cursor is in the moment a space or Enter keystroke crosses `columnLimit`. See [Auto-wrap](#auto-wrap) below. |
+| `rewrapPlus.autoWrap.notification` | `icon` | `icon` shows a persistent status-bar icon while auto-wrap is on for the current file. `text` shows a brief status-bar message only when toggled via `rewrapPlus.toggleAutoWrap`. |
 
 ### Column limit precedence
 
@@ -145,6 +148,40 @@ If instead you've set Rewrap+ *as* the default formatter for a language,
 its ordering relative to other save-time actions (`editor
 .codeActionsOnSave`, for instance) follows VSCode's usual rules for that
 setting, same as it would for any formatter.
+
+### Auto-wrap
+
+Rewrap's own live "auto-wrap": with `rewrapPlus.autoWrap.enabled` on
+(default `false`, matching upstream), the moment a space or Enter
+keystroke pushes the cursor at or past `rewrapPlus.columnLimit`,
+the comment or docstring it's in wraps automatically, mid-typing — no
+save, no command invocation. This is a different feature from
+`rewrapPlus.formatOnSave` above: format-on-save is one pass at a known
+instant (save time); auto-wrap is continuous, reacting to the document's
+own edit stream while you type.
+
+- **Comment/docstring only.** Auto-wrap never fires on a string literal,
+  regardless of `rewrapPlus.wrapStrings`/`stringPolicy` — reflowing a
+  string literal while you're still typing inside it carries materially
+  higher corruption risk (an escape split mid-composition, an unbalanced
+  quote) than the explicit wrap commands accept, since those are a
+  deliberate, reviewable action rather than one firing on every other
+  keystroke. Use `rewrapPlus.wrapAtCursor`/`wrapDocument` for strings.
+- **Doesn't fight your undo stack.** The wrap is applied so it merges
+  into the same undo entry as the keystroke that triggered it — undoing
+  once after typing across the margin removes the wrap along with
+  whatever you just typed, the same way upstream Rewrap's auto-wrap
+  behaves.
+- **IME-safe.** A composing candidate (Japanese/Chinese/Korean input, or
+  any accented-character composition) never looks like a plain typed
+  space or Enter to auto-wrap's trigger detection, so it never fires
+  mid-composition.
+- **Per-file override**: `rewrapPlus.toggleAutoWrap` flips auto-wrap for
+  just the current file, independent of the `rewrapPlus.autoWrap.enabled`
+  setting — on globally but off for one noisy file, or vice versa. Not
+  persisted across a window reload, matching upstream Rewrap.
+- `rewrapPlus.enable` (the global kill switch) always wins over both the
+  setting and any per-file override.
 
 ### Scoping string wrapping by path
 

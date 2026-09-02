@@ -156,6 +156,19 @@ eventually ships this.
   from the release and what ships to each registry are byte-identical
   rather than independently rebuilt.
 
+- **Auto-wrap** (`rewrapPlus.autoWrap.enabled`, default `false`): wraps
+  the comment/docstring the cursor is in the moment a space or Enter
+  keystroke crosses `rewrapPlus.columnLimit`, mid-typing — matching
+  upstream Rewrap's own live `rewrap.autoWrap.enabled`. Comment/docstring
+  only (never a string literal, regardless of `wrapStrings`). Applied so
+  it merges into the same undo entry as the triggering keystroke, rather
+  than becoming its own undo step. Structurally immune to IME composition
+  noise — a composing candidate's text is never a bare space/newline, the
+  one shape the trigger detection reacts to. `rewrapPlus.toggleAutoWrap`
+  overrides it per file, independent of the setting; `rewrapPlus.autoWrap.notification`
+  (`icon`, the default, or `text`) controls how the current on/off state
+  is surfaced, both matching upstream Rewrap's own values exactly.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
