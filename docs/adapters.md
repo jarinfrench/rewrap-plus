@@ -933,3 +933,226 @@ languages) comes next: "no engine change needed" continues to hold, but
 begin with, and Java's own two findings are the concrete evidence for
 why a real probe-first pass — not a template copy from the nearest
 similar-looking adapter — stays the right way to add one.
+
+---
+
+# Markdown and LaTeX — prose languages, Phase B: engine changes ahead of any real adapter
+
+Every section above asked "does the adapter interface hold?" *after* a
+real adapter's own fixtures exercised it — the leaked assumptions were
+things a real language's real content tripped over. This section is
+different in one real way: Markdown and LaTeX (`docs/planning/markdown-latex-plan.md`)
+are the first language work where the leaks were found *before* either
+real adapter exists — Phase C and D, not yet started — because the shape
+of the problem (prose *is* the document, not a comment or string inside
+one) was different enough from every language above that it justified a
+deliberate design phase (that plan's §1: "why prose is a different
+shape, concretely") rather than writing an adapter and discovering the
+gaps the usual way. What's below was still found and fixed by *building*
+something, though, not by design alone: Phase A's direct grammar probing
+(`docs/parsing.md` Findings 7/8) and, for the assumptions that only
+surface once real code runs, a synthetic `discoverProse`/`wrapProse`-only
+fixture (`packages/engine/test/conformance/fake-prose-conformance.test.ts`)
+built specifically to exercise the new engine surface end to end ahead of
+a real adapter. Four leaked assumptions, in the same sense as every
+section above; one more the synthetic fixture caught by actually running
+the pipeline rather than only reasoning about it.
+
+## Leaked assumptions found and fixed
+
+### 1. Every language has strings
+
+`LanguageDescriptor.strings` and `queries.strings` were required fields —
+already flagged as a real leak in the JavaScript-canary section above
+("`strings` is structurally populated but functionally inert"), where the
+canary had to declare a real-but-unused `strings` block just to satisfy
+`validateDescriptor`, purely because the schema had no way to say "this
+language has none." Markdown has no string-literal concept whatsoever, so
+that workaround would have had to be repeated a second time, this time
+with no honest data to populate it with at all.
+
+**Fix:** `queries.comments`, `queries.strings`, and `strings` itself all
+became optional (`types/adapter.ts`), with `validateDescriptor`
+(`adapter-registry.ts`) gaining a new consistency rule — `queries.strings`
+and `strings` must be declared together, or not at all — since one
+without the other is meaningless, not merely unused. Retires the
+JavaScript canary's inert-`strings` workaround as the *required* way to
+say "no strings"; that canary's own `strings` block is untouched (nothing
+forces removing real, if unused, data), but a future language genuinely
+has the option Markdown needed.
+
+### 2. Every region is discovered by running a query against the tree
+
+`discoverRegions` ran exactly `queries.comments` and `queries.strings`
+against the tree, full stop — every region kind before `'prose'`
+(`'lineComment'`, `'blockComment'`, `'docComment'`, `'docstring'`,
+`'stringLiteral'`) is a captured tree-sitter node, one way or another.
+LaTeX's own prose has no such node to capture: `docs/parsing.md` Finding
+8 confirmed directly (not merely inferred from the grammar's docs) that
+`tree-sitter-latex` has no paragraph-level node at all — a two-paragraph
+`\section` body separated by a blank line parses as one flat `text` node
+with the blank line inside it, since `_whitespace` is an `extras` rule
+the grammar discards entirely. A query-only discovery mechanism simply
+has nothing to capture for this case, at any query sophistication.
+
+**Fix:** `LanguageAdapter.discoverProse`, a whole-tree hook (like
+`wrapDocstring`/`wrapString` are whole-*pipeline* hooks, for the parallel
+reason: the shape varies too much per language to express as descriptor
+data alone), called by `discoverRegions` *in addition to* the query-driven
+passes and free to ignore the tree's captures entirely — LaTeX's own
+future implementation is expected to be a masked line scan using the tree
+only for exclusion spans (verbatim/math environments, comment spans),
+never a query. Markdown, which *does* have a real paragraph node, still
+gets to implement this hook as a thin twelve-line wrapper over an ordinary
+`queries.prose` capture — the hook covers the harder case without
+penalizing the easier one.
+
+### 3. A language's directive-comment marker is always its line-comment marker
+
+`scanDirectives` (and `wrap.ts`'s one call site) assumed
+`descriptor.comments.line?.marker` was the right pattern to scan for
+`rewrap: off`/`on`/`ignore`/`force` — true for every comment/string
+language so far, where the natural directive marker and the line-comment
+marker are the same thing by construction. Markdown breaks this outright:
+it has no line-comment concept at all (an HTML comment is left verbatim,
+not wrapped), but still needs a directive syntax, and the natural one —
+`<!-- rewrap: off -->` — has nothing to do with any comment marker this
+descriptor would otherwise declare.
+
+**Fix:** a new optional `LanguageDescriptor.directives?.marker` field,
+consulted by `wrap.ts` ahead of the `comments.line?.marker` fallback.
+Every existing descriptor leaves it unset and is unaffected; Markdown is
+expected to declare `directives: { marker: '<!--' }`. LaTeX needs no
+override — its `%` line-comment marker already doubles as its directive
+marker, the ordinary case this fallback exists to keep cheap.
+
+### 4. `Atom.breakBefore` had a consumer but no producer
+
+`types/document.ts`'s `Atom.breakBefore` field, and both fill algorithms'
+handling of it (`reflow/reflow-block.ts`: a `breakBefore` atom forces a
+fresh line under both greedy and balanced modes), existed from early in
+this project's history — but nothing anywhere ever *set* it to `true`.
+`atomizeWords` always emits `false` (confirmed directly, not assumed, by
+reading the function before writing `dissolveProse`). A latent,
+fully-plumbed feature with zero real callers is exactly the kind of gap
+that's invisible until something needs it.
+
+**Fix:** not a new mechanism — `reflowBlock` already did the right thing
+the moment something set the field. `prose/dissolve-prose.ts`'s
+`dissolveProse` is the first real producer: a hard-break marker (a
+trailing backslash, two-or-more spaces, an HTML `<br>` for Markdown; a
+line-break command for LaTeX) tags the *following* line's first atom
+`breakBefore: true`. Confirmed by tracing `reflowBlock`'s own logic before
+writing `dissolveProse` this way, not assumed and then debugged after —
+this is the one leak in this section that needed no engine-code change at
+all to close, only a real caller.
+
+### 5. The conformance kit's sources, and its line-length decoration check, are comment-shaped
+
+Two related assumptions in `conformance/run-adapter-conformance.ts`:
+`ConformanceFixtures.sources`' own doc comment required "at least one
+line-comment block that overflows," and `stripKnownCommentDecoration` (the
+over-limit check's decoration stripper) only ever knew how to strip a
+line-comment marker or a block-comment's continuation prefix — both
+written before any region kind existed whose "decoration" was neither.
+
+**Fix:** the fixture doc comment generalized to "at least one region ...
+whichever kind(s) this adapter actually produces," and
+`stripKnownCommentDecoration` gained a third, loosened branch for a
+prose-capable adapter (`adapter.discoverProse !== undefined`, threaded
+from the one real caller — not a descriptor-only signal, since LaTeX's own
+shape declares no `queries.prose` for this to key off of): strip a maximal
+leading run of `>` and horizontal whitespace, covering every real
+continuation-prefix shape `docs/planning/markdown-latex-plan.md` §5.3's
+derivation produces without reconstructing the exact one a real region
+used. Deliberately the *loosened* option the plan itself named as
+acceptable, not the more precise "run `discoverRegions` and match by
+region" alternative it also named — chosen because no real prose adapter
+exists yet to prove the loosened version wrong, and re-deciding that
+trade-off with real data once one does is cheaper than building the exact
+version speculatively now.
+
+## The synthetic conformance fixture found a real bug of its own
+
+`fake-prose-conformance.test.ts` — a `discoverProse`/`wrapProse`-only
+adapter with no real language behind it, built to run
+`runAdapterConformance` against a real `'prose'`-producing pipeline before
+Phase C/D exist to do it for real — caught a genuine bug in this phase's
+own commit 6 changes that nothing else did: the kit's "descriptor passes
+structural validation" check called `validateDescriptor(descriptor)` with
+no second argument, so any adapter relying solely on `discoverProse`
+(declaring none of `queries.comments`/`.strings`/`.prose` — LaTeX's real
+shape) would fail that check even though commit 4's own
+`validateDescriptor` had explicitly added a `hasDiscoverProse` parameter
+to accommodate exactly this. Unexercised until this fixture existed,
+because no adapter before it left every query field unset. Fixed to pass
+`adapter.discoverProse !== undefined`, the same signal already threaded
+into the line-length check above.
+
+The same fixture also caught two bugs in its own test-fixture
+construction — a CRLF trailing-`\r` left uncorrected in a hand-rolled
+region (the identical quirk `discover-regions.ts`'s `trimTrailingCR`
+exists for on the real, grammar-backed path, this document's own "CRLF
+handling" section above), and an `indentColumn`/`continuationPrefix`-width
+mismatch that let a continuation line's rendered length exceed
+`columnLimit` by the prefix's own width (`emit-prose.ts`'s single-budget
+formula assumes the two coincide, documented there). Neither is an engine
+bug — both are exactly the kind of mistake a *real* Markdown/LaTeX
+`discoverProse` implementation would need to get right, caught here
+against a throwaway fixture instead of a real adapter's own gold fixtures
+later, which is the whole reason building this synthetic fixture was
+worth the extra effort rather than only unit-testing `dissolveProse`/
+`emitProse` in isolation.
+
+## Deliberate scope limits (not leaks)
+
+- **The conformance kit's prose decoration check is a heuristic, not an
+  exact per-region match.** Named above — revisit for the plan's own
+  named alternative if a real fixture ever shows the `[> \t]*` strip
+  producing a false failure, not before.
+- **The trailing-whitespace invariant has no carve-out for a prose
+  region's own two-space hard break.** A deliberate call, not an
+  oversight: conformance *sources* are expected to avoid the one
+  legitimate trailing whitespace this project produces, which is tested
+  for real by a prose adapter's own gold fixtures instead, where a
+  region-aware test can tell "expected" apart from a regression in a way
+  this kit's flat string comparison never could.
+- **`emitProse`'s single-budget formula treats `continuationPrefix`'s
+  display width and `indentColumn` as identical**, which is exact except
+  when the prefix contains a tab (`displayWidth` doesn't expand tabs the
+  way `indentColumn`'s own `visualIndentColumn`-based computation does) —
+  the same approximation this document's own C++/Java sections would
+  recognize from `comments/group-adjacent-regions.ts`'s tab-indented
+  `rawText` case: never depended on for correctness, since `wrapRegions`
+  always diffs actual emitted text against source.
+- **No adapter-level decisions are recorded here yet** — Markdown's
+  canonicalization choices (`docs/planning/markdown-latex-plan.md` §3.3:
+  continuation prefixes computed, not observed; internal indentation
+  normalized; setext headings left unwrapped in v1) and its verbatim
+  exclusions (§5.6: headings, code blocks, tables, front matter, link/
+  footnote definitions) are real, deliberate scope limits, but they
+  belong to Markdown's own future section once that adapter exists
+  (Phase C), not to this one, which covers only the engine surface every
+  future prose adapter shares.
+
+## What this means for future adapters
+
+No adapter has used any of this yet — that's the one way this section
+differs from every one before it, and worth being honest about rather
+than claiming more than Phase B actually proved. What it *does* show:
+`discoverProse`/`wrapProse` and the shared `prose/` dissolve/emit pair
+were designed against two genuinely different discovery shapes at once
+(Markdown's real paragraph node, LaTeX's masked line scan with none) and
+verified end-to-end — hook wiring, dissolve, reflow, emit, idempotency,
+the conformance kit's own new checks — against a fixture built
+specifically to exercise both the "has a query" and "has none" cases
+being possible under one interface, catching one real bug and two
+realistic near-misses before either real adapter has to. `docs/planning/markdown-latex-plan.md`
+§11 names the next-cheapest proof point once one does land: a plain-text
+adapter (`languageId: 'plaintext'`) needs no grammar at all under this
+design, only a descriptor with no `grammarWasm`-dependent queries and a
+`discoverProse` that splits on blank lines — the one remaining piece of
+that follow-on, "parse is optional when no queries are declared," is
+flagged there as worth designing for now precisely so this phase's hooks
+don't end up quietly assuming a tree, but is out of scope to build until
+a plain-text adapter actually needs it.
