@@ -5,18 +5,16 @@ import type { ReflowOptions } from '../../reflow/reflow-block.js';
 import { dissolveProse, type ProseSpec } from '../../prose/dissolve-prose.js';
 import { emitProse } from '../../prose/emit-prose.js';
 import { markdownContinuationPrefix } from './continuation-prefix.js';
+import { MARKDOWN_HARD_BREAK } from './hard-break.js';
 
 /**
- * No hard-break patterns yet — `docs/planning/markdown-latex-plan.md`
- * §5.4's trailing-backslash/two-space/`<br>` detection is its own commit
- * (Phase C commit 11: "hard line breaks, verbatim zero-edit fixtures,
- * directives"), not this one. `ProseSpec.hardBreak` is a required field
- * (`../../prose/dissolve-prose.ts`), so this is `[]` rather than left
- * unset — every physical line boundary reflows as an ordinary join until
- * commit 11 gives some of them real hard-break markers instead.
+ * §5.4's hard-break forms — trailing backslash (parity-aware, see
+ * `./hard-break.ts`), two-or-more spaces, `<br>`/`<br/>`/`<br />`. No
+ * `extraUnbreakable` — Markdown v1 has nothing beyond `atomizeWords`'
+ * shared built-in set (unlike LaTeX's `\verb`/`\lstinline`).
  */
 const markdownProseSpec: ProseSpec = {
-  hardBreak: [],
+  hardBreak: MARKDOWN_HARD_BREAK,
 };
 
 /**

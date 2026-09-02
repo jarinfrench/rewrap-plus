@@ -8,11 +8,12 @@ import { wrapMarkdownProse } from './wrap-prose.js';
  * `emitContext` are all comment/string-region hooks with nothing to
  * override here (this descriptor discovers neither kind at all — see
  * `./descriptor.ts`'s own doc comment). `discoverProse`/`wrapProse` are
- * `./discover-prose.ts`/`./wrap-prose.ts`'s real implementations —
- * `wrapMarkdownProse` doesn't yet support hard line breaks (Phase C
- * commit 11) or directives (also commit 11; `wrap.ts` itself already
- * honors `descriptor.directives`, so no adapter-level change is needed
- * there once directives.test.ts confirms `<!--` works).
+ * `./discover-prose.ts`/`./wrap-prose.ts`'s real implementations, the
+ * latter now including §5.4 hard-break support (`./hard-break.ts`).
+ * Directives need no adapter-level code at all — `wrap.ts` already
+ * honors `descriptor.directives.marker` (`'<!--'`, set on
+ * `./descriptor.ts`) generically, confirmed by `../../directives.test.ts`'s
+ * own Markdown-specific cases.
  */
 export const markdownAdapter: LanguageAdapter = {
   descriptor: markdownDescriptor,

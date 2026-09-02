@@ -79,4 +79,52 @@ describe('scanDirectives', () => {
     const scan = scanDirectives(source, '//');
     expect(scan.isDisabledAt(1)).toBe(false);
   });
+
+  describe('the Markdown "<!--" marker', () => {
+    // Markdown has no line-comment marker of its own (`docs/planning/markdown-latex-plan.md`
+    // §3.2/§5.1) — its natural directive is an HTML comment instead. `<!--`
+    // needs no regex-escaping (none of its four characters are regex
+    // metacharacters — `-` is only special inside a character class), so
+    // this is really confirming `buildDirectivePattern` behaves for a
+    // multi-character, punctuation-heavy marker at all, not just single
+    // characters like `#`/`//`.
+
+    it('recognizes a single-line HTML comment directive, trailing "-->" included', () => {
+      const source = ['<!-- rewrap: off -->', 'text one', 'text two'].join('\n');
+      const scan = scanDirectives(source, '<!--');
+      expect(scan.isDisabledAt(1)).toBe(true);
+      expect(scan.isDisabledAt(2)).toBe(true);
+    });
+
+    it('recognizes an off/on pair, each its own single-line HTML comment', () => {
+      const source = [
+        '<!-- rewrap: off -->',
+        'text one',
+        '<!-- rewrap: on -->',
+        'text two',
+      ].join('\n');
+      const scan = scanDirectives(source, '<!--');
+      expect(scan.isDisabledAt(1)).toBe(true);
+      expect(scan.isDisabledAt(3)).toBe(false);
+    });
+
+    it('recognizes the marker and directive sharing a line even when the closing "-->" is on the next one', () => {
+      const source = ['<!-- rewrap: off', '-->', 'text one'].join('\n');
+      const scan = scanDirectives(source, '<!--');
+      expect(scan.isDisabledAt(2)).toBe(true);
+    });
+
+    it('does NOT recognize a genuinely multi-line HTML comment with the directive text on its own line', () => {
+      // A real limitation, confirmed directly rather than assumed:
+      // `<!--` and `rewrap: off` must share one physical line for
+      // `buildDirectivePattern`'s single-line regex to find them — a
+      // comment opened on one line, with the directive text alone on the
+      // next, is invisible to this scan. Documented here so a future
+      // reader finds this as an intentional, tested boundary rather than
+      // rediscovering it as a bug report.
+      const source = ['<!--', 'rewrap: off', '-->', 'text one'].join('\n');
+      const scan = scanDirectives(source, '<!--');
+      expect(scan.isDisabledAt(3)).toBe(false);
+    });
+  });
 });
