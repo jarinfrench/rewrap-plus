@@ -153,11 +153,23 @@ unchecked without either fixing it or removing the claim.
       documented absence of caps and why that's acceptable]`, tested
       against pathological fixtures.
 - [x] **Grammar provenance is pinned and documented, and enforced in CI.**
-      All six vendored `.wasm` grammars (Python, JavaScript, TypeScript,
-      TSX, C++, Java) have a recorded source package/version, upstream
-      repo and commit, npm tarball shasum/integrity, and vendored-file
-      sha256 in `packages/engine/grammars/PROVENANCE.md` (referenced from
-      `docs/parsing.md`). `scripts/verify-grammar-provenance.mjs`,
+      All eight vendored `.wasm` grammars (Python, JavaScript, TypeScript,
+      TSX, C++, Java, Markdown, LaTeX) have a recorded source/version,
+      upstream repo and commit, and vendored-file sha256 in
+      `packages/engine/grammars/PROVENANCE.md` (referenced from
+      `docs/parsing.md`). Six of the eight are unmodified files that ship
+      inside an npm package, verified by that package's own tarball
+      integrity; the Markdown grammar is instead an **attested GitHub
+      release asset** (Sigstore/Fulcio certificate + Rekor transparency
+      log entry, verified against the exact vendored file's sha256 —
+      `docs/parsing.md` Finding 7 has the verification steps, since `gh`
+      isn't installed on the machine that vendored it); the LaTeX grammar
+      has no upstream binary to vendor at all and is instead **self-built
+      from a pinned npm tarball with a pinned `tree-sitter-cli` and
+      wasi-sdk version**, with every input to reproducing it recorded
+      (`docs/parsing.md` Finding 8). Three genuinely different trust
+      shapes, all recorded as such rather than flattened into one
+      "vendored, trust us" line. `scripts/verify-grammar-provenance.mjs`,
       wired in as a root `pretest` hook so it runs as part of every
       `npm test` (every CI run, every commit's local gate), recomputes
       each vendored file's sha256 and diffs it against `PROVENANCE.md`
@@ -325,3 +337,4 @@ stay honest over time rather than becoming stale claims.
 | 2026-08-30 | Stale-wrap corruption: once cancellation can actually interrupt mid-computation, the live document can genuinely change while `wrapRegions` is still running against an earlier text snapshot. `vscode.workspace.applyEdit` has no document-version check of its own — it applies a `WorkspaceEdit`'s row/column positions to whatever the document currently contains — so a wrap computed before a concurrent edit landed could apply misaligned positions on top of it, silently corrupting or misplacing text the user just typed. A "writes outside the intended scope" issue by this document's own definition. Found as the direct corollary of the cancellation fix above, same audit pass. | Added `WrapOutcome.documentVersionChanged`, computed by comparing `document.version` immediately before/after `wrapRegions`. Every consumer (`apply-wrap.ts`, both formatting providers, `format-on-save.ts`, `report-wrap-outcome.ts`) now treats it identically to the existing `result.cancelled` case: nothing is applied or returned, and the status bar/output channel reports "document changed during wrap" rather than stale edit/skip counts. Not configurable — same fixed-safety-default treatment as `cancelled`. | `packages/vscode-extension/src/test/suite/wrap-document-concurrent-edit.test.ts`, run in a real Extension Development Host: started a wrap on a 50,000-line file, edited the same document 1.5s into the computation, confirmed the concurrent edit survived and the rest of the document came back byte-for-byte identical to the pre-wrap original |
 | 2026-08-30 | Grammar provenance was recorded in `PROVENANCE.md` but never re-verified — nothing recomputed a vendored `.wasm` file's sha256 and compared it against the doc on any run, so a swapped/tampered binary or a stale/falsified doc entry would go unnoticed indefinitely (this document's own "supply-chain integrity" category). | Added `scripts/verify-grammar-provenance.mjs` (dependency-free, matching `packages/vscode-extension/scripts/verify-vsix-contents.mjs`'s style): parses every `## \`filename\`` section's "Vendored file sha256" row out of `PROVENANCE.md`, recomputes each file's actual sha256, and fails on any mismatch or on a file/entry existing without its counterpart. Wired in as a root `pretest` hook so `npm test` runs it automatically, everywhere it already runs. | Ran directly against the current tree (all 6 grammars match); sanity-checked all three failure modes (hash mismatch, orphaned doc entry, undocumented file) against a throwaway copy before wiring it in |
 | 2026-08-30 | `capabilities.untrustedWorkspaces` was left undeclared in `packages/vscode-extension/package.json`, leaving VSCode's own unverified-extension default in place instead of a deliberate, audited statement. | Audited every workspace-controllable input the extension reads (all `rewrapPlus.*` settings, `.editorconfig`'s `max_line_length`) and confirmed none can cause behavior beyond configuring the wrap itself; declared `capabilities.untrustedWorkspaces.supported: true`. | Manual audit recorded in this document's VSCode-extension trust-model checklist above |
+| 2026-09-02 | Vendoring `tree-sitter-markdown.wasm` and `tree-sitter-latex.wasm` (Markdown/LaTeX support, `docs/planning/markdown-latex-plan.md` Phase A) introduced two supply-chain trust shapes this document hadn't previously had to distinguish from the existing npm-tarball-asset shape: an attested GitHub release binary (Markdown) with no npm package tarball backing it at all, and a locally self-built binary (LaTeX) with no upstream binary of any kind to compare against. Neither fits the "unmodified file from an npm tarball, verified by the tarball's own integrity" story every prior grammar entry relied on. | `PROVENANCE.md` gained a distinct entry template for each new shape (asset URL/attestation details for Markdown; build-input pinning — npm tarball hash, `tree-sitter-cli` version, wasi-sdk version — for LaTeX), and this checklist item above now names all three shapes explicitly rather than describing eight grammars as if they were vendored identically. | GitHub attestations REST API + manual Fulcio-certificate SAN decode for Markdown (`gh` not installed on the vendoring machine; a `sigstore-python` run got through certificate-chain verification but not Rekor checkpoint verification — see `docs/parsing.md` Finding 7); a from-scratch build against the pinned npm tarball with sha256 recomputed and diffed against `PROVENANCE.md` for LaTeX (`docs/parsing.md` Finding 8); `scripts/verify-grammar-provenance.mjs` passing against all 8 vendored files |

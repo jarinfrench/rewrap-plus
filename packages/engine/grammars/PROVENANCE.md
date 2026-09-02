@@ -196,3 +196,144 @@ the supported range.
 
 Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
 above documents, substituting `tree-sitter-java` throughout.
+
+## `tree-sitter-markdown.wasm`
+
+| | |
+|---|---|
+| Source | GitHub release asset (block grammar only — see below) |
+| Upstream repo | https://github.com/tree-sitter-grammars/tree-sitter-markdown |
+| Release tag | `v0.5.3` |
+| Release tag commit | `f969cd3ae3f9fbd4e43205431d0ae286014c05b5` |
+| Asset URL | https://github.com/tree-sitter-grammars/tree-sitter-markdown/releases/download/v0.5.3/tree-sitter-markdown.wasm |
+| Built by | `tree-sitter/workflows` reusable `release.yml`, via `tree-sitter/setup-action/cli@v2` + `tree-sitter build --wasm` |
+| Attestation | `actions/attest-build-provenance@v4`, verified against `sha256:dd9fc12ac2804d7c7da787e4774125b32e4fb3c244e5e7031a77cb7dd8036020` via `GET /repos/tree-sitter-grammars/tree-sitter-markdown/attestations/sha256:<hash>` (`gh` not installed on the vendoring machine — see `docs/parsing.md` Finding 7 for the verification steps actually taken, including a partial `sigstore-python` run and manual Fulcio-certificate SAN decoding, both of which confirmed the workflow/repo/tag/commit identity above) |
+| Vendored file sha256 | `dd9fc12ac2804d7c7da787e4774125b32e4fb3c244e5e7031a77cb7dd8036020` |
+| Grammar ABI version | `15` (`Language#abiVersion`) |
+| License | MIT (author MDeiml, per `tree-sitter.json`) |
+
+This is the first grammar vendored from a GitHub release asset rather than
+an npm tarball — `@tree-sitter-grammars/tree-sitter-markdown` on npm ships
+no `.wasm` at all (only native `prebuilds/*.node` and grammar sources;
+**verified** with `npm pack --dry-run`) and lags upstream by two minor
+versions, so the release asset is both the only prebuilt option and the
+more current one. This is a genuinely different trust story from every
+other entry in this file: those are all *unmodified files that ship
+inside an npm package*, verified by npm's own tarball integrity; this one
+is a build artifact GitHub Actions produced and cryptographically attested
+to (Sigstore/Fulcio + Rekor transparency log), verified independently of
+npm's supply chain entirely. See `SECURITY.md`'s supply-chain section for
+why that's called out explicitly rather than treated as equivalent.
+
+Only the **block** grammar is vendored (this repo's `RegionKind: 'prose'`
+only needs block structure — see `docs/planning/markdown-latex-plan.md`
+§3.1). The same release also publishes a `tree-sitter-markdown_inline.wasm`
+(426,117 bytes) for the companion inline grammar, deliberately *not*
+vendored: everything the wrap engine needs from a Markdown paragraph is
+already block-level (paragraph/list/quote structure), and inline concerns
+(inline code spans, URLs, hard-break detection) are already handled
+text-side by `segmentation/unbreakable-spans.ts` and a regex over each
+line's raw text. A future pass could vendor the inline grammar too, to
+keep `[link text](url)` whole under reflow via `Language.load` +
+`Parser#setIncludedRanges` — see `docs/planning/markdown-latex-plan.md`
+§11's "the inline grammar" open question.
+
+Default compile-time extensions confirmed active in this release build
+(directly, not assumed from the README): `EXTENSION_GFM` (pipe tables,
+task lists, strikethrough) and both YAML (`EXTENSION_MINUS_METADATA`) and
+TOML (`EXTENSION_PLUS_METADATA`) front matter — see `docs/parsing.md`
+Finding 7.
+
+### Regenerating / updating
+
+1. Check https://github.com/tree-sitter-grammars/tree-sitter-markdown/releases
+   for a newer tag; confirm it still attaches a `tree-sitter-markdown.wasm`
+   asset (the block grammar) built by the same `release.yml` workflow.
+2. Download the asset and verify its attestation — `gh attestation verify
+   <file> --repo tree-sitter-grammars/tree-sitter-markdown` if `gh` is
+   available; otherwise `GET
+   https://api.github.com/repos/tree-sitter-grammars/tree-sitter-markdown/attestations/sha256:<hash>`
+   plus a manual Fulcio-certificate SAN decode, as this vendoring did (see
+   `docs/parsing.md` Finding 7 for the exact steps and why a full
+   `sigstore-python` verification didn't complete cleanly on this
+   machine).
+3. Re-run `docs/spikes/tree-sitter-markdown-probe.mjs` against the new
+   file (`WASM_PATH=<new file> node docs/spikes/tree-sitter-markdown-probe.mjs`)
+   before replacing the vendored one — a grammar update can rename node
+   types or shift geometry the way any grammar bump can.
+4. Copy the file over this one; update the table above (tag, tag commit,
+   asset URL, attestation hash, vendored file sha256, ABI version).
+5. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
+   typecheck && npm run build` — the Markdown adapter's own descriptor/
+   fixture tests are what catch a node name or geometry shift under a
+   query that still compiles.
+
+## `tree-sitter-latex.wasm`
+
+| | |
+|---|---|
+| Source package | [`@pfoerster/tree-sitter-latex`](https://www.npmjs.com/package/@pfoerster/tree-sitter-latex) |
+| Package version | `0.6.0` |
+| Upstream repo | https://github.com/latex-lsp/tree-sitter-latex |
+| Upstream commit (`gitHead`, = `v0.6.0` tag) | `7e0ecdc02926c7b9b2e0c76003d4fe7b0944f957` |
+| npm tarball shasum | `a51fd660b8f17b4619457e0570df5bc759d589ff` |
+| npm tarball integrity | `sha512-j9V0Zh5bFoEu6ZLqbLAB+2+NWm/gsPkoKgtOf2Gbn6mikuJ5MyxMmKgwQvPIxPYC57tHcIj9oKaT4jBdN86R1Q==` |
+| Built with | `tree-sitter-cli@0.26.13` (`tree-sitter build --wasm`), pinned to match this project's `web-tree-sitter@0.26.13` |
+| wasi-sdk version used by the CLI | `29.0` (`wasi-sdk-29.0-x86_64-windows`, auto-downloaded by the CLI — no Emscripten/Docker step) |
+| Build host OS | Windows 10 (the vendoring machine) |
+| Vendored file sha256 | `4178504425e5576092735bed9190f2bf5f127ba3573988c016e086ae76d01855` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (Patrick Förster, per upstream `LICENSE`) |
+
+**This is self-built provenance, not an unmodified upstream artifact —**
+`latex-lsp/tree-sitter-latex`'s GitHub releases attach no assets at all
+(**verified**), so there is no upstream `.wasm` to vendor as-is. The
+tarball above does contain the generated `src/parser.c` (43.9 MB) and
+`src/scanner.c`, so no `tree-sitter generate` step was needed — just
+`tree-sitter build --wasm` against the extracted tarball. Trust here rests
+on: the npm tarball's own recorded integrity (verifiable via `npm view
+@pfoerster/tree-sitter-latex@0.6.0 dist`), the pinned and reproducible
+`tree-sitter-cli` version, the wasi-sdk version that CLI resolved (printed
+during the build, recorded above), and this vendored file's own sha256 —
+a *stronger* trust story than "we trust an opaque binary someone else
+built," precisely because every input to reproducing it is pinned and
+recorded here. See `SECURITY.md`'s supply-chain section for why this is
+called out as a different shape from the Markdown entry's GitHub-attested
+one, not a lesser one.
+
+Despite the 43.9 MB `parser.c` input, the output WASM is 3,710,264 bytes
+(3.54 MB) — comparable to `tree-sitter-cpp.wasm` above, not the "several
+MB, maybe much larger" this project's own planning flagged as a size risk
+for the `.vsix`. See `docs/parsing.md` Finding 8 for the full build log
+and node-shape probe results.
+
+No `workflow_dispatch` Linux-builder fallback (described in
+`docs/planning/markdown-latex-plan.md` §3.1, for the case where wasi-sdk's
+Windows auto-download fails) was needed for this vendoring — the download
+and build succeeded on the first attempt on this Windows machine. Add
+`.github/workflows/grammar-wasm.yml` only if a future regeneration
+attempt actually hits that failure.
+
+### Regenerating / updating
+
+1. `npm view @pfoerster/tree-sitter-latex versions --json` for what's
+   published; confirm the tarball still ships a generated `src/parser.c`
+   (`npm pack --dry-run`) so no `tree-sitter generate` step is needed.
+2. `npm pack @pfoerster/tree-sitter-latex@<version>` and extract the
+   tarball.
+3. `npx --package tree-sitter-cli@0.26.13 tree-sitter build --wasm
+   <extracted dir> -o tree-sitter-latex.wasm` — keep the CLI version
+   pinned to match this project's `web-tree-sitter` version (currently
+   `0.26.13`); a CLI/runtime version mismatch can emit a dynamic-linking
+   format the runtime can't load even when the ABI number is supported
+   (see `docs/parsing.md` Finding 2).
+4. Re-run `docs/spikes/tree-sitter-latex-probe.mjs` against the new file
+   before replacing the vendored one — this grammar assigns dedicated node
+   types to many individual macros (environments, `\item`,
+   `\newtheorem`, …), any of which a version bump could rename.
+5. Copy the file over this one; update the table above (package version,
+   `gitHead`, tarball shasum/integrity, CLI version if it changed, the
+   wasi-sdk version the build printed, the vendored file's own sha256, and
+   `abiVersion`).
+6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
+   typecheck && npm run build`.

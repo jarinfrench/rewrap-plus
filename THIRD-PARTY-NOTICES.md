@@ -8,9 +8,13 @@ etc. never ships in the `.vsix`, so it isn't covered here).
 
 Every component below is **MIT-licensed**, the same license as this
 project — no license-compatibility conflict, and no reason to reconsider
-the MIT-vs-Apache-2.0 choice made for this project. All of them happen
-to share an author (Max Brunsfeld, the tree-sitter project's creator),
-which is incidental to the license analysis, not load-bearing for it.
+the MIT-vs-Apache-2.0 choice made for this project. `web-tree-sitter` and
+every grammar through `tree-sitter-java` share one author (Max Brunsfeld,
+the tree-sitter project's creator); the Markdown and LaTeX grammars below
+are each maintained separately (Matthias Deiml; Patrick Förster) — the
+shared authorship among the earlier entries was always incidental to the
+license analysis, not load-bearing for it, and stays that way as the
+grammar set diversifies.
 
 ## `web-tree-sitter`
 
@@ -171,6 +175,83 @@ SOFTWARE.
 The MIT License (MIT)
 
 Copyright (c) 2014 Max Brunsfeld
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## `tree-sitter-markdown` (grammar, block only)
+
+- **What it is / where it's used:** the Markdown block grammar, vendored
+  as `packages/engine/grammars/tree-sitter-markdown.wasm` and copied into
+  the packaged extension's `grammars/` directory at build time. Backs the
+  `markdown` language adapter. Unlike every other grammar in this file,
+  this one was vendored from a GitHub release asset rather than an npm
+  tarball — full provenance, including the attestation-verification
+  steps, is in `packages/engine/grammars/PROVENANCE.md`.
+- **License:** MIT.
+- **Source:** <https://github.com/tree-sitter-grammars/tree-sitter-markdown>.
+
+```
+MIT License
+
+Copyright (c) 2021 Matthias Deiml
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## `tree-sitter-latex` (grammar)
+
+- **What it is / where it's used:** the LaTeX grammar, compiled to
+  `packages/engine/grammars/tree-sitter-latex.wasm` and copied into the
+  packaged extension's `grammars/` directory at build time. Backs the
+  `latex` language adapter. Built locally from the
+  `@pfoerster/tree-sitter-latex` npm package's generated `src/parser.c`
+  with a pinned `tree-sitter-cli` — this grammar's upstream repo publishes
+  no prebuilt `.wasm` at all, so unlike every other grammar in this file
+  it is self-built provenance rather than an unmodified upstream asset.
+  Full provenance, including the exact build recipe and inputs, is in
+  `packages/engine/grammars/PROVENANCE.md`.
+- **License:** MIT.
+- **Source:** <https://github.com/latex-lsp/tree-sitter-latex> (built from
+  the `@pfoerster/tree-sitter-latex` npm package,
+  <https://www.npmjs.com/package/@pfoerster/tree-sitter-latex>).
+
+```
+MIT License
+
+Copyright (c) 2021 Patrick Förster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
