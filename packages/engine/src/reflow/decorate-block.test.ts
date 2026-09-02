@@ -57,4 +57,35 @@ describe('decorateFirstLine', () => {
     const block: Block = { type: 'listItem', marker: '-', hangingIndent: 2, atoms: [] };
     expect(decorateFirstLine(block, [])).toEqual([]);
   });
+
+  it('trims the trailing separating space when the first line has no content to separate it from (regression)', () => {
+    // `markerPrefix` always ends in exactly one separating space; gluing
+    // it onto a genuinely empty first line (a `listItem`/`fieldEntry`
+    // with no content at all, or a `fieldEntry` whose `blocks[0]` is
+    // itself a `blank` block) used to leave that space dangling —
+    // `'x: '`, not `'x:'`. Beyond the stray whitespace, this was a real
+    // idempotency bug for `fieldEntry` specifically: `'x: '` (non-blank,
+    // due to the label text) is indistinguishable on re-dissolve from
+    // "this entry's own inline description is a single space," not "the
+    // description arrives after a blank separator line" — confirmed via
+    // `test/wrap/nested-field-entry-stress.test.ts` to cost
+    // `wrap(wrap(x)) === wrap(x)` a full round of drift before
+    // stabilizing. Trimming instead keeps the marker's own line
+    // unambiguous from the very first wrap.
+    const listItem: Block = { type: 'listItem', marker: '-', hangingIndent: 2, atoms: [] };
+    expect(decorateFirstLine(listItem, [''])).toEqual(['-']);
+
+    const fieldEntry: Block = { type: 'fieldEntry', label: 'x:', hangingIndent: 3, blocks: [] };
+    expect(decorateFirstLine(fieldEntry, [''])).toEqual(['x:']);
+
+    // A later line, if any, is untouched — only lines[0] is ever decorated.
+    expect(decorateFirstLine(fieldEntry, ['', 'more'])).toEqual(['x:', 'more']);
+
+    // An empty *label* (NumPy's own convention) degrades to a fully
+    // empty line, not a dangling single space — `markerPrefix('',
+    // hangingIndent)` is pure padding to begin with, so trimming it
+    // clears it entirely.
+    const numpyEntry: Block = { type: 'fieldEntry', label: '', hangingIndent: 4, blocks: [] };
+    expect(decorateFirstLine(numpyEntry, [''])).toEqual(['']);
+  });
 });

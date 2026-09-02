@@ -324,6 +324,53 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     expect(reflowBlock(block, 40, block.hangingIndent)).toEqual(['']);
   });
 
+  it('keeps a genuinely blank line inside a blocks[0] verbatim block empty, not hangingIndent-wide trailing whitespace (regression)', () => {
+    // Found via stress testing (`test/wrap/nested-field-entry-stress.test.ts`),
+    // not any single fixture: a fenced sample can contain a blank line of
+    // its own (`matchFencedCode`, `../segmentation/verbatim.ts`, collects
+    // everything between the fences unconditionally, blanks included).
+    // `reflowBlock`'s `case 'verbatim'` prepends `hangingIndent` to every
+    // line after the first — but a *blank* line has nothing to indent
+    // "under," so it must stay `''`, not become `hangingIndent` columns
+    // of invisible trailing whitespace the source never had.
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 10,
+      blocks: [{ type: 'verbatim', lines: ['```', 'print("a")', '', 'print("b")', '```'] }],
+    };
+    const reflowed = reflowBlock(block, 40, block.hangingIndent, {
+      firstLineReserve: block.hangingIndent,
+    });
+    expect(reflowed).toEqual([
+      '```',
+      `${' '.repeat(10)}print("a")`,
+      '',
+      `${' '.repeat(10)}print("b")`,
+      `${' '.repeat(10)}\`\`\``,
+    ]);
+  });
+
+  it('keeps a genuinely blank line inside a rest verbatim block empty too (regression, companion to the blocks[0] case)', () => {
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 4,
+      blocks: [
+        { type: 'paragraph', atoms: words('Example:') },
+        { type: 'verbatim', lines: ['```', 'print("a")', '', 'print("b")', '```'] },
+      ],
+    };
+    expect(reflowBlock(block, 40, block.hangingIndent)).toEqual([
+      'Example:',
+      '    ```',
+      '    print("a")',
+      '',
+      '    print("b")',
+      '    ```',
+    ]);
+  });
+
   it('preserves the depth delta between sibling listItems at different hangingIndents as real visual nesting', () => {
     // Companion to `../docs/field-entries.test.ts`'s "Markdown-indented
     // sub-bullet" case: confirms the depth delta `groupFieldEntries`

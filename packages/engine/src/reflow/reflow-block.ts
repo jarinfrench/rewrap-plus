@@ -147,7 +147,20 @@ export function reflowBlock(
       // region's base indent — confirmed directly during development,
       // not hypothetical (see
       // `docs/planning/nested-field-entry-structure-plan.md`, section 5).
-      return block.lines.map((line, index) => (index === 0 ? line : ' '.repeat(hangingIndent) + line));
+      //
+      // A genuinely blank *line* inside `block.lines` (a fenced sample
+      // with a blank line separating two statements, say — `matchFencedCode`,
+      // `../segmentation/verbatim.ts`, collects everything between the
+      // fences unconditionally, blanks included) stays empty rather than
+      // getting `hangingIndent` spaces too — the same "genuinely blank
+      // means genuinely empty, never trailing whitespace" rule
+      // `reflowFieldEntry`'s own `rest`-loop already applies to a `blank`
+      // *block*, below, just needed again here at the *line* level: a
+      // `verbatim` block has no `blank`-typed sub-blocks of its own to
+      // hook that rule onto, only raw lines.
+      return block.lines.map((line, index) =>
+        index === 0 || line === '' ? line : ' '.repeat(hangingIndent) + line,
+      );
     case 'sectionHeader':
       return [block.text];
     case 'paragraph':
@@ -237,8 +250,16 @@ function reflowFieldEntry(
         lines.push('');
         continue;
       }
+      // Same rule, one level down: a `verbatim` block's own `.lines` can
+      // contain a genuinely blank *line* (not a `blank` *block* — a fenced
+      // sample with a blank line inside it), and `reflowBlockSequence`
+      // reflows a nested `verbatim` block at `hangingIndent: 0` (it isn't
+      // `listItem`/`fieldEntry`), so `reflowBlock`'s own blank-line
+      // handling for `verbatim` (see its `case 'verbatim'`, above) is a
+      // no-op here — this loop is the one actually adding the literal
+      // indent, so it's the one that has to skip it for an empty line too.
       for (const line of reflowBlockSequence([nested], availableWidth - hangingIndent, options)) {
-        lines.push(indent + line);
+        lines.push(line === '' ? '' : indent + line);
       }
     }
   }

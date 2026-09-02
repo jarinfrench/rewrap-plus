@@ -109,8 +109,14 @@ export function groupFieldEntries(
     // inject a synthetic leading blank line into the segmented body that
     // was never actually there (nothing was written on the label's own
     // physical line at all, which isn't the same thing as "a blank line
-    // separates the label from its description").
-    const bodyLines = entry.rest === '' ? dedented : [entry.rest, ...dedented];
+    // separates the label from its description"). And when the
+    // description genuinely *does* open with one or more blank lines
+    // before any real content, those are stripped here too, not carried
+    // into `bodyLines` at all — `stripLeadingBlanks`'s own doc comment
+    // explains why a leading blank can never round-trip as a real
+    // separator once `blocks[0]` shares the label's own physical line.
+    const bodyLines =
+      entry.rest === '' ? stripLeadingBlanks(dedented) : [entry.rest, ...dedented];
     blocks.push({
       type: 'fieldEntry',
       label: entry.label,
@@ -120,6 +126,43 @@ export function groupFieldEntries(
   }
 
   return blocks;
+}
+
+/**
+ * Strip any leading blank lines from `lines` — used only when an entry's
+ * inline text (`entry.rest`/NumPy's own nonexistent equivalent) is
+ * empty, so `lines[0]` would otherwise become the entry's own `blocks[0]`
+ * and share the label's physical line with nothing on it.
+ *
+ * **Confirmed as more than a style choice, via stress testing (not any
+ * single fixture):** a genuinely leading `blank` block in `blocks[0]`
+ * can never round-trip as an actual separator, because the *only* place
+ * that ever sees `blocks[0]`'s own reflowed content is the *outer*
+ * caller's `decorateFirstLine` (`../reflow/decorate-block.ts`), applied
+ * to the `fieldEntry` block as a whole — a `blank` block's reflow is
+ * `['']` regardless of context, and gluing a real label onto that empty
+ * string produces a line that's non-blank *only because of the label
+ * text* (`'label:'`, not `''`) — `matchEntryStart`, re-run against that
+ * exact line on the next dissolve, sees an ordinary entry-start line
+ * with an empty `rest`, not a label followed by a separate blank
+ * separator; the blank line's own existence is unrecoverable from the
+ * emitted text. Left in, this cost `wrap(wrap(x)) === wrap(x)` a full
+ * round of drift (the label's line and the following content
+ * restructure once, then stabilize) before converging — a real
+ * violation of the property this whole area of the engine leans on, not
+ * just a cosmetic wrinkle. Stripping the leading blank(s) here instead
+ * means `blocks[0]` is always the entry's actual first real content (or
+ * `blocks` is empty, if there was none at all), which round-trips
+ * stably from the very first wrap.
+ *
+ * Exported for `./numpy.ts`'s own `segmentFieldSection` to reuse, same
+ * as `dedentBody` — NumPy's own label is *always* empty, so this applies
+ * there unconditionally too, not just when `entry.rest` happens to be
+ * empty.
+ */
+export function stripLeadingBlanks(lines: readonly string[]): readonly string[] {
+  const firstContentIndex = lines.findIndex((line) => line.trim() !== '');
+  return firstContentIndex === -1 ? lines : lines.slice(firstContentIndex);
 }
 
 /**

@@ -141,4 +141,28 @@ describe('numpyDialect.segment', () => {
     if (entry?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
     expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'paragraph']);
   });
+
+  it('strips a blank line right after the header, before any real description content (regression)', () => {
+    // NumPy's label is always empty, so a leading blank block here is
+    // *always* in scope for `stripLeadingBlanks` — unlike Google/Sphinx,
+    // there's no `entry.rest` gate to check first. Confirmed via
+    // `test/wrap/nested-field-entry-stress.test.ts`: left in, this was
+    // already-idempotent for NumPy specifically (its empty label means
+    // `decorateFirstLine` degrades to pure whitespace either way), but
+    // produced a `hangingIndent`-wide trailing-whitespace-only line
+    // where the source had none — see `../field-entries.ts`'s
+    // `stripLeadingBlanks` for the fuller mechanism, shared with
+    // `groupFieldEntries`.
+    const text = [
+      'Parameters',
+      '----------',
+      'x : int',
+      '',
+      '    Description after a blank line right under the header.',
+    ].join('\n');
+    const blocks = numpyDialect.segment(text, {});
+    const entry = blocks[3];
+    if (entry?.type !== 'fieldEntry') throw new Error('expected fieldEntry');
+    expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph']);
+  });
 });

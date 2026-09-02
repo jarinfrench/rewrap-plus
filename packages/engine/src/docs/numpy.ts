@@ -4,7 +4,7 @@ import type { SplitBlocksOptions } from '../segmentation/split-blocks.js';
 import { toLines } from '../segmentation/to-lines.js';
 import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
 import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } from './dialect.js';
-import { dedentBody } from './field-entries.js';
+import { dedentBody, stripLeadingBlanks } from './field-entries.js';
 
 /**
  * Sections whose body is a list of `name : type` entries, each followed
@@ -139,11 +139,16 @@ function segmentFieldSection(body: readonly string[], options: SplitBlocksOption
     const { body: descriptionLines, nextIndex } = collectDescriptionBody(body, i, baseIndent);
     i = nextIndex;
     if (descriptionLines.length > 0) {
+      // `stripLeadingBlanks` (`./field-entries.ts` — its own doc comment
+      // has the full "why," confirmed via stress testing, not
+      // hypothetical): NumPy's label is *always* empty, so this applies
+      // unconditionally here, not gated on anything the way
+      // `groupFieldEntries`'s own equivalent is gated on `entry.rest`.
       blocks.push({
         type: 'fieldEntry',
         label: '',
         hangingIndent: descriptionIndent,
-        blocks: segmentLines(dedentBody(descriptionLines), options),
+        blocks: segmentLines(stripLeadingBlanks(dedentBody(descriptionLines)), options),
       });
     }
   }

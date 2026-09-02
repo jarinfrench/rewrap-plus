@@ -278,4 +278,52 @@ describe('groupFieldEntries', () => {
       expect(inner.atoms.map((a) => a.text)).toEqual(['inner', 'item']);
     });
   });
+
+  describe('a leading blank line before the description never survives as blocks[0] (regression)', () => {
+    it('strips one leading blank line when entry.rest is empty', () => {
+      // `x:` has nothing after the colon, and the very next line is
+      // blank before the real description starts. Confirmed via
+      // `test/wrap/nested-field-entry-stress.test.ts`: leaving that
+      // blank as `blocks[0]` cost `wrap(wrap(x)) === wrap(x)` a full
+      // round of drift, since `blocks[0]` shares the label's own
+      // physical line and a `blank` block there can never round-trip as
+      // a real separator once the label glues onto it (see
+      // `stripLeadingBlanks`'s own doc comment for the full mechanism).
+      const blocks = groupFieldEntries(
+        ['x:', '', '    description after a blank line'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph']);
+      expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['description', 'after', 'a', 'blank', 'line']);
+    });
+
+    it('strips more than one leading blank line', () => {
+      const blocks = groupFieldEntries(
+        ['x:', '', '', '    description after two blank lines'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph']);
+    });
+
+    it('strips a leading blank even when the real first block is a listItem, not a paragraph', () => {
+      const blocks = groupFieldEntries(['x:', '', '    - first', '    - second'], matchSimple);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['listItem', 'listItem']);
+    });
+
+    it('does not strip a blank line that separates two real blocks (only a leading one)', () => {
+      const blocks = groupFieldEntries(
+        ['x: Opens with prose.', '', '    More after a real blank.'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'paragraph']);
+    });
+  });
 });

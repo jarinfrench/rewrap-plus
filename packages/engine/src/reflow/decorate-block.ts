@@ -55,6 +55,26 @@ export function markerPrefix(marker: string, hangingIndent: number): string {
  * `listItem`/`fieldEntry` block; every other block type (and every line
  * after the first, already indented by `reflowBlock` itself via
  * `hangingIndent`) passes through unchanged.
+ *
+ * When `lines[0]` is itself empty — a `listItem`/`fieldEntry` with no
+ * content at all (`greedyFill`/`balancedFill`'s own `atoms.length === 0`
+ * case, or `../reflow/reflow-block.ts`'s `reflowFieldEntry` returning
+ * `['']` for a `blocks: []` entry) — `markerPrefix`'s own trailing
+ * separating space has nothing to separate the marker *from*, so it's
+ * trimmed rather than left dangling. Confirmed as more than cosmetic for
+ * `fieldEntry` specifically, not just a stray-whitespace nit: a
+ * dangling `'label: '` (real label text, still non-blank) instead of a
+ * clean `'label:'` is *indistinguishable on re-dissolve* from "this
+ * entry's description genuinely starts with a lone space" — collectEntryBody
+ * (`../docs/field-entries.ts`) sees a non-blank entry-start line either
+ * way, so a genuine blank line that followed the label in the source
+ * (description arrives after a blank separator, `blocks[0]` a `blank`
+ * `Block`) silently stopped round-tripping as a blank line at all,
+ * breaking `wrap(wrap(x)) === wrap(x)` for two rounds before happening
+ * to stabilize — caught via `test/wrap/nested-field-entry-idempotency.test.ts`-style
+ * stress testing, not any single fixture. Trimming here keeps the
+ * marker's own line unambiguously non-blank-but-clean on every pass, so
+ * re-dissolve is stable from the very first wrap.
  */
 export function decorateFirstLine(block: Block, lines: readonly string[]): string[] {
   if (lines.length === 0) {
@@ -69,5 +89,6 @@ export function decorateFirstLine(block: Block, lines: readonly string[]): strin
   if (prefix === null) {
     return [...lines];
   }
-  return [prefix + lines[0], ...lines.slice(1)];
+  const firstLine = lines[0]! === '' ? prefix.trimEnd() : prefix + lines[0]!;
+  return [firstLine, ...lines.slice(1)];
 }
