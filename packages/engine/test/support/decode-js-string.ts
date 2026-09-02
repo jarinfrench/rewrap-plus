@@ -16,11 +16,11 @@
  *
  * A backtick template literal is scanned over and skipped, never extracted
  * as a token: this project's JS/TS adapters don't wrap template literals at
- * all yet (`docs/implementation-plan.md`, Phase 12b: "Consider deferring
- * templates the way triple-quoted code strings were deferred in Python"),
- * so no fixture should contain one inside the wrappable construct under
- * test — but a stray backtick elsewhere in a fixture (unlikely today, still
- * worth guarding) must not have its own internal quote characters
+ * all yet (`docs/planning/implementation-plan.md`, Phase 12b: "Consider
+ * deferring templates the way triple-quoted code strings were deferred in
+ * Python"), so no fixture should contain one inside the wrappable construct
+ * under test — but a stray backtick elsewhere in a fixture (unlikely today,
+ * still worth guarding) must not have its own internal quote characters
  * mis-parsed as string-token boundaries.
  */
 export function extractConcatenatedStringValue(source: string): string {

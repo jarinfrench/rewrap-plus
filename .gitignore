@@ -41,3 +41,7 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+# Local planning/handoff docs — private roadmap and design notes, not
+# published. See docs/planning/ for what lives here.
+docs/planning/

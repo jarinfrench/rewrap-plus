@@ -1,8 +1,8 @@
 # Rewrap+ — project context for Claude Code
 
-Read this file, and `docs/implementation-plan.md`, before doing anything else
-in a new session. This file is the quick orientation; the plan is the full
-phased roadmap.
+Read this file, and `docs/planning/implementation-plan.md`, before doing
+anything else in a new session. This file is the quick orientation; the plan
+is the full phased roadmap.
 
 ## What this is
 
@@ -83,8 +83,8 @@ concatenation syntax on split.
   omission — but not a phase-referenced one. Source comments, like
   `docs/`/README/CHANGELOG prose, describe what a future reader (human or
   Claude) needs to understand the code and its design rationale, not the
-  private phased history in `docs/implementation-plan.md`. Don't cite
-  "Phase N" or "the plan" in new comments; if you're editing a comment
+  private phased history in `docs/planning/implementation-plan.md`. Don't
+  cite "Phase N" or "the plan" in new comments; if you're editing a comment
   that still has one, clean it up as part of that edit rather than adding
   to it.
 
@@ -118,4 +118,4 @@ similar Python-only or engine/extension-boundary assumption could leak in
 unnoticed otherwise.
 
 Next per the plan: **Phase 7 — VSCode integration and manual commands**
-(`docs/implementation-plan.md`, search for "Phase 7").
+(`docs/planning/implementation-plan.md`, search for "Phase 7").
