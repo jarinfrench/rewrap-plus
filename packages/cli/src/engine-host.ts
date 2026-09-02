@@ -48,6 +48,7 @@ import {
   cppAdapter,
   javaAdapter,
   javascriptAdapter,
+  markdownAdapter,
   pythonAdapter,
   typescriptAdapter,
   typescriptReactAdapter,
@@ -80,6 +81,7 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(typescriptReactAdapter);
   registry.register(cppAdapter);
   registry.register(javaAdapter);
+  registry.register(markdownAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

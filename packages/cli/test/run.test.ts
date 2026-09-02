@@ -119,21 +119,24 @@ describe('run — directory discovery', () => {
   it('wraps every recognized file under a directory argument', async () => {
     const root = makeTempDir();
     writeFileSync(join(root, 'a.py'), `${OVERLONG_COMMENT}\n`);
-    writeFileSync(join(root, 'notes.md'), 'not touched, unrecognized extension\n');
+    // .txt has no adapter at all — genuinely unrecognized, unlike .md
+    // (recognized since Markdown support landed) which would merely
+    // happen not to need wrapping for this particular one-line content.
+    writeFileSync(join(root, 'notes.txt'), 'not touched, unrecognized extension\n');
 
     const io = captureIo();
     const exitCode = await run([root], io);
 
     expect(exitCode).toBe(0);
     expect(readFileSync(join(root, 'a.py'), 'utf8')).not.toBe(`${OVERLONG_COMMENT}\n`);
-    expect(readFileSync(join(root, 'notes.md'), 'utf8')).toBe(
+    expect(readFileSync(join(root, 'notes.txt'), 'utf8')).toBe(
       'not touched, unrecognized extension\n',
     );
   });
 
   it('reports "No files matched." for a directory with nothing recognized', async () => {
     const root = makeTempDir();
-    writeFileSync(join(root, 'notes.md'), 'hi\n');
+    writeFileSync(join(root, 'notes.txt'), 'hi\n');
 
     const io = captureIo();
     const exitCode = await run([root], io);
@@ -155,7 +158,7 @@ describe('run — error handling', () => {
 
   it('exits 2 for an explicit file with an unrecognized extension and no --language', async () => {
     const root = makeTempDir();
-    const file = join(root, 'notes.md');
+    const file = join(root, 'notes.txt');
     writeFileSync(file, 'hi\n');
 
     const io = captureIo();

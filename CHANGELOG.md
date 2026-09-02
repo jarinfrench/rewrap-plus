@@ -169,6 +169,26 @@ eventually ships this.
   (`icon`, the default, or `text`) controls how the current on/off state
   is surfaced, both matching upstream Rewrap's own values exactly.
 
+- **Markdown support**, the first language where the prose *is* the
+  document rather than something living inside a comment or string — a
+  new `'prose'` region kind and `discoverProse`/`wrapProse` adapter hooks
+  (`docs/adapters.md`'s "Markdown and LaTeX — prose languages" section),
+  gated on neither `wrapComments` nor `wrapStrings`. Paragraphs (inside
+  plain text, block quotes at any nesting depth, and ordered/unordered/
+  task list items, including combinations like a quote inside a list)
+  wrap with a freshly-computed, canonical continuation prefix rather than
+  whatever the source happened to use — a lazy continuation line with no
+  `>` in source gains one on wrap. Hard line breaks (a trailing
+  backslash, two-or-more trailing spaces, `<br>`/`<br/>`) are preserved
+  exactly. Directives use an HTML comment (`<!-- rewrap: off/on/ignore -->`)
+  since Markdown has no line-comment marker of its own. Headings (ATX and
+  setext), fenced/indented code blocks, tables, front matter (YAML/TOML),
+  thematic breaks, HTML blocks, link reference and footnote definitions,
+  and a `$$` display-math paragraph are all left untouched. `.md`/
+  `.markdown` recognized by the CLI; note its own README's "blast radius"
+  callout — a bare directory walk over an existing repo now touches every
+  Markdown file it finds, which no prior language here did.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
@@ -185,5 +205,10 @@ eventually ships this.
 - The CLI has no `.gitignore` awareness beyond a fixed default-ignored
   directory list, and doesn't follow symlinked directories during a
   recursive walk.
-- Markdown/LaTeX/plain-text support and a plain-C adapter are not yet
+- LaTeX and plain-text prose support, and a plain-C adapter, are not yet
   implemented.
+- Markdown setext headings' own text is never wrapped (v1 canonicalizes
+  everything else about a paragraph's continuation but leaves this one
+  form alone — "bias toward verbatim when uncertain"); link reference and
+  footnote definitions are left alone rather than wrapped with their own
+  4-space continuation indent.

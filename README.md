@@ -1,12 +1,13 @@
 # Rewrap+
 
 A VSCode extension - and companion CLI - that rewraps comments, docstrings,
-and string literals to a configured column limit, preserving formatted
-structure and emitting language-valid concatenation on split.
+string literals, and (for Markdown) ordinary prose to a configured column
+limit, preserving formatted structure and emitting language-valid
+concatenation on split.
 
-Status: **alpha.** Python, JavaScript, TypeScript, TSX, C++, and Java
-support, plus a CLI for scripting/pre-commit use - installable as a
-`.vsix`/`npm install`, not yet published to a marketplace or registry.
+Status: **alpha.** Python, JavaScript, TypeScript, TSX, C++, Java, and
+Markdown support, plus a CLI for scripting/pre-commit use - installable as
+a `.vsix`/`npm install`, not yet published to a marketplace or registry.
 See [CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's
 known-missing.
 

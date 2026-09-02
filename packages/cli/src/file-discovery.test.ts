@@ -32,7 +32,7 @@ describe('discoverFiles', () => {
 
   it('reports an explicit file with an unrecognized extension, without --language', () => {
     const root = makeTempDir();
-    const file = join(root, 'notes.md');
+    const file = join(root, 'notes.txt');
     writeFileSync(file, '# hi\n');
 
     const result = discoverFiles([file]);
@@ -61,7 +61,9 @@ describe('discoverFiles', () => {
     mkdirSync(join(root, 'src', 'nested'), { recursive: true });
     writeFileSync(join(root, 'src', 'a.py'), '');
     writeFileSync(join(root, 'src', 'nested', 'b.ts'), '');
-    writeFileSync(join(root, 'README.md'), '');
+    // .txt has no adapter at all — genuinely unrecognized, unlike .md
+    // (recognized since Markdown support landed).
+    writeFileSync(join(root, 'notes.txt'), '');
 
     const result = discoverFiles([root]);
     const paths = result.files.map((f) => f.path).sort();
@@ -83,7 +85,7 @@ describe('discoverFiles', () => {
 
   it('ignores --language for files discovered via a directory walk', () => {
     const root = makeTempDir();
-    writeFileSync(join(root, 'notes.md'), '');
+    writeFileSync(join(root, 'notes.txt'), '');
     writeFileSync(join(root, 'a.py'), '');
 
     const result = discoverFiles([root], { languageOverride: 'python' });

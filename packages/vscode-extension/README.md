@@ -1,16 +1,18 @@
 # Rewrap+
 
-Rewraps comments, docstrings, and string literals to a configured column
-limit — preserving formatted structure (lists, doc-comment sections,
-fenced code, tables) and emitting language-valid concatenation syntax
-when a string literal has to split across lines.
+Rewraps comments, docstrings, string literals, and (for Markdown)
+ordinary prose to a configured column limit — preserving formatted
+structure (lists, doc-comment sections, fenced code, tables) and emitting
+language-valid concatenation syntax when a string literal has to split
+across lines.
 
-**Language support: Python, JavaScript, TypeScript, TSX, C++, and Java.**
-The three wrap commands gray themselves out automatically in any other
-language. This isn't a permanent ceiling — the engine's adapter interface
-is deliberately data-first (a language is a declarative descriptor plus
-fixtures, not new engine code — see the repo root [README](../../README.md)
-and `docs/adapters.md`), and more languages are on the roadmap.
+**Language support: Python, JavaScript, TypeScript, TSX, C++, Java, and
+Markdown.** The three wrap commands gray themselves out automatically in
+any other language. This isn't a permanent ceiling — the engine's adapter
+interface is deliberately data-first (a language is a declarative
+descriptor plus fixtures, not new engine code — see the repo root
+[README](../../README.md) and `docs/adapters.md`), and more languages are
+on the roadmap.
 
 ## Features
 
@@ -69,6 +71,30 @@ and `docs/adapters.md`), and more languages are on the roadmap.
   - `# rewrap: force` — wrap even if the prose heuristic says no.
   - `# fmt: off` / `# fmt: on` — honored too, since Black users already
     have them (sets the same disabled state as `# rewrap: off`/`on`).
+- **Markdown** wraps the document's own paragraphs — for Markdown, the
+  prose *is* the document, so this isn't gated by `wrapComments`/
+  `wrapStrings` the way every other language's regions are. A few choices
+  are deliberately **canonicalizing rather than preserving** (unlike
+  every other region kind, which reflows in place and leaves everything
+  else about the source untouched):
+  - A paragraph's continuation lines always get a freshly-computed
+    block-quote/list prefix (`>`, a list item's hanging indent, or both
+    nested), not whatever prefix the source happened to have — so a lazy
+    continuation line with no `>` in source gains one on wrap, and every
+    continuation lines up consistently regardless of how the original was
+    typed.
+  - A paragraph's own internal indentation is normalized to its first
+    line's, rather than preserving each line's own.
+  - A setext heading's underlined text is left unwrapped, matching "bias
+    toward verbatim when uncertain" for a form that reads as a surprise
+    if it silently reflows.
+
+  Hard line breaks — a trailing backslash, two-or-more trailing spaces,
+  or `<br>`/`<br/>` — are preserved exactly, including the one case where
+  that means a wrapped line keeps real trailing whitespace on purpose.
+  Directives use an HTML comment instead of a line-comment marker
+  (Markdown has none): `<!-- rewrap: off -->` / `<!-- rewrap: on -->` /
+  `<!-- rewrap: ignore -->`.
 
 ## Commands and keybindings
 
@@ -148,6 +174,12 @@ If instead you've set Rewrap+ *as* the default formatter for a language,
 its ordering relative to other save-time actions (`editor
 .codeActionsOnSave`, for instance) follows VSCode's usual rules for that
 setting, same as it would for any formatter.
+
+Markdown is the one language here where "Format Document" already has
+real competition — Prettier and markdownlint both register a Markdown
+formatter too, so VSCode will prompt you to pick a default the first time
+more than one is installed. Same `editor.defaultFormatter` mechanism as
+any other language; nothing Markdown-specific about how to resolve it.
 
 ### Auto-wrap
 
@@ -239,6 +271,12 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
   (visible via the output channel), never partially edited.
 - **File-final newline, trailing whitespace, and line endings** (LF vs
   CRLF, detected per region) — preserved exactly as found.
+- **In Markdown**: headings (both `#` and underlined/setext forms), fenced
+  and indented code blocks, tables, front matter (YAML `---`/TOML `+++`),
+  thematic breaks, HTML blocks (including HTML comments — which is where
+  `<!-- rewrap: off -->` itself lives), link reference and footnote
+  definitions, and a paragraph containing a `$$` display-math line — none
+  of these are wrapped at all.
 
 One thing worth naming as a **known, deliberate limitation** rather than
 a bug to report: continuation-line indentation for a split string
@@ -246,14 +284,20 @@ literal always uses the enclosing statement's indent **+4** (matching
 Black's convention), with no setting yet to choose "align to the opening
 delimiter" instead.
 
+Also worth knowing if you use Markdown's two-trailing-space hard break:
+VS Code's own `files.trimTrailingWhitespace` setting removes trailing
+whitespace on save, including that break, regardless of anything this
+extension does — not a Rewrap+ bug, just two independent features that
+can conflict if both are enabled.
+
 ## Language coverage and related extensions
 
 The table below compares Rewrap+ against the other actively-installable
 general-purpose comment/text wrappers on the Marketplace, as of this
 writing. It's deliberately not all wins for Rewrap+ — a table that only
 lists advantages reads as marketing, and the honest gaps are exactly
-what should steer a Markdown/LaTeX-heavy or non-Python user toward one
-of the others instead of filing a bug here.
+what should steer a LaTeX-heavy or non-Python user toward one of the
+others instead of filing a bug here.
 
 | Capability | [Rewrap](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap) (stkb) | [Rewrap Revived](https://marketplace.visualstudio.com/items?itemName=dnut.rewrap-revived) (dnut) | [Reflow Markdown](https://marketplace.visualstudio.com/items?itemName=marvhen.reflow-markdown) | **Rewrap+** |
 |---|---|---|---|---|
@@ -263,8 +307,8 @@ of the others instead of filing a bug here.
 | **Language-valid concatenation on split** | **No** | **No** | **No** | **Yes** |
 | **Prose-vs-code string heuristic** | **No** | **No** | **No** | **Yes** |
 | Parser | Line/regex-based | Line/regex-based | Markdown-aware | **tree-sitter AST** |
-| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++, Java |
-| Markdown / LaTeX / plain-text files | Yes | Yes | Markdown only | **No** |
+| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++, Java, Markdown |
+| Markdown / LaTeX / plain-text files | Yes | Yes | Markdown only | **Markdown** |
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
 | Format-on-save | No | Yes (`Run rewrap on save`, added v17.7) | — | Yes |

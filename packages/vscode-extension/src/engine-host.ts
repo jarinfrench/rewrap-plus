@@ -110,10 +110,10 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * `createRegistry()` (below) registers six adapters — `pythonAdapter`,
+ * `createRegistry()` (below) registers seven adapters — `pythonAdapter`,
  * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`,
- * `cppAdapter`, and `javaAdapter` — and this list is the one deliberate
- * place deciding what's actually user-facing, since
+ * `cppAdapter`, `javaAdapter`, and `markdownAdapter` — and this list is
+ * the one deliberate place deciding what's actually user-facing, since
  * `getSupportedLanguages()` (below) drives
  * which documents the extension's commands and formatters activate for.
  * The engine's `javascriptAdapter` didn't start out registered here: it
@@ -133,7 +133,10 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
  * explains why). `cppAdapter` (`'cpp'`) and `javaAdapter` (`'java'`) are
  * each real adapters from the start, unlike JavaScript's canary-then-real
  * path, since neither C++ nor Java had an equivalent thin precursor to
- * extend.
+ * extend. `markdownAdapter` (`'markdown'`) is the first `'prose'`-only
+ * adapter registered here — no comment/string discovery at all, see
+ * `docs/adapters.md`'s "Markdown and LaTeX — prose languages" section and
+ * `../../engine/src/languages/markdown/descriptor.ts`'s own doc comment.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -160,6 +163,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.typescriptReactAdapter);
   registry.register(engine.cppAdapter);
   registry.register(engine.javaAdapter);
+  registry.register(engine.markdownAdapter);
   return registry;
 }
 
