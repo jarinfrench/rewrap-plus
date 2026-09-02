@@ -92,6 +92,8 @@ export { cppAdapter } from './languages/cpp/adapter.js';
 export { cppDescriptor } from './languages/cpp/descriptor.js';
 export { javaAdapter } from './languages/java/adapter.js';
 export { javaDescriptor } from './languages/java/descriptor.js';
+export { markdownAdapter } from './languages/markdown/adapter.js';
+export { markdownDescriptor } from './languages/markdown/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';
