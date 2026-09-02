@@ -82,7 +82,10 @@ export const javadocDialect: DocDialect = {
 
     const prose = lines.slice(0, firstTagIndex);
     const tagLines = lines.slice(firstTagIndex);
-    return [...segmentLines(prose, options), ...groupFieldEntries(tagLines, matchJavadocEntry)];
+    return [
+      ...segmentLines(prose, options),
+      ...groupFieldEntries(tagLines, matchJavadocEntry, options),
+    ];
   },
 
   emit(blocks: readonly Block[], ctx: DocEmitContext): string[] {

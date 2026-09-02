@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Atom, Block } from '../types/document.js';
+import { decorateFirstLine } from './decorate-block.js';
 import { reflowBlock } from './reflow-block.js';
 
 function atom(text: string, overrides: Partial<Atom> = {}): Atom {
@@ -197,6 +198,42 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     ]);
   });
 
+  it("reserves room for blocks[0]'s own marker on the label's shared first line, not just the entry's (regression)", () => {
+    // Confirmed broken during development (see
+    // docs/planning/nested-field-entry-structure-plan.md, section 5):
+    // when `blocks[0]` itself carries a marker (a description that opens
+    // directly with a bullet, no leading prose), reflowing it at only the
+    // *entry's* own `firstLineReserve`/`hangingIndent` under-reserves by
+    // exactly `blocks[0].hangingIndent` — the nested marker
+    // (`decorateFirstLine`, called on `blocks[0]` from inside
+    // `reflowFieldEntry`) lands *after* budgeting was already done,
+    // silently pushing the final line past `availableWidth`, and
+    // `blocks[0]`'s own continuation lines land under the entry's plain
+    // continuation indent instead of under the bullet's own content.
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:', // length 9 → hangingIndent 10
+      hangingIndent: 10,
+      blocks: [{ type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('aaaaa', 'bbb') }],
+    };
+    const availableWidth = 20;
+    const reflowed = reflowBlock(block, availableWidth, block.hangingIndent, {
+      firstLineReserve: block.hangingIndent,
+    });
+    // Correctly budgeted: only 8 columns (20 - the *combined* 12-column
+    // reservation) are available for atom content on line 0, so 'bbb'
+    // wraps to its own line — indented 12 (10 entry + 2 marker), aligned
+    // under where the bullet's own content starts, not just under the
+    // entry's plain continuation column (10).
+    expect(reflowed).toEqual(['- aaaaa', `${' '.repeat(12)}bbb`]);
+    // And restoring the entry's own label afterward never overflows
+    // `availableWidth` by the marker's unaccounted width the way the
+    // pre-fix code did (':param x: - aaaaa' is 17 columns, under 20).
+    const decorated = decorateFirstLine(block, reflowed);
+    expect(decorated[0]).toBe(':param x: - aaaaa');
+    expect(decorated[0]!.length).toBeLessThanOrEqual(availableWidth);
+  });
+
   it("indents a fieldEntry's later nested blocks by hangingIndent and restores their own markers", () => {
     const block: Block = {
       type: 'fieldEntry',
@@ -214,6 +251,45 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
       '    ',
       '    - first',
       '    - second',
+    ]);
+  });
+
+  it("glues the label onto blocks[0]'s own first line when blocks[0] is a (possibly multi-line) verbatim block, re-basing its later lines under the entry's own continuation column (regression)", () => {
+    // Resolved deliberately, not just left as an open question: a
+    // `verbatim` block carries no marker (`decorateFirstLine` no-ops for
+    // it), so `blocks[0]` being `verbatim` needs no *marker-width*
+    // special-casing in `reflowFieldEntry` (`firstOwnIndent` is 0, same
+    // as `paragraph`) — the label glues onto `verbatim.lines[0]` exactly
+    // the way it already glues onto the first word of plain continuation
+    // prose when `entry.rest` is empty, the established, pre-existing
+    // convention this change doesn't redesign. See
+    // docs/planning/nested-field-entry-structure-plan.md, section 5.
+    //
+    // But confirmed broken during development for `lines[1:]`: a
+    // multi-line `verbatim` block (a real fenced sample is *always* at
+    // least 3 lines — open fence, content, close fence) shares only its
+    // first line with the label; the rest is ordinary continuation and
+    // needs `hangingIndent` re-added the same way a wrapped `paragraph`'s
+    // own continuation lines already get it from `greedyFill`/
+    // `balancedFill` — `reflowBlock`'s `case 'verbatim'` now does this
+    // (a no-op for every other caller, which always pass `hangingIndent:
+    // 0` for a top-level `verbatim` block). Before that fix, `'code'` and
+    // the closing fence printed flush left, ignoring the entry's
+    // continuation column entirely.
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 10,
+      blocks: [{ type: 'verbatim', lines: ['```', 'code', '```'] }],
+    };
+    const reflowed = reflowBlock(block, 40, block.hangingIndent, {
+      firstLineReserve: block.hangingIndent,
+    });
+    expect(reflowed).toEqual(['```', `${' '.repeat(10)}code`, `${' '.repeat(10)}\`\`\``]);
+    expect(decorateFirstLine(block, reflowed)).toEqual([
+      ':param x: ```',
+      `${' '.repeat(10)}code`,
+      `${' '.repeat(10)}\`\`\``,
     ]);
   });
 

@@ -160,7 +160,7 @@ export const googleDialect: DocDialect = {
         continue;
       }
 
-      const fieldBlocks = groupFieldEntries(section.body, matchGoogleEntry);
+      const fieldBlocks = groupFieldEntries(section.body, matchGoogleEntry, options);
       // `Returns`/`Yields` (and, rarely, hand-written `Args`) may carry
       // no recognizable `name:`/`type:` entry at all — legitimate bare
       // prose under Google style. `groupFieldEntries` already falls back

@@ -101,4 +101,42 @@ describe('googleDialect.segment', () => {
     const headers = blocks.filter((b) => b.type === 'sectionHeader').map((b) => (b as Extract<Block, { type: 'sectionHeader' }>).text);
     expect(headers).toEqual(['Args:', 'Returns:']);
   });
+
+  it('recognizes a nested list and a fenced sample inside an Args entry, end to end through segment()', () => {
+    // The headline scenario this whole nested-block-structure change
+    // exists for: `packages/engine/src/docs/field-entries.ts`'s
+    // `groupFieldEntries` now routes an entry's collected description
+    // through `../segmentation/split-blocks.ts` instead of flattening it
+    // to one atom stream — confirmed here through the real dialect entry
+    // point, `googleDialect.segment`, not just `groupFieldEntries`
+    // directly (`./field-entries.test.ts` already covers that in
+    // isolation).
+    const text = [
+      'Args:',
+      '    dry_run: Options include the following steps',
+      '        - printing each step',
+      '        - aborting on the first warning',
+      '        An example follows.',
+      '        ```',
+      '        deploy("x", dry_run=True)',
+      '        ```',
+    ].join('\n');
+    const blocks = googleDialect.segment(text, {});
+    expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'fieldEntry']);
+    const entry = fieldEntry(blocks, 1);
+    expect(entry.blocks.map((b) => b.type)).toEqual([
+      'paragraph',
+      'listItem',
+      'listItem',
+      'paragraph',
+      'verbatim',
+    ]);
+    const item0 = entry.blocks[1];
+    if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+    expect(item0.marker).toBe('-');
+    expect(item0.atoms.map((a) => a.text)).toEqual(['printing', 'each', 'step']);
+    const verbatim = entry.blocks[4];
+    if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
+    expect(verbatim.lines).toEqual(['```', 'deploy("x", dry_run=True)', '```']);
+  });
 });

@@ -160,7 +160,7 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
     expect(actual).toBe(fixture.expected);
   });
 
-  it('produces no reflowed line over the column limit, except a lone unbreakable atom (006’s doctest)', async () => {
+  it('produces no reflowed line over the column limit, except a lone unbreakable atom or verbatim content (006’s doctest, 012/014’s fenced sample)', async () => {
     // Mirrors `./python-comment-wrap-fixtures.test.ts`'s own "only this
     // phase's concern" scoping: a `def`/`return` code line untouched by
     // docstring wrapping is free to be any length — this check is about
@@ -172,13 +172,32 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
       const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
       const actual = applyTextEdits(fixture.input, result.edits);
       let insideDocstring = false;
+      let insideFence = false;
       for (const line of actual.split(/\r?\n/)) {
         const opensOrClosesHere = /"""/.test(line);
         const isDocstringLine = insideDocstring || opensOrClosesHere;
         if (opensOrClosesHere) {
           insideDocstring = !insideDocstring;
         }
+        const trimmed = line.trimStart();
+        // A fenced code sample (now reachable *inside* a field entry's
+        // own description too, once `groupFieldEntries` started routing
+        // descriptions through `../../src/segmentation/split-blocks.ts`
+        // — see `012-pathological-google.out.py`/`014-pathological-sphinx.out.py`)
+        // is `verbatim`: never reflowed, categorically exempt from the
+        // overflow rule for its *entire* content, not just a single
+        // token — mirrors `../../src/segmentation/verbatim.ts`'s own
+        // `FENCE_OPEN` delimiter recognition. `isFenceDelimiter` covers
+        // the toggling line itself regardless of which side of the
+        // toggle it's read on.
+        const isFenceDelimiter = /^(`{3,}|~{3,})/.test(trimmed);
+        if (isFenceDelimiter) {
+          insideFence = !insideFence;
+        }
         if (!isDocstringLine || line.length <= COLUMN_LIMIT) {
+          continue;
+        }
+        if (insideFence || isFenceDelimiter) {
           continue;
         }
         // Legitimate only as the overflow rule: a lone unbreakable
@@ -194,7 +213,6 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
         // token"). Stripping up to the first `':' + whitespace` removes
         // any such label before checking; a continuation line with no
         // label is unaffected, since nothing in it matches that pattern.
-        const trimmed = line.trimStart();
         if (/^(>>>|\.\.\.)/.test(trimmed)) {
           continue;
         }

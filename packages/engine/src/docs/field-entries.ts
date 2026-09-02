@@ -1,6 +1,8 @@
-import type { Atom, Block } from '../types/document.js';
+import type { Block } from '../types/document.js';
 import { atomizeWords } from '../segmentation/atomize-words.js';
+import type { SplitBlocksOptions } from '../segmentation/split-blocks.js';
 import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
+import { segmentLines } from './dialect.js';
 
 /** One recognized field-entry start, as matched by a dialect's own regex. */
 export interface EntryStartMatch {
@@ -31,27 +33,21 @@ export interface EntryStartMatch {
  * the first place, but "assume paragraph" is a safer failure mode than
  * dropping the line outright.
  *
- * **Known limitation:** an entry's continuation lines are atomized
- * directly (`atomizeWords`, below) rather than run back through
- * `../segmentation/split-blocks.ts`, so a nested list or a fenced code
- * sample inside a field-entry's own description (e.g. a Google `Args:`
- * entry whose text includes a bulleted sub-list or a ` ``` ` example) is
- * *not* recognized as such — it degrades to plain reflowed prose, its
- * bullets and fence delimiters becoming ordinary words, and a blank line
- * that was structurally meaningful (separating two bullets, surrounding a
- * fenced block) atomizes to nothing and simply vanishes, silently
- * merging what were two visually-separated chunks into one continuous
- * run of prose. This only ever flattens (see
- * `test/fixtures/python/docstrings/012-pathological-google.*` and its
- * NumPy/Sphinx siblings, `013`/`014`, for the current, accepted output);
- * it does not corrupt, and does not require avoiding a blank line inside
- * the description — a blank line no longer ends the entry early
- * (`collectEntryBody`, below, collects it as long as further entry
- * content follows), only a genuine dedent or a new sibling entry does.
+ * An entry's description is segmented for real structure — a nested
+ * list, a fenced sample, a table — via `../segmentation/split-blocks.ts`,
+ * not flattened into one atom stream (see `dedentBody` and the
+ * `segmentLines` call, below, for exactly how). `entry`'s own residual
+ * limitation, now that nested structure is recognized: `splitBlocks`
+ * still can't do anything for a description that merely *looks*
+ * structured to a human but doesn't match any of its recognized shapes
+ * (a hand-drawn ASCII diagram with no fence around it, say) — that was
+ * never in scope here, and still degrades to reflowed prose, same as it
+ * would at the top level of any other section body.
  */
 export function groupFieldEntries(
   lines: readonly string[],
   matchEntryStart: (line: string) => EntryStartMatch | null,
+  options: SplitBlocksOptions = {},
   continuationIndentWidth = 4,
 ): Block[] {
   const blocks: Block[] = [];
@@ -83,22 +79,58 @@ export function groupFieldEntries(
     // `markerPrefix`'s own defensive "no room" branch for.
     const hangingIndent =
       entryIndent + Math.max(continuationIndentWidth, entry.label.length + 1);
-    const atoms: Atom[] = atomizeWords(entry.rest);
     i++;
     const { body, nextIndex } = collectEntryBody(lines, i, entryIndent, matchEntryStart);
-    for (const bodyLine of body) {
-      atoms.push(...atomizeWords(bodyLine));
-    }
     i = nextIndex;
+    const dedented = dedentBody(body);
+    // `entry.rest` is already at relative column 0 by construction
+    // (`EntryStartMatch`'s own doc comment: captured text, no leading
+    // whitespace) — prepending it unconditionally when it's empty would
+    // inject a synthetic leading blank line into the segmented body that
+    // was never actually there (nothing was written on the label's own
+    // physical line at all, which isn't the same thing as "a blank line
+    // separates the label from its description").
+    const bodyLines = entry.rest === '' ? dedented : [entry.rest, ...dedented];
     blocks.push({
       type: 'fieldEntry',
       label: entry.label,
       hangingIndent,
-      blocks: [{ type: 'paragraph', atoms }],
+      blocks: segmentLines(bodyLines, options),
     });
   }
 
   return blocks;
+}
+
+/**
+ * Strip the common leading whitespace shared by every non-blank line in
+ * `body` before segmenting it — the same "compute common indentation,
+ * strip it" move PEP 257 prescribes and
+ * `../languages/python/dissolve-docstring.ts`'s `dissolveDocstring`
+ * already performs for a *whole docstring's* body, applied here one
+ * level down, to a single entry's own collected continuation. Without
+ * this, a nested list or fenced sample one level deeper than the rest of
+ * the entry's continuation would carry `splitBlocks`'s own
+ * `hangingIndent`/verbatim-line indentation as a large, source-column-
+ * dependent number (however many columns the whole docstring happens to
+ * sit at) instead of the small, meaningful "how much deeper than this
+ * entry's own continuation" delta that `reflowFieldEntry`
+ * (`../reflow/reflow-block.ts`) actually needs to reproduce the nesting
+ * relative to wherever the entry itself ends up.
+ */
+function dedentBody(body: readonly string[]): readonly string[] {
+  let commonIndent: number | null = null;
+  for (const line of body) {
+    if (line.trim() === '') {
+      continue;
+    }
+    const indent = leadingWhitespaceLength(line);
+    commonIndent = commonIndent === null ? indent : Math.min(commonIndent, indent);
+  }
+  if (!commonIndent) {
+    return body;
+  }
+  return body.map((line) => (line.trim() === '' ? '' : line.slice(commonIndent)));
 }
 
 /**
@@ -112,9 +144,10 @@ export function groupFieldEntries(
  * instead of `matchIndentedRun`'s flat "indent above zero" one. This is
  * what lets a blank-line-separated nested list or fenced sample inside a
  * description stay part of the entry instead of ending it the moment the
- * first blank line appears — see this file's own "Known limitation"
- * above for what still happens to that content once collected (it still
- * flattens; only *which* lines get collected changes here).
+ * first blank line appears — `groupFieldEntries`'s own doc comment,
+ * above, covers what happens to the collected result (`dedentBody`, then
+ * `segmentLines`); this function only decides *which* lines belong to
+ * the entry in the first place.
  *
  * Trailing blank lines are deliberately excluded from `body` (and so
  * never atomized) and instead left where the caller's own top-level loop
@@ -159,12 +192,15 @@ function collectEntryBody(
  * `test/fixtures/python/docstrings/012-pathological-google.*`:** the
  * indent check used to be applied only to a *non*-matching line, so any
  * line matching `matchEntryStart` ended continuation outright,
- * regardless of depth. A field entry's flattened description (this
- * file's own "Known limitation" above) can legitimately contain a
- * `word:` substring — a nested bullet's own "label: description"
- * shape, or plain prose with a colon in it — and reflow is free to
- * break a line right before that word on any given wrap. When it did,
- * the old code read it as a brand-new sibling entry despite sitting at
+ * regardless of depth. A field entry's description can legitimately
+ * contain a `word:` substring — a nested bullet's own "label:
+ * description" shape, or plain prose with a colon in it — and reflow is
+ * free to break a line right before that word on any given wrap. At the
+ * time this was fixed, a description always flattened to one atom
+ * stream regardless of what it contained; the same risk applies just as
+ * well now that a description segments for real structure (a nested
+ * `listItem`'s own text can contain the identical `word:` substring).
+ * When it did, the old code read it as a brand-new sibling entry despite sitting at
  * the *continuation* indent, not the entries' own shared indent —
  * splitting one logical entry into several and, since the split
  * doesn't happen at a section boundary, discarding everything after it

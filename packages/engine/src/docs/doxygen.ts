@@ -78,7 +78,10 @@ export const doxygenDialect: DocDialect = {
 
     const prose = lines.slice(0, firstTagIndex);
     const tagLines = lines.slice(firstTagIndex);
-    return [...segmentLines(prose, options), ...groupFieldEntries(tagLines, matchDoxygenEntry)];
+    return [
+      ...segmentLines(prose, options),
+      ...groupFieldEntries(tagLines, matchDoxygenEntry, options),
+    ];
   },
 
   emit(blocks: readonly Block[], ctx: DocEmitContext): string[] {

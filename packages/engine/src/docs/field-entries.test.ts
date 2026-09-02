@@ -9,11 +9,15 @@ function matchSimple(line: string): EntryStartMatch | null {
   return { label: `${name}:`, rest };
 }
 
-/** A `fieldEntry`'s own nested `blocks[0]`, at step 1 always the single `paragraph` wrapping its flat atoms. */
+/** A `fieldEntry`'s own `blocks[0]`, for the common case where the whole description is one unstructured paragraph. */
 function entryAtomTexts(entry: Extract<Block, { type: 'fieldEntry' }>): string[] {
-  const first = entry.blocks[0];
-  if (first?.type !== 'paragraph') throw new Error('expected the entry to open with a paragraph');
-  return first.atoms.map((a) => a.text);
+  return paragraphAtomTexts(entry.blocks[0]);
+}
+
+/** A single `paragraph` block's atom texts, for asserting one block among a `fieldEntry`'s several nested `blocks`. */
+function paragraphAtomTexts(block: Block | undefined): string[] {
+  if (block?.type !== 'paragraph') throw new Error(`expected a paragraph, got ${block?.type}`);
+  return block.atoms.map((a) => a.text);
 }
 
 describe('groupFieldEntries', () => {
@@ -93,23 +97,30 @@ describe('groupFieldEntries', () => {
   });
 
   describe('look-ahead body collection (blank lines inside continuation)', () => {
-    it('does not end the entry at a blank line followed by more continuation', () => {
+    it('does not end the entry at a blank line followed by more continuation — and now preserves the paragraph break, rather than losing it', () => {
       const blocks = groupFieldEntries(
         ['x: first', '    continues', '', '    more after blank'],
         matchSimple,
       );
       // A strict per-line "blank always ends continuation" loop would have
-      // produced 3 blocks here (fieldEntry, blank, a paragraph for the
-      // trailing line) — see this file's own "Known limitation" doc
-      // comment. One fieldEntry, with the blank line contributing zero
-      // atoms, confirms the look-ahead collection kept it all together.
+      // produced 3 top-level blocks here (fieldEntry, blank, a paragraph
+      // for the trailing line, wrongly detached from the entry it was
+      // actually written under). One fieldEntry confirms the look-ahead
+      // collection (`collectEntryBody`) kept it together; the entry's own
+      // *nested* blocks being `[paragraph, blank, paragraph]`, not one
+      // flat paragraph, confirms `segmentLines`/`splitBlocks` (wired in
+      // for real segmentation, not `atomizeWords`) preserved the blank
+      // line as a real paragraph break instead of silently merging both
+      // sides into one run of prose.
       expect(blocks).toHaveLength(1);
       const entry = blocks[0];
       if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
-      expect(entryAtomTexts(entry)).toEqual(['first', 'continues', 'more', 'after', 'blank']);
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'paragraph']);
+      expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['first', 'continues']);
+      expect(paragraphAtomTexts(entry.blocks[2])).toEqual(['more', 'after', 'blank']);
     });
 
-    it('tolerates more than one consecutive blank line inside continuation', () => {
+    it('tolerates more than one consecutive blank line inside continuation, one blank block per source line', () => {
       const blocks = groupFieldEntries(
         ['x: first', '    continues', '', '', '    more'],
         matchSimple,
@@ -117,7 +128,12 @@ describe('groupFieldEntries', () => {
       expect(blocks).toHaveLength(1);
       const entry = blocks[0];
       if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
-      expect(entryAtomTexts(entry)).toEqual(['first', 'continues', 'more']);
+      // `splitBlocks` never collapses a run of blank lines into one block
+      // (see its own doc comment on why) — two blank source lines here
+      // means two `blank` blocks, not one.
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'blank', 'paragraph']);
+      expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['first', 'continues']);
+      expect(paragraphAtomTexts(entry.blocks[3])).toEqual(['more']);
     });
 
     it('still ends the entry at a genuinely trailing blank line (no further continuation)', () => {
@@ -137,6 +153,70 @@ describe('groupFieldEntries', () => {
       const first = blocks[0];
       if (first?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
       expect(entryAtomTexts(first)).toEqual(['first', 'continues']);
+    });
+  });
+
+  describe('nested structure via splitBlocks (no longer flattened)', () => {
+    it('recognizes a nested list inside a description with no leading prose', () => {
+      // `x:` itself has nothing after the colon — the description opens
+      // directly with a bullet on the very next line. `blocks[0]` being a
+      // real `listItem` (not a `paragraph` whose atoms start with a
+      // literal `-`) is exactly the shape `../reflow/reflow-block.ts`'s
+      // `reflowFieldEntry` has to budget for specially, alongside the
+      // entry's own label sharing that same first line.
+      const blocks = groupFieldEntries(
+        ['x:', '    - first item', '    - second item'],
+        matchSimple,
+      );
+      expect(blocks).toHaveLength(1);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['listItem', 'listItem']);
+      const item0 = entry.blocks[0];
+      if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+      expect(item0.marker).toBe('-');
+      expect(item0.atoms.map((a) => a.text)).toEqual(['first', 'item']);
+    });
+
+    it('recognizes a nested list with leading prose on the entry’s own line', () => {
+      const blocks = groupFieldEntries(
+        ['x: Options include:', '    - verbose mode', '    - strict mode'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'listItem', 'listItem']);
+      expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['Options', 'include:']);
+    });
+
+    it('recognizes a fenced sample inside a description, unbroken (no blank line) — the 012/014 fixture shape', () => {
+      const blocks = groupFieldEntries(
+        ['x: See below.', '    ```', '    example()', '    ```'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'verbatim']);
+      const verbatim = entry.blocks[1];
+      if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
+      expect(verbatim.lines).toEqual(['```', 'example()', '```']);
+    });
+
+    it('dedents nested structure relative to the entry’s own continuation, not the raw source column', () => {
+      // Same shape as the previous test, just indented one level deeper
+      // (as it would be inside a doubly-nested Google section) — the
+      // `listItem`'s own `hangingIndent` must reflect its depth *within
+      // the entry* (2, for '- '), not the raw 8-column source indent, or
+      // `reflowFieldEntry`'s combined-indent math breaks.
+      const blocks = groupFieldEntries(
+        ['        x:', '            - first', '            - second'],
+        matchSimple,
+      );
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      const item0 = entry.blocks[0];
+      if (item0?.type !== 'listItem') throw new Error('expected a listItem');
+      expect(item0.hangingIndent).toBe(2);
     });
   });
 });

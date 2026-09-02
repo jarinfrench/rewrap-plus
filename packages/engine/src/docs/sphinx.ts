@@ -56,7 +56,10 @@ export const sphinxDialect: DocDialect = {
 
     const prose = lines.slice(0, firstFieldIndex);
     const fieldLines = lines.slice(firstFieldIndex);
-    return [...segmentLines(prose, options), ...groupFieldEntries(fieldLines, matchSphinxEntry)];
+    return [
+      ...segmentLines(prose, options),
+      ...groupFieldEntries(fieldLines, matchSphinxEntry, options),
+    ];
   },
 
   emit(blocks: readonly Block[], ctx: DocEmitContext): string[] {

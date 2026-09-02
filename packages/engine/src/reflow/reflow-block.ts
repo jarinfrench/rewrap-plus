@@ -61,10 +61,14 @@ export interface ReflowOptions {
  * hatch that makes 'preserve formatting' tractable"):
  *
  * - `blank` — a single empty line.
- * - `verbatim` — its `lines`, untouched. Reflowing a fenced code block,
- *   a doctest, or an ASCII table would corrupt it; that's the entire
- *   reason `splitBlocks` routed this content to `verbatim`
- *   instead of `paragraph` in the first place.
+ * - `verbatim` — its `lines`, content untouched (reflowing a fenced code
+ *   block, a doctest, or an ASCII table would corrupt it; that's the
+ *   entire reason `splitBlocks` routed this content to `verbatim` instead
+ *   of `paragraph` in the first place), though every line after the
+ *   first still gets `hangingIndent` spaces prepended — a no-op for
+ *   every top-level caller (`hangingIndent` is always `0` for a
+ *   top-level `verbatim` block; see the `case 'verbatim'` branch's own
+ *   comment for why this still matters for `fieldEntry`).
  * - `sectionHeader` — its `text` as one line. Headers ("Args:", a NumPy
  *   underline) are structural markers, not prose to fill; reflowing one
  *   would break whatever fixed relationship it has to its section (see
@@ -124,7 +128,26 @@ export function reflowBlock(
     case 'blank':
       return [''];
     case 'verbatim':
-      return [...block.lines];
+      // `hangingIndent` spaces on every line *after* the first, mirroring
+      // `greedyFill`/`balancedFill`'s own continuation-line convention —
+      // a no-op (`hangingIndent` is always `0`) for every existing
+      // top-level caller (`reflowBlockSequence` and
+      // `../comments/emit-line-comments.ts`/`emit-block-comments.ts`
+      // never pass a non-zero `hangingIndent` for `verbatim`, since
+      // there's nothing to align a top-level block's continuation
+      // *under*), but load-bearing for `reflowFieldEntry`, below: a
+      // multi-line `verbatim` block sitting in `blocks[0]` (a description
+      // opening directly with a fenced sample) shares only its *first*
+      // line with the entry's label — lines after that are ordinary
+      // continuation and need the same re-basing every other multi-line
+      // `blocks[0]` shape already gets from `greedyFill`/`balancedFill`
+      // reading this same parameter. Without this, `blocks[0]`-as-
+      // `verbatim` printed its second-and-later lines flush left,
+      // ignoring both the entry's own continuation column and the
+      // region's base indent — confirmed directly during development,
+      // not hypothetical (see
+      // `docs/planning/nested-field-entry-structure-plan.md`, section 5).
+      return block.lines.map((line, index) => (index === 0 ? line : ' '.repeat(hangingIndent) + line));
     case 'sectionHeader':
       return [block.text];
     case 'paragraph':
@@ -147,13 +170,27 @@ export function reflowBlock(
  * (restored by the caller via `../reflow/decorate-block.ts`'s
  * `decorateFirstLine`, applied to this function's *return value* — not
  * here, since only the caller knows the label's display form), so it's
- * reflowed at the *entry's* `firstLineReserve`/`hangingIndent`, exactly
- * as a lone flat atom stream always has been — this is what keeps a
- * single-`paragraph`-block entry (still the only shape any dialect
- * actually produces today) byte-identical to the pre-nested-blocks
- * behavior. Any further blocks are unambiguously past that shared first
- * line, so each is reflowed as its own top-level unit (`reflowBlockSequence`,
- * the same "one block, its own hanging indent, its own decoration" pass
+ * reflowed at the *entry's* `firstLineReserve`/`hangingIndent` — except
+ * when `blocks[0]` itself carries its own marker (a `listItem` opening
+ * the description directly, no leading prose), in which case *both*
+ * reservations apply to that one shared line: the entry's own label
+ * *and* `blocks[0]`'s own marker (glued on right after it, by
+ * `decorateFirstLine` here — necessary since nothing else ever sees a
+ * `fieldEntry`'s inner `blocks` to do it). Reserving only the entry's
+ * own width and letting `blocks[0]`'s marker land afterward,
+ * unaccounted, silently let a line run past `availableWidth` by exactly
+ * the marker's width — confirmed directly against this function during
+ * development, not a hypothetical (see
+ * `docs/planning/nested-field-entry-structure-plan.md`'s section 5 for
+ * the repro this fixes). For the common case — `blocks[0]` is a bare
+ * `paragraph`, still the *only* shape `groupFieldEntries` produces
+ * before its `splitBlocks` wiring existed — `firstOwnIndent` is `0` and
+ * this reduces to exactly the pre-nested-blocks call, so that case
+ * stays byte-identical.
+ *
+ * Any further blocks are unambiguously past that shared first line, so
+ * each is reflowed as its own top-level unit (`reflowBlockSequence`, the
+ * same "one block, its own hanging indent, its own decoration" pass
  * `../docs/dialect.ts`'s `reflowDocBlocks` uses for a document's own
  * top-level blocks) at the width remaining inside the entry's
  * `hangingIndent`, then that whole result is indented by `hangingIndent`
@@ -170,9 +207,14 @@ function reflowFieldEntry(
     return [''];
   }
   const [first, ...rest] = blocks;
+  const firstOwnIndent =
+    first!.type === 'listItem' || first!.type === 'fieldEntry' ? first!.hangingIndent : 0;
   const lines = decorateFirstLine(
     first!,
-    reflowBlock(first!, availableWidth, hangingIndent, { ...options, firstLineReserve }),
+    reflowBlock(first!, availableWidth, hangingIndent + firstOwnIndent, {
+      ...options,
+      firstLineReserve: firstLineReserve + firstOwnIndent,
+    }),
   );
   if (rest.length > 0) {
     const indent = ' '.repeat(hangingIndent);

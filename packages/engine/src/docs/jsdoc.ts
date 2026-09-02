@@ -79,7 +79,10 @@ export const jsdocDialect: DocDialect = {
 
     const prose = lines.slice(0, firstTagIndex);
     const tagLines = lines.slice(firstTagIndex);
-    return [...segmentLines(prose, options), ...groupFieldEntries(tagLines, matchJsdocEntry)];
+    return [
+      ...segmentLines(prose, options),
+      ...groupFieldEntries(tagLines, matchJsdocEntry, options),
+    ];
   },
 
   emit(blocks: readonly Block[], ctx: DocEmitContext): string[] {

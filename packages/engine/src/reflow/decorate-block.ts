@@ -19,6 +19,10 @@ import type { Block } from '../types/document.js';
  * with `- one\n- two` silently lost both bullets on wrap. No shipped
  * fixture happened to exercise a list inside a comment, so nothing catches
  * this until it's fixed at the one shared spot every caller can use.
+ * `./reflow-block.ts` is a caller too, internally: a `fieldEntry`'s own
+ * nested `blocks` are never exposed to any of the callers above, so its
+ * `reflowFieldEntry` calls this directly on each one, the only place that
+ * ever can.
  *
  * The marker/label is placed flush at column 0 of the *dissolved* text's
  * own coordinate space, with exactly one space before content — which is

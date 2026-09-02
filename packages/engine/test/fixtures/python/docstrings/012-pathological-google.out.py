@@ -11,12 +11,15 @@ def deploy(really_long_deployment_target_identifier, dry_run=False):
                                                   deployment
                                                   target.
         dry_run: Options include the following
-                 steps - printing each step as it
-                 executes - aborting immediately
-                 on the first warning An example
-                 follows. ```
-                 deploy("prod-eu-west",
-                 dry_run=True) ```
+                 steps
+                 - printing each step as it
+                   executes
+                 - aborting immediately on the
+                   first warning
+                 An example follows.
+                 ```
+                 deploy("prod-eu-west", dry_run=True)
+                 ```
 
     Returns:
         None: Nothing is returned.
