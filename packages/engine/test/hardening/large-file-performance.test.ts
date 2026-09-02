@@ -8,6 +8,7 @@ import { javascriptAdapter } from '../../src/languages/javascript/adapter.js';
 import { typescriptAdapter } from '../../src/languages/typescript/adapter.js';
 import { cppAdapter } from '../../src/languages/cpp/adapter.js';
 import { javaAdapter } from '../../src/languages/java/adapter.js';
+import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
@@ -108,6 +109,34 @@ function jsBody(lineCount: number): string {
   return lines.join('\n') + '\n';
 }
 
+/**
+ * Markdown's own worst case is the *opposite* of every code language
+ * above's: a real Markdown document is close to 100% wrappable-region
+ * density already (ordinary prose, not "mostly non-wrappable code with
+ * the occasional comment"), so — unlike `pythonBody`/`jsBody`/`cLikeBody`,
+ * which inflate density well past anything realistic to give the time
+ * bounds real margin — this doesn't need to inflate anything to already
+ * be the worst case (`docs/planning/markdown-latex-plan.md` §8.4: "every
+ * line a region line — worse than any code file's region density"). Many
+ * separate two-line paragraphs (not one giant one) so the "wrap a single
+ * region near the cursor" test below still has many other regions in the
+ * file to *not* wrap, the same property it checks for every other
+ * language.
+ */
+function markdownBody(lineCount: number): string {
+  const lines: string[] = [];
+  let i = 0;
+  while (lines.length < lineCount) {
+    lines.push(
+      `This is paragraph number ${i}, a fairly long line of ordinary prose that will likely need wrapping.`,
+    );
+    lines.push(`A second line continuing that same paragraph, also long enough to matter.`);
+    lines.push('');
+    i++;
+  }
+  return lines.slice(0, lineCount).join('\n') + '\n';
+}
+
 /** C++/Java both need every statement inside one enclosing function/method — neither allows a bare top-level statement. */
 function cLikeBody(lineCount: number, indent: string): string {
   const lines: string[] = [];
@@ -163,6 +192,19 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     generateFile: (lineCount) =>
       `class C {\n  void f() {\n${cLikeBody(lineCount, '    ')}\n  }\n}\n`,
     warmUpSource: '// warm up\n',
+  },
+  {
+    languageId: 'markdown',
+    adapter: markdownAdapter,
+    // Markdown has no comment marker at all — `commentMarker` is only
+    // ever used below to locate a real region's start via
+    // `source.indexOf(commentMarker)`; an empty string's `indexOf` is
+    // always `0`, which is exactly where `markdownBody`'s first
+    // paragraph starts (no preamble before it, unlike C++/Java's
+    // enclosing function/class header).
+    commentMarker: '',
+    generateFile: markdownBody,
+    warmUpSource: 'warm up\n',
   },
 ];
 
