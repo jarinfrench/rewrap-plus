@@ -3,6 +3,7 @@ import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { groupAdjacentRegions } from '../../comments/group-adjacent-regions.js';
 import { latexDescriptor } from './descriptor.js';
+import { discoverLatexProse } from './discover-prose.js';
 
 /**
  * LaTeX's `classify` override: `line_comment` is the only node type
@@ -37,21 +38,27 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
 }
 
 /**
- * LaTeX's `LanguageAdapter` — commit 14's scope: `%` comment paragraphs
- * only, through the existing generic `'lineComment'` dissolve/emit
- * machinery (`dissolveLineComments`/`emitLineComments`), needing no
- * LaTeX-specific dissolve or emit code at all. `isSafeToWrap` is
- * deliberately omitted: with no `queries.strings` and no `'stringLiteral'`
- * regions ever discovered from this descriptor, there is nothing for it to
- * flag unsafe — `wrap.ts` treats an adapter with no `isSafeToWrap` hook as
- * "every region is safe" (see that module's own `adapter.isSafeToWrap &&
- * ...` guard). `discoverProse`/`wrapProse` (the masked line-scan prose
- * pipeline `docs/planning/markdown-latex-plan.md` §6.2/§6.3 describe) land
- * in commit 15 — a LaTeX file with only `%` comments and no prose-eligible
- * text is already fully served by this adapter as it stands.
+ * LaTeX's `LanguageAdapter`. `%` comment paragraphs flow through the
+ * existing generic `'lineComment'` dissolve/emit machinery
+ * (`dissolveLineComments`/`emitLineComments`), needing no LaTeX-specific
+ * dissolve or emit code at all (commit 14). `discoverProse` (commit 15,
+ * `./discover-prose.ts`) is the masked line scan §6.2 describes — LaTeX's
+ * grammar has no paragraph node, so prose regions come from `source`'s own
+ * physical lines rather than a query capture the way Markdown's does.
+ * `wrapProse` (the reflow/indentation half, §6.3) is still later work —
+ * `discoverProse` existing without it means every discovered `'prose'`
+ * region is found but not yet wrapped, the same "discovery ships before
+ * wrapping" sequencing Markdown's own commits 9/10 used.
+ *
+ * `isSafeToWrap` is deliberately omitted: with no `queries.strings` and no
+ * `'stringLiteral'` regions ever discovered from this descriptor, there is
+ * nothing for it to flag unsafe — `wrap.ts` treats an adapter with no
+ * `isSafeToWrap` hook as "every region is safe" (see that module's own
+ * `adapter.isSafeToWrap && ...` guard).
  */
 export const latexAdapter: LanguageAdapter = {
   descriptor: latexDescriptor,
   classify,
   groupRegions,
+  discoverProse: discoverLatexProse,
 };

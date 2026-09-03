@@ -521,6 +521,56 @@ literal backslashes in an earlier heredoc-authored version, and re-deriving
 confirm the corrected script itself was trustworthy before relying on its
 *new* findings above.
 
+**Every sectioning command's node type name, and header-vs-body extent —
+completed for commit 15's structural-line detection** — probed via
+`docs/spikes/tree-sitter-latex-probe4.mjs`, filling the one gap Finding
+8's original probe left (only `section`/`subsection` had been directly
+exercised):
+
+- `part`, `chapter`, `subsubsection`, `paragraph`, and `subparagraph`
+  each get their own node type, named identically to the command
+  (`\chapter{...}` → a `chapter` node, etc.) — the same
+  `[command, curly_group, text]` three-child shape `section`/`subsection`
+  already confirmed, extended to the full set. Worth flagging by name:
+  LaTeX's `\paragraph{...}` sectioning command produces a node type
+  literally called `paragraph` — an unrelated, same-named node type from
+  the *Markdown* adapter's very different `paragraph` (a prose block);
+  the two grammars are never loaded into the same tree, so this is a
+  naming coincidence with no runtime collision, but worth a comment where
+  LaTeX's `SECTIONING_NODE_TYPES` list is defined so a future reader
+  doesn't assume a connection that isn't there.
+- A starred sectioning command (`\section*{...}`) keeps the same node
+  type (`section`) — the `*` lives inside the command token's own text
+  (`'\section*'`), not a distinct node shape, so no separate starred
+  entries are needed anywhere this grammar's node types are matched.
+- **The header-vs-body extent question, resolved concretely:** a
+  sectioning node's title (`children[1]`, the `curly_group`) ends exactly
+  where the visible title text ends — confirmed on
+  `\section{Title with \emph{nested} braces}`, where the title group's
+  own `endPosition.column` (41) exactly equals the full line's length
+  (41), even though the *node's own* `endPosition` (per the finding
+  above) extends through the entire body that follows. This is what
+  makes commit 15's tree-based structural-line fallback possible at all:
+  the title-group's own end position is a reliable "header ends here"
+  signal that's genuinely independent of how much body content follows,
+  where the sectioning node's own `endPosition` is not.
+- `generic_command`'s own extent needs no such header/body split:
+  confirmed directly (`\maketitle`, `\newpage`, `\clearpage`, `\noindent`,
+  each alone on a line) that a bare command's node ends exactly at its
+  own command text, with no trailing-body absorption of any kind — only
+  sectioning commands have that behavior.
+- `enum_item`'s `label` field, on a real two-item list with one labeled
+  and one unlabeled `\item`, confirmed exactly as Finding 8's original
+  probe predicted: `command` end lands right after `\item` (column 5 on
+  `\item First item text.`), and a present `label` is a
+  `brack_group_text` node (`[custom]`, brackets included) ending right
+  after its own closing `]`.
+- `\[ ... \]` display math (a second confirmation, this time spanning
+  multiple lines with real content between the delimiters) parses as a
+  single `displayed_equation` node whose row range covers the opening
+  `\[` line through the closing `\]` line inclusive — exactly the row
+  range commit 15's mask-building needs.
+
 **Error rate and performance on real content:** `latex-lsp/tree-sitter-latex`'s
 own `examples/texlab.tex` (2,584 bytes, a real README-style project
 document with packages, sectioning, links, and inline macros) parsed with

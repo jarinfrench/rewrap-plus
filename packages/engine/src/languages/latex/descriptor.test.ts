@@ -38,7 +38,7 @@ describe('latexDescriptor', () => {
     expect(latexDescriptor.queries.strings).toBeUndefined();
   });
 
-  it('declares no prose query yet — discoverProse lands in a later commit', () => {
+  it('declares no prose query — discoverProse is a masked line scan, not a query capture', () => {
     expect(latexDescriptor.queries.prose).toBeUndefined();
   });
 
