@@ -10,6 +10,7 @@ import { typescriptAdapter } from '../../src/languages/typescript/adapter.js';
 import { cppAdapter } from '../../src/languages/cpp/adapter.js';
 import { javaAdapter } from '../../src/languages/java/adapter.js';
 import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
+import { latexAdapter } from '../../src/languages/latex/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
@@ -104,6 +105,12 @@ const markdownFixtures = import.meta.glob('../fixtures/markdown/**/*.in.md', {
   import: 'default',
 }) as Record<string, string>;
 
+const latexFixtures = import.meta.glob('../fixtures/latex/**/*.in.tex', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as Record<string, string>;
+
 /**
  * One entry per adapter with its own end-to-end gold-fixture directory —
  * mirrors the set of adapters `docs/adapters.md` records as passing
@@ -126,6 +133,7 @@ const LANGUAGE_SETS: readonly LanguageFixtureSet[] = [
   { languageId: 'cpp', adapter: cppAdapter, fixtures: cppFixtures },
   { languageId: 'java', adapter: javaAdapter, fixtures: javaFixtures },
   { languageId: 'markdown', adapter: markdownAdapter, fixtures: markdownFixtures },
+  { languageId: 'latex', adapter: latexAdapter, fixtures: latexFixtures },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {

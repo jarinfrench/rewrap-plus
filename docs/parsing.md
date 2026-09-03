@@ -466,6 +466,61 @@ from the Markdown asset's GitHub-attested one, exactly as §3.1 specifies.
   node type, simplifying the Phase D masking list (one type covers both
   shortcut forms, not two).
 
+**Environment classification, completed for §6.2's full preserve-list
+candidates** — probed via `docs/spikes/tree-sitter-latex-probe2.mjs`,
+following up on the subset above with every remaining name §6.2 needed
+classified before commit 15 could write the mask list. Two results the
+plan's own draft got wrong (verify, don't assume, paid off again here):
+
+- `lstlisting` gets its **own** dedicated `listing_environment` node type
+  — but plain `listing` (no `lst` prefix) does not; it falls through to
+  `generic_environment` like the rest of the unnamed cases. §6.2's mask
+  list needs `listing_environment` as an always-mask type *and*
+  `lstlisting`'s absence from the generic preserve-list (it's never
+  reached as `generic_environment` at all), while plain `listing` needs
+  adding to the preserve-list explicitly if it's meant to be masked too.
+- `array` classifies as `math_environment`, not `generic_environment` —
+  so it's already covered by the "always mask `math_environment`" rule
+  and needs no separate preserve-list entry, contrary to the plan's
+  draft list which named it alongside `tabular`/`tikzpicture` as if it
+  needed one.
+- `comment` (the `comment` package's environment, distinct from `%`
+  line comments) gets its own dedicated `comment_environment` node, as
+  the plan predicted.
+- `minted` (the `minted` package's syntax-highlighted listing
+  environment) produces an **`ERROR`** node, not `minted_environment` —
+  no such node type exists in this grammar at all, `\begin{minted}` (with
+  or without the package's required language argument) simply fails to
+  parse as a recognized environment. This needed no special-casing in the
+  end: `wrap.ts` already skips any region overlapping an `ERROR` node
+  unconditionally, so `minted` content is protected by that generic
+  mechanism rather than needing its own mask-list entry — but it does
+  mean `minted_environment` must **not** appear in commit 15's mask-type
+  list (referencing a node type that doesn't exist would either be dead
+  code or, worse, silently match nothing while looking like it does
+  something).
+- `Verbatim`, `BVerbatim`, `alltt`, `tikzpicture`, `tabular`, `tabular*`,
+  `tabularx`, `itemize`, `abstract` all confirmed `generic_environment`,
+  exactly as the plan expected — these are the names that actually need
+  the descriptor-declared preserve-list (`itemize`/`abstract` deliberately
+  excluded from it, per §6.2's own worked example).
+
+**Trailing-`\r` and `\%`-escaping re-confirmed for commit 14's descriptor**
+— probed a second time, independently, via
+`docs/spikes/tree-sitter-latex-probe3.mjs`, specifically against the
+`latexDescriptor`/`latexAdapter` commit 14 actually shipped (not just the
+grammar in the abstract): a `line_comment` node on a CRLF-terminated line
+still never includes the trailing `\r` (`trimTrailingCR` confirmed a
+no-op), and `\%` still produces zero `line_comment` nodes and zero
+`ERROR` nodes. Both match Finding 8's original probe above exactly — kept
+as a second, independent confirmation specifically because two of this
+session's LaTeX probe scripts (see `-probe2.mjs`'s and `-probe3.mjs`'s own
+header comments) had to be rewritten after a shell-tooling bug corrupted
+literal backslashes in an earlier heredoc-authored version, and re-deriving
+"already known" facts from the corrected script was the cheapest way to
+confirm the corrected script itself was trustworthy before relying on its
+*new* findings above.
+
 **Error rate and performance on real content:** `latex-lsp/tree-sitter-latex`'s
 own `examples/texlab.tex` (2,584 bytes, a real README-style project
 document with packages, sectioning, links, and inline macros) parsed with

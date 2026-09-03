@@ -56,6 +56,12 @@ declare module '*.md?raw' {
   export default content;
 }
 
+// The LaTeX fixtures — same rationale as the `.py?raw` declaration above.
+declare module '*.tex?raw' {
+  const content: string;
+  export default content;
+}
+
 // `import.meta.glob` (used by `test/wrap/idempotency-all-fixtures.test.ts`
 // to pick up every gold fixture in a language's directory without a
 // hand-maintained list of named imports) isn't typed without pulling in
