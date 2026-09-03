@@ -123,6 +123,36 @@ describe('discoverLatexProse', () => {
     expect(proseText(source, prose[0]!)).toBe('Labeled item text.');
   });
 
+  describe('indentColumn is the marker column, not the content column, for an \\item region', () => {
+    it('coincides with the content-start column for an ordinary paragraph (no change)', () => {
+      const source = '  This paragraph is indented two spaces.\n';
+      const [region] = discover(source).filter((r) => r.kind === 'prose');
+      expect(region!.indentColumn).toBe(2);
+      expect(region!.parts[0]!.startColumn).toBe(2);
+    });
+
+    it('is the \\item marker\'s own column, shorter than the item\'s real content-start column', () => {
+      const source = '\\begin{itemize}\n  \\item \\label{item:foo} Item text.\n\\end{itemize}\n';
+      const [region] = discover(source).filter((r) => r.kind === 'prose');
+      // "  \item \label{item:foo} " is 25 columns wide — the region's own
+      // content (region.parts[0].startColumn) starts there, but
+      // indentColumn must stay at 2 (the marker's own column) for
+      // wrapLatexProse's firstLineReserve derivation to produce correctly
+      // wide continuation lines instead of needlessly narrow ones — see
+      // ./wrap-prose.ts's own doc comment on firstLineReserve.
+      expect(region!.indentColumn).toBe(2);
+      expect(region!.parts[0]!.startColumn).toBe(25);
+    });
+
+    it('is the marker column for an unlabeled item too, still shorter than the content column', () => {
+      const source = '\\begin{itemize}\n  \\item Item text here.\n\\end{itemize}\n';
+      const [region] = discover(source).filter((r) => r.kind === 'prose');
+      // "  \item " is 8 columns wide.
+      expect(region!.indentColumn).toBe(2);
+      expect(region!.parts[0]!.startColumn).toBe(8);
+    });
+  });
+
   it('excludes a \\label{...} chained right after \\item from the item\'s own prose text', () => {
     const source = '\\begin{itemize}\n\\item \\label{item:foo} Item text.\n\\end{itemize}\n';
     const prose = discover(source).filter((r) => r.kind === 'prose');

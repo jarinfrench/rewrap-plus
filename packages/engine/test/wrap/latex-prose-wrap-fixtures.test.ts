@@ -171,6 +171,22 @@ describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
     }
   });
 
+  it('item continuation lines use the width the marker column actually leaves available, not the narrower content-start-column budget (the firstLineReserve fix)', () => {
+    // Before the fix, reflow budgeted every line (including continuation
+    // lines that only carry a 2-space prefix) as if it started at the
+    // item's own *content* column — needlessly narrow. "wrapping onto a
+    // continuation line." (35 chars) plus a 2-space prefix is 37 columns,
+    // comfortably inside the 40-column limit, and previously got split
+    // across two lines regardless.
+    const lines = itemIndentationOut.split('\n');
+    expect(lines).toContain('  wrapping onto a continuation line.');
+  });
+
+  it('item-with-label continuation lines get the same full-width treatment', () => {
+    const lines = itemWithLabelOut.split('\n');
+    expect(lines).toContain('  a chained cross-reference label and');
+  });
+
   it('a \\section{Title}\\label{sec:foo} header line survives byte-identical, even though its body prose wraps', () => {
     const headerLine = sectionWithLabelOut.split('\n')[0]!;
     expect(headerLine).toBe('\\section{Introduction}\\label{sec:intro}');

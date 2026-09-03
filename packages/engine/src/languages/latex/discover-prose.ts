@@ -542,12 +542,38 @@ export function discoverLatexProse(
       endRow: last.endRow,
       endColumn: last.endColumn,
     };
+    // `indentColumn` is the visual column *continuation* lines land at —
+    // for an ordinary paragraph this is the same as `first.startColumn`
+    // (both computed as `firstNonWhitespaceColumn` of the same row), but
+    // for an `\item` region it deliberately is **not**: `first.startColumn`
+    // is the item's own *content* start, past `\item`/`[label]` (and any
+    // further chained command, `structuralConsumedLength`), while
+    // continuation lines align under the marker itself (§6.3, confirmed
+    // by `./continuation-prefix.ts`'s own `latexContinuationPrefix`,
+    // which derives from the same raw leading-whitespace run computed
+    // here). Using `first.startColumn` here instead — as an earlier
+    // version of this function did — fed `emitProse`'s single shared
+    // `availableWidth` (`columnLimit - indentColumn`) a value far
+    // narrower than what continuation lines actually have room for once
+    // displayed at the marker's own (shorter) `continuationPrefix`,
+    // producing needlessly short, choppy continuation lines for any
+    // labeled or long-markered item — confirmed by direct comparison
+    // against the real pipeline's output before this fix, not assumed.
+    // `wrapLatexProse` (`./wrap-prose.ts`) is the other half: it derives
+    // `firstLineReserve` from the *difference* between this value and the
+    // real content-start column, so line 1 (which genuinely does start
+    // printing at the content column, since the marker itself is
+    // untouched source text) still gets its own correctly narrower
+    // budget — the same `firstLineReserve` mechanism `strings/emit-string.ts`
+    // already uses for an analogous "marker text precedes line 1"
+    // scenario.
+    const markerColumn = firstNonWhitespaceColumn(sourceLines[first.startRow] ?? '');
     regions.push({
       kind: 'prose',
       span,
       parts: currentParts,
       rawText: currentParts.map((part) => normalizeRawText(sliceSpanText(source, part))).join('\n'),
-      indentColumn: visualIndentColumn(sourceLines[first.startRow] ?? '', first.startColumn, tabSize),
+      indentColumn: visualIndentColumn(sourceLines[first.startRow] ?? '', markerColumn, tabSize),
       languageId,
     });
     currentParts = [];
