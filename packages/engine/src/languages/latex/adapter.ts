@@ -4,6 +4,7 @@ import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { groupAdjacentRegions } from '../../comments/group-adjacent-regions.js';
 import { latexDescriptor } from './descriptor.js';
 import { discoverLatexProse } from './discover-prose.js';
+import { wrapLatexProse } from './wrap-prose.js';
 
 /**
  * LaTeX's `classify` override: `line_comment` is the only node type
@@ -45,10 +46,11 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
  * `./discover-prose.ts`) is the masked line scan §6.2 describes — LaTeX's
  * grammar has no paragraph node, so prose regions come from `source`'s own
  * physical lines rather than a query capture the way Markdown's does.
- * `wrapProse` (the reflow/indentation half, §6.3) is still later work —
- * `discoverProse` existing without it means every discovered `'prose'`
- * region is found but not yet wrapped, the same "discovery ships before
- * wrapping" sequencing Markdown's own commits 9/10 used.
+ * `wrapProse` (commit 16, `./wrap-prose.ts`) dissolves/reflows/emits each
+ * discovered region through the shared `prose/` pipeline
+ * (`dissolveProse`/`emitProse`), the same shape `wrapMarkdownProse` uses,
+ * with LaTeX's own hard-break commands (`./hard-break.ts`) and
+ * `\verb`/`\lstinline` never-split spans.
  *
  * `isSafeToWrap` is deliberately omitted: with no `queries.strings` and no
  * `'stringLiteral'` regions ever discovered from this descriptor, there is
@@ -61,4 +63,5 @@ export const latexAdapter: LanguageAdapter = {
   classify,
   groupRegions,
   discoverProse: discoverLatexProse,
+  wrapProse: wrapLatexProse,
 };

@@ -42,9 +42,20 @@ import codeUntouchedOut from '../fixtures/latex/comments/008-code-untouched-comm
  * for every fixture, the same targeted-scoping fix
  * `markdown-directive-fixtures.test.ts` already established for the
  * identical shape of problem (§Errors and fixes, Phase C commit 11).
- * `008`'s ordinary-text line is excluded for a different, adjacent reason:
- * it isn't inside a comment at all, and `discoverProse` doesn't exist yet
- * (commit 15) — nothing this commit's adapter could have wrapped it with.
+ *
+ * `008` originally also carried an ordinary-text paragraph, back when
+ * `discoverProse` didn't exist yet and the fixture's point was "text
+ * outside a comment stays untouched, since nothing here could wrap it."
+ * Once `discoverProse`/`wrapProse` landed (commits 15/16), that paragraph
+ * became real, wrappable prose — a fixture whose gold file asserted it
+ * stayed untouched would have been asserting the adapter's own
+ * (correct, intended) new capability *doesn't* work. Simplified back to
+ * a comment-only fixture (`\section{...}` untouched, `%` comment wrapped)
+ * to keep this suite's own scope honest — the richer "section header
+ * plus real body prose plus a comment, all three interacting" scenario
+ * moved to `latex-prose-wrap-fixtures.test.ts` instead, where it belongs
+ * now that it's genuinely exercising prose wrapping, not just proving an
+ * absence of it.
  */
 const COLUMN_LIMIT = 40;
 
@@ -72,7 +83,6 @@ const fixtures: readonly Fixture[] = [
 const NEVER_UNDER_LIMIT = new Set([
   '004-magic-comment-untouched',
   '006-commented-out-code-verbatim',
-  '008-code-untouched-comment-wrapped',
 ]);
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
