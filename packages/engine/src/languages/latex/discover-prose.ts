@@ -151,40 +151,6 @@ function environmentName(beginNode: SyntaxNode | null): string | null {
   return text.startsWith('{') && text.endsWith('}') ? text.slice(1, -1) : text;
 }
 
-/**
- * Row ranges (inclusive) that no prose region may include or start in —
- * `docs/planning/markdown-latex-plan.md` §6.2 item 1. Built from
- * `ALWAYS_MASKED_NODE_TYPES` unconditionally, plus every
- * `generic_environment` whose `begin.name` is in
- * `MASKED_GENERIC_ENVIRONMENT_NAMES`. A `\begin{…}` that isn't alone on
- * its line is still masked by these node rows regardless — per the plan's
- * own instruction, this never falls back to a line-based `\begin`/`\end`
- * scan the way Rewrap's own rule does.
- */
-function buildRowMasks(tree: Tree): RowMask[] {
-  const masks: RowMask[] = [];
-
-  for (const nodeType of ALWAYS_MASKED_NODE_TYPES) {
-    for (const node of tree.rootNode.descendantsOfType(nodeType)) {
-      if (node) {
-        masks.push({ startRow: node.startPosition.row, endRow: node.endPosition.row });
-      }
-    }
-  }
-
-  for (const node of tree.rootNode.descendantsOfType('generic_environment')) {
-    if (!node) {
-      continue;
-    }
-    const name = environmentName(node.childForFieldName('begin'));
-    if (name !== null && MASKED_GENERIC_ENVIRONMENT_NAMES.has(name)) {
-      masks.push({ startRow: node.startPosition.row, endRow: node.endPosition.row });
-    }
-  }
-
-  return masks;
-}
-
 function isRowMasked(row: number, masks: readonly RowMask[]): boolean {
   return masks.some((mask) => row >= mask.startRow && row <= mask.endRow);
 }
@@ -262,15 +228,12 @@ function buildWholeLineCommentRows(tree: Tree, sourceLines: readonly string[]): 
  * `firstNonWhitespaceColumnFrom` call is needed after it.
  */
 function buildEnumItemStartColumns(
-  tree: Tree,
+  enumItemNodes: readonly SyntaxNode[],
   sourceLines: readonly string[],
   headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>,
 ): Map<number, number> {
   const byRow = new Map<number, number>();
-  for (const item of tree.rootNode.descendantsOfType('enum_item')) {
-    if (!item) {
-      continue;
-    }
+  for (const item of enumItemNodes) {
     const command = item.childForFieldName('command');
     const label = item.childForFieldName('label');
     const end = label ?? command;
@@ -291,70 +254,126 @@ function buildEnumItemStartColumns(
 }
 
 /**
- * Header spans (command plus its immediate argument groups, *never*
- * including a sectioning node's absorbed body) for every
- * `generic_command`, `theorem_definition`, and sectioning node in the
- * tree, indexed by the row each one starts on. This is
- * `treeStructuralLineEnd`'s data source — see that function's own doc
- * comment for why a sectioning node's *own* `endPosition` can never be
- * used directly here.
- *
- * `generic_command`/`theorem_definition` need no special-casing:
- * confirmed directly (`-probe4.mjs`'s "generic_command header shape"
- * section — `\maketitle`/`\newpage`/`\clearpage`/`\noindent` each end
- * exactly at their own command text, no trailing body absorption) that
- * their own node extent already *is* the header, unlike sectioning nodes.
+ * Every node type this file's tree-scanning cares about — the input to
+ * `buildTreeIndexes`'s single combined `descendantsOfType` call. Typed
+ * `string[]` (mutable), not `readonly string[]`, purely to satisfy
+ * `descendantsOfType`'s own parameter type — this array is built once,
+ * here, and never mutated afterward.
  */
-function buildHeaderSpansByStartRow(tree: Tree): Map<number, TreeHeaderSpan[]> {
-  const byRow = new Map<number, TreeHeaderSpan[]>();
-  const push = (startRow: number, span: TreeHeaderSpan): void => {
-    const existing = byRow.get(startRow);
+const ALL_SCANNED_NODE_TYPES: string[] = [
+  ...ALWAYS_MASKED_NODE_TYPES,
+  'generic_environment',
+  'generic_command',
+  'theorem_definition',
+  ...SECTIONING_NODE_TYPES,
+  'enum_item',
+];
+
+const ALWAYS_MASKED_NODE_TYPE_SET: ReadonlySet<string> = new Set(ALWAYS_MASKED_NODE_TYPES);
+const SIMPLE_HEADER_NODE_TYPES: ReadonlySet<string> = new Set(['generic_command', 'theorem_definition']);
+
+interface TreeIndexes {
+  readonly rowMasks: readonly RowMask[];
+  readonly headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>;
+  readonly enumItemNodes: readonly SyntaxNode[];
+}
+
+/**
+ * Every row mask, header span, and `enum_item` node this file needs,
+ * gathered in **one** combined `tree.rootNode.descendantsOfType(ALL_SCANNED_NODE_TYPES)`
+ * call rather than the sixteen separate single-type calls an earlier
+ * version of this file made (one per `ALWAYS_MASKED_NODE_TYPES` entry,
+ * one for `generic_environment`, one each for `generic_command`/
+ * `theorem_definition`, one per `SECTIONING_NODE_TYPES` entry, one for
+ * `enum_item`). `descendantsOfType` accepts an array natively — passing
+ * every type at once still does exactly one walk of the tree internally,
+ * just filtering against a combined set as it goes, rather than sixteen
+ * separate walks each re-visiting every node in the tree to ask "are you
+ * one of my one or two types?"
+ *
+ * Found to matter, not just theorized: profiled directly (a 50,000-line
+ * synthetic file) at **17×** — the sixteen-separate-calls version took
+ * ~1.7s, this combined version ~0.1s. This was the dominant cost in
+ * `discoverLatexProse` by a wide margin (parsing the same file took
+ * ~0.7s), and specifically what made a near-cursor "wrap the one region
+ * under the cursor" request scale with total file size the same as a
+ * whole-file wrap would — `discoverRegions` (`../../discovery/discover-regions.ts`)
+ * always runs discovery on the whole tree before filtering to the
+ * requested target, for every adapter alike, so this adapter's own
+ * discovery cost is the whole story for that path. That distinction
+ * stayed invisible for every language before LaTeX because a single
+ * tree-sitter query pass (every other adapter's own discovery mechanism)
+ * is cheap enough that it was never the bottleneck; LaTeX's masked line
+ * scan is the first adapter where it was.
+ *
+ * Each node is dispatched to exactly one of three buckets by its own
+ * `.type`, reproducing the identical per-node logic the three original
+ * single-purpose functions each had — `rowMasks`
+ * (§6.2 item 1: `ALWAYS_MASKED_NODE_TYPES` unconditionally, plus a
+ * `generic_environment` whose `begin.name` is in
+ * `MASKED_GENERIC_ENVIRONMENT_NAMES`), `headerSpansByStartRow`
+ * (`generic_command`/`theorem_definition` via their own full extent —
+ * confirmed via `-probe4.mjs` to need no special-casing, no trailing
+ * body absorption — and every `SECTIONING_NODE_TYPES` entry via its
+ * title `curly_group` only, `children[1]`, deliberately never its own
+ * `endPosition`, which absorbs the entire section body through the next
+ * same-or-higher-level section per Finding 8), and `enumItemNodes` (the
+ * raw node list only — `buildEnumItemStartColumns` still does its own
+ * per-item processing afterward, since it needs `headerSpansByStartRow`
+ * fully built first for its own `structuralConsumedLength` calls).
+ */
+function buildTreeIndexes(tree: Tree): TreeIndexes {
+  const rowMasks: RowMask[] = [];
+  const headerSpansByStartRow = new Map<number, TreeHeaderSpan[]>();
+  const enumItemNodes: SyntaxNode[] = [];
+
+  const pushHeaderSpan = (startRow: number, span: TreeHeaderSpan): void => {
+    const existing = headerSpansByStartRow.get(startRow);
     if (existing) {
       existing.push(span);
     } else {
-      byRow.set(startRow, [span]);
+      headerSpansByStartRow.set(startRow, [span]);
     }
   };
 
-  for (const nodeType of ['generic_command', 'theorem_definition']) {
-    for (const node of tree.rootNode.descendantsOfType(nodeType)) {
-      if (node) {
-        push(node.startPosition.row, {
-          startColumn: node.startPosition.column,
-          endRow: node.endPosition.row,
-          endColumn: node.endPosition.column,
-        });
-      }
+  for (const node of tree.rootNode.descendantsOfType(ALL_SCANNED_NODE_TYPES)) {
+    if (!node) {
+      continue;
     }
-  }
-
-  for (const nodeType of SECTIONING_NODE_TYPES) {
-    for (const node of tree.rootNode.descendantsOfType(nodeType)) {
-      if (!node) {
-        continue;
+    if (ALWAYS_MASKED_NODE_TYPE_SET.has(node.type)) {
+      rowMasks.push({ startRow: node.startPosition.row, endRow: node.endPosition.row });
+    } else if (node.type === 'generic_environment') {
+      const name = environmentName(node.childForFieldName('begin'));
+      if (name !== null && MASKED_GENERIC_ENVIRONMENT_NAMES.has(name)) {
+        rowMasks.push({ startRow: node.startPosition.row, endRow: node.endPosition.row });
       }
+    } else if (SIMPLE_HEADER_NODE_TYPES.has(node.type)) {
+      pushHeaderSpan(node.startPosition.row, {
+        startColumn: node.startPosition.column,
+        endRow: node.endPosition.row,
+        endColumn: node.endPosition.column,
+      });
+    } else if (SECTIONING_NODE_TYPES.has(node.type)) {
       // children[0] is the command token (`\section`), children[1] is
       // the title `curly_group` — confirmed directly (`-probe.mjs`'s
       // original section probe, re-confirmed for every sectioning type
       // by `-probe4.mjs`) that this is *always* the shape, never fewer
       // than two children. children[2] onward is the absorbed body,
-      // deliberately excluded: a sectioning node's own `endPosition`
-      // spans through the *next* same-or-higher-level section (Finding
-      // 8), so using it directly here would treat that entire body as
-      // part of the header line, masking real prose paragraphs as
-      // "structural" on every row of the section.
+      // deliberately excluded — see this function's own doc comment.
       const titleGroup = node.children[1];
       if (titleGroup) {
-        push(node.startPosition.row, {
+        pushHeaderSpan(node.startPosition.row, {
           startColumn: node.startPosition.column,
           endRow: titleGroup.endPosition.row,
           endColumn: titleGroup.endPosition.column,
         });
       }
+    } else if (node.type === 'enum_item') {
+      enumItemNodes.push(node);
     }
   }
 
-  return byRow;
+  return { rowMasks, headerSpansByStartRow, enumItemNodes };
 }
 
 /**
@@ -526,10 +545,9 @@ export function discoverLatexProse(
   const sourceLines = source.split('\n');
   const mapper = new PositionMapper(source);
 
-  const rowMasks = buildRowMasks(tree);
+  const { rowMasks, headerSpansByStartRow, enumItemNodes } = buildTreeIndexes(tree);
   const wholeLineCommentRows = buildWholeLineCommentRows(tree, sourceLines);
-  const headerSpansByStartRow = buildHeaderSpansByStartRow(tree);
-  const enumItemStartColumns = buildEnumItemStartColumns(tree, sourceLines, headerSpansByStartRow);
+  const enumItemStartColumns = buildEnumItemStartColumns(enumItemNodes, sourceLines, headerSpansByStartRow);
 
   const regions: WrappableRegion[] = [];
   let currentParts: SourceSpan[] = [];

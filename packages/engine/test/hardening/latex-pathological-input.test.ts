@@ -12,11 +12,15 @@ import { wrapRegions } from '../../src/wrap.js';
  * `./pathological-input.test.ts`'s comment/string-language ones and from
  * `./markdown-pathological-input.test.ts`'s own Markdown-specific ones,
  * because LaTeX's `discoverProse` is a masked line scan with its own
- * distinct cost shapes: `buildRowMasks`'s `isRowMasked` does an `O(masks)`
- * scan *per row* (flagged as a real, not-yet-measured concern during this
- * commit's own pre-work review — this suite is what resolves it, not
- * assumption), and `buildEnumItemStartColumns`/`buildHeaderSpansByStartRow`
- * each do their own whole-tree `descendantsOfType` walk.
+ * distinct cost shapes: `isRowMasked` does an `O(masks)` scan *per row*
+ * (flagged as a real, not-yet-measured concern during this commit's own
+ * pre-work review — this suite is what resolves it, not assumption), and
+ * `buildTreeIndexes` does one combined whole-tree `descendantsOfType`
+ * walk to gather everything else (row masks, header spans, `enum_item`
+ * nodes) — originally sixteen *separate* single-type walks, until a real,
+ * measured ~17× cost was found and fixed while investigating a related
+ * concern (per-keystroke auto-wrap latency on a large file); see that
+ * function's own doc comment in `../../src/languages/latex/discover-prose.ts`.
  *
  * All four were measured, not merely assumed safe — `docs/benchmarks.md`
  * records the actual numbers this suite's own comments quote. The
@@ -50,23 +54,25 @@ beforeAll(async () => {
 
 describe('LaTeX pathological input hardening', () => {
   it('handles 2,000 small masked environments interspersed with prose without quadratic slowdown', async () => {
-    // Measured ~1.4-1.5s in isolation — recorded in docs/benchmarks.md.
-    // Directly resolves the `isRowMasked` `O(masks)`-per-row concern
-    // flagged during this commit's own review: 2,000 separate `verbatim`
-    // environments means 2,000 row-mask entries, and every one of the
-    // file's ~10,000 rows checks against all of them — the worst
-    // realistic shape for that function's linear scan. A separate
-    // scaling check (500/1,000/2,000/4,000/8,000 items, not committed as
-    // its own test — a one-off run while investigating this suite's own
-    // timings) confirmed cost-per-region *falls*, not rises, as the
-    // count grows — the opposite of what a quadratic `isRowMasked` scan
-    // would produce. The bound below is intentionally far wider than the
-    // isolated measurement (confirmed to genuinely need it: this exact
-    // test measured over 8s once, running inside the full suite
-    // alongside every other CPU-bound hardening/performance test at
-    // once — a real contention effect, not a regression, reproduced by
-    // rerunning this file alone afterward and seeing it back at ~1.4s) —
-    // this is a regression guard against a *quadratic*-shaped blowup,
+    // Measured ~1.1s in isolation (down from ~1.4-1.5s before
+    // `buildTreeIndexes`'s combined-descendantsOfType fix) — recorded in
+    // docs/benchmarks.md. Directly resolves the `isRowMasked`
+    // `O(masks)`-per-row concern flagged during this commit's own
+    // review: 2,000 separate `verbatim` environments means 2,000
+    // row-mask entries, and every one of the file's ~10,000 rows checks
+    // against all of them — the worst realistic shape for that
+    // function's linear scan. A separate scaling check
+    // (500/1,000/2,000/4,000/8,000 items, not committed as its own test
+    // — a one-off run while investigating this suite's own timings)
+    // confirmed cost-per-region *falls*, not rises, as the count grows —
+    // the opposite of what a quadratic `isRowMasked` scan would produce.
+    // The bound below is intentionally far wider than the isolated
+    // measurement (confirmed to genuinely need it: this exact test
+    // measured over 8s once, running inside the full suite alongside
+    // every other CPU-bound hardening/performance test at once — a real
+    // contention effect, not a regression, reproduced by rerunning this
+    // file alone afterward and seeing it back near the isolated number)
+    // — this is a regression guard against a *quadratic*-shaped blowup,
     // not a tight latency SLA, matching `./large-file-performance.test.ts`'s
     // own stated philosophy.
     const parts: string[] = [];
@@ -119,9 +125,11 @@ describe('LaTeX pathological input hardening', () => {
   }, 10_000);
 
   it('handles 5,000 \\item entries in one list without crashing or hanging', async () => {
-    // Measured ~2.1s in isolation (~0.13-0.4ms/item, falling as the
-    // count grows — see the scaling note on the masked-environments case
-    // above) — recorded in docs/benchmarks.md. 5,000 *separate* regions,
+    // Measured ~1.6s in isolation (down from ~2.1s before
+    // `buildTreeIndexes`'s combined-descendantsOfType fix; ~0.13-0.4ms/item,
+    // falling as the count grows — see the scaling note on the
+    // masked-environments case above) — recorded in docs/benchmarks.md.
+    // 5,000 *separate* regions,
     // each its own `wrapLatexProse` call (dissolve, reflow, emit), is a
     // meaningfully different cost shape from the single-giant-region
     // 10,000-line case above — confirmed linear, not quadratic, by

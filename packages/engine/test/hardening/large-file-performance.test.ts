@@ -85,14 +85,19 @@ interface LanguageSet {
    * cheap enough, even at 5,000 lines, that discovery's own cost never
    * dominated the 200ms budget. LaTeX's `discoverLatexProse`
    * (masked line scan, §6.2) is a genuinely more expensive discovery
-   * mechanism — four separate whole-tree `descendantsOfType` walks plus
-   * a per-line masking/structural/comment/item check for every row of
-   * the file, none of it query-driven — so this is the first adapter
-   * where discovery's own cost is what the near-cursor number actually
-   * measures. Confirmed *linear* in file size, not quadratic, by direct
-   * measurement across several sizes (a one-off scaling check, not
-   * committed as its own test) before setting this override rather than
-   * guessing a bound; `docs/benchmarks.md` records the real numbers.
+   * mechanism — a combined whole-tree `descendantsOfType` walk (once
+   * sixteen separate single-type walks, until a real ~17× cost found and
+   * fixed while investigating this — see `buildTreeIndexes`'s own doc
+   * comment in `../../src/languages/latex/discover-prose.ts`) plus a
+   * per-line masking/structural/comment/item check for every row of the
+   * file, none of it query-driven — so this is the first adapter where
+   * discovery's own cost (now smaller, but still real) is what the
+   * near-cursor number actually measures, alongside parse time itself
+   * (shared by every adapter, not LaTeX-specific). Confirmed *linear* in
+   * file size, not quadratic, by direct measurement across several sizes
+   * (a one-off scaling check, not committed as its own test) before
+   * setting this override rather than guessing a bound; `docs/benchmarks.md`
+   * records the real numbers.
    */
   readonly nearCursorBoundMs?: number;
 }
@@ -261,17 +266,20 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     commentMarker: '',
     generateFile: latexBody,
     warmUpSource: 'warm up\n',
-    // Measured ~350-390ms at 5,000 lines in isolation on this machine —
-    // see the `nearCursorBoundMs` field's own doc comment above for why
-    // this is the one adapter where that's expected rather than a
-    // regression. 3s keeps real margin above the isolated measurement
-    // (this suite's own other LaTeX bounds needed similarly wide margin
-    // to survive running alongside every other CPU-bound
-    // hardening/performance test at once — real contention, confirmed
-    // by rerunning in isolation and seeing the smaller number again, not
-    // a regression) while still well below what a quadratic-cost bug
-    // (rather than this linear, understood cost) would produce.
-    nearCursorBoundMs: 3_000,
+    // Measured ~220-270ms at 5,000 lines in isolation on this machine
+    // (down from ~350-390ms before discoverLatexProse's own
+    // sixteen-separate-descendantsOfType-calls fix — see that function's
+    // doc comment) — see the `nearCursorBoundMs` field's own doc comment
+    // above for why this is the one adapter where growing with file size
+    // is expected rather than a regression at all. 2s keeps real margin
+    // above the isolated measurement (this suite's own other LaTeX
+    // bounds needed similarly wide margin to survive running alongside
+    // every other CPU-bound hardening/performance test at once — real
+    // contention, confirmed by rerunning in isolation and seeing the
+    // smaller number again, not a regression) while still well below
+    // what a quadratic-cost bug (rather than this linear, understood
+    // cost) would produce.
+    nearCursorBoundMs: 2_000,
   },
 ];
 

@@ -69,35 +69,51 @@ realistic, not artificially inflated, source.
 
 | File size | Time |
 |---|---|
-| 1,000 lines | 137 ms |
-| 10,000 lines | 0.9 s |
-| 50,000 lines | 3.8 s |
+| 1,000 lines | 160 ms |
+| 10,000 lines | 0.6 s |
+| 50,000 lines | 2.4 s |
 
 **Wrap at Cursor is the one exception to "regardless of file size"
 above**, and worth calling out plainly rather than glossing over: LaTeX
 has no paragraph node in its grammar at all (`docs/parsing.md` Finding
-8), so `discoverProse` is a masked line scan — several whole-tree walks
-plus a per-line check for every row of the file — rather than the single
+8), so `discoverProse` is a masked line scan rather than the single
 native tree-sitter query pass every other language (including Markdown)
 uses. That scan runs in full before a cursor-wrap request is narrowed
 down to the one region it actually touches, so unlike every other
-language, LaTeX's Wrap at Cursor time **does grow with file size**:
-measured at ~140 ms for a 1,000-line file, ~390 ms at 5,000 lines, up to
-roughly 1.5 s at 20,000 lines and 3.3 s at 50,000 — confirmed linear in
-this range, not quadratic, but a real, user-visible cost nonetheless for
-a very large single `.tex` file. Most real LaTeX documents (a single
-chapter, an article, even a long thesis chapter) are well under a
-thousand lines, where this stays comfortably fast; a single file in the
-tens of thousands of lines is the case where it's noticeable.
+language, LaTeX's Wrap at Cursor time **does grow with file size**.
 
-Two edge cases worth naming specifically: 2,000 small masked
-environments (`\begin{verbatim}`/`\end{verbatim}`) interspersed with
-2,000 wrapped paragraphs — deliberately the worst realistic shape for
-`isRowMasked`'s per-row mask scan — still wraps in about 1.5 s; 5,000
-separate `\item` entries in one list (5,000 individually-wrapped
-regions, a meaningfully different cost shape from one giant region) take
-about 2.1 s, confirmed linear rather than quadratic in item count by
-direct measurement across several sizes.
+A real, once-significant cost inside that scan was found and fixed
+while investigating this: the scan originally made sixteen separate
+whole-tree `descendantsOfType` calls (one per node type it cares
+about — masked-environment kinds, sectioning commands, `\item`s, ...);
+`web-tree-sitter`'s own `descendantsOfType` accepts an array of types
+and does the equivalent of one combined walk for all of them at once,
+so replacing sixteen single-type calls with one sixteen-type call
+measured **~17× faster** on its own (a 50,000-line file: ~1.7s → ~0.1s
+for that portion alone) — this was the dominant cost in the whole
+scan, well ahead of parsing the same file (~0.7s). Wrap at Cursor
+roughly halved as a result: ~160 ms at 1,000 lines, ~270 ms at 5,000,
+~900 ms at 20,000, ~1.9 s at 50,000 — still confirmed linear, not
+quadratic, and still a real, user-visible cost for a very large single
+`.tex` file, now dominated by parse time itself (a cost every language
+pays, not LaTeX-specific) rather than by this adapter's own discovery
+overhead on top of it. Most real LaTeX documents (a single chapter, an
+article, even a long thesis chapter) are well under a thousand lines,
+where this stays comfortably fast; a single file in the tens of
+thousands of lines is the case where it's still noticeable, and a
+further fix would mean touching how `wrapRegions` scopes discovery to
+a target in the first place — a larger, cross-cutting change, not
+something specific to this adapter.
+
+Two edge cases worth naming specifically, both also improved by the
+same fix: 2,000 small masked environments (`\begin{verbatim}`/`\end{verbatim}`)
+interspersed with 2,000 wrapped paragraphs — deliberately the worst
+realistic shape for `isRowMasked`'s per-row mask scan — wraps in about
+1.1 s (was ~1.5 s); 5,000 separate `\item` entries in one list (5,000
+individually-wrapped regions, a meaningfully different cost shape from
+one giant region) take about 1.6 s (was ~2.1 s), confirmed linear
+rather than quadratic in item count by direct measurement across
+several sizes.
 
 ## Large files
 
