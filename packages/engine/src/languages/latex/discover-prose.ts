@@ -92,18 +92,21 @@ const SECTIONING_NODE_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * A line whose trimmed text is entirely one command with its `[..]`/`{..}`
- * arguments — `docs/planning/markdown-latex-plan.md` §6.2's `commandRegex`,
- * verified as specified (repeated bracket/brace groups in any order and
- * count, e.g. `\newtheorem{name}[counter]{text}` matches: three groups,
- * any mix of `{...}`/`[...]`). The one confirmed failure mode — a `{...}`
+ * One command with its `[..]`/`{..}` arguments, matched from the *start*
+ * of whatever text it's tested against (no `$` anchor — callers use this
+ * to consume a prefix, not to test a whole line) —
+ * `docs/planning/markdown-latex-plan.md` §6.2's `commandRegex`, verified
+ * as specified (repeated bracket/brace groups in any order and count,
+ * e.g. `\newtheorem{name}[counter]{text}` matches: three groups, any mix
+ * of `{...}`/`[...]`). The one confirmed failure mode — a `{...}`
  * argument containing *nested* braces, e.g.
- * `\section{Title with \emph{nested} braces}` (the `[^}]*` character class
- * stops at the first `}`, so the trailing `braces}` is left over and the
- * `$` anchor fails) — is exactly what `treeStructuralLineEnd` below exists
- * to catch instead.
+ * `\section{Title with \emph{nested} braces}` (the `[^}]*` character
+ * class stops at the first `}`, leaving `braces}` unconsumed) — is
+ * exactly what `structuralConsumedLength`'s tree lookup exists to catch
+ * instead; see that function's own doc comment for why tree lookup runs
+ * *before* this regex is even tried, not just as a whole-line fallback.
  */
-const STRUCTURAL_COMMAND_LINE = /^\\[A-Za-z@]+\*?(\[[^\]]*\]|\{[^}]*\})*\s*$/;
+const SINGLE_STRUCTURAL_COMMAND = /^\\[A-Za-z@]+\*?(\[[^\]]*\]|\{[^}]*\})*/;
 
 /** `\[`, `\]`, or `$$` alone on a line — display-math delimiters, structural even though they never match `STRUCTURAL_COMMAND_LINE` (they aren't `\command` shaped at all). Redundant with `displayed_equation` masking in the common case; kept as a textual safety net for the boundary lines themselves. */
 const DISPLAY_MATH_DELIMITER_LINE = /^(\\\[|\\\]|\$\$)$/;
@@ -235,6 +238,22 @@ function buildCommentsByRow(
  * an ordinary line) — an item's first `parts` entry should start at its
  * real text, not at the whitespace conventionally separating it from the
  * marker.
+ *
+ * Known limitation, not yet fixed: `field('label')` above is `\item`'s
+ * *own* optional `[label]` bracket argument, unrelated to a `\label{...}`
+ * cross-reference command chained right after `\item` (e.g. `\item
+ * \label{item:foo} Item text.` — confirmed via `-probe5.mjs` to parse as
+ * an unnamed `label_definition` child of `enum_item`, sitting between
+ * `command` and the item's own `text`). Because `isStructuralLine`
+ * (below) is never consulted for an item-start row — an `\item` line
+ * always starts a fresh region regardless of what its content looks
+ * like — a chained `\label{...}` immediately after `\item` is *not*
+ * excluded the way the identical chain after `\section{...}` now is:
+ * it becomes part of this item's own discovered prose text and could be
+ * reflowed. The top-level chain fix (`structuralConsumedLength`) doesn't
+ * extend here without also deciding how an item's *own* content-start
+ * column should move past such a chain — real, separate work, not
+ * attempted in this pass.
  */
 function buildEnumItemStartColumns(tree: Tree, sourceLines: readonly string[]): Map<number, number> {
   const byRow = new Map<number, number>();
@@ -322,39 +341,115 @@ function buildHeaderSpansByStartRow(tree: Tree): Map<number, TreeHeaderSpan[]> {
 }
 
 /**
- * The tree-derived end position of the structural command/sectioning
- * header starting at `(row, startColumn)`, or `null` if none starts
- * there — `treeHeaderSpans`'s per-row lookup, filtered to spans that
- * actually begin at the caller's own already-computed content-start
- * column (an entry starting elsewhere on the row, e.g. a command nested
- * inside another line's prose text, is never a whole-line match and must
- * not be treated as one).
+ * The tree-derived end column of the structural command/sectioning
+ * header starting at `(row, column)`, or `null` if none starts there —
+ * `headerSpansByStartRow`'s per-row lookup, filtered to spans that
+ * actually begin at the caller's own already-computed position (an entry
+ * starting elsewhere on the row, e.g. a command nested inside another
+ * line's prose text, is never a match here). Only ever returns a
+ * same-row result: a header span whose own `endRow` differs from `row`
+ * (a title that itself wraps onto a second physical line — unusual, but
+ * not impossible) is deliberately excluded, since this file's line-by-line
+ * scan has nowhere to fit a "structural, but spans two rows" verdict.
  */
 function treeStructuralLineEnd(
   row: number,
-  startColumn: number,
+  column: number,
   headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>,
-): { readonly row: number; readonly column: number } | null {
+): number | null {
   const candidates = headerSpansByStartRow.get(row) ?? [];
   for (const span of candidates) {
-    if (span.startColumn === startColumn) {
-      return { row: span.endRow, column: span.endColumn };
+    if (span.startColumn === column && span.endRow === row) {
+      return span.endColumn;
     }
   }
   return null;
 }
 
 /**
+ * How much of `text` (the row's own content-start-to-content-end slice —
+ * *not* yet trimmed, since trailing whitespace is itself valid input to
+ * consume) is a run of one or more structural commands, each optionally
+ * separated by horizontal whitespace, starting from `text`'s own
+ * beginning. Returning `text.length` means the *entire* slice is
+ * structural; anything less means real, non-command content exists
+ * somewhere in it (`isStructuralLine` below is the only caller, and only
+ * ever accepts a full match).
+ *
+ * This is the fix for a real gap found by review after commit 15 first
+ * shipped: `\section{Title}\label{sec:foo}` — an extremely common LaTeX
+ * idiom (a sectioning header immediately followed by its cross-reference
+ * label, with or without a space between) — is *two* structural commands
+ * on one line, not one, and the original single-shot "does the whole
+ * line match one `\command{args}`" check had no way to recognize a
+ * *chain*. Confirmed empirically (not just reasoned about) that this
+ * really did get swallowed into a `'prose'` region and, for a long
+ * enough label, actually reflowed the command syntax across output
+ * lines. This function walks the row consuming one command at a time
+ * (via the tree when a header span starts exactly at the current
+ * position, via `SINGLE_STRUCTURAL_COMMAND` otherwise — `\label{...}`
+ * itself is a dedicated `label_definition` node, not one of the types
+ * `buildHeaderSpansByStartRow` collects, confirmed by
+ * `docs/spikes/tree-sitter-latex-probe5.mjs`, so the regex path is what
+ * actually catches it in practice) until neither can consume anything
+ * further.
+ *
+ * The tree is tried *before* the regex at each position, not only as a
+ * fallback after a whole-line regex failure the way commit 15 originally
+ * had it: once a chain is possible, a regex match for the *first* unit
+ * can consume fewer characters than the tree would have (imagine a
+ * nested-brace title followed by a plain second command — the regex
+ * alone would stop mid-title with no way to resync), so preferring the
+ * authoritative tree result at every step, and falling back to the regex
+ * only where the tree has nothing to say, is what keeps this correct for
+ * an arbitrary mix of tree-known and tree-unknown command types chained
+ * together.
+ *
+ * Deliberately a hand-rolled loop, not a single regex with a repeated
+ * outer group (`(\\...)+`): nesting an unbounded quantifier around a
+ * group that already contains one is a classic catastrophic-backtracking
+ * shape, and every unit here is unambiguously delimited by its own
+ * leading `\`, so a loop is both safer and no harder to follow.
+ */
+function structuralConsumedLength(
+  row: number,
+  lineStartColumn: number,
+  text: string,
+  headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>,
+): number {
+  let pos = 0;
+  while (pos < text.length) {
+    const whitespace = /^[ \t]+/.exec(text.slice(pos));
+    if (whitespace) {
+      pos += whitespace[0].length;
+      continue;
+    }
+    if (text[pos] !== '\\') {
+      break;
+    }
+
+    const treeEndColumn = treeStructuralLineEnd(row, lineStartColumn + pos, headerSpansByStartRow);
+    if (treeEndColumn !== null && treeEndColumn > lineStartColumn + pos) {
+      pos = treeEndColumn - lineStartColumn;
+      continue;
+    }
+
+    const regexMatch = SINGLE_STRUCTURAL_COMMAND.exec(text.slice(pos));
+    if (regexMatch && regexMatch[0].length > 0) {
+      pos += regexMatch[0].length;
+      continue;
+    }
+
+    break;
+  }
+  return pos;
+}
+
+/**
  * True if the text from `(row, startColumn)` through `(row, endColumn)`
- * is a "structural line" per §6.2: a line whose trimmed text is entirely
- * one command with its arguments, `\begin{…}`/`\end{…}` (already covered
- * by `STRUCTURAL_COMMAND_LINE` — both parse as an ordinary
- * `\command{arg}` shape), or a display-math delimiter alone. Tries the
- * regex first; when it fails on a line starting with `\`, falls back to
- * the tree's own header-span extent (`treeStructuralLineEnd`) — the one
- * case the plan calls out by name: nested braces inside a command
- * argument defeat the regex's `[^}]*` character class, but the tree
- * parses them correctly regardless.
+ * is a "structural line" per §6.2: one or more structural commands
+ * (`structuralConsumedLength`), possibly chained, with nothing else on
+ * the line — or a display-math delimiter alone.
  */
 function isStructuralLine(
   row: number,
@@ -363,18 +458,14 @@ function isStructuralLine(
   rawLine: string,
   headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>,
 ): boolean {
-  const text = rawLine.slice(startColumn, endColumn).trim();
-  if (text.length === 0) {
+  const text = rawLine.slice(startColumn, endColumn);
+  if (text.trim().length === 0) {
     return false;
   }
-  if (STRUCTURAL_COMMAND_LINE.test(text) || DISPLAY_MATH_DELIMITER_LINE.test(text)) {
+  if (DISPLAY_MATH_DELIMITER_LINE.test(text.trim())) {
     return true;
   }
-  if (!text.startsWith('\\')) {
-    return false;
-  }
-  const treeEnd = treeStructuralLineEnd(row, startColumn, headerSpansByStartRow);
-  return treeEnd !== null && treeEnd.row === row && treeEnd.column === endColumn;
+  return structuralConsumedLength(row, startColumn, text, headerSpansByStartRow) === text.length;
 }
 
 /**

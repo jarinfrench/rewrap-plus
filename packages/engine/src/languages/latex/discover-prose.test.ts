@@ -156,4 +156,57 @@ describe('discoverLatexProse', () => {
     const prose = discover(source).filter((r) => r.kind === 'prose');
     expect(prose).toHaveLength(0);
   });
+
+  describe('chained structural commands on one line (found by review after this file first shipped)', () => {
+    it('excludes \\section{Title}\\label{sec:foo} chained with no space between them', () => {
+      const source = '\\section{Introduction}\\label{sec:intro}\nBody paragraph follows.\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(1);
+      expect(proseText(source, prose[0]!)).toBe('Body paragraph follows.');
+    });
+
+    it('excludes \\section{Title} \\label{sec:foo} chained with a space between them', () => {
+      const source = '\\section{Introduction} \\label{sec:intro}\nBody paragraph follows.\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(1);
+      expect(proseText(source, prose[0]!)).toBe('Body paragraph follows.');
+    });
+
+    it('excludes a chained header even when there is no following body at all (whole file is structural)', () => {
+      const source = '\\section{Introduction}\\label{sec:intro}\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(0);
+    });
+
+    it('excludes a nested-brace title chained with a second command (tree fallback mid-chain)', () => {
+      const source =
+        '\\section{Title with \\emph{nested} braces}\\label{sec:foo}\nBody text follows.\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(1);
+      expect(proseText(source, prose[0]!)).toBe('Body text follows.');
+    });
+
+    it('excludes three or more chained commands on one line', () => {
+      const source = '\\subsection{Details}\\label{sec:details}\\index{details}\nBody text.\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(1);
+      expect(proseText(source, prose[0]!)).toBe('Body text.');
+    });
+
+    it('still does NOT exclude real prose text following a structural command on the same line (documented remaining gap)', () => {
+      // \section{Title} is itself excludable, but "extra text" after it is
+      // real content the command/tree scanner can't consume — the whole
+      // line still isn't recognized as structural, and (unlike the
+      // pure-chain case above) there's no fix for this one yet: splitting
+      // one physical line into an excluded header prefix plus a *new*
+      // prose region for the remainder is a real, separate piece of work,
+      // not covered by this chain fix.
+      const source = '\\section{Title} extra text follows here.\nMore body text.\n';
+      const prose = discover(source).filter((r) => r.kind === 'prose');
+      expect(prose).toHaveLength(1);
+      expect(proseText(source, prose[0]!)).toBe(
+        '\\section{Title} extra text follows here.\nMore body text.',
+      );
+    });
+  });
 });

@@ -571,6 +571,31 @@ exercised):
   `\[` line through the closing `\]` line inclusive — exactly the row
   range commit 15's mask-building needs.
 
+**`\label{...}` is its own dedicated `label_definition` node type, not
+`generic_command`** — found while fixing a real gap post-review in
+`discoverLatexProse`'s structural-line detection (`-probe5.mjs`): a
+`\section{Title}\label{sec:foo}` header — chained structural commands on
+one line, one of the most common idioms in real LaTeX — was originally
+swallowed whole into a `'prose'` region, because the original single-shot
+"does the whole line match one `\command{args}`" check had no concept of
+a *chain*, and its tree fallback only ever looked up
+`generic_command`/`theorem_definition`/sectioning nodes, none of which
+`\label` turned out to be. Confirmed the section node's own children gain
+a `label_definition` sibling when a `\label{...}` immediately follows
+(`children = ['\section', curly_group, label_definition, text]`, one more
+than the plain `[command, curly_group, text]` shape every earlier probe
+exercised) — the title `curly_group` stays `children[1]` regardless, so
+this didn't change how the *title's own* extent is found, only added a
+new node type discovery's chain-walker needed to recognize (or, since
+`\label{...}` has no nested-brace argument in practice, simply fall
+through to the regex for). Also confirmed the identical
+`label_definition` shape appears as a plain, unnamed child of `enum_item`
+for `\item \label{...} text` — a related, still-open gap: item rows
+currently skip structural-line detection entirely (by design, since
+`\item` itself always starts a new region), so a `\label{...}` chained
+right after `\item` is not yet excluded from that item's own discovered
+prose text.
+
 **Error rate and performance on real content:** `latex-lsp/tree-sitter-latex`'s
 own `examples/texlab.tex` (2,584 bytes, a real README-style project
 document with packages, sectioning, links, and inline macros) parsed with

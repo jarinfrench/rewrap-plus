@@ -14,6 +14,8 @@ import alreadyWrappedIn from '../fixtures/latex/prose/003-already-wrapped-byte-i
 import alreadyWrappedOut from '../fixtures/latex/prose/003-already-wrapped-byte-identical.out.tex?raw';
 import sectionBodyCommentIn from '../fixtures/latex/prose/004-section-body-and-comment.in.tex?raw';
 import sectionBodyCommentOut from '../fixtures/latex/prose/004-section-body-and-comment.out.tex?raw';
+import sectionWithLabelIn from '../fixtures/latex/prose/005-section-with-label.in.tex?raw';
+import sectionWithLabelOut from '../fixtures/latex/prose/005-section-with-label.out.tex?raw';
 import itemIndentationIn from '../fixtures/latex/lists/001-item-indentation.in.tex?raw';
 import itemIndentationOut from '../fixtures/latex/lists/001-item-indentation.out.tex?raw';
 import doubleBackslashIn from '../fixtures/latex/hard-breaks/001-double-backslash.in.tex?raw';
@@ -37,6 +39,16 @@ import newlineCommandOut from '../fixtures/latex/hard-breaks/002-newline-command
  * to commit 17, and `wrapLatexProse`'s own `ProseSpec` doesn't set
  * `extraUnbreakable` yet (`../../src/languages/latex/wrap-prose.ts`'s own
  * doc comment).
+ *
+ * `prose/005-section-with-label` is a post-review addition: a real-world
+ * proof that `\section{Title}\label{sec:foo}` — chained structural
+ * commands on one line, an extremely common idiom — stays untouched
+ * end-to-end through the full pipeline, not just at the discovery-level
+ * unit-test layer (`../../src/languages/latex/discover-prose.test.ts`'s
+ * own "chained structural commands" cases). Discovery originally treated
+ * this as ordinary prose, confirmed empirically to actually get reflowed
+ * for a long enough label — fixed in `discoverLatexProse`'s
+ * `structuralConsumedLength`.
  */
 const COLUMN_LIMIT = 40;
 
@@ -58,6 +70,11 @@ const fixtures: readonly Fixture[] = [
     name: 'prose/004-section-body-and-comment',
     input: sectionBodyCommentIn,
     expected: sectionBodyCommentOut,
+  },
+  {
+    name: 'prose/005-section-with-label',
+    input: sectionWithLabelIn,
+    expected: sectionWithLabelOut,
   },
   { name: 'lists/001-item-indentation', input: itemIndentationIn, expected: itemIndentationOut },
   {
@@ -140,6 +157,12 @@ describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
       expect(line.startsWith('  ')).toBe(true);
       expect(line.startsWith('   ')).toBe(false); // exactly two spaces, matching \item's own column
     }
+  });
+
+  it('a \\section{Title}\\label{sec:foo} header line survives byte-identical, even though its body prose wraps', () => {
+    const headerLine = sectionWithLabelOut.split('\n')[0]!;
+    expect(headerLine).toBe('\\section{Introduction}\\label{sec:intro}');
+    expect(sectionWithLabelOut).not.toBe(sectionWithLabelIn); // the body paragraph did wrap
   });
 
   it('a \\\\ hard break keeps its own line from absorbing the following line\'s first word', () => {
