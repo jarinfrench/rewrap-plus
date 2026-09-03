@@ -596,6 +596,31 @@ currently skip structural-line detection entirely (by design, since
 right after `\item` is not yet excluded from that item's own discovered
 prose text.
 
+**An unterminated `\begin{...}` produces a genuine `ERROR` node — no
+graceful recovery, unlike `tree-sitter-markdown`'s fenced code block** —
+found while writing commit 18's own hardening test for exactly this
+input shape and confirmed with a dedicated probe
+(`docs/spikes/tree-sitter-latex-probe7.mjs`) rather than assumed from
+precedent: `tree-sitter-markdown`'s unterminated code fence extends
+gracefully to end of file with zero parse errors (Finding 7's own
+unterminated-fence case), but this grammar's `\begin{...}` with no
+matching `\end{...}` — tried for `verbatim` specifically and for an
+ordinary `itemize` too, both alike — produces a real top-level `ERROR`
+node wrapping everything from the `\begin` onward, with the recovered
+`begin` field still cleanly typed underneath it but everything after
+swallowed into either an `enum_item`/`comment`-typed placeholder or
+plain unstructured content depending on shape. Not a problem for
+`discoverLatexProse` in practice: nothing here needs the environment's
+row range to *mask* an unterminated construct specifically, since
+`wrap.ts`'s existing generic "region overlaps a parse `ERROR`" skip
+already protects any `'prose'` region discovery finds inside it — the
+same mechanism protecting every other adapter's own unparseable input,
+confirmed directly by `../../test/hardening/latex-pathological-input.test.ts`'s
+own dedicated case for this. Worth recording as its own finding because
+the *shape* of the safety net differs from the common case (skip via
+`ERROR` overlap, not exclusion via row masking) in a way a future reader
+extending the mask list might otherwise assume incorrectly.
+
 **Error rate and performance on real content:** `latex-lsp/tree-sitter-latex`'s
 own `examples/texlab.tex` (2,584 bytes, a real README-style project
 document with packages, sectioning, links, and inline macros) parsed with
