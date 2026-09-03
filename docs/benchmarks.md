@@ -82,38 +82,63 @@ uses. That scan runs in full before a cursor-wrap request is narrowed
 down to the one region it actually touches, so unlike every other
 language, LaTeX's Wrap at Cursor time **does grow with file size**.
 
-A real, once-significant cost inside that scan was found and fixed
-while investigating this: the scan originally made sixteen separate
-whole-tree `descendantsOfType` calls (one per node type it cares
-about — masked-environment kinds, sectioning commands, `\item`s, ...);
-`web-tree-sitter`'s own `descendantsOfType` accepts an array of types
-and does the equivalent of one combined walk for all of them at once,
-so replacing sixteen single-type calls with one sixteen-type call
-measured **~17× faster** on its own (a 50,000-line file: ~1.7s → ~0.1s
-for that portion alone) — this was the dominant cost in the whole
-scan, well ahead of parsing the same file (~0.7s). Wrap at Cursor
-roughly halved as a result: ~160 ms at 1,000 lines, ~270 ms at 5,000,
-~900 ms at 20,000, ~1.9 s at 50,000 — still confirmed linear, not
-quadratic, and still a real, user-visible cost for a very large single
-`.tex` file, now dominated by parse time itself (a cost every language
-pays, not LaTeX-specific) rather than by this adapter's own discovery
-overhead on top of it. Most real LaTeX documents (a single chapter, an
-article, even a long thesis chapter) are well under a thousand lines,
-where this stays comfortably fast; a single file in the tens of
-thousands of lines is the case where it's still noticeable, and a
-further fix would mean touching how `wrapRegions` scopes discovery to
-a target in the first place — a larger, cross-cutting change, not
-something specific to this adapter.
+Two real, once-significant costs inside that scan were found and
+fixed while investigating this. First: the scan originally made
+sixteen separate whole-tree `descendantsOfType` calls (one per node
+type it cares about — masked-environment kinds, sectioning commands,
+`\item`s, ...); `web-tree-sitter`'s own `descendantsOfType` accepts an
+array of types and does the equivalent of one combined walk for all of
+them at once, so replacing sixteen single-type calls with one
+sixteen-type call measured **~17× faster** on its own (a 50,000-line
+file: ~1.7s → ~0.1s for that portion alone) — this was the dominant
+cost in the whole scan, well ahead of parsing the same file (~0.7s).
+Second, found while chasing this same "still scales with file size"
+concern further: a separate, redundant `Query.captures` pass the scan
+made to classify each `%` comment as whole-line or trailing
+(`(line_comment) @comment`, the identical query `discoverRegions`'s
+own shared comment-discovery pass already runs once) cost a further
+~200-350ms of its own on a 50,000-line file — confirmed, by direct
+profiling, to cost that much **regardless of match count** (even with
+zero actual comments in the file), meaning `web-tree-sitter` query
+*execution* here scales with tree size, not result size, unlike the
+`descendantsOfType` walk above. Folding that same `line_comment`
+classification into the already-combined `descendantsOfType` walk (a
+plain tree walk, not a compiled-query execution, so it has no
+comparable per-call floor) removed that second pass entirely.
 
-Two edge cases worth naming specifically, both also improved by the
-same fix: 2,000 small masked environments (`\begin{verbatim}`/`\end{verbatim}`)
+Wrap at Cursor dropped as a result of both fixes combined: ~80 ms at
+1,000 lines, ~230 ms at 5,000, ~800 ms at 20,000, ~1.7 s at 50,000 —
+still confirmed linear, not quadratic, and still a real, user-visible
+cost for a very large single `.tex` file, now dominated by parse time
+itself (a cost every language pays, not LaTeX-specific) plus
+`discoverRegions`'s own always-whole-file discovery pass (shared
+architecture, not this adapter's own overhead) rather than by
+anything specific to this adapter's discovery logic. Most real LaTeX
+documents (a single chapter, an article, even a long thesis chapter)
+are well under a thousand lines, where this stays comfortably fast; a
+single file in the tens of thousands of lines is the case where it's
+still noticeable, and a further fix would mean touching how
+`wrapRegions` scopes discovery to a target in the first place — a
+larger, cross-cutting change affecting every adapter, not something
+specific to this one. (Incremental parsing — reusing a previous parse
+tree via `web-tree-sitter`'s own `Tree.edit`/edit-aware `Parser.parse`
+— was investigated as an alternative and set aside: profiled directly
+with correctly-computed edit positions, it measured only ~1.7-2×
+faster than a full reparse here, and, tellingly, an edit near the
+start of a 50,000-line file was no faster than one near the end — this
+grammar/binding isn't achieving the "cost independent of file size"
+behavior incremental parsing is supposed to provide, so it wasn't a
+productive lever for the size of change it would require.)
+
+Two edge cases worth naming specifically, both also improved by these
+fixes: 2,000 small masked environments (`\begin{verbatim}`/`\end{verbatim}`)
 interspersed with 2,000 wrapped paragraphs — deliberately the worst
 realistic shape for `isRowMasked`'s per-row mask scan — wraps in about
-1.1 s (was ~1.5 s); 5,000 separate `\item` entries in one list (5,000
-individually-wrapped regions, a meaningfully different cost shape from
-one giant region) take about 1.6 s (was ~2.1 s), confirmed linear
-rather than quadratic in item count by direct measurement across
-several sizes.
+1.1 s (was ~1.5 s before either fix); 5,000 separate `\item` entries in
+one list (5,000 individually-wrapped regions, a meaningfully different
+cost shape from one giant region) take about 1.6 s (was ~2.1 s),
+confirmed linear rather than quadratic in item count by direct
+measurement across several sizes.
 
 ## Large files
 

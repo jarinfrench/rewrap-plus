@@ -266,19 +266,22 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     commentMarker: '',
     generateFile: latexBody,
     warmUpSource: 'warm up\n',
-    // Measured ~220-270ms at 5,000 lines in isolation on this machine
+    // Measured ~215-255ms at 5,000 lines in isolation on this machine
     // (down from ~350-390ms before discoverLatexProse's own
-    // sixteen-separate-descendantsOfType-calls fix — see that function's
-    // doc comment) — see the `nearCursorBoundMs` field's own doc comment
-    // above for why this is the one adapter where growing with file size
-    // is expected rather than a regression at all. 2s keeps real margin
-    // above the isolated measurement (this suite's own other LaTeX
-    // bounds needed similarly wide margin to survive running alongside
-    // every other CPU-bound hardening/performance test at once — real
-    // contention, confirmed by rerunning in isolation and seeing the
-    // smaller number again, not a regression) while still well below
-    // what a quadratic-cost bug (rather than this linear, understood
-    // cost) would produce.
+    // sixteen-separate-descendantsOfType-calls fix, and from ~220-270ms
+    // after that fix but before folding `line_comment` classification
+    // into the same combined walk, removing a second redundant
+    // Query.captures pass — see buildTreeIndexes's own doc comment) —
+    // see the `nearCursorBoundMs` field's own doc comment above for why
+    // this is the one adapter where growing with file size is expected
+    // rather than a regression at all. 2s keeps real margin above the
+    // isolated measurement (this suite's own other LaTeX bounds needed
+    // similarly wide margin to survive running alongside every other
+    // CPU-bound hardening/performance test at once — real contention,
+    // confirmed by rerunning in isolation and seeing the smaller number
+    // again, not a regression) while still well below what a
+    // quadratic-cost bug (rather than this linear, understood cost)
+    // would produce.
     nearCursorBoundMs: 2_000,
   },
 ];

@@ -3,11 +3,9 @@ import type { WrappableRegion } from '../../types/region.js';
 import type { SourceSpan } from '../../types/span.js';
 import type { SyntaxNode, Tree } from '../../types/tree-sitter-types.js';
 import { PositionMapper } from '../../types/position-mapper.js';
-import { captureNodes } from '../../discovery/capture.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { normalizeRawText } from '../../discovery/normalize-raw-text.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
-import { latexDescriptor } from './descriptor.js';
 
 /**
  * Node types that are always a discovery mask, regardless of name —
@@ -156,46 +154,6 @@ function isRowMasked(row: number, masks: readonly RowMask[]): boolean {
 }
 
 /**
- * Comment info per row, from every `line_comment` node in the tree (the
- * same nodes `latexDescriptor.queries.comments` captures for the ordinary
- * `'lineComment'` discovery pass — reusing that query rather than a
- * second, hand-rolled tree walk). `isWholeLine` says whether the comment
- * is the entire line's content (nothing but whitespace precedes it) —
- * such a row is already its own `'lineComment'` region (§6.2's "already
- * `'lineComment'` regions — they split a prose run, deliberately") and
- * must never also become part of a `'prose'` region.
- *
- * A row with a **trailing** (non-whole-line) comment is different, and
- * changed shape as of commit 17's trailing-`%`-comment safety fix
- * (§6.4): `./adapter.ts`'s `classify` now excludes a trailing comment's
- * `line_comment` node from the ordinary query-driven pass entirely (it
- * returns `null` for one), so there is no longer a second region for
- * this function's own row-scanning loop, below, to avoid overlapping —
- * that row's own `parts` entry is built through the row's *full* length,
- * comment text included, so the surrounding `'prose'` region carries it
- * forward as ordinary (if unbreakable-and-hard-broken, per
- * `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT` hard-break pattern)
- * content. `isWholeLine` is still exactly what's needed to decide "does
- * this row belong in a prose region at all," so this function keeps
- * computing it the same way — the comment's own start *column* is no
- * longer needed here at all (a non-whole-line row's `endColumn` is no
- * longer capped before it, per the caller below), so this now returns a
- * plain `Set` of whole-line-comment rows rather than a column-carrying
- * map.
- */
-function buildWholeLineCommentRows(tree: Tree, sourceLines: readonly string[]): ReadonlySet<number> {
-  const rows = new Set<number>();
-  for (const node of captureNodes(tree, latexDescriptor.queries.comments!, 'comment')) {
-    const row = node.startPosition.row;
-    const before = stripTrailingCR(sourceLines[row] ?? '').slice(0, node.startPosition.column);
-    if (before.trim().length === 0) {
-      rows.add(row);
-    }
-  }
-  return rows;
-}
-
-/**
  * Item-content start columns, by the row each `enum_item` starts on —
  * §6.2's "a line beginning with `\item` starts a new region whose span
  * begins after `\item` and its optional `[label]`." Confirmed directly
@@ -259,6 +217,25 @@ function buildEnumItemStartColumns(
  * `string[]` (mutable), not `readonly string[]`, purely to satisfy
  * `descendantsOfType`'s own parameter type — this array is built once,
  * here, and never mutated afterward.
+ *
+ * `line_comment` joined this list (rather than staying its own separate
+ * `captureNodes(tree, latexDescriptor.queries.comments!, 'comment')` pass,
+ * as an earlier version of this file had it) for the same reason the other
+ * sixteen-calls-to-one fix above exists, but hitting a different cost:
+ * profiling a 50,000-line synthetic file (zero actual `%` comments in it)
+ * found `Query.captures` itself costing a consistent ~200-350ms *regardless
+ * of match count* — tree-sitter query execution here scales with tree
+ * size, not result size. `discover-regions.ts`'s own shared discovery pass
+ * already runs this exact `(line_comment) @comment` query once, necessarily,
+ * to build `'lineComment'` regions; this file's own now-removed
+ * `buildWholeLineCommentRows` ran the *same* query a second time, purely to
+ * classify each comment row as whole-line or trailing — measured at ~400ms
+ * of `discoverLatexProse`'s own ~700ms total at 50,000 lines, i.e. the
+ * single largest remaining cost after the combined-`descendantsOfType` fix.
+ * `descendantsOfType` doesn't have this per-call floor (it's a plain tree
+ * walk, not a compiled-query execution), so folding `line_comment` into the
+ * walk this function already does removes that second query pass entirely
+ * rather than just deferring it.
  */
 const ALL_SCANNED_NODE_TYPES: string[] = [
   ...ALWAYS_MASKED_NODE_TYPES,
@@ -267,6 +244,7 @@ const ALL_SCANNED_NODE_TYPES: string[] = [
   'theorem_definition',
   ...SECTIONING_NODE_TYPES,
   'enum_item',
+  'line_comment',
 ];
 
 const ALWAYS_MASKED_NODE_TYPE_SET: ReadonlySet<string> = new Set(ALWAYS_MASKED_NODE_TYPES);
@@ -276,6 +254,20 @@ interface TreeIndexes {
   readonly rowMasks: readonly RowMask[];
   readonly headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>;
   readonly enumItemNodes: readonly SyntaxNode[];
+  /**
+   * Rows whose entire content is a `%` comment (nothing but whitespace
+   * precedes it) — such a row is already its own `'lineComment'` region
+   * (§6.2's "already `'lineComment'` regions — they split a prose run,
+   * deliberately") and must never also become part of a `'prose'` region.
+   * A row with a **trailing** (non-whole-line) comment is deliberately
+   * *not* in this set: `./adapter.ts`'s `classify` excludes a trailing
+   * comment's `line_comment` node from the ordinary query-driven pass
+   * entirely (commit 17, §6.4), so that row's own `parts` entry in
+   * `discoverLatexProse` is built through the row's *full* length, comment
+   * text included, and `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT`
+   * hard-break pattern is what keeps that text from being reflowed.
+   */
+  readonly wholeLineCommentRows: ReadonlySet<number>;
 }
 
 /**
@@ -306,8 +298,8 @@ interface TreeIndexes {
  * is cheap enough that it was never the bottleneck; LaTeX's masked line
  * scan is the first adapter where it was.
  *
- * Each node is dispatched to exactly one of three buckets by its own
- * `.type`, reproducing the identical per-node logic the three original
+ * Each node is dispatched to exactly one of four buckets by its own
+ * `.type`, reproducing the identical per-node logic the original
  * single-purpose functions each had — `rowMasks`
  * (§6.2 item 1: `ALWAYS_MASKED_NODE_TYPES` unconditionally, plus a
  * `generic_environment` whose `begin.name` is in
@@ -317,15 +309,21 @@ interface TreeIndexes {
  * body absorption — and every `SECTIONING_NODE_TYPES` entry via its
  * title `curly_group` only, `children[1]`, deliberately never its own
  * `endPosition`, which absorbs the entire section body through the next
- * same-or-higher-level section per Finding 8), and `enumItemNodes` (the
+ * same-or-higher-level section per Finding 8), `enumItemNodes` (the
  * raw node list only — `buildEnumItemStartColumns` still does its own
  * per-item processing afterward, since it needs `headerSpansByStartRow`
- * fully built first for its own `structuralConsumedLength` calls).
+ * fully built first for its own `structuralConsumedLength` calls), and
+ * `wholeLineCommentRows` (see `TreeIndexes`'s own doc comment for what
+ * "whole-line" means and why a trailing comment's row is excluded —
+ * folded in here, rather than kept as its own separate
+ * `captureNodes`-based pass, for the same query-execution-cost reason
+ * explained on `ALL_SCANNED_NODE_TYPES` above).
  */
-function buildTreeIndexes(tree: Tree): TreeIndexes {
+function buildTreeIndexes(tree: Tree, sourceLines: readonly string[]): TreeIndexes {
   const rowMasks: RowMask[] = [];
   const headerSpansByStartRow = new Map<number, TreeHeaderSpan[]>();
   const enumItemNodes: SyntaxNode[] = [];
+  const wholeLineCommentRows = new Set<number>();
 
   const pushHeaderSpan = (startRow: number, span: TreeHeaderSpan): void => {
     const existing = headerSpansByStartRow.get(startRow);
@@ -370,10 +368,16 @@ function buildTreeIndexes(tree: Tree): TreeIndexes {
       }
     } else if (node.type === 'enum_item') {
       enumItemNodes.push(node);
+    } else if (node.type === 'line_comment') {
+      const row = node.startPosition.row;
+      const before = stripTrailingCR(sourceLines[row] ?? '').slice(0, node.startPosition.column);
+      if (before.trim().length === 0) {
+        wholeLineCommentRows.add(row);
+      }
     }
   }
 
-  return { rowMasks, headerSpansByStartRow, enumItemNodes };
+  return { rowMasks, headerSpansByStartRow, enumItemNodes, wholeLineCommentRows };
 }
 
 /**
@@ -545,8 +549,7 @@ export function discoverLatexProse(
   const sourceLines = source.split('\n');
   const mapper = new PositionMapper(source);
 
-  const { rowMasks, headerSpansByStartRow, enumItemNodes } = buildTreeIndexes(tree);
-  const wholeLineCommentRows = buildWholeLineCommentRows(tree, sourceLines);
+  const { rowMasks, headerSpansByStartRow, enumItemNodes, wholeLineCommentRows } = buildTreeIndexes(tree, sourceLines);
   const enumItemStartColumns = buildEnumItemStartColumns(enumItemNodes, sourceLines, headerSpansByStartRow);
 
   const regions: WrappableRegion[] = [];
