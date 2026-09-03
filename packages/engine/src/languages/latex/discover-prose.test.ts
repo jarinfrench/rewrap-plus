@@ -123,6 +123,20 @@ describe('discoverLatexProse', () => {
     expect(proseText(source, prose[0]!)).toBe('Labeled item text.');
   });
 
+  it('excludes a \\label{...} chained right after \\item from the item\'s own prose text', () => {
+    const source = '\\begin{itemize}\n\\item \\label{item:foo} Item text.\n\\end{itemize}\n';
+    const prose = discover(source).filter((r) => r.kind === 'prose');
+    expect(prose).toHaveLength(1);
+    expect(proseText(source, prose[0]!)).toBe('Item text.');
+  });
+
+  it('excludes a \\label{...} chained after \\item\'s own [bracket label] too', () => {
+    const source = '\\begin{itemize}\n\\item[custom] \\label{item:foo} Item text.\n\\end{itemize}\n';
+    const prose = discover(source).filter((r) => r.kind === 'prose');
+    expect(prose).toHaveLength(1);
+    expect(proseText(source, prose[0]!)).toBe('Item text.');
+  });
+
   it('excludes a plain \\command{arg} structural line from prose', () => {
     const source = '\\maketitle\nOrdinary paragraph text here.\n';
     const prose = discover(source).filter((r) => r.kind === 'prose');

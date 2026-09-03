@@ -239,23 +239,28 @@ function buildCommentsByRow(
  * real text, not at the whitespace conventionally separating it from the
  * marker.
  *
- * Known limitation, not yet fixed: `field('label')` above is `\item`'s
- * *own* optional `[label]` bracket argument, unrelated to a `\label{...}`
- * cross-reference command chained right after `\item` (e.g. `\item
- * \label{item:foo} Item text.` — confirmed via `-probe5.mjs` to parse as
- * an unnamed `label_definition` child of `enum_item`, sitting between
- * `command` and the item's own `text`). Because `isStructuralLine`
- * (below) is never consulted for an item-start row — an `\item` line
- * always starts a fresh region regardless of what its content looks
- * like — a chained `\label{...}` immediately after `\item` is *not*
- * excluded the way the identical chain after `\section{...}` now is:
- * it becomes part of this item's own discovered prose text and could be
- * reflowed. The top-level chain fix (`structuralConsumedLength`) doesn't
- * extend here without also deciding how an item's *own* content-start
- * column should move past such a chain — real, separate work, not
- * attempted in this pass.
+ * `field('label')` above is `\item`'s *own* optional `[label]` bracket
+ * argument — unrelated to a `\label{...}` cross-reference command
+ * sometimes chained right after `\item` (e.g. `\item \label{item:foo}
+ * Item text.`, confirmed via `-probe5.mjs` to parse as an unnamed
+ * `label_definition` child of `enum_item`, sitting between `command`
+ * and the item's own `text`). Because `isStructuralLine` is never
+ * consulted for an item-start row — an `\item` line always starts a
+ * fresh region regardless of what its content looks like — a chained
+ * `\label{...}` (or any other structural-command chain) right after the
+ * marker needs its own consumption pass here, reusing
+ * `structuralConsumedLength` (the same scanner `isStructuralLine` uses)
+ * rather than a second, duplicated walk: once past `\item`/`[label]`,
+ * consume as much further structural-command chain as exists — the
+ * scanner's own whitespace handling means this also swallows any gap
+ * before the item's real text starts, so no separate
+ * `firstNonWhitespaceColumnFrom` call is needed after it.
  */
-function buildEnumItemStartColumns(tree: Tree, sourceLines: readonly string[]): Map<number, number> {
+function buildEnumItemStartColumns(
+  tree: Tree,
+  sourceLines: readonly string[],
+  headerSpansByStartRow: ReadonlyMap<number, readonly TreeHeaderSpan[]>,
+): Map<number, number> {
   const byRow = new Map<number, number>();
   for (const item of tree.rootNode.descendantsOfType('enum_item')) {
     if (!item) {
@@ -267,7 +272,14 @@ function buildEnumItemStartColumns(tree: Tree, sourceLines: readonly string[]): 
     if (end) {
       const row = item.startPosition.row;
       const rawLine = stripTrailingCR(sourceLines[row] ?? '');
-      byRow.set(row, firstNonWhitespaceColumnFrom(rawLine, end.endPosition.column));
+      const afterMarker = firstNonWhitespaceColumnFrom(rawLine, end.endPosition.column);
+      const chainConsumed = structuralConsumedLength(
+        row,
+        afterMarker,
+        rawLine.slice(afterMarker),
+        headerSpansByStartRow,
+      );
+      byRow.set(row, afterMarker + chainConsumed);
     }
   }
   return byRow;
@@ -367,14 +379,23 @@ function treeStructuralLineEnd(
 }
 
 /**
- * How much of `text` (the row's own content-start-to-content-end slice —
- * *not* yet trimmed, since trailing whitespace is itself valid input to
- * consume) is a run of one or more structural commands, each optionally
- * separated by horizontal whitespace, starting from `text`'s own
- * beginning. Returning `text.length` means the *entire* slice is
- * structural; anything less means real, non-command content exists
- * somewhere in it (`isStructuralLine` below is the only caller, and only
- * ever accepts a full match).
+ * How much of `text` (a row's own content slice, starting wherever the
+ * caller's own scan already begins — *not* pre-trimmed, since trailing
+ * whitespace is itself valid input to consume) is a run of one or more
+ * structural commands, each optionally separated by horizontal
+ * whitespace, starting from `text`'s own beginning. Returning
+ * `text.length` means the entire slice is structural; anything less
+ * means real, non-command content exists somewhere in it.
+ *
+ * Two callers, both consuming this scanner's result differently:
+ * `isStructuralLine` below only ever accepts a *full* match (the whole
+ * line, nothing else on it); `buildEnumItemStartColumns` above instead
+ * uses however much of a chain it *does* consume, whatever that is, to
+ * advance an `\item`'s own content-start column past any commands
+ * (`\label{...}` and its own kind) chained right after the marker —
+ * a partial (or zero-length) result there is exactly the correct answer
+ * for "nothing more to skip," not treated as a failure the way it is in
+ * `isStructuralLine`.
  *
  * This is the fix for a real gap found by review after commit 15 first
  * shipped: `\section{Title}\label{sec:foo}` — an extremely common LaTeX
@@ -501,8 +522,8 @@ export function discoverLatexProse(
 
   const rowMasks = buildRowMasks(tree);
   const commentsByRow = buildCommentsByRow(tree, sourceLines);
-  const enumItemStartColumns = buildEnumItemStartColumns(tree, sourceLines);
   const headerSpansByStartRow = buildHeaderSpansByStartRow(tree);
+  const enumItemStartColumns = buildEnumItemStartColumns(tree, sourceLines, headerSpansByStartRow);
 
   const regions: WrappableRegion[] = [];
   let currentParts: SourceSpan[] = [];

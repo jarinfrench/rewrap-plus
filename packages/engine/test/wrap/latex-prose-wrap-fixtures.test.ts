@@ -18,6 +18,8 @@ import sectionWithLabelIn from '../fixtures/latex/prose/005-section-with-label.i
 import sectionWithLabelOut from '../fixtures/latex/prose/005-section-with-label.out.tex?raw';
 import itemIndentationIn from '../fixtures/latex/lists/001-item-indentation.in.tex?raw';
 import itemIndentationOut from '../fixtures/latex/lists/001-item-indentation.out.tex?raw';
+import itemWithLabelIn from '../fixtures/latex/lists/002-item-with-label.in.tex?raw';
+import itemWithLabelOut from '../fixtures/latex/lists/002-item-with-label.out.tex?raw';
 import doubleBackslashIn from '../fixtures/latex/hard-breaks/001-double-backslash.in.tex?raw';
 import doubleBackslashOut from '../fixtures/latex/hard-breaks/001-double-backslash.out.tex?raw';
 import newlineCommandIn from '../fixtures/latex/hard-breaks/002-newline-command.in.tex?raw';
@@ -49,6 +51,15 @@ import newlineCommandOut from '../fixtures/latex/hard-breaks/002-newline-command
  * this as ordinary prose, confirmed empirically to actually get reflowed
  * for a long enough label — fixed in `discoverLatexProse`'s
  * `structuralConsumedLength`.
+ *
+ * `lists/002-item-with-label` is the related follow-up fix: the same
+ * `\label{...}` chaining, but immediately after `\item` rather than a
+ * sectioning command — `buildEnumItemStartColumns` originally had no
+ * concept of a chain either, so `\item \label{item:foo} text` folded
+ * the label into the item's own discovered prose text. Fixed by reusing
+ * `structuralConsumedLength` there too, advancing the item's
+ * content-start column past any chained commands right after the
+ * marker.
  */
 const COLUMN_LIMIT = 40;
 
@@ -77,6 +88,7 @@ const fixtures: readonly Fixture[] = [
     expected: sectionWithLabelOut,
   },
   { name: 'lists/001-item-indentation', input: itemIndentationIn, expected: itemIndentationOut },
+  { name: 'lists/002-item-with-label', input: itemWithLabelIn, expected: itemWithLabelOut },
   {
     name: 'hard-breaks/001-double-backslash',
     input: doubleBackslashIn,
@@ -163,6 +175,15 @@ describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
     const headerLine = sectionWithLabelOut.split('\n')[0]!;
     expect(headerLine).toBe('\\section{Introduction}\\label{sec:intro}');
     expect(sectionWithLabelOut).not.toBe(sectionWithLabelIn); // the body paragraph did wrap
+  });
+
+  it('a \\label{...} chained after \\item survives intact, never wrapped as if it were item text', () => {
+    const firstLine = itemWithLabelOut.split('\n')[1]!; // line 0 is \begin{itemize}
+    expect(firstLine.trimStart().startsWith('\\item \\label{item:first}')).toBe(true);
+    // The label itself is never split across the reflow, no matter how
+    // the item's own following text wraps.
+    expect(itemWithLabelOut).toContain('\\label{item:first}');
+    expect(itemWithLabelOut.match(/\\label\{item:first\}/g)).toHaveLength(1);
   });
 
   it('a \\\\ hard break keeps its own line from absorbing the following line\'s first word', () => {
