@@ -9,17 +9,60 @@ import { dissolveProse, type ProseSpec } from '../../prose/dissolve-prose.js';
 import { emitProse } from '../../prose/emit-prose.js';
 import { latexContinuationPrefix } from './continuation-prefix.js';
 import { LATEX_HARD_BREAK } from './hard-break.js';
+import { LATEX_TRAILING_COMMENT_HARD_BREAK } from './trailing-comment.js';
 
 /**
- * `extraUnbreakable` (`\verb`/`\lstinline`, §4.3) is deliberately not set
- * here — the plan assigns "`\verb` unbreakability" to commit 17 alongside
- * trailing-`%` comment safety, not this commit's scope (wrapping,
- * indentation, and hard-break commands only). `ProseSpec.extraUnbreakable`
- * is optional for exactly this reason: a spec can grow it later without
- * disturbing anything this commit already ships.
+ * `\verb`/`\lstinline` — §4.3's true never-split spans: unlike `$…$`
+ * (breakable in TeX; deliberately not added, §11), a split inside either
+ * of these changes the typeset output. Both take the *same* delimiter
+ * form (an arbitrary character right after the command, matched again to
+ * close), confirmed unprotected by the grammar itself
+ * (`docs/parsing.md` Finding 8: `\verb|...|` parses as an ordinary
+ * `generic_command` followed by plain `text`/`word` nodes, fragmented at
+ * internal spaces exactly like prose) — so this is genuinely load-bearing
+ * for `atomizeWords`, not defensive. `[^\n]*?\1` is lazy and bounded by
+ * the required closing delimiter, satisfying `unbreakable-spans.ts`'s
+ * no-adjacent-unbounded-quantifiers rule.
+ *
+ * **One combined alternation, not two separate patterns each with its
+ * own `(.)`/`\1`** — a real bug found while generating this commit's own
+ * `\lstinline` gold fixture: `findUnbreakableSpans`
+ * (`../../segmentation/unbreakable-spans.ts`) builds one big `RegExp` by
+ * joining every `extraUnbreakable` pattern's `.source` with the built-in
+ * set via `|`, which *renumbers capture groups across the whole combined
+ * pattern* — with `\verb`'s own pattern listed first, its `(.)` becomes
+ * group 1, and `\lstinline`'s own `(.)` becomes group 2, but the
+ * `\lstinline` pattern's own `\1` text still literally means "group 1"
+ * (`\verb`'s delimiter, not `\lstinline`'s own) once combined. Group 1
+ * never participates when the `\lstinline` alternative is the one
+ * matching, and an unparticipated backreference matches the empty string
+ * in JS regex — so `[^\n]*?\1` was satisfied immediately, truncating
+ * every `\lstinline|...|` match down to just `\lstinline` plus its
+ * opening delimiter character. Confirmed directly: `atomizeWords` split
+ * `\lstinline|some_function_name(argument_one, argument_two)|` into three
+ * separate atoms at the internal spaces, and the real pipeline reflowed
+ * it across two lines, before this fix. One pattern with a single shared
+ * capture group sidesteps the whole class of bug — there's only one
+ * group for *this* alternative to conflict with itself over, regardless
+ * of whatever numbering the built-in patterns end up at when combined
+ * (none of `unbreakable-spans.ts`'s own built-in patterns use a capture
+ * group or backreference at all, so there's no symmetric risk from that
+ * side either).
+ */
+const LATEX_EXTRA_UNBREAKABLE: readonly RegExp[] = [/\\(?:verb|lstinline)\*?(.)[^\n]*?\1/];
+
+/**
+ * The ordinary line-break commands (`\\`, `\newline`, ...) are tried
+ * before the trailing-`%`-comment pattern: the former is `$`-anchored
+ * (only matches when it's genuinely the last thing on the line), so a
+ * line ending `\\ % note` naturally falls through to the comment pattern
+ * regardless of order — the two can never both claim the same line's
+ * tail, so this ordering is a documentation choice, not a correctness
+ * one.
  */
 const latexProseSpec: ProseSpec = {
-  hardBreak: LATEX_HARD_BREAK,
+  hardBreak: [...LATEX_HARD_BREAK, ...LATEX_TRAILING_COMMENT_HARD_BREAK],
+  extraUnbreakable: LATEX_EXTRA_UNBREAKABLE,
 };
 
 /**

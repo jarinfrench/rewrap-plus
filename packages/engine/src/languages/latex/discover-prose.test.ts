@@ -49,21 +49,31 @@ describe('discoverLatexProse', () => {
     expect(sliceSpanText(source, comments[0]!.span)).toBe('% a standalone comment');
   });
 
-  it('does not overlap a trailing % comment: the prose part ends before it, the comment stays its own region', () => {
+  it('folds a trailing % comment into the surrounding prose region — no separate lineComment region (commit 17, §6.4)', () => {
     const source = 'text before % a trailing note\nmore text after\n';
     const regions = discover(source);
     const prose = regions.filter((r) => r.kind === 'prose');
     const comments = regions.filter((r) => r.kind === 'lineComment');
     expect(prose).toHaveLength(1);
-    expect(comments).toHaveLength(1);
-    // Neither region's span may overlap the other's.
-    const proseFirstPart = prose[0]!.parts[0]!;
-    expect(proseFirstPart.endByte).toBeLessThanOrEqual(comments[0]!.span.startByte);
-    // Includes the trailing space right up to the comment's own start
-    // column — the same "no trimming at a line's own boundary" behavior
-    // Markdown's discoverProse already has for an ordinary line's end
-    // column; only word-segmentation at reflow time normalizes it away.
-    expect(sliceSpanText(source, proseFirstPart)).toBe('text before ');
+    expect(comments).toHaveLength(0);
+    // The comment's own text is included in the region's first part — it
+    // is `wrapLatexProse`'s trailing-comment hard-break pattern
+    // (`./trailing-comment.ts`), not discovery, that keeps it from ever
+    // being reflowed once dissolveProse sees it.
+    expect(sliceSpanText(source, prose[0]!.parts[0]!)).toBe('text before % a trailing note');
+    expect(sliceSpanText(source, prose[0]!.parts[1]!)).toBe('more text after');
+  });
+
+  it('folds a trailing comment even when an earlier escaped \\% appears on the same line', () => {
+    const source = 'text \\% percent then % real comment\nmore text.\n';
+    const regions = discover(source);
+    const prose = regions.filter((r) => r.kind === 'prose');
+    const comments = regions.filter((r) => r.kind === 'lineComment');
+    expect(prose).toHaveLength(1);
+    expect(comments).toHaveLength(0);
+    expect(sliceSpanText(source, prose[0]!.parts[0]!)).toBe(
+      'text \\% percent then % real comment',
+    );
   });
 
   it.each([

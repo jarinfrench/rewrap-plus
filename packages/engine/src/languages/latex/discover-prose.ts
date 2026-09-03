@@ -197,31 +197,36 @@ function isRowMasked(row: number, masks: readonly RowMask[]): boolean {
  * is the entire line's content (nothing but whitespace precedes it) —
  * such a row is already its own `'lineComment'` region (§6.2's "already
  * `'lineComment'` regions — they split a prose run, deliberately") and
- * must never also become part of a `'prose'` region. A line with real
- * text *before* a trailing comment stays prose-eligible, but that line's
- * part must end at the comment's own start column: `discoverRegions`
- * (`../../discovery/discover-regions.ts`) has no mechanism to reconcile
- * two regions whose spans overlap, and the ordinary comment-query pass
- * above already claims that exact span unconditionally — so this
- * function guarantees non-overlap by construction rather than relying on
- * anything downstream to catch it. (The richer §6.4 treatment — folding
- * a trailing comment's text into the prose region itself as a glued,
- * unbreakable atom — is explicitly a later commit's work, per the plan's
- * own phase split; this discovery pass only needs to get the region
- * *geometry* right, not the reflow semantics of trailing comments.)
+ * must never also become part of a `'prose'` region.
+ *
+ * A row with a **trailing** (non-whole-line) comment is different, and
+ * changed shape as of commit 17's trailing-`%`-comment safety fix
+ * (§6.4): `./adapter.ts`'s `classify` now excludes a trailing comment's
+ * `line_comment` node from the ordinary query-driven pass entirely (it
+ * returns `null` for one), so there is no longer a second region for
+ * this function's own row-scanning loop, below, to avoid overlapping —
+ * that row's own `parts` entry is built through the row's *full* length,
+ * comment text included, so the surrounding `'prose'` region carries it
+ * forward as ordinary (if unbreakable-and-hard-broken, per
+ * `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT` hard-break pattern)
+ * content. `isWholeLine` is still exactly what's needed to decide "does
+ * this row belong in a prose region at all," so this function keeps
+ * computing it the same way — the comment's own start *column* is no
+ * longer needed here at all (a non-whole-line row's `endColumn` is no
+ * longer capped before it, per the caller below), so this now returns a
+ * plain `Set` of whole-line-comment rows rather than a column-carrying
+ * map.
  */
-function buildCommentsByRow(
-  tree: Tree,
-  sourceLines: readonly string[],
-): Map<number, { readonly startColumn: number; readonly isWholeLine: boolean }> {
-  const byRow = new Map<number, { startColumn: number; isWholeLine: boolean }>();
+function buildWholeLineCommentRows(tree: Tree, sourceLines: readonly string[]): ReadonlySet<number> {
+  const rows = new Set<number>();
   for (const node of captureNodes(tree, latexDescriptor.queries.comments!, 'comment')) {
     const row = node.startPosition.row;
-    const startColumn = node.startPosition.column;
-    const before = stripTrailingCR(sourceLines[row] ?? '').slice(0, startColumn);
-    byRow.set(row, { startColumn, isWholeLine: before.trim().length === 0 });
+    const before = stripTrailingCR(sourceLines[row] ?? '').slice(0, node.startPosition.column);
+    if (before.trim().length === 0) {
+      rows.add(row);
+    }
   }
-  return byRow;
+  return rows;
 }
 
 /**
@@ -503,12 +508,13 @@ function isStructuralLine(
  *
  * Each qualifying row contributes one `parts` entry spanning from its
  * content-start column (the item's content column on an `\item` row, else
- * the first non-whitespace column) through its content-end column (a
- * trailing comment's own start column, when one exists on that row —
- * `buildCommentsByRow`'s non-overlap guarantee — else the row's full
- * length). `wrapProse`, the reflow/indentation half of this adapter, is
- * later work (`docs/planning/markdown-latex-plan.md` §9 commit 16); this
- * function's whole job is correct region *geometry*.
+ * the first non-whitespace column) through the row's own full length — a
+ * trailing (non-whole-line) comment, if one exists on that row, is
+ * included rather than excluded: `./adapter.ts`'s `classify` already
+ * keeps it from also becoming a separate `'lineComment'` region (commit
+ * 17, §6.4), and `./wrap-prose.ts`'s dedicated hard-break pattern is what
+ * keeps that comment text from ever being reflowed once dissolve reaches
+ * it.
  */
 export function discoverLatexProse(
   tree: Tree,
@@ -521,7 +527,7 @@ export function discoverLatexProse(
   const mapper = new PositionMapper(source);
 
   const rowMasks = buildRowMasks(tree);
-  const commentsByRow = buildCommentsByRow(tree, sourceLines);
+  const wholeLineCommentRows = buildWholeLineCommentRows(tree, sourceLines);
   const headerSpansByStartRow = buildHeaderSpansByStartRow(tree);
   const enumItemStartColumns = buildEnumItemStartColumns(tree, sourceLines, headerSpansByStartRow);
 
@@ -591,15 +597,22 @@ export function discoverLatexProse(
       continue;
     }
 
-    const comment = commentsByRow.get(row);
-    if (comment?.isWholeLine) {
+    if (wholeLineCommentRows.has(row)) {
       flush();
       continue;
     }
 
     const itemStartColumn = enumItemStartColumns.get(row);
     const startColumn = itemStartColumn ?? firstNonWhitespaceColumn(rawLine);
-    const endColumn = comment ? comment.startColumn : rawLine.length;
+    // A trailing (non-whole-line) comment's text is deliberately *not*
+    // excluded here — `endColumn` runs through the row's full length,
+    // comment included. `./adapter.ts`'s `classify` already keeps that
+    // comment from also becoming its own separate `'lineComment'`
+    // region (commit 17, §6.4), so there is nothing left to avoid
+    // overlapping with; `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT`
+    // hard-break pattern is what keeps the comment text itself from
+    // ever being reflowed once this part reaches `dissolveProse`.
+    const endColumn = rawLine.length;
 
     if (startColumn >= endColumn) {
       flush();

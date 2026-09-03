@@ -188,6 +188,27 @@ const UNBREAKABLE_PATTERN = new RegExp(
  * terminator like `\verb`'s own matching delimiter character keeps a
  * `[^\n]*?` lazy quantifier safe the way an unanchored greedy one
  * wouldn't be.
+ *
+ * **If more than one pattern in `extraPatterns` uses a capture group and
+ * a backreference (`(.)` paired with `\1`, a delimiter-matching shape
+ * `\verb`-style patterns need), put them in one alternation with a single
+ * shared group rather than passing separate patterns that each assume
+ * they own group 1.** This function joins every pattern's `.source` with
+ * `|` into one combined `RegExp` (see below), which renumbers capture
+ * groups across the *whole* result — a second pattern's own `\1` still
+ * literally means "group 1", which after combining belongs to the
+ * *first* pattern, not this one. Group 1 never participates when a later
+ * alternative is the one actually matching, and an unparticipated
+ * backreference matches the empty string in JS regex — so the
+ * backreference is satisfied immediately, truncating the match to just
+ * whatever came before it. Confirmed as a real, not hypothetical, bug
+ * while adding LaTeX's own `\verb`/`\lstinline` patterns
+ * (`../languages/latex/wrap-prose.ts`): two separate patterns each
+ * shaped `/\\verb\*?(.)[^\n]*?\1/` / `/\\lstinline\*?(.)[^\n]*?\1/` split
+ * every real `\lstinline|...|` span at its first internal space instead
+ * of keeping it whole — fixed there by merging into one pattern,
+ * `/\\(?:verb|lstinline)\*?(.)[^\n]*?\1/`, with one capture group two
+ * command names share.
  */
 export function findUnbreakableSpans(
   line: string,
