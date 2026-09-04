@@ -17,9 +17,9 @@ export interface ProseSpec {
   /**
    * Patterns tested, in order, against each physical line's raw text (the
    * line's own content, prefix already excluded per `WrappableRegion.parts`'
-   * own contract — see `docs/planning/markdown-latex-plan.md` §3.2). The
-   * *first* pattern that matches wins; each is expected to anchor at the
-   * end of the line (`$`) itself — this module trusts wherever a match
+   * own contract). The *first* pattern that matches wins; each is
+   * expected to anchor at the end of the line (`$`) itself — this
+   * module trusts wherever a match
    * lands rather than enforcing that itself. Markdown's shape:
    * `/(\\|[ ]{2,}|<br\s*\/?>)$/i` (trailing backslash, two-or-more
    * spaces, or an HTML `<br>`); LaTeX's: line-break commands (`\\`,
@@ -50,9 +50,8 @@ export interface ProseSpec {
  * region per paragraph) — the grammar-backed discovery that produced it
  * already resolved the block structure `splitBlocks` would otherwise be
  * re-guessing from text, which is the entire reason this project chose a
- * tree-sitter grammar for Markdown/LaTeX in the first place (see
- * `docs/planning/markdown-latex-plan.md` §1/§4.2). So the result is
- * always exactly one `{ type: 'paragraph' }` block, atoms only.
+ * tree-sitter grammar for Markdown/LaTeX in the first place. So the
+ * result is always exactly one `{ type: 'paragraph' }` block, atoms only.
  *
  * Walks `region.parts` (one per physical line) in order, atomizing each
  * line's content and concatenating the results into one flat atom
@@ -67,9 +66,8 @@ export interface ProseSpec {
  * When `spec.hardBreak` matches a line's trailing text (`matchHardBreak`,
  * below), the matched marker text is appended onto that line's *last*
  * atom — literally concatenated onto its `text`, with its `width` grown
- * by `displayWidth` of the marker (per
- * `docs/planning/markdown-latex-plan.md` §4.2: "a two-space break stays
- * exactly two spaces and counts 2 columns of width") — and the
+ * by `displayWidth` of the marker (a two-space break stays exactly two
+ * spaces and counts 2 columns of width) — and the
  * *following* line's first atom is tagged `breakBefore: true`, which
  * `reflowBlock` already honors under both fill modes (it forces a fresh
  * line the moment a `breakBefore` atom is next up — see that function's
@@ -88,7 +86,7 @@ export interface ProseSpec {
  * A trailing two-space (or backslash/`<br>`) marker surviving into the
  * emitted line as real trailing whitespace is deliberate — the one
  * legitimate trailing whitespace this whole project produces; see
- * `docs/planning/markdown-latex-plan.md` §4.6 for the conformance kit's
+ * `../conformance/run-adapter-conformance.ts` for the conformance kit's
  * carve-out for it.
  */
 export function dissolveProse(

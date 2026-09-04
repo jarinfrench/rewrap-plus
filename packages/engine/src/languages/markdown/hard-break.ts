@@ -1,7 +1,7 @@
 /**
- * Markdown's hard-break detection — `docs/planning/markdown-latex-plan.md`
- * §5.4, plus the fix Phase A's own probe found was needed before this
- * commit could ship it (`docs/parsing.md` Finding 7's closing paragraph).
+ * Markdown's hard-break detection, plus the fix Phase A's own probe found
+ * was needed before this commit could ship it (`docs/parsing.md`
+ * Finding 7's closing paragraph).
  *
  * Two forms are unambiguous, matched directly: two-or-more trailing
  * spaces, or a trailing `<br>`/`<br/>`/`<br />` (case-insensitive, any

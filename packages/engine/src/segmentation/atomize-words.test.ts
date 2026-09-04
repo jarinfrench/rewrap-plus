@@ -143,8 +143,8 @@ describe('atomizeWords', () => {
   });
 
   it('does not split an extra caller-supplied unbreakable pattern at its internal whitespace', () => {
-    // The `\verb`/`\lstinline` shape (`docs/planning/markdown-latex-plan.md`
-    // §4.3) — real content the built-in pattern set knows nothing about.
+    // The `\verb`/`\lstinline` shape — real content the built-in
+    // pattern set knows nothing about.
     const verb = /\\verb\*?(.)[^\n]*?\1/;
     const atoms = atomizeWords('see \\verb|a b c| now', { extraUnbreakable: [verb] });
     expect(atoms.map((a) => a.text)).toEqual(['see', '\\verb|a b c|', 'now']);

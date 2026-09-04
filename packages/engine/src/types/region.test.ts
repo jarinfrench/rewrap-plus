@@ -57,8 +57,7 @@ describe('WrappableRegion', () => {
     // A `'prose'` region's `parts` are its physical lines, per-line prefix
     // (block-quote marker, list hanging indent, …) excluded from each
     // part's own span — the same per-line contract `'lineComment'`
-    // regions already follow, per `docs/planning/markdown-latex-plan.md`
-    // §3.2.
+    // regions already follow.
     const first = span(0, 11);
     const second = span(14, 25);
     const region: WrappableRegion = {

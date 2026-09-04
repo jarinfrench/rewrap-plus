@@ -9,8 +9,8 @@ import type { SourceSpan } from './span.js';
  * via a typo'd string.
  *
  * `'prose'` is exactly that kind of change, added for Markdown/LaTeX
- * support (`docs/planning/markdown-latex-plan.md`): a paragraph-shaped
- * unit whose per-line prefix is derived from container ancestry rather
+ * support: a paragraph-shaped unit whose per-line prefix is derived
+ * from container ancestry rather
  * than a fixed marker, discovered via `LanguageAdapter.discoverProse` and
  * wrapped via `LanguageAdapter.wrapProse` (`../types/adapter.ts`) instead
  * of the query-driven comment/string discovery every other kind uses —

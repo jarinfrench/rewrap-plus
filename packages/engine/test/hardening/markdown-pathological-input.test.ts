@@ -7,9 +7,9 @@ import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Markdown's own named worst cases — `docs/planning/markdown-latex-plan.md`
- * §8.4/§10 — genuinely different pathologies from `./pathological-input.test.ts`'s
- * comment/string-language ones (a long concatenation chain, a huge string
+ * Markdown's own named worst cases — genuinely different pathologies
+ * from `./pathological-input.test.ts`'s comment/string-language ones
+ * (a long concatenation chain, a huge string
  * literal, mixed tab/space indentation — none of which Markdown has a
  * concept of), so kept as their own suite rather than shoehorned into
  * that file's `LANGUAGE_SETS` parameterization.

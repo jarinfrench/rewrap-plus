@@ -8,9 +8,9 @@ import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
  * Extracted out of `./discover-regions.ts` (which still uses it for
  * `queries.comments`/`.strings`/`.concatenations`) so a `discoverProse`
  * hook — Markdown's, in particular, whose discovery is a straightforward
- * `queries.prose` capture (`docs/planning/markdown-latex-plan.md` §3.2)
- * — can run its own query without re-implementing this, or importing
- * from `discover-regions.ts` and risking a cycle back through
+ * `queries.prose` capture — can run its own query without
+ * re-implementing this, or importing from `discover-regions.ts` and
+ * risking a cycle back through
  * `../types/adapter.ts` (which `discoverProse`'s own signature lives on).
  */
 export function captureNodesByName(tree: Tree, querySource: string): Map<string, SyntaxNode[]> {

@@ -1,15 +1,15 @@
 /**
- * LaTeX's continuation-prefix rule — `docs/planning/markdown-latex-plan.md`
- * §6.3: "spaces to the region's first line's indentation (not the content
- * column)." For an ordinary paragraph, a region's own content-start
- * column *is* its line's indentation (`./discover-prose.ts` computes both
- * the same way, `firstNonWhitespaceColumn`), so the two coincide and this
- * is a no-op refinement. For a `\item` line, they diverge on purpose: the
- * region's own first `parts` entry starts *after* `\item`/`[label]`
+ * LaTeX's continuation-prefix rule: spaces to the region's first line's
+ * indentation (not the content column). For an ordinary paragraph, a
+ * region's own content-start column *is* its line's indentation
+ * (`./discover-prose.ts` computes both the same way,
+ * `firstNonWhitespaceColumn`), so the two coincide and this is a no-op
+ * refinement. For a `\item` line, they diverge on purpose: the region's
+ * own first `parts` entry starts *after* `\item`/`[label]`
  * (`./discover-prose.ts`'s `buildEnumItemStartColumns`), but a
  * continuation line should align under the `\item` marker itself, not
  * under where the item's own text happens to start — "new lines match the
- * line above," per the plan's own citation of Rewrap's convention.
+ * line above," Rewrap's own convention for this case.
  *
  * Much simpler than Markdown's `markdownContinuationPrefix`
  * (`../markdown/continuation-prefix.ts`): LaTeX has no block-quote-style

@@ -24,8 +24,8 @@ import codeUntouchedIn from '../fixtures/latex/comments/008-code-untouched-comme
 import codeUntouchedOut from '../fixtures/latex/comments/008-code-untouched-comment-wrapped.out.tex?raw';
 
 /**
- * The LaTeX adapter's first gold fixtures — `docs/planning/markdown-latex-plan.md`
- * Phase D commit 14, `%` comment paragraphs through the *existing*
+ * The LaTeX adapter's first gold fixtures — Phase D commit 14, `%`
+ * comment paragraphs through the *existing*
  * `'lineComment'` machinery, no LaTeX-specific dissolve/emit code at all
  * (`../../src/languages/latex/adapter.ts`'s own doc comment). Each
  * `.out.tex` was produced by actually running this adapter's own

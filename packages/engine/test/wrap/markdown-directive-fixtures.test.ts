@@ -12,9 +12,9 @@ import ignoreIn from '../fixtures/markdown/directives/002-ignore.in.md?raw';
 import ignoreOut from '../fixtures/markdown/directives/002-ignore.out.md?raw';
 
 /**
- * Directive gold fixtures — `docs/planning/markdown-latex-plan.md` Phase
- * C commit 11. No adapter-level code backs this (`../../src/languages/markdown/adapter.ts`'s
- * own doc comment): `markdownDescriptor.directives.marker` (`'<!--'`,
+ * Directive gold fixtures — Phase C commit 11. No adapter-level code
+ * backs this (`../../src/languages/markdown/adapter.ts`'s own doc
+ * comment): `markdownDescriptor.directives.marker` (`'<!--'`,
  * `../../src/languages/markdown/descriptor.ts`) is all `wrap.ts` needed,
  * generically, to make `<!-- rewrap: off/on/ignore -->` work — these
  * fixtures are the end-to-end proof of that, alongside `../../src/directives.test.ts`'s

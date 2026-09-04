@@ -8,7 +8,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * A synthetic, `discoverProse`/`wrapProse`-only adapter — no real
  * language, built purely to run `runAdapterConformance` against a
  * `'prose'`-producing adapter for real, ahead of a real one (Markdown/
- * LaTeX, `docs/planning/markdown-latex-plan.md` Phase C/D) existing.
+ * LaTeX, Phase C/D) existing.
  * Phase B commit 6 taught the conformance kit three things about prose
  * adapters — compiling `queries.prose` when declared, generalized
  * "at least one region overflows" fixture wording, and a loosened
@@ -22,8 +22,8 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  *
  * Declares **no** `queries.comments`/`.strings`/`.prose` at all —
  * mirroring LaTeX's own real shape (masked-line-scan discovery, no query
- * to run at all — `docs/planning/markdown-latex-plan.md` §3.2/§6.2) more
- * closely than Markdown's query-driven one, and conveniently also the
+ * to run at all) more closely than Markdown's query-driven one, and
+ * conveniently also the
  * shape that most directly needs `validateDescriptor`'s `hasDiscoverProse`
  * escape hatch (commit 4) to pass at all.
  *

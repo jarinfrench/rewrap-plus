@@ -103,9 +103,8 @@ describe('findUnbreakableSpans', () => {
   });
 
   it('finds a span from an extra caller-supplied pattern, alongside the built-in set', () => {
-    // The `\verb`/`\lstinline` shape (`docs/planning/markdown-latex-plan.md`
-    // §4.3) — a delimiter-bounded raw span the built-in patterns know
-    // nothing about.
+    // The `\verb`/`\lstinline` shape — a delimiter-bounded raw span the
+    // built-in patterns know nothing about.
     const verb = /\\verb\*?(.)[^\n]*?\1/;
     expect(spanTextsWith('see \\verb|a b c| now', [verb])).toEqual(['\\verb|a b c|']);
   });

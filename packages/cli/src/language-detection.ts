@@ -54,10 +54,9 @@ const EXTENSION_TO_LANGUAGE: ReadonlyMap<string, string> = new Map([
   ['.java', 'java'],
 
   // `.mdx`/`.rmd`/`.qmd` are deliberately absent — distinct languageIds
-  // with different grammars/semantics, not aliases of plain Markdown
-  // (`docs/planning/markdown-latex-plan.md` §7.2), the same "genuinely
-  // different, not a same-descriptor alias" distinction `.h`'s own
-  // comment above draws for C vs. C++.
+  // with different grammars/semantics, not aliases of plain Markdown,
+  // the same "genuinely different, not a same-descriptor alias"
+  // distinction `.h`'s own comment above draws for C vs. C++.
   ['.md', 'markdown'],
   ['.markdown', 'markdown'],
 

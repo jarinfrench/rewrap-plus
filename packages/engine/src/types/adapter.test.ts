@@ -86,10 +86,9 @@ describe('LanguageDescriptor', () => {
 
 describe('LanguageDescriptor — prose-shaped (no comments/strings queries or strings block)', () => {
   it('is valid data with queries.comments, queries.strings, and strings all omitted', () => {
-    // The shape a prose-only language (Markdown) actually declares — see
-    // `docs/planning/markdown-latex-plan.md` §3.2/§5.1. No `!`/`as never`
-    // needed anywhere here: this is what makes these fields genuinely
-    // optional on the type, not just optional-with-a-cast.
+    // The shape a prose-only language (Markdown) actually declares. No
+    // `!`/`as never` needed anywhere here: this is what makes these
+    // fields genuinely optional on the type, not just optional-with-a-cast.
     const descriptor: LanguageDescriptor = {
       id: 'markdown-probe',
       grammarWasm: 'grammars/tree-sitter-markdown.wasm',

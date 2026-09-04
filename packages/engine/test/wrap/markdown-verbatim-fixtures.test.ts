@@ -9,10 +9,10 @@ import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Zero-edit gold fixtures for every §5.6 "never a region" node type, plus
- * the two §5.2 discovery-level exclusions (a footnote definition, a `$$`
- * display-math paragraph) — `docs/planning/markdown-latex-plan.md` Phase
- * C commit 9. Each fixture is verified two ways:
+ * Zero-edit gold fixtures for every "never a region" node type, plus
+ * the two discovery-level exclusions (a footnote definition, a `$$`
+ * display-math paragraph) — Phase C commit 9. Each fixture is verified
+ * two ways:
  *
  * - **Discovery-level**: `discoverRegions` (real `markdownAdapter`, real
  *   grammar) produces zero `'prose'` regions for a fixture whose entire

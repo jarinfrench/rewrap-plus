@@ -17,8 +17,7 @@ import { markdownDescriptor } from './descriptor.js';
  * footnote's continuation as 4-space-indented, which this adapter's
  * canonical block-quote/list-derived continuation prefix
  * (`./continuation-prefix.ts`, commit 10) would get wrong — excluded
- * from discovery entirely rather than wrapped incorrectly, per
- * `docs/planning/markdown-latex-plan.md` §5.2/§3.3 item 4.
+ * from discovery entirely rather than wrapped incorrectly.
  */
 const FOOTNOTE_DEFINITION = /^\s*\[\^[^\]\s]+\]:/;
 
@@ -46,15 +45,13 @@ const FOOTNOTE_DEFINITION = /^\s*\[\^[^\]\s]+\]:/;
  *
  * A paragraph overlapping a parse `ERROR` node needs no exclusion here:
  * `wrap.ts`'s `wrapRegions` already skips any region overlapping one,
- * for every region kind uniformly (`docs/planning/markdown-latex-plan.md`
- * §5.2's own note that this is "already handled generically").
+ * for every region kind uniformly — "already handled generically."
  *
  * ## Region geometry
  *
  * Built entirely from `source`'s own physical lines and each paragraph
- * node's row range — never from walking `inline`'s children — per
- * `docs/planning/markdown-latex-plan.md` §5.2's own instruction, itself
- * forced by a real finding: `block_continuation` turned out to be a
+ * node's row range — never from walking `inline`'s children — forced by
+ * a real finding: `block_continuation` turned out to be a
  * child of the paragraph's `inline` node, not of `paragraph` directly
  * (`docs/parsing.md` Finding 7), so relying on tree structure for
  * per-line boundaries would have been fragile in a way a source-line scan
@@ -181,9 +178,9 @@ function firstNonWhitespaceColumn(line: string): number {
  * directly: always right after any block-quote/list marker chain).
  * Every later line's start column is the end of that row's own
  * `block_continuation` node when one exists, else the row's first
- * non-whitespace column (a lazy continuation line) — `docs/planning/markdown-latex-plan.md`
- * §5.2's exact rule. Every line's end column is that row's own content
- * length, `\r` excluded — not `paragraph.endColumn`, which (per
+ * non-whitespace column (a lazy continuation line). Every line's end
+ * column is that row's own content length, `\r` excluded — not
+ * `paragraph.endColumn`, which (per
  * `lastContentRow`'s own doc comment) only ever describes the *last* row
  * correctly and says nothing about the rows before it.
  */

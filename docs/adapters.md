@@ -941,13 +941,14 @@ similar-looking adapter — stays the right way to add one.
 Every section above asked "does the adapter interface hold?" *after* a
 real adapter's own fixtures exercised it — the leaked assumptions were
 things a real language's real content tripped over. This section is
-different in one real way: Markdown and LaTeX (`docs/planning/markdown-latex-plan.md`)
-are the first language work where the leaks were found *before* either
-real adapter exists — Phase C and D, not yet started — because the shape
-of the problem (prose *is* the document, not a comment or string inside
+different in one real way: Markdown and LaTeX are the first language
+work where the leaks were found *before* either real adapter existed —
+at the time this section was written, Phase C and D (the real Markdown
+and LaTeX adapters) hadn't started yet, because the shape of the
+problem (prose *is* the document, not a comment or string inside
 one) was different enough from every language above that it justified a
-deliberate design phase (that plan's §1: "why prose is a different
-shape, concretely") rather than writing an adapter and discovering the
+deliberate design phase ("why prose is a different shape, concretely")
+rather than writing an adapter and discovering the
 gaps the usual way. What's below was still found and fixed by *building*
 something, though, not by design alone: Phase A's direct grammar probing
 (`docs/parsing.md` Findings 7/8) and, for the assumptions that only
@@ -1063,14 +1064,15 @@ prose-capable adapter (`adapter.discoverProse !== undefined`, threaded
 from the one real caller — not a descriptor-only signal, since LaTeX's own
 shape declares no `queries.prose` for this to key off of): strip a maximal
 leading run of `>` and horizontal whitespace, covering every real
-continuation-prefix shape `docs/planning/markdown-latex-plan.md` §5.3's
-derivation produces without reconstructing the exact one a real region
-used. Deliberately the *loosened* option the plan itself named as
-acceptable, not the more precise "run `discoverRegions` and match by
-region" alternative it also named — chosen because no real prose adapter
-exists yet to prove the loosened version wrong, and re-deciding that
-trade-off with real data once one does is cheaper than building the exact
-version speculatively now.
+continuation-prefix shape Markdown's own continuation-prefix derivation
+(`languages/markdown/continuation-prefix.ts`) produces without
+reconstructing the exact one a real region used. Deliberately the
+*loosened* option, not the more precise "run `discoverRegions` and match
+by region" alternative also considered — chosen because no real prose
+adapter existed yet, at the time this choice was made, to prove the
+loosened version wrong. It hasn't needed revisiting since: both real
+adapters' own conformance suites now exercise this same code path
+against real content, and neither has hit a false failure from it.
 
 ## The synthetic conformance fixture found a real bug of its own
 
@@ -1125,15 +1127,14 @@ worth the extra effort rather than only unit-testing `dissolveProse`/
   recognize from `comments/group-adjacent-regions.ts`'s tab-indented
   `rawText` case: never depended on for correctness, since `wrapRegions`
   always diffs actual emitted text against source.
-- **No adapter-level decisions are recorded here yet** — Markdown's
-  canonicalization choices (`docs/planning/markdown-latex-plan.md` §3.3:
-  continuation prefixes computed, not observed; internal indentation
-  normalized; setext headings left unwrapped in v1) and its verbatim
-  exclusions (§5.6: headings, code blocks, tables, front matter, link/
-  footnote definitions) are real, deliberate scope limits, but they
-  belong to Markdown's own future section once that adapter exists
-  (Phase C), not to this one, which covers only the engine surface every
-  future prose adapter shares.
+- **No adapter-level decisions are recorded here** — Markdown's
+  canonicalization choices (continuation prefixes computed, not
+  observed; internal indentation normalized; setext headings left
+  unwrapped in v1) and its verbatim exclusions (headings, code blocks,
+  tables, front matter, link/footnote definitions) are real, deliberate
+  scope limits, but they belong to Markdown's own section below ("Markdown
+  — real adapter (Phase C)"), not to this one, which covers only the
+  engine surface every future prose adapter shares.
 
 ## What this means for future adapters
 
@@ -1147,8 +1148,9 @@ verified end-to-end — hook wiring, dissolve, reflow, emit, idempotency,
 the conformance kit's own new checks — against a fixture built
 specifically to exercise both the "has a query" and "has none" cases
 being possible under one interface, catching one real bug and two
-realistic near-misses before either real adapter has to. `docs/planning/markdown-latex-plan.md`
-§11 names the next-cheapest proof point once one does land: a plain-text
+realistic near-misses before either real adapter has to.
+`docs/planning/implementation-plan.md` 12h names the next-cheapest proof
+point once one does land: a plain-text
 adapter (`languageId: 'plaintext'`) needs no grammar at all under this
 design, only a descriptor with no `grammarWasm`-dependent queries and a
 `discoverProse` that splits on blank lines — the one remaining piece of
@@ -1159,7 +1161,7 @@ a plain-text adapter actually needs it.
 
 # Markdown — real adapter (Phase C)
 
-Phase C (`docs/planning/markdown-latex-plan.md` §9 commits 8-13) is the
+Phase C (commits 8-13 of the Markdown/LaTeX support work) is the
 proof point the previous section's "no adapter has used any of this
 yet" was waiting on, for the easier of the two discovery shapes:
 Markdown has a real `paragraph` node, so `discoverMarkdownProse` is the
@@ -1221,9 +1223,9 @@ and where.
 
 ## Deliberate scope limits confirmed as shipped
 
-Every canonicalization choice `docs/planning/markdown-latex-plan.md`
-§3.3 recommended shipped exactly as designed, confirmed by gold
-fixtures rather than left as a design intention: continuation prefixes
+Every canonicalization choice the original design recommended shipped
+exactly as designed, confirmed by gold fixtures rather than left as a
+design intention: continuation prefixes
 are computed from container ancestry, never observed from source
 (`languages/markdown/continuation-prefix.ts`, §5.3's table as a direct
 unit test); internal paragraph indentation is normalized to the first
@@ -1251,7 +1253,7 @@ was already named in a plan.
 
 # LaTeX — real adapter (Phase D)
 
-Phase D (`docs/planning/markdown-latex-plan.md` §9 commits 14-19) is
+Phase D (commits 14-19 of the Markdown/LaTeX support work) is
 the harder of the two discovery shapes Phase B's design was built to
 cover at once: `tree-sitter-latex` has no paragraph-level node at all
 (`docs/parsing.md` Finding 8), so `discoverLatexProse` is a masked line
@@ -1431,10 +1433,10 @@ and `\item`-list hardening cases and found them unchanged within noise.
 
 ## Deliberate scope limits confirmed as shipped
 
-Every environment-classification decision `docs/planning/markdown-latex-plan.md`
-§6.2 anticipated was confirmed by direct probing before the mask list
-was written, with two of the plan's own draft guesses corrected by that
-probing rather than assumed: `lstlisting` gets its own
+Every environment-classification decision the original design anticipated
+was confirmed by direct probing before the mask list was written, with
+two of that design's own draft guesses corrected by that probing rather
+than assumed: `lstlisting` gets its own
 `listing_environment` node type (plain `listing` doesn't, and falls
 through to the generic preserve-list instead), and `array` classifies
 as `math_environment` (already covered by the "always mask

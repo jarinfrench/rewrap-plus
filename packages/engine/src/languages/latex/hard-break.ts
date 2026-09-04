@@ -1,6 +1,6 @@
 /**
- * LaTeX's hard-break detection — `docs/planning/markdown-latex-plan.md`
- * §4.2/§6.5, adapted from Rewrap's own pattern. Unlike Markdown's
+ * LaTeX's hard-break detection, adapted from Rewrap's own pattern
+ * (`docs/adapters.md`, "LaTeX — real adapter" section). Unlike Markdown's
  * trailing-backslash form (`../markdown/hard-break.ts`), which needs
  * parity-counting to tell an escaped backslash from a real break, LaTeX's
  * forms are all fixed, unambiguous command tokens — `\\` (LaTeX's own

@@ -18,8 +18,8 @@ import negEscapedIn from '../fixtures/markdown/hard-breaks/neg-001-escaped-backs
 import negEscapedOut from '../fixtures/markdown/hard-breaks/neg-001-escaped-backslash-not-a-break.out.md?raw';
 
 /**
- * §5.4 hard-break gold fixtures — `docs/planning/markdown-latex-plan.md`
- * Phase C commit 11. Every source line here is deliberately short enough
+ * Hard-break gold fixtures — Phase C commit 11. Every source line here
+ * is deliberately short enough
  * to fit well within `COLUMN_LIMIT` on its own, so a break surviving into
  * the output can only be the hard-break marker forcing it — reflow would
  * otherwise happily join two such short lines onto one, which is exactly

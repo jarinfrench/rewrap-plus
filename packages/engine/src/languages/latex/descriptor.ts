@@ -6,8 +6,8 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  * (`dissolveLineComments`/`emitLineComments`) exactly like Python's `#`
  * comments do, no new engine code needed. `queries.prose` (the masked
  * line-scan `discoverProse` needs, since this grammar has no paragraph
- * node at all — `docs/planning/markdown-latex-plan.md` §6.2) is deliberately
- * absent until commit 15; a LaTeX file with no comments produces zero
+ * node at all, `docs/parsing.md` Finding 8) is deliberately absent
+ * until commit 15; a LaTeX file with no comments produces zero
  * regions from this descriptor alone, same as any other prose-less commit.
  *
  * Node names and shapes below were verified against the vendored grammar

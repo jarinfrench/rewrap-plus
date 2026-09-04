@@ -109,9 +109,9 @@ export function runAdapterConformance(
       expect(language).not.toBeNull();
 
       // `queries.comments`/`.strings`/`.prose` are each optional as of the
-      // `'prose'` region kind (`docs/planning/markdown-latex-plan.md`
-      // §3.2) — a prose-only adapter (Markdown) declares `queries.prose`
-      // and neither of the other two; a masked-line-scan prose adapter
+      // `'prose'` region kind — a prose-only adapter (Markdown) declares
+      // `queries.prose` and neither of the other two; a masked-line-scan
+      // prose adapter
       // (LaTeX) declares none of the three query fields at all and relies
       // entirely on its own `discoverProse` hook, which has no query
       // source for this test to compile in the first place. Each is
@@ -217,18 +217,17 @@ export function runAdapterConformance(
 
         /**
          * Deliberately kept strict, with **no** carve-out for a `'prose'`
-         * region's own two-space hard break
-         * (`docs/planning/markdown-latex-plan.md` §4.2/§4.6) — a
-         * Markdown paragraph line ending in exactly two spaces is real,
-         * intentional trailing whitespace that must survive a wrap
+         * region's own two-space hard break — a Markdown paragraph line
+         * ending in exactly two spaces is real, intentional trailing
+         * whitespace that must survive a wrap
          * (`../prose/dissolve-prose.ts` glues it onto the preceding
          * atom's own text for exactly this reason). Rather than loosen
          * this invariant to tolerate it, this kit's own conformance
          * *sources* are expected to avoid two-space hard breaks
          * entirely — the one legitimate trailing whitespace in the whole
          * project is tested for real in the Markdown adapter's own gold
-         * fixtures (`docs/planning/markdown-latex-plan.md` §8.2's
-         * `paragraphs` fixture directory, "each hard-break form"), where
+         * fixtures (the `paragraphs` fixture directory's "each hard-break
+         * form" cases), where
          * a `WrappableRegion`-aware test can assert *which* line is
          * allowed to carry it, rather than this kit's own flat
          * before/after string comparison, which has no way to
@@ -306,27 +305,29 @@ function stripKnownCommentDecoration(
   }
 
   if (isProseCapable) {
-    // `docs/planning/markdown-latex-plan.md` §4.6: this kit has no
-    // `WrappableRegion` in hand at this point, only a flat already-
-    // wrapped line, so it can't know the exact per-region
-    // `continuationPrefix` a real `wrapProse` call computed (§5.3's
+    // This kit has no `WrappableRegion` in hand at this point, only a
+    // flat already-wrapped line, so it can't know the exact per-region
+    // `continuationPrefix` a real `wrapProse` call computed (the
     // block-quote/list-hanging-indent derivation, which varies by
     // container nesting within one region, let alone across regions).
-    // Loosened, rather than exact, on purpose: strip a maximal leading
-    // run of `>` and horizontal whitespace, which covers every real
-    // continuation-prefix shape that derivation produces (`>`, `>> `,
-    // list hanging indent, a LaTeX `\item`'s own indent, ...) without
-    // reconstructing it here. `isProseCapable` — "does this adapter
-    // implement `discoverProse`," passed by the caller, which has the
-    // adapter — rather than a descriptor-only signal like
+    // Loosened, rather than exact, on purpose: strip a
+    // maximal leading run of `>` and horizontal whitespace, which covers
+    // every real continuation-prefix shape that derivation produces
+    // (`>`, `>> `, list hanging indent, a LaTeX `\item`'s own indent,
+    // ...) without reconstructing it here. `isProseCapable` — "does this
+    // adapter implement `discoverProse`," passed by the caller, which
+    // has the adapter — rather than a descriptor-only signal like
     // `queries.prose`, since LaTeX's prose discovery declares no
-    // `queries.prose` at all (`docs/planning/markdown-latex-plan.md`
-    // §3.2/§6.2: no paragraph node exists to query) and would otherwise
-    // fall through this check for the one adapter it's also needed for.
-    // Revisit for the exact "run discoverRegions and match by region"
-    // approach the plan's own §4.6 names as the fallback, if this
-    // heuristic ever proves visibly wrong against a real fixture — not
-    // before, since no real prose adapter exists yet to test it against.
+    // `queries.prose` at all (`docs/parsing.md` Finding 8: no paragraph
+    // node exists to query) and would otherwise fall through this check
+    // for the one adapter it's also needed for. Revisit for the exact
+    // "run discoverRegions and match by region" approach, if this
+    // heuristic ever proves visibly wrong against a real fixture — it
+    // hasn't yet, even now that Markdown's and LaTeX's own conformance
+    // suites (`test/conformance/{markdown,latex}-conformance.test.ts`)
+    // exercise it against real content, not just the synthetic
+    // `fake-prose-conformance.test.ts` fixture this loosened choice was
+    // originally made against.
     return trimmedStart.replace(/^[> \t]*/, '');
   }
 

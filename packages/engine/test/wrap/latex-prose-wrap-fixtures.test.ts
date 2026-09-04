@@ -27,7 +27,7 @@ import newlineCommandOut from '../fixtures/latex/hard-breaks/002-newline-command
 
 /**
  * The LaTeX adapter's first real *prose* gold fixtures —
- * `docs/planning/markdown-latex-plan.md` Phase D commit 16: `wrapProse`
+ * Phase D commit 16: `wrapProse`
  * (`../../src/languages/latex/wrap-prose.ts`) dissolving/reflowing/
  * emitting `'prose'` regions through the shared `prose/` pipeline, with
  * LaTeX's own hard-break commands and `\item` indentation. Each `.out.tex`

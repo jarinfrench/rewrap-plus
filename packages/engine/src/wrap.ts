@@ -165,8 +165,8 @@ function yieldToEventLoop(): Promise<void> {
  * `cfg.wrapComments` nor `cfg.wrapStrings` — only parse-error overlap and
  * directives apply, the same as every other kind, but no kind-specific
  * config switch. For a language whose `discoverProse` ever produces one
- * (Markdown, LaTeX — see `docs/planning/markdown-latex-plan.md`), the
- * document *is* the prose; `wrapComments`/`wrapStrings` describe code
+ * (Markdown, LaTeX), the document *is* the prose; `wrapComments`/
+ * `wrapStrings` describe code
  * files' comment/string wrapping and have no natural reading as "should
  * this language's actual document content wrap."
  *

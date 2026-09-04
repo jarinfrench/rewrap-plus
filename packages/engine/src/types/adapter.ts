@@ -96,8 +96,8 @@ export interface LanguageDescriptor {
   readonly queries: {
     /**
      * tree-sitter query source matching comment nodes. Optional as of the
-     * `'prose'` region kind (`docs/planning/markdown-latex-plan.md` §3.2):
-     * a prose language with nothing comment-shaped worth wrapping (e.g.
+     * `'prose'` region kind: a prose language with nothing comment-shaped
+     * worth wrapping (e.g.
      * Markdown, which leaves HTML comments verbatim) omits this rather
      * than declaring a query that's structurally present but captures
      * nothing — the JavaScript canary's own inert-but-valid `strings`
@@ -119,9 +119,9 @@ export interface LanguageDescriptor {
      * tree-sitter query source matching `'prose'` regions — one capture
      * per paragraph-shaped unit, e.g. Markdown's `(paragraph) @prose`.
      * Optional even for a prose language: LaTeX has no paragraph node at
-     * all (`docs/planning/markdown-latex-plan.md` §3.2), so its
-     * `discoverProse` hook does a masked line scan instead of running a
-     * query. When present, `discoverProse` is expected to read it via
+     * all (`docs/parsing.md` Finding 8), so its `discoverProse` hook
+     * does a masked line scan instead of running a query. When present,
+     * `discoverProse` is expected to read it via
      * `../discovery/capture.js`'s `captureNodes`/`captureNodesByName`
      * rather than re-implementing query running — declaring it as
      * descriptor data (instead of hardcoding the pattern inside the
@@ -206,9 +206,9 @@ export interface LanguageDescriptor {
   /**
    * String-literal syntax: quote forms, prefixes, raw-form delimiters,
    * escapes, placeholders, and concatenation style. Optional as of the
-   * `'prose'` region kind (`docs/planning/markdown-latex-plan.md` §3.2):
-   * Markdown and LaTeX have no string-literal concept at all, so this —
-   * and `queries.strings` above — is simply omitted rather than
+   * `'prose'` region kind: Markdown and LaTeX have no string-literal
+   * concept at all, so this — and `queries.strings` above — is simply
+   * omitted rather than
    * populated with a structurally-valid-but-meaningless value.
    * `validateDescriptor` (`../adapter-registry.ts`) requires this field
    * and `queries.strings` to be declared together, or not at all.
@@ -239,8 +239,8 @@ export interface LanguageDescriptor {
    * separately because a prose language's natural directive marker isn't
    * always its line-comment marker: Markdown has no line comment at all
    * but writes directives as `<!-- rewrap: off -->` (an HTML comment,
-   * left verbatim otherwise — see `docs/planning/markdown-latex-plan.md`
-   * §3.2), so it declares `directives: { marker: '<!--' }`. LaTeX's `%`
+   * left verbatim otherwise), so it declares
+   * `directives: { marker: '<!--' }`. LaTeX's `%`
    * line-comment marker already doubles as its directive marker, so it
    * needs no override.
    */
@@ -395,9 +395,8 @@ export interface LanguageAdapter {
    * `queries.prose` capture plus straightforward exclusion logic, but
    * LaTeX's isn't — there's no paragraph node in that grammar at all, so
    * its prose regions come from a line scan masked by other tree spans
-   * (see `docs/planning/markdown-latex-plan.md` §3.2/§6.2). One
-   * mechanism that covers both shapes beats a query-only mechanism that
-   * only covers one.
+   * (`docs/parsing.md` Finding 8). One mechanism that covers both shapes
+   * beats a query-only mechanism that only covers one.
    *
    * `discoverRegions` (`../discovery/discover-regions.ts`) calls this
    * *in addition to* its own query-driven comment/string discovery — an
@@ -428,9 +427,8 @@ export interface LanguageAdapter {
    * real tree access the same way a string's paren-insertion rules do —
    * hence the `tree` parameter, unlike the generic `'lineComment'`/
    * `'blockComment'` dissolve/emit pair `../wrap.ts` drives itself from
-   * `LanguageDescriptor` data alone. See
-   * `docs/planning/markdown-latex-plan.md` §3.2/§4.2 for the shared
-   * `prose/` dissolve/emit machinery this is expected to be built on.
+   * `LanguageDescriptor` data alone. See `../prose/` for the shared
+   * dissolve/emit machinery this is built on.
    */
   wrapProse?(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string;
 }

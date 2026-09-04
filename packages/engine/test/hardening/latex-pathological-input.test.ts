@@ -7,8 +7,7 @@ import { latexAdapter } from '../../src/languages/latex/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * LaTeX's own named worst cases — `docs/planning/markdown-latex-plan.md`
- * §8.4/§10 — genuinely different pathologies from
+ * LaTeX's own named worst cases — genuinely different pathologies from
  * `./pathological-input.test.ts`'s comment/string-language ones and from
  * `./markdown-pathological-input.test.ts`'s own Markdown-specific ones,
  * because LaTeX's `discoverProse` is a masked line scan with its own

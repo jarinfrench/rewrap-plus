@@ -4,9 +4,8 @@ import type { LanguageAdapter, LanguageDescriptor } from './types/adapter.js';
  * Validates the structural invariants of a descriptor that can be checked
  * without a loaded grammar: non-empty ids and delimiters, an internally
  * consistent concatenation configuration, and — as of the `'prose'`
- * region kind (`docs/planning/markdown-latex-plan.md` §3.2, which made
- * `queries.comments`/`queries.strings`/`strings` all optional) — that the
- * descriptor can actually discover *something*.
+ * region kind, which made `queries.comments`/`queries.strings`/`strings`
+ * all optional — that the descriptor can actually discover *something*.
  *
  * This is deliberately partial. Deeper validation — that the declared
  * tree-sitter queries actually compile against the grammar — needs a

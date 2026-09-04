@@ -18,8 +18,8 @@ import lstinlineIn from '../fixtures/latex/verb/002-lstinline-unbreakable.in.tex
 import lstinlineOut from '../fixtures/latex/verb/002-lstinline-unbreakable.out.tex?raw';
 
 /**
- * Phase D commit 17 (`docs/planning/markdown-latex-plan.md` §6.4/§4.3):
- * trailing-`%`-comment safety and `\verb`/`\lstinline` unbreakability.
+ * Phase D commit 17: trailing-`%`-comment safety and `\verb`/`\lstinline`
+ * unbreakability.
  * Each `.out.tex` was produced by actually running `wrapRegions` against
  * the paired `.in.tex` (not hand-computed), then verified — idempotent,
  * no line over the column limit *except* the two `\verb`/`\lstinline`

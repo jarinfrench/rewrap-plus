@@ -4,9 +4,9 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
 /**
  * Per-region layout `emitProse` needs beyond what `LogicalDocument.meta`
  * already carries — the prose counterpart of `emitLineComments`'
- * `marker`/`spaceAfterMarker` parameters, but computed by the adapter
- * (`docs/planning/markdown-latex-plan.md` §5.3/§6.3), not descriptor
- * data, since a prose region's continuation prefix is derived per-region
+ * `marker`/`spaceAfterMarker` parameters, but computed by the adapter,
+ * not descriptor data, since a prose region's continuation prefix is
+ * derived per-region
  * from its container ancestry rather than being one fixed value for the
  * whole language.
  */
@@ -34,8 +34,9 @@ export interface ProseLayout {
  * `WrappableRegion.indentColumn`'s own contract ("the visual column of
  * the content start") and `../types/adapter.ts`'s `wrapProse` callers
  * deriving `continuationPrefix` specifically so it lands at that same
- * visual column (`docs/planning/markdown-latex-plan.md` §5.3's
- * continuation-prefix table is built for exactly this property). The two
+ * visual column (Markdown's continuation-prefix table,
+ * `../languages/markdown/continuation-prefix.ts`, is built for exactly
+ * this property). The two
  * widths coincide exactly except when the prefix contains a tab:
  * `indentColumn` is tab-*expanded* (`../discovery/visual-indent-column.ts`),
  * while `displayWidth` (used nowhere in this function, notably) treats a

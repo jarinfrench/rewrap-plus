@@ -1,7 +1,6 @@
 /**
  * Derive a `'prose'` region's canonical continuation prefix from its
- * first physical line's own container-marker text —
- * `docs/planning/markdown-latex-plan.md` §5.3.
+ * first physical line's own container-marker text.
  *
  * `firstLinePrefix` is the literal source text on line 1 *before* the
  * paragraph's content starts (everything `discover-prose.ts` excluded

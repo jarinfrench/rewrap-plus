@@ -226,17 +226,17 @@ npm's supply chain entirely. See `SECURITY.md`'s supply-chain section for
 why that's called out explicitly rather than treated as equivalent.
 
 Only the **block** grammar is vendored (this repo's `RegionKind: 'prose'`
-only needs block structure — see `docs/planning/markdown-latex-plan.md`
-§3.1). The same release also publishes a `tree-sitter-markdown_inline.wasm`
-(426,117 bytes) for the companion inline grammar, deliberately *not*
-vendored: everything the wrap engine needs from a Markdown paragraph is
-already block-level (paragraph/list/quote structure), and inline concerns
-(inline code spans, URLs, hard-break detection) are already handled
-text-side by `segmentation/unbreakable-spans.ts` and a regex over each
-line's raw text. A future pass could vendor the inline grammar too, to
-keep `[link text](url)` whole under reflow via `Language.load` +
-`Parser#setIncludedRanges` — see `docs/planning/markdown-latex-plan.md`
-§11's "the inline grammar" open question.
+only needs block structure). The same release also publishes a
+`tree-sitter-markdown_inline.wasm` (426,117 bytes) for the companion
+inline grammar, deliberately *not* vendored: everything the wrap engine
+needs from a Markdown paragraph is already block-level (paragraph/list/
+quote structure), and inline concerns (inline code spans, URLs,
+hard-break detection) are already handled text-side by
+`segmentation/unbreakable-spans.ts` and a regex over each line's raw
+text. A future pass could vendor the inline grammar too, to keep
+`[link text](url)` whole under reflow via `Language.load` +
+`Parser#setIncludedRanges` — see `docs/planning/implementation-plan.md`
+12h's "the inline Markdown grammar" open question.
 
 Default compile-time extensions confirmed active in this release build
 (directly, not assumed from the README): `EXTENSION_GFM` (pipe tables,
@@ -307,10 +307,10 @@ MB, maybe much larger" this project's own planning flagged as a size risk
 for the `.vsix`. See `docs/parsing.md` Finding 8 for the full build log
 and node-shape probe results.
 
-No `workflow_dispatch` Linux-builder fallback (described in
-`docs/planning/markdown-latex-plan.md` §3.1, for the case where wasi-sdk's
-Windows auto-download fails) was needed for this vendoring — the download
-and build succeeded on the first attempt on this Windows machine. Add
+No `workflow_dispatch` Linux-builder fallback (for the case where
+wasi-sdk's Windows auto-download fails) was needed for this vendoring —
+the download and build succeeded on the first attempt on this Windows
+machine. Add
 `.github/workflows/grammar-wasm.yml` only if a future regeneration
 attempt actually hits that failure.
 

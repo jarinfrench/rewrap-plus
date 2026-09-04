@@ -120,8 +120,8 @@ const latexFixtures = import.meta.glob('../fixtures/latex/**/*.in.tex', {
  * it isn't listed here either — nothing to glob.
  *
  * Markdown's own fixtures are all zero-edit as of this addition
- * (`docs/planning/markdown-latex-plan.md` Phase C commit 9 — discovery
- * only, `markdownAdapter.wrapProse` doesn't exist until commit 10), so
+ * (Phase C commit 9 — discovery only, `markdownAdapter.wrapProse`
+ * doesn't exist until commit 10), so
  * this suite exercises them trivially for now; they become a real
  * idempotency check, not just a discovery-exclusion one, the moment real
  * wrapping fixtures land alongside the negative ones already here.

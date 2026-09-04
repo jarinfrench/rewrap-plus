@@ -238,9 +238,9 @@ See `docs/adapters.md`'s C++ section for how each of these shaped
 
 ## Finding 7: `tree-sitter-markdown` (block grammar) — geometry mostly holds, one real tree-shape surprise, and a clean error-overlap rate
 
-Probed via `docs/spikes/tree-sitter-markdown-probe.mjs`, per
-`docs/planning/markdown-latex-plan.md` §9 Phase A commit 1, against the
-`v0.5.3` release asset (`tree-sitter-markdown.wasm`, 421,574 bytes —
+Probed via `docs/spikes/tree-sitter-markdown-probe.mjs`, Phase A
+commit 1 of the Markdown/LaTeX support work, against the `v0.5.3`
+release asset (`tree-sitter-markdown.wasm`, 421,574 bytes —
 matches the plan's recorded size exactly).
 
 **Attestation.** `gh` is not installed on this machine (as the plan's own
@@ -343,8 +343,8 @@ parity, rather than the single-character lookbehind as written).
 
 ## Finding 8: `tree-sitter-latex` (built from `@pfoerster/tree-sitter-latex@0.6.0`) — wasi-sdk auto-download works on Windows, several new node shapes, zero errors on a real document
 
-Probed via `docs/spikes/tree-sitter-latex-probe.mjs`, per
-`docs/planning/markdown-latex-plan.md` §9 Phase A commit 2.
+Probed via `docs/spikes/tree-sitter-latex-probe.mjs`, Phase A commit 2
+of the Markdown/LaTeX support work.
 
 **The build.** `npm pack @pfoerster/tree-sitter-latex@0.6.0` produced a
 tarball matching every value the plan recorded in advance: `gitHead

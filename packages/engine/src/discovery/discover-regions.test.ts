@@ -180,9 +180,9 @@ describe('discoverRegions', () => {
 
 describe('discoverRegions — discoverProse', () => {
   // A `'prose'` region's own shape isn't exercised through the real
-  // Python grammar here (that's Phase C/D's Markdown/LaTeX adapters,
-  // `docs/planning/markdown-latex-plan.md`) — these tests only prove the
-  // generic wiring: the hook is called with the right arguments, its
+  // Python grammar here (that's Phase C/D's Markdown/LaTeX adapters) —
+  // these tests only prove the generic wiring: the hook is called with
+  // the right arguments, its
   // results are merged with the query-driven passes and sorted
   // correctly, and query-driven discovery keeps working when a
   // descriptor omits `queries.comments`/`queries.strings` entirely.

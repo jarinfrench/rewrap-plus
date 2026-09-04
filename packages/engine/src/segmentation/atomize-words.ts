@@ -12,9 +12,8 @@ export interface AtomizeWordsOptions {
    * and the constraints a pattern here must satisfy (self-contained,
    * non-global, no adjacent unbounded quantifiers). Used by
    * `../prose/dissolve-prose.ts` for a prose language's own true
-   * never-split forms, e.g. LaTeX's `\verb`/`\lstinline`
-   * (`docs/planning/markdown-latex-plan.md` §4.3) — content the grammar
-   * itself doesn't protect from being torn at internal whitespace.
+   * never-split forms, e.g. LaTeX's `\verb`/`\lstinline` — content the
+   * grammar itself doesn't protect from being torn at internal whitespace.
    */
   readonly extraUnbreakable?: readonly RegExp[];
 }

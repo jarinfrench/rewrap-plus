@@ -9,11 +9,11 @@ import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 
 /**
  * Node types that are always a discovery mask, regardless of name —
- * `docs/planning/markdown-latex-plan.md` §6.2's exclusion-mask list,
  * confirmed against the vendored grammar (`docs/parsing.md` Finding 8's
  * environment-classification table and its `-probe2.mjs` addendum) rather
- * than assumed from the plan's own draft, which got two of these entries
- * wrong (see below).
+ * than assumed from the original design draft, which got two of these
+ * entries wrong (see below; full writeup in `docs/adapters.md`,
+ * "LaTeX — real adapter" section).
  *
  * `minted_environment` is deliberately **absent** from this list: no such
  * node type exists in this grammar at all — `\begin{minted}` (with or
@@ -93,8 +93,7 @@ const SECTIONING_NODE_TYPES: ReadonlySet<string> = new Set([
  * One command with its `[..]`/`{..}` arguments, matched from the *start*
  * of whatever text it's tested against (no `$` anchor — callers use this
  * to consume a prefix, not to test a whole line) —
- * `docs/planning/markdown-latex-plan.md` §6.2's `commandRegex`, verified
- * as specified (repeated bracket/brace groups in any order and count,
+ * verified as specified (repeated bracket/brace groups in any order and count,
  * e.g. `\newtheorem{name}[counter]{text}` matches: three groups, any mix
  * of `{...}`/`[...]`). The one confirmed failure mode — a `{...}`
  * argument containing *nested* braces, e.g.
@@ -520,8 +519,8 @@ function isStructuralLine(
 /**
  * Find every `'prose'` region in a LaTeX `tree` — `LanguageAdapter.discoverProse`'s
  * implementation for this language (`./adapter.ts`). LaTeX's grammar has
- * no paragraph node at all (`docs/planning/markdown-latex-plan.md` §1/§3.2),
- * so this is a masked line scan rather than a query capture: `source`'s
+ * no paragraph node at all (`docs/parsing.md` Finding 8), so this is a
+ * masked line scan rather than a query capture: `source`'s
  * physical lines, outside `buildRowMasks`'s exclusion ranges, grouped into
  * maximal runs that are none of: masked; blank; a whole-line comment
  * (already its own `'lineComment'` region); or a structural line

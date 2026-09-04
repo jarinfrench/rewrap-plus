@@ -32,8 +32,8 @@ import listInQuoteIn from '../fixtures/markdown/blockquotes/005-list-in-quote.in
 import listInQuoteOut from '../fixtures/markdown/blockquotes/005-list-in-quote.out.md?raw';
 
 /**
- * The Markdown adapter's first real wrapping gold fixtures —
- * `docs/planning/markdown-latex-plan.md` Phase C commit 10. Each `.out.md`
+ * The Markdown adapter's first real wrapping gold fixtures — Phase C
+ * commit 10. Each `.out.md`
  * was produced by actually running this adapter's own `wrapRegions`
  * pipeline against the paired `.in.md` (not hand-computed), then verified
  * — idempotent, every line within `COLUMN_LIMIT`, no skipped regions —

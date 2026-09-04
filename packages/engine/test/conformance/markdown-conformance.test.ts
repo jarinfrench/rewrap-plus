@@ -2,8 +2,8 @@ import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Real sources, exercising the adapter's full pipeline —
- * `docs/planning/markdown-latex-plan.md` Phase C commit 12, once
+ * Real sources, exercising the adapter's full pipeline — Phase C
+ * commit 12, once
  * `discoverProse`/`wrapProse` (commits 9/10) and hard-break/directive
  * support (commit 11) all exist. Two source shapes, each with a CRLF and
  * LF variant: an ordinary paragraph, and a block-quoted one — between

@@ -162,10 +162,10 @@ const UNBREAKABLE_PATTERN = new RegExp(
  * (the regex engine's own global-match cursor already guarantees this:
  * each match starts at or after the previous match's end).
  *
- * `extraPatterns` — a prose language's own never-split forms
- * (`docs/planning/markdown-latex-plan.md` §4.3: LaTeX's `\verb`/
- * `\lstinline`, whose *contents* the grammar itself doesn't protect from
- * being torn at internal whitespace — see `docs/parsing.md` Finding 8) —
+ * `extraPatterns` — a prose language's own never-split forms (LaTeX's
+ * `\verb`/`\lstinline`, whose *contents* the grammar itself doesn't
+ * protect from being torn at internal whitespace — see
+ * `docs/parsing.md` Finding 8) —
  * are merged into the alternation *ahead of* the built-in patterns above,
  * for this call only: a fresh combined `RegExp` is built per call rather
  * than mutating the shared module-level `UNBREAKABLE_PATTERN`, so one

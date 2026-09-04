@@ -81,8 +81,8 @@ describe('scanDirectives', () => {
   });
 
   describe('the Markdown "<!--" marker', () => {
-    // Markdown has no line-comment marker of its own (`docs/planning/markdown-latex-plan.md`
-    // §3.2/§5.1) — its natural directive is an HTML comment instead. `<!--`
+    // Markdown has no line-comment marker of its own — its natural
+    // directive is an HTML comment instead. `<!--`
     // needs no regex-escaping (none of its four characters are regex
     // metacharacters — `-` is only special inside a character class), so
     // this is really confirming `buildDirectivePattern` behaves for a

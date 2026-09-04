@@ -2,8 +2,8 @@ import { latexAdapter } from '../../src/languages/latex/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Real sources, exercising the adapter's full pipeline —
- * `docs/planning/markdown-latex-plan.md` Phase D commit 18, once every
+ * Real sources, exercising the adapter's full pipeline — Phase D
+ * commit 18, once every
  * other real piece of the adapter (comments, discovery, wrapping,
  * trailing-comment safety, `\verb` unbreakability) already exists and has
  * its own gold fixtures. Three source shapes, each with a CRLF and LF

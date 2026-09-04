@@ -2,14 +2,13 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
 
 /**
  * Markdown's `LanguageDescriptor` — the first `'prose'`-only descriptor
- * in this project (`docs/planning/markdown-latex-plan.md` §5.1). Unlike
- * every comment/string language before it, Markdown declares none of
- * `queries.comments`, `queries.strings`, or `strings`: the document *is*
- * the prose, not something living inside comments or string literals, so
- * there is nothing comment- or string-shaped to query for at all (§1's
- * "why prose is a different shape" — see `docs/adapters.md`'s own
- * "Markdown and LaTeX — prose languages" section for the engine-level
- * leaks this shape found).
+ * in this project. Unlike every comment/string language before it,
+ * Markdown declares none of `queries.comments`, `queries.strings`, or
+ * `strings`: the document *is* the prose, not something living inside
+ * comments or string literals, so there is nothing comment- or
+ * string-shaped to query for at all (see `docs/adapters.md`'s
+ * "Markdown and LaTeX — prose languages" and "Markdown — real adapter"
+ * sections for the engine-level leaks this shape found).
  *
  * `queries.prose: '(paragraph) @prose'` is intentionally the *only*
  * discovery mechanism this descriptor needs: the block grammar
@@ -17,8 +16,8 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  * already resolves paragraph/list/quote/table structure, so
  * `languages/markdown/adapter.ts`'s `discoverProse` can be a thin capture
  * plus exclusion pass over this one query rather than the masked
- * line-scan LaTeX's own `discoverProse` will need (no paragraph node
- * exists in that grammar at all — §3.2/§6.2).
+ * line-scan LaTeX's own `discoverProse` needs (no paragraph node
+ * exists in that grammar at all — `docs/parsing.md` Finding 8).
  *
  * `grammarWasm` and `queries.prose`'s exact capture shape are both
  * confirmed directly against the vendored WASM, not assumed — see
@@ -42,7 +41,7 @@ export const markdownDescriptor: LanguageDescriptor = {
    * empty array, never omitted) because `dissolveLineComments` reads it
    * unconditionally — cheaper to keep this one field real than to make
    * it optional for the one descriptor that never reaches that code path
-   * at all (`docs/planning/markdown-latex-plan.md` §5.1's own note).
+   * at all.
    */
   comments: {
     neverReflow: [],

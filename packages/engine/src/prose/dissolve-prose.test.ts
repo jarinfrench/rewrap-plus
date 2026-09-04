@@ -6,11 +6,11 @@ import { dissolveProse, type ProseSpec } from './dissolve-prose.js';
 /**
  * Hand-build a `'prose'` region and its backing source from a list of
  * physical lines — `WrappableRegion.parts`' contract is one entry per
- * physical line, with the region's own container prefix already excluded
- * (`docs/planning/markdown-latex-plan.md` §3.2), so each part here is
- * simply that whole line: no real Markdown/LaTeX grammar exists yet to
- * discover one from (that's Phase C/D), and none of this module's own
- * logic needs one — it only needs `region.parts`/`region.indentColumn`
+ * physical line, with the region's own container prefix already
+ * excluded, so each part here is simply that whole line: this module's
+ * own tests exercise `dissolveProse` directly rather than through a real
+ * Markdown/LaTeX grammar, and none of this module's own logic needs
+ * one — it only needs `region.parts`/`region.indentColumn`
  * and `source`, the same "hand-built regions" convention
  * `comments/*.test.ts` already uses for engine-level unit tests.
  */

@@ -145,8 +145,8 @@ function jsBody(lineCount: number): string {
  * the occasional comment"), so — unlike `pythonBody`/`jsBody`/`cLikeBody`,
  * which inflate density well past anything realistic to give the time
  * bounds real margin — this doesn't need to inflate anything to already
- * be the worst case (`docs/planning/markdown-latex-plan.md` §8.4: "every
- * line a region line — worse than any code file's region density"). Many
+ * be the worst case ("every line a region line — worse than any code
+ * file's region density"). Many
  * separate two-line paragraphs (not one giant one) so the "wrap a single
  * region near the cursor" test below still has many other regions in the
  * file to *not* wrap, the same property it checks for every other
