@@ -44,7 +44,7 @@ jobs:
         run: npm run build
 
   package:
-    name: Package .vsix, attach to GitHub Release, and publish
+    name: Package .vsix and attach to GitHub Release
     # Only on a version tag push (v*), and only once every `ci` matrix
     # leg has passed on that exact tagged commit — packaging a build
     # that hasn't cleared the same gate every other commit has to is
@@ -96,9 +96,45 @@ jobs:
             --generate-notes \
             --repo "${{ github.repository }}"
 
-      # Publish the exact .vsix already attached to the release above,
-      # rather than repackaging — what a user downloads from the release
-      # and what ships to each registry should be byte-identical.
+  publish:
+    name: Publish to Marketplace and Open VSX
+    # Gated on the `marketplace-publish` GitHub Environment, which carries a
+    # required-reviewer protection rule (configured via the API, not this
+    # file — see repo Settings > Environments). A `v*` tag push queues this
+    # job but it sits paused until a reviewer approves the deployment; the
+    # tag trigger alone can never reach vsce/ovsx publish unmoderated.
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: marketplace-publish
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      # npm workspaces hoists `@vscode/vsce`/`ovsx` (devDependencies of
+      # packages/vscode-extension) so `npx` below resolves the pinned
+      # version instead of falling back to whatever's latest on the npm
+      # registry.
+      - name: Install dependencies
+        run: npm ci
+
+      # Downloaded from the `package` job's own workflow artifact rather
+      # than rebuilt, so what a user downloads from the GitHub Release and
+      # what ships to each registry are byte-identical.
+      - name: Download .vsix built by the package job
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: rewrap-plus-vsix
+          path: packages/vscode-extension
+
       - name: Publish to Visual Studio Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}

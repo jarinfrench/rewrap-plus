@@ -188,13 +188,18 @@ unchecked without either fixing it or removing the claim.
       `.github/dependabot.yml` keeps both the npm tree and those pins
       current. The `ci` job declares `permissions: contents: read`
       explicitly rather than inheriting repo-default token permissions.
-      The `package` job (which holds the publish secrets and
-      `contents: write`) only ever runs on a `v*` tag push
-      (`if: startsWith(github.ref, 'refs/tags/v')`) and never on
+      The `package` job (`contents: write`, builds the `.vsix` and attaches
+      it to the GitHub Release) and the `publish` job (holds the
+      `VSCE_PAT`/`OVSX_PAT` publish secrets) only ever run on a `v*` tag
+      push (`if: startsWith(github.ref, 'refs/tags/v')`) and never on
       `pull_request`, so untrusted PR content is never evaluated with
       secrets available — and the workflow uses the safe `pull_request`
-      trigger, not `pull_request_target`, so forked-PR runs get no
-      secrets regardless.
+      trigger, not `pull_request_target`, so forked-PR runs get no secrets
+      regardless. `publish` additionally requires a `marketplace-publish`
+      GitHub Environment approval (a required-reviewer protection rule
+      configured on the repo, not in this workflow file) before its steps
+      run, so a tag push alone can queue but never complete a real
+      Marketplace/Open VSX publish without an explicit human approval.
 
       `npm audit` is not yet wired into CI as an automated gate — run
       manually as of 2026-08-30, it found 3 vulnerabilities (1 high: RCE

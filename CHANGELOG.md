@@ -149,12 +149,18 @@ eventually ships this.
   extension's own copy (two independent glue-layer peers of the engine,
   not a shared dependency between them).
 
-- **Marketplace and Open VSX publishing** on tagged releases: the CI
-  packaging job now runs `vsce publish` and `ovsx publish` against the
-  exact `.vsix` already attached to the GitHub Release, authenticated via
-  the `VSCE_PAT`/`OVSX_PAT` repo secrets, so the artifact a user downloads
-  from the release and what ships to each registry are byte-identical
-  rather than independently rebuilt.
+- **Marketplace and Open VSX publishing** on tagged releases, as a separate
+  `publish` job gated behind the `marketplace-publish` GitHub Environment's
+  required-reviewer approval — a `v*` tag push builds and attaches the
+  `.vsix` to the GitHub Release unattended (the `package` job), but
+  `vsce publish`/`ovsx publish` (authenticated via the `VSCE_PAT`/`OVSX_PAT`
+  repo secrets) only run after a reviewer approves the pending deployment in
+  the Actions UI. `publish` downloads the exact workflow artifact `package`
+  produced rather than rebuilding, so what a user downloads from the release
+  and what ships to each registry are byte-identical. Marketplace publishing
+  is deferred for v1 regardless (`docs/planning/implementation-plan.md`,
+  12e) — the approval gate exists so a tag push can't produce an unintended
+  real Marketplace listing before that's actually decided.
 
 - **Auto-wrap** (`rewrapPlus.autoWrap.enabled`, default `false`): wraps
   the comment/docstring the cursor is in the moment a space or Enter
