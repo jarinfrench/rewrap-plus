@@ -18,7 +18,16 @@ at least as well, usually noticeably better.
 
 ## Results
 
-### Wrap Document
+The two tables immediately below are **Python's** numbers — the
+language this benchmarking work originally profiled, and profiled most
+deeply (see the two real quadratic-cost bugs found and fixed while doing
+so, described in `packages/engine/test/hardening/large-file-performance.test.ts`'s
+own doc comment). JavaScript, TypeScript, C++, and Java each get their
+own section further down; so do Markdown and LaTeX, whose wrappable-content
+density is a fundamentally different shape from any code language's,
+Python included.
+
+### Wrap Document (Python)
 
 | File size | Time |
 |---|---|
@@ -26,7 +35,7 @@ at least as well, usually noticeably better.
 | 10,000 lines | 0.4 s |
 | 50,000 lines | 7.3 s |
 
-### Wrap at Cursor / format-on-save
+### Wrap at Cursor / format-on-save (Python)
 
 **~30 ms** once the file's language grammar is warm, regardless of the
 surrounding file's size — comfortably under the ~50 ms it takes for a
@@ -37,6 +46,42 @@ section below.
 Measured on ordinary development hardware, not dedicated benchmark
 hardware — treat these as representative, not a guarantee for every
 machine.
+
+### JavaScript, TypeScript, C++, and Java
+
+Unlike Python's numbers above — each individually profiled, with real
+quadratic-cost bugs found and fixed along the way — the numbers below are
+what the engine's own performance-regression suite
+(`packages/engine/test/hardening/large-file-performance.test.ts`) measures
+directly, timing the identical worst-case synthetic file shape described
+under "What's measured" above (one long comment and one long string every
+10 lines) through the identical `wrapRegions` pipeline every language
+shares. They're a real one-time measurement (`npx vitest run
+test/hardening/large-file-performance.test.ts --reporter=verbose` from
+`packages/engine`, reading each test's own reported wall time), not a
+placeholder — but that suite exists as a regression guard first and a
+benchmark second, so its actual asserted bounds are deliberately far
+looser than these numbers (generous headroom for machine variance and
+future feature work, not a tight SLA — see that file's own doc comment).
+
+**Wrap Document**
+
+| File size | JavaScript | TypeScript | C++ | Java |
+|---|---|---|---|---|
+| 1,000 lines | 32 ms | 65 ms | 88 ms | 28 ms |
+| 10,000 lines | 0.5 s | 0.5 s | 0.6 s | 0.4 s |
+| 50,000 lines | 8.3 s | 8.4 s | 8.6 s | 7.9 s |
+
+**Wrap at Cursor / format-on-save**, warm grammar, measured on the same
+5,000-line file used for every language in that test file: **~90 ms**
+(JavaScript), **~125 ms** (TypeScript), **~125 ms** (C++), **~75 ms**
+(Java) — all, like Python's ~30 ms above, independent of the surrounding
+file's size. Higher than Python's own ~30 ms, but still comfortably under
+the ~50-200 ms range that suite's own `nearCursorBoundMs` treats as
+"near-instant" for every language before LaTeX; the gap against Python is
+consistent with these being a single one-time measurement run rather than
+Python's own more heavily profiled and re-verified number, not evidence
+of a real per-language difference.
 
 ### Markdown
 

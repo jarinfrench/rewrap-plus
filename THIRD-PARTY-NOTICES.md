@@ -9,12 +9,16 @@ etc. never ships in the `.vsix`, so it isn't covered here).
 Every component below is **MIT-licensed**, the same license as this
 project — no license-compatibility conflict, and no reason to reconsider
 the MIT-vs-Apache-2.0 choice made for this project. `web-tree-sitter` and
-every grammar through `tree-sitter-java` share one author (Max Brunsfeld,
-the tree-sitter project's creator); the Markdown and LaTeX grammars below
-are each maintained separately (Matthias Deiml; Patrick Förster) — the
-shared authorship among the earlier entries was always incidental to the
-license analysis, not load-bearing for it, and stays that way as the
-grammar set diversifies.
+most of the grammars below share one author (Max Brunsfeld, the
+tree-sitter project's creator) — but not all of them: `tree-sitter-java`'s
+own `LICENSE` names Ayman Nadeem as copyright holder, not Max Brunsfeld,
+despite living in the same `tree-sitter` GitHub organization as the
+Brunsfeld-authored grammars above it; the Markdown and LaTeX grammars
+below are each maintained separately again (Matthias Deiml; Patrick
+Förster). The shared authorship among some entries was always incidental
+to the license analysis, not load-bearing for it — every entry here is
+independently confirmed MIT regardless of who holds the copyright — and
+that stays true as the grammar set diversifies.
 
 ## `web-tree-sitter`
 
@@ -175,6 +179,43 @@ SOFTWARE.
 The MIT License (MIT)
 
 Copyright (c) 2014 Max Brunsfeld
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## `tree-sitter-java` (grammar)
+
+- **What it is / where it's used:** the Java grammar, compiled to
+  `packages/engine/grammars/tree-sitter-java.wasm` and copied into the
+  packaged extension's `grammars/` directory at build time. Backs the
+  `java` language adapter (`packages/engine/src/languages/java/`). Full
+  provenance is in `packages/engine/grammars/PROVENANCE.md`.
+- **License:** MIT — note the copyright holder here is **Ayman Nadeem**,
+  not Max Brunsfeld (see this file's intro above); confirmed directly
+  from the `LICENSE` file inside the `tree-sitter-java@0.23.5` npm
+  tarball, not assumed from the package's declared `license` field alone.
+- **Source:** <https://github.com/tree-sitter/tree-sitter-java>.
+
+```
+MIT License
+
+Copyright (c) 2017 Ayman Nadeem
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
