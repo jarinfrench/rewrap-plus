@@ -1,6 +1,32 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { matchesEditorConfigGlob, resolveEditorConfigMaxLineLength } from './editorconfig.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  clearEditorConfigCache,
+  EDITORCONFIG_CACHE_TTL_MS,
+  handleEditorConfigSave,
+  handleWindowStateChange,
+  invalidateEditorConfigCacheDir,
+  matchesEditorConfigGlob,
+  resolveEditorConfigMaxLineLength,
+} from './editorconfig.js';
+
+// A plain `vi.spyOn(fs, 'existsSync')` can't redefine a named export of a
+// real ESM module (Vitest's own limitation: "Module namespace is not
+// configurable in ESM") — `node:fs` needs to be replaced with a
+// call-through mock *before* `editorconfig.ts` (transitively, via this
+// file's own import above) ever imports it, so both this file's `fs.*`
+// and `editorconfig.ts`'s internal `existsSync`/`readFileSync` resolve to
+// the same mocked functions. `vi.mock` factories are hoisted above every
+// import in the file specifically to make that ordering guarantee.
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...actual,
+    existsSync: vi.fn(actual.existsSync),
+    readFileSync: vi.fn(actual.readFileSync),
+  };
+});
 
 // `__dirname` (not `import.meta.url`) deliberately: this file is
 // compiled by `tsc` as CommonJS (see `../engine-host.ts`'s own doc
@@ -9,6 +35,14 @@ import { matchesEditorConfigGlob, resolveEditorConfigMaxLineLength } from './edi
 // so this needs to stay usable under `tsc -p tsconfig.json --noEmit`
 // (part of the CI gate), not just under `vitest run`.
 const fixturesDir = path.join(__dirname, '../../test/fixtures/editorconfig');
+
+// The directory cache (`editorconfig.ts`'s `dirCache`) is module-level
+// state shared across every test in this file — cleared before each one
+// so no test's cache warmth leaks into another's expectations, whether
+// that test cares about the cache at all or not.
+beforeEach(() => {
+  clearEditorConfigCache();
+});
 
 describe('resolveEditorConfigMaxLineLength', () => {
   it('resolves a simple root [*] section', () => {
@@ -123,5 +157,139 @@ describe('matchesEditorConfigGlob', () => {
     const start = Date.now();
     expect(matchesEditorConfigGlob(manyStars, dir, 'C:/project/a/b/c.txt')).toBe(false);
     expect(Date.now() - start).toBeLessThan(1000);
+  });
+});
+
+describe('editorconfig directory cache', () => {
+  // `basic/` and `off-disables/` are both single-directory walks (each
+  // declares `root = true` in its own `.editorconfig`), so a cold
+  // resolution against either costs exactly one `existsSync` +
+  // `readFileSync` pair — the minimal shape needed to assert "no new fs
+  // calls happened" precisely, without also having to account for however
+  // many ancestor levels a deeper fixture would walk through.
+  const basicTarget = path.join(fixturesDir, 'basic/target.py');
+  const basicEditorConfig = path.join(fixturesDir, 'basic/.editorconfig');
+  const offDisablesTarget = path.join(fixturesDir, 'off-disables/target.py');
+
+  // The module-level `vi.mock('node:fs', ...)` above already made these
+  // call-through mocks for the whole file — `editorconfig.ts`'s own
+  // `existsSync`/`readFileSync` calls land on these same functions, so
+  // clearing call history here (not the mock implementation) is all each
+  // test needs.
+  const existsSyncSpy = vi.mocked(fs.existsSync);
+  const readFileSyncSpy = vi.mocked(fs.readFileSync);
+
+  beforeEach(() => {
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+  });
+
+  it('a cache hit skips the fs calls a cold resolution needed', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).toHaveBeenCalledTimes(1);
+    expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    expect(resolveEditorConfigMaxLineLength(basicTarget)).toBe(100);
+    expect(existsSyncSpy).not.toHaveBeenCalled();
+    expect(readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('saving a .editorconfig invalidates only its own directory, not the whole cache', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    resolveEditorConfigMaxLineLength(offDisablesTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    handleEditorConfigSave({ scheme: 'file', fsPath: basicEditorConfig });
+
+    expect(resolveEditorConfigMaxLineLength(basicTarget)).toBe(100);
+    expect(existsSyncSpy).toHaveBeenCalledTimes(1);
+    expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    // off-disables/ was never saved — its cache entry should still be warm.
+    expect(resolveEditorConfigMaxLineLength(offDisablesTarget)).toBe(100);
+    expect(existsSyncSpy).not.toHaveBeenCalled();
+    expect(readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('ignores a save of a document that is not a .editorconfig, or not a file-scheme document', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    handleEditorConfigSave({ scheme: 'file', fsPath: basicTarget }); // target.py, not .editorconfig
+    handleEditorConfigSave({ scheme: 'untitled', fsPath: basicEditorConfig }); // right name, wrong scheme
+
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).not.toHaveBeenCalled();
+    expect(readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('invalidateEditorConfigCacheDir clears exactly the directory it names', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    invalidateEditorConfigCacheDir(path.dirname(basicTarget));
+
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).toHaveBeenCalledTimes(1);
+    expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('the window regaining focus clears every cached directory', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    resolveEditorConfigMaxLineLength(offDisablesTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    handleWindowStateChange({ focused: true });
+
+    resolveEditorConfigMaxLineLength(basicTarget);
+    resolveEditorConfigMaxLineLength(offDisablesTarget);
+    expect(existsSyncSpy).toHaveBeenCalledTimes(2);
+    expect(readFileSyncSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('the window losing focus (blur) does not clear the cache — only regaining it does', () => {
+    resolveEditorConfigMaxLineLength(basicTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    handleWindowStateChange({ focused: false });
+
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).not.toHaveBeenCalled();
+    expect(readFileSyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('a stale entry past EDITORCONFIG_CACHE_TTL_MS re-reads disk even with no invalidation trigger fired', () => {
+    let now = 1_700_000_000_000;
+    const dateNowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);
+
+    resolveEditorConfigMaxLineLength(basicTarget);
+    existsSyncSpy.mockClear();
+    readFileSyncSpy.mockClear();
+
+    // Still within the TTL window — stays a cache hit.
+    now += EDITORCONFIG_CACHE_TTL_MS - 1;
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).not.toHaveBeenCalled();
+    expect(readFileSyncSpy).not.toHaveBeenCalled();
+
+    // Past the TTL now, with neither invalidation trigger ever firing —
+    // the entry expires on its own.
+    now += 2;
+    resolveEditorConfigMaxLineLength(basicTarget);
+    expect(existsSyncSpy).toHaveBeenCalledTimes(1);
+    expect(readFileSyncSpy).toHaveBeenCalledTimes(1);
+
+    dateNowSpy.mockRestore();
   });
 });

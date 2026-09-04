@@ -119,6 +119,24 @@ export interface ComputeWrapResultOptions {
    * always `'all'` and so never need one in the first place.
    */
   readonly mapper?: PositionMapper;
+
+  /**
+   * Skip re-deriving `../config/resolve-wrap-config.ts`'s
+   * `ResolvedWrapConfig` from scratch and use this one instead. Every
+   * caller but `../auto-wrap.ts` omits this — unchanged behavior, resolve
+   * it internally exactly as before this option existed. Auto-wrap
+   * already has to resolve it itself, before this function is ever
+   * called, just to answer "did this keystroke cross the column limit?"
+   * (`resolveWrapConfigForDocument` is the one step in that check that
+   * can touch the filesystem, via `.editorconfig` — see
+   * `../config/editorconfig.ts`). Without this option, that same
+   * resolution ran a second time in here, once per triggering keystroke,
+   * purely because this function had no way to know the caller already
+   * had one. Used exactly as if this function had derived it itself —
+   * `options.wrapStrings` below still overrides
+   * `resolvedConfig.wrapConfig.wrapStrings` the same way either way.
+   */
+  readonly resolvedConfig?: ResolvedWrapConfig;
 }
 
 export async function computeWrapResult(
@@ -127,7 +145,7 @@ export async function computeWrapResult(
   cancellation?: vscode.CancellationToken,
   options?: ComputeWrapResultOptions,
 ): Promise<WrapOutcome | undefined> {
-  const resolvedConfig = resolveWrapConfigForDocument(document);
+  const resolvedConfig = options?.resolvedConfig ?? resolveWrapConfigForDocument(document);
   if (!resolvedConfig.enable) {
     return undefined;
   }

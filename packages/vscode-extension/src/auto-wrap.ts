@@ -268,6 +268,12 @@ async function handleDocumentChange(
       report: false,
       wrapStrings: false,
       mapper,
+      // Reuse the `resolvedConfig` already resolved above (for the
+      // column-limit early-exit check) instead of letting
+      // `computeWrapResult` resolve it again from scratch — that second
+      // resolution is what used to re-walk `.editorconfig` a second time
+      // per triggering keystroke.
+      resolvedConfig,
     });
     if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged || outcome.result.edits.length === 0) {
       return;
