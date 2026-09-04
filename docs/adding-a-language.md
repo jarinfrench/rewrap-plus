@@ -114,6 +114,36 @@ node type (`comment`) covers three different comment forms that need
 telling apart by text, not by node type; most languages need nothing
 here at all.
 
+#### Prose languages
+
+A language where the prose *is* the document — Markdown, LaTeX, a
+future plain-text adapter — doesn't fit the comment/string model above
+at all: there's no marker to strip, and often no strings or comments
+worth wrapping either. For that shape, `queries.strings`/`.comments`
+and the `strings` block are optional (omit whichever your language has
+none of), and two more hooks exist alongside the four above:
+`discoverProse` (produce every `'prose'` region in the tree — one
+reflowable paragraph-shaped unit per region) and `wrapProse` (dissolve,
+reflow, and emit one, given the whole-document `tree` since a
+continuation prefix is usually a property of the region's container
+ancestry, not the region alone). `languages/markdown/` is the smallest
+real example: `discoverProse` is a twelve-line wrapper over a
+`(paragraph) @prose` capture (`queries.prose`, a plain descriptor query
+like `comments`/`strings`), because the grammar already resolved block
+structure. `languages/latex/` is the harder shape worth knowing exists:
+its grammar has no paragraph-level node at all, so `discoverProse` is a
+masked line scan that uses the tree only for exclusion spans, comment
+spans, and structural anchors — proof that `discoverProse` doesn't need
+a query to be legal, only a real implementation of the hook. The shared
+`prose/` directory (`dissolve-prose.ts`/`emit-prose.ts`) handles
+dissolve/emit for both, the same way `comments/`/`strings/` do for
+every comment/string-shaped language. `docs/adapters.md`'s "Markdown"
+and "LaTeX" real-adapter sections are the full write-up of what each of
+these two adapters actually found building on this design, including
+the one real algorithmic-cost bug and the one real corruption bug prose
+work turned up that a comment/string adapter wouldn't have hit the same
+way.
+
 ### 5. Fill in the conformance test and run it
 
 Replace the scaffolded placeholder source with a real snippet in the new

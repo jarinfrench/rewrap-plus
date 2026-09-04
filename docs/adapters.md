@@ -1156,3 +1156,319 @@ that follow-on, "parse is optional when no queries are declared," is
 flagged there as worth designing for now precisely so this phase's hooks
 don't end up quietly assuming a tree, but is out of scope to build until
 a plain-text adapter actually needs it.
+
+# Markdown — real adapter (Phase C)
+
+Phase C (`docs/planning/markdown-latex-plan.md` §9 commits 8-13) is the
+proof point the previous section's "no adapter has used any of this
+yet" was waiting on, for the easier of the two discovery shapes:
+Markdown has a real `paragraph` node, so `discoverMarkdownProse` is the
+twelve-line `queries.prose`-capture wrapper Phase B's design predicted.
+It needed **zero** further changes to `discoverProse`/`wrapProse`/
+`prose/` or anything under `packages/engine/src/core` — the design held
+on first real contact, exactly what the synthetic
+`fake-prose-conformance.test.ts` fixture was built in advance to
+de-risk. What Phase C did find was one real, adapter-local bug, caught
+the way this project's convention insists on: by actually measuring the
+plan's own named worst case rather than assuming a carried-over bound
+would hold.
+
+## A real quadratic-cost bug found by measuring, not assumed
+
+`wrapMarkdownProse` called `source.split('\n')` on every invocation, to
+read the first physical line's own text for `markdownContinuationPrefix`
+— and `wrapRegions` calls a `wrapProse` implementation once per region.
+For the plan's own named 50,000-line, all-paragraphs synthetic worst
+case (§8.4), that's 16,667 regions each re-splitting the *entire file*
+from scratch: measured at 18.8s before the fix. This is the identical
+class of bug `sliceSpanText`'s and `detectLineEndingNear`'s own doc
+comments already document finding and fixing once, during this
+project's earlier Python-only benchmarking work — reintroduced fresh
+here because Markdown's `wrapProse` was written without reaching for
+that established cache, not because the cache itself has any gap.
+Fixed by switching to `sliceSpanText` (the same single-entry,
+reference-equality cache `discoverRegions` and every dissolve step
+already share for exactly this reason): 18.8s → 1.9s, confirmed by
+direct measurement, not by inspection. `docs/benchmarks.md`'s
+"Markdown" section carries the resulting numbers.
+
+Worth being explicit about the shape of this finding: it is not a leak
+in the adapter interface (nothing about `wrapProse`'s contract invited
+the mistake), and not a grammar surprise (`docs/parsing.md` Finding 7
+already covered every geometry question Phase C needed). It is a plain
+adapter-implementation mistake of the one specific kind this codebase
+has already been burned by once — which is exactly why it's worth a
+place here rather than only a commit message: the second occurrence of
+the same mistake, in a different language's adapter, is the signal that
+the lesson needs to live somewhere a future adapter author will
+actually see it before writing their own `wrapProse`/`wrapString`, not
+just in `git log`.
+
+## The plan's own hard-break regex was one character too narrow — already caught in Phase A, fixed for real here
+
+`docs/parsing.md` Finding 7 already records this in full: the plan's
+own §5.4 trailing-backslash regex (`/(?<!\\)\\$/`, a one-character
+lookbehind) correctly rejects two trailing backslashes but silently
+also rejects three, when CommonMark's real rule is escape-pair parity
+(an odd trailing run is a break; an even run isn't). Phase C's
+`trailingBackslashHardBreak` (`languages/markdown/hard-break.ts`)
+implements the parity rule instead, with `hard-break.test.ts` covering
+run lengths 1 through 5 specifically because 2-vs-3 is exactly where
+the plan's original regex was wrong. Noted here only to close the loop
+Finding 7 opened, not duplicated in full — that finding is the record
+of what was *found*; this is the one-line record of what was *fixed*,
+and where.
+
+## Deliberate scope limits confirmed as shipped
+
+Every canonicalization choice `docs/planning/markdown-latex-plan.md`
+§3.3 recommended shipped exactly as designed, confirmed by gold
+fixtures rather than left as a design intention: continuation prefixes
+are computed from container ancestry, never observed from source
+(`languages/markdown/continuation-prefix.ts`, §5.3's table as a direct
+unit test); internal paragraph indentation is normalized to the first
+line's; setext heading text is excluded by `paragraph.parent.type ===
+'setext_heading'`; footnote and link-reference definitions are skipped;
+a paragraph containing a `$$` line is skipped whole. None of these
+needed revisiting once real content ran through them — the real-corpus
+acceptance check (this repo's own `README.md`, `CONTRIBUTING.md`,
+`SECURITY.md`, `CHANGELOG.md`, `docs/*.md`) came back idempotent with
+word/backtick/link counts preserved exactly, recorded in commit
+`e8a0f70`'s own message rather than repeated here.
+
+## What this means for future adapters
+
+Markdown is the confirmation case, not the discovery case: Phase B's
+`discoverProse`-as-thin-query-wrapper design needed nothing further,
+and the one real bug found was a plain implementation mistake this
+project has already named and fixed once before, not a new class of
+problem. The instructive part for the next prose (or any) adapter is
+narrower than a whole leaked assumption: reach for `sliceSpanText`
+(or the equivalent per-invocation cache) reflexively in any
+per-region hook that reads from `source` more than once, rather than
+learning that lesson a third time by first measuring a worst case that
+was already named in a plan.
+
+# LaTeX — real adapter (Phase D)
+
+Phase D (`docs/planning/markdown-latex-plan.md` §9 commits 14-19) is
+the harder of the two discovery shapes Phase B's design was built to
+cover at once: `tree-sitter-latex` has no paragraph-level node at all
+(`docs/parsing.md` Finding 8), so `discoverLatexProse` is a masked line
+scan that uses the tree only for exclusion spans, comment spans, and
+structural anchors — never a query. Like Markdown, this needed no
+further changes to `discoverProse`/`wrapProse`/`prose/` or
+`packages/engine/src/core` itself; every real bug Phase D found was
+adapter-local, inside `languages/latex/` or (one case) inside a shared
+segmentation helper's own combining logic, not in the hook contract
+those files implement. Four are worth recording individually — two
+correctness bugs a narrow view of "does this line match one command"
+couldn't see, one silent-corruption bug in how multiple
+`extraUnbreakable` patterns combine, and one genuinely two-round
+performance investigation — because each teaches something a future
+adapter (prose or otherwise) can hit the same way.
+
+## Structural-line detection needed a chain-walking scanner, not a single whole-line match
+
+`isStructuralLine`'s original shape (commit 15) only ever asked "does
+this whole line match one `\command{args}`" — true for an isolated
+sectioning header, false the moment a second structural command follows
+on the same line with no prose between them. `\section{Title}\label{sec:foo}`
+— a sectioning header immediately followed by its cross-reference
+label, one of the most common idioms in real LaTeX — was swallowed
+whole into a `'prose'` region instead of being excluded, and confirmed
+directly (not just reasoned about) to actually reflow the section/label
+commands across output lines at a narrow column limit. Fixed by
+replacing the whole-line check with `structuralConsumedLength`, a
+hand-rolled per-unit scanner: at each position, try the tree first
+(authoritative, and required for a nested-brace title) via
+`headerSpansByStartRow`, then fall back to the same regex with its `$`
+anchor removed so it can match a prefix; a line is structural only when
+the scan consumes it in full. Deliberately a loop rather than a single
+regex with a repeated outer group — an unbounded quantifier around a
+group that already contains one is a classic catastrophic-backtracking
+shape, and this scan runs once per line of every file wrapped, so a
+slow pattern here is a real regression, not a theoretical one.
+
+The identical chaining shape recurs immediately after `\item`
+(`\item \label{item:foo} Item text.`), which needed its own follow-up
+fix: `buildEnumItemStartColumns` gained `headerSpansByStartRow` as a
+dependency and reused `structuralConsumedLength` to advance an item's
+content-start column past any chained structural command following
+`\item`/`[label]` — the same scanner, a different caller, since
+`structuralConsumedLength` was already shaped to answer "how much was
+consumed" rather than a pass/fail verdict. Two residual, explicitly
+documented (not silently dropped) gaps remain, named in
+`buildEnumItemStartColumns`'s own doc comment: real prose trailing a
+structural command on the same line (`\section{Title} extra text`) is
+a different shape of problem (splitting one line into an excluded
+prefix plus a new region) and isn't handled; an item whose entire first
+line is consumed by a chained label loses that item's own
+marker-based continuation indent for the line that follows. Both are
+safe (nothing overflows or corrupts) and narrower in practice than the
+chain-swallowing bug itself, which is why they were left open rather
+than blocking the fix that mattered.
+
+## `\item` continuation lines were budgeted for the wrong column
+
+`emitProse`'s single shared `availableWidth` formula assumes
+`region.indentColumn` and `continuationPrefix`'s display width coincide
+— true by construction for an ordinary paragraph, but
+`discoverLatexProse` was computing `indentColumn` from the item's real
+*content*-start column (past `\item`/`[label]` and any chained
+command), while `latexContinuationPrefix` (§6.3) deliberately derives a
+*shorter* prefix — the marker's own raw leading whitespace, not the
+content column. Every continuation line of a labeled or long-markered
+item was budgeted as if printing started at the far-right content
+column, then actually rendered flush against a much shorter prefix,
+wasting the difference as unused width on every wrapped line. Fixed
+with the same mechanism `strings/emit-string.ts` already established
+for the analogous "line 1 shares a physical line with marker text
+outside the region" case: `discoverLatexProse` now derives
+`indentColumn` from the row's own marker column, and `wrapLatexProse`
+computes a `firstLineReserve` (the visual-column gap between the real
+content-start column and the now-narrower `indentColumn`) and threads
+it through `ReflowOptions`, which already supported exactly this shape
+— just never wired up for LaTeX before. Regenerating every existing
+gold fixture confirmed the fix's blast radius directly rather than
+assuming it: of ten fixtures, only the two `\item`-based ones changed,
+both idempotent and visibly better-packed.
+
+## A second `extraUnbreakable` pattern silently truncated real `\lstinline` spans — capture-group renumbering across combined patterns
+
+`\verb`/`\lstinline` are genuinely unprotected by the grammar itself
+(`docs/parsing.md` Finding 8: `\verb|...|` parses as an ordinary
+`generic_command` followed by plain `text`/`word` nodes, torn at
+internal spaces exactly like prose), so §4.3's `extraUnbreakable`
+patterns are load-bearing, not defensive. The first implementation used
+two separate patterns, each with its own `(.)` capture group and `\1`
+backreference for the matched delimiter — and building this commit's
+own `\lstinline` gold fixture caught a real, previously-latent bug in
+how `findUnbreakableSpans` (`segmentation/unbreakable-spans.ts`)
+combines multiple `extraUnbreakable` patterns: it joins every pattern's
+`.source` into one `RegExp` via `|`, which **renumbers capture groups
+across the whole combined result**. `\lstinline`'s own `\1` still
+literally meant "group 1" post-combination, but group 1 belonged to
+`\verb`'s pattern (listed first) — and since group 1 never participates
+when the `\lstinline` alternative is the one matching, its
+backreference matched the empty string (standard, if obscure,
+ECMAScript behavior), satisfying `[^\n]*?\1` immediately and truncating
+every real `\lstinline|...|` match down to just `\lstinline` plus its
+opening delimiter. Confirmed directly: `atomizeWords` split
+`\lstinline|some_function_name(argument_one, argument_two)|` into three
+atoms at the internal spaces, and the real pipeline reflowed it across
+two lines — silently changing what the span typesets to, exactly the
+class of bug `SECURITY.md`'s "silent string/semantic corruption"
+category exists to catch, even though a `\verb`/`\lstinline` span isn't
+a `'stringLiteral'` region. Fixed by merging into one pattern with a
+single shared capture group
+(`/\(?:verb|lstinline)\*?(.)[^\n]*?\1/`), confirmed none of the
+built-in unbreakable patterns carry the same symmetric risk (none use a
+capture group or backreference at all), and `unbreakable-spans.ts`'s
+own doc comment now carries a permanent warning about this exact
+pitfall for the next adapter that reaches for a second
+delimiter-matching `extraUnbreakable` pattern. `SECURITY.md`'s
+Hardening changelog records this one — the other three findings in
+this section are real, worthwhile bug fixes, but "incorrect wrapping
+decisions" are explicitly out of that document's declared scope; this
+one is a verbatim-content-changing corruption bug in the same
+subsystem, and same class, as the C++/JavaScript escape-splitting row
+already there.
+
+## Two-round near-cursor performance investigation
+
+LaTeX is the one adapter whose `discoverProse` is a masked line scan
+rather than a single tree-sitter query pass, so it's also the one
+adapter whose Wrap-at-Cursor (and auto-wrap, which shares the same
+target-based `wrapRegions` path) time grows with file size instead of
+staying roughly constant. Two real, measured fixes landed, in two
+separate commits after the question was asked explicitly a second time
+("does this same cost affect auto-wrap, not just an explicit command?")
+rather than assumed answered by the first fix:
+
+- `buildRowMasks` and `buildHeaderSpansByStartRow` together made
+  sixteen separate `tree.rootNode.descendantsOfType(oneType)` calls —
+  one per node type each cares about. `web-tree-sitter`'s
+  `descendantsOfType` accepts an array of types and does the
+  equivalent of one combined walk for all of them at once; replacing
+  the sixteen calls with `buildTreeIndexes`'s single
+  `descendantsOfType(ALL_SCANNED_NODE_TYPES)` call measured **~17x
+  faster** on its own (a 50,000-line file: ~1.7s → ~0.1s for that
+  portion), confirmed by direct profiling to be the dominant cost in
+  the whole scan.
+- A second, separate `(line_comment) @comment` `Query.captures` pass in
+  `buildWholeLineCommentRows` — re-running the *identical* query
+  `discover-regions.ts`'s own shared comment-discovery pass already
+  runs once, purely to classify each comment's row as whole-line vs.
+  trailing — cost a further ~200-350ms on a 50,000-line file,
+  confirmed by direct profiling to cost that much **regardless of
+  match count** (the same file with zero real comments paid the
+  identical cost): `web-tree-sitter` query *execution* here scales
+  with tree size, not result size, a genuinely different cost shape
+  from `descendantsOfType`'s own walk. Folding `line_comment`
+  classification into the same combined `buildTreeIndexes` walk (a
+  plain tree walk, with no comparable per-call floor) removed the
+  second pass entirely.
+
+Combined effect on Wrap-at-Cursor at 50,000 lines: ~3.3s before either
+fix → ~1.9s after the first → ~1.7s after the second — real, but not a
+complete fix; the remaining cost is parse time itself (a cost every
+adapter pays) plus `discoverRegions`'s own always-whole-file discovery
+pass before narrowing to a target, which is shared architecture, not
+something this adapter can fix on its own. Incremental parsing
+(`Tree.edit`/edit-aware `Parser.parse`) was investigated directly as
+the obvious next lever and set aside: profiled with correctly-computed
+edit positions, it measured only ~1.7-2x faster than a full reparse,
+and an edit near the start of a 50,000-line file was no faster than one
+near the end — this grammar/binding isn't achieving anywhere near
+"cost independent of file size" reuse for this content, so it wasn't a
+productive trade for the size of the change it would require. The
+closing gap is recorded as its own roadmap item, not silently dropped:
+`docs/planning/implementation-plan.md` Phase 12f, "scope `discoverRegions`
+to a requested target." `docs/benchmarks.md`'s "LaTeX" section carries
+every number above; both rounds also re-measured the masked-environment
+and `\item`-list hardening cases and found them unchanged within noise.
+
+## Deliberate scope limits confirmed as shipped
+
+Every environment-classification decision `docs/planning/markdown-latex-plan.md`
+§6.2 anticipated was confirmed by direct probing before the mask list
+was written, with two of the plan's own draft guesses corrected by that
+probing rather than assumed: `lstlisting` gets its own
+`listing_environment` node type (plain `listing` doesn't, and falls
+through to the generic preserve-list instead), and `array` classifies
+as `math_environment` (already covered by the "always mask
+`math_environment`" rule, not a separate preserve-list entry as the
+plan's draft had it). `minted` produces a genuine `ERROR` node rather
+than any dedicated type — covered for free by `wrap.ts`'s existing
+generic "skip any region overlapping `ERROR`" mechanism, deliberately
+*not* added to the mask-type list (a reference to a non-existent node
+type would be dead code at best). An unterminated `\begin{...}` also
+produces a real `ERROR` node with no graceful recovery — unlike
+`tree-sitter-markdown`'s fenced code block, which degrades gracefully
+to end-of-file — protected by the same generic `ERROR`-overlap
+mechanism rather than needing its own row-masking entry; recorded here
+because the *shape* of the safety net differs from the common case in a
+way a future reader extending the mask list might otherwise assume
+incorrectly. `docs/parsing.md` Finding 8 carries the full probe
+results for every environment name; this section names only the ones
+that changed the mask list from the plan's own first draft.
+
+## What this means for future adapters
+
+LaTeX is the proof case Phase B's design was actually built for: a
+`discoverProse` with no query to run at all, using the tree purely for
+masking and anchoring. All four real bugs found here were adapter-local
+— a chain-detection gap in a hand-rolled line scanner, a reflow-budget
+formula that assumed two values coincide when a labeled `\item` proved
+they don't, a capture-group collision when combining regex patterns by
+string concatenation, and the algorithmic cost of a masked line scan —
+never a gap in `discoverProse`/`wrapProse`/`prose/` itself, which
+needed zero changes after Phase B. The capture-group lesson is now a
+permanent warning in `unbreakable-spans.ts` for the next adapter that
+reaches for a second delimiter-matching `extraUnbreakable` pattern; the
+chain-detection lesson is that "does this line match one thing" and
+"does this line match a sequence of things" are genuinely different
+questions, worth asking explicitly rather than assuming the simpler one
+covers real-world input once real-world input is what a fixture
+actually exercises.
