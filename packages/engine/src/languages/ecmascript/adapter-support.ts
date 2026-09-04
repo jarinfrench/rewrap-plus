@@ -1,13 +1,9 @@
-import type { EmitContext, LanguageDescriptor } from '../../types/adapter.js';
+import type { LanguageDescriptor } from '../../types/adapter.js';
 import type { WrapConfig } from '../../types/config.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
-import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
-import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
-import { dissolveString } from '../../strings/dissolve-string.js';
-import { escapeQuoteCollisions } from '../../strings/escape-quote-collisions.js';
-import { emitString } from '../../strings/emit-string.js';
+import { wrapStringDefault } from '../../strings/wrap-string-default.js';
 
 /**
  * Shared `LanguageAdapter` logic for every ECMAScript-family grammar
@@ -124,58 +120,26 @@ export function isEcmaScriptStringSafeToWrap(region: WrappableRegion, source: st
 }
 
 /**
- * `emitContext` shared across every ECMAScript-family adapter: unlike
- * Python (`../python/emit-context.ts`), splitting a `+`-concatenation run
- * across new lines never needs its own inserted grouping — `"a" + "b"` is
- * valid wherever an expression is valid, with no enclosing-bracket
- * requirement the way Python's bare implicit-concatenation juxtaposition
- * has — and there is no second concatenation style to resolve between,
- * since every ECMAScript-family descriptor declares only `'operator'`.
- * `region`/`tree`/`cfg` are accepted only to match `LanguageAdapter.emitContext`'s
- * signature; none is consulted.
- */
-export function ecmaScriptEmitContext(): EmitContext {
-  return { needsParens: false, concatenationStyle: 'operator' as const };
-}
-
-/**
- * `wrapString` shared across every ECMAScript-family adapter: dissolve,
- * normalize quote collisions, and emit — the identical pipeline shape as
- * Python's own `../python/wrap-string.ts`, with `needsParens` always
- * `false` and `style` always `'operator'` (per `ecmaScriptEmitContext`
- * above), so no `tree`/`emitContext` lookup is actually needed here at
- * all, unlike Python's version.
- *
- * Hanging indent for a multi-line split follows the identical "statement's
- * own indent plus four columns" convention Python's `wrapString` uses and
- * documents as a deliberate simplification (`../python/wrap-string.ts`) —
- * carried forward unchanged rather than re-litigated, since nothing about
- * JS/TS gives a reason to choose differently.
+ * `wrapString` shared across every ECMAScript-family adapter: the shared
+ * `../../strings/wrap-string-default.ts` pipeline (dissolve, normalize
+ * quote collisions, emit) with `needsParens` always `false` and `style`
+ * always `'operator'` — unlike Python (`../python/emit-context.ts`),
+ * splitting a `+`-concatenation run across new lines never needs its own
+ * inserted grouping (`"a" + "b"` is valid wherever an expression is valid,
+ * with no enclosing-bracket requirement the way Python's bare implicit-
+ * concatenation juxtaposition has), and there is no second concatenation
+ * style to resolve between, since every ECMAScript-family descriptor
+ * declares only `'operator'`. Both axes are therefore fixed constants
+ * rather than something a `tree` lookup ever needs to resolve, unlike
+ * Python's version.
  */
 export function wrapEcmaScriptString(
   region: WrappableRegion,
   source: string,
   cfg: WrapConfig,
 ): string {
-  const dissolved = dissolveString(region, source);
-  const safeText = escapeQuoteCollisions(dissolved.text, dissolved.quoteDelimiter);
-
-  const sourceLine = source.split('\n')[region.span.startRow] ?? '';
-  const statementIndentChars = /^[ \t]*/.exec(sourceLine)?.[0].length ?? 0;
-  const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
-  const hangingIndentColumns = statementIndentColumns + 4;
-
-  const reflowOptions = reflowOptionsFrom(cfg);
-
-  return emitString(
-    safeText,
-    dissolved.prefix,
-    dissolved.quoteDelimiter,
-    region.indentColumn,
-    hangingIndentColumns,
-    false,
-    'operator',
-    cfg.columnLimit,
-    reflowOptions,
-  );
+  return wrapStringDefault(region, source, cfg, {
+    needsParens: false,
+    concatenationStyle: 'operator',
+  });
 }

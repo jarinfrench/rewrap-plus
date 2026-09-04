@@ -1,4 +1,3 @@
-import type { EmitContext } from '../../types/adapter.js';
 import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode, Tree } from '../../types/tree-sitter-types.js';
@@ -9,9 +8,14 @@ import { pythonDescriptor } from './descriptor.js';
 /**
  * Python's emit-time context for a `'stringLiteral'` region: whether
  * splitting it across multiple physical lines needs its own inserted
- * parentheses, and which concatenation syntax to emit with.
+ * parentheses, and which concatenation syntax to emit with. A plain,
+ * self-contained interface rather than an extension of any shared
+ * `LanguageAdapter`-member type — `emitContext` is an internal helper
+ * `./wrap-string.ts` and `../adapter.ts`'s `isProseEligible` call
+ * directly, not a `LanguageAdapter` hook (removed from that interface once
+ * it turned out nothing in the engine ever dispatched through it as one).
  */
-export interface StringEmitContext extends EmitContext {
+export interface StringEmitContext {
   readonly needsParens: boolean;
   readonly concatenationStyle: ConcatenationStyle;
   /**
@@ -138,10 +142,10 @@ function resolveConcatenationStyle(
 }
 
 /**
- * Python's `LanguageAdapter.emitContext` implementation for
- * `'stringLiteral'` regions — see `./adapter.ts` for how this is wired in,
- * and `../../types/adapter.ts`'s own doc comment anticipating exactly this
- * ("Python... emitContext (paren insertion)").
+ * Python's emit-time context resolution for `'stringLiteral'` regions —
+ * an internal helper called directly by `./wrap-string.ts`'s `wrapString`
+ * and `./adapter.ts`'s `isProseEligible`, not a `LanguageAdapter` member
+ * (see `./adapter.ts`'s own doc comment for why it isn't one).
  *
  * `nodeAtSpan` returning `null` (defensive: shouldn't happen for a region
  * that really came from `discoverRegions` against this same `tree`) falls

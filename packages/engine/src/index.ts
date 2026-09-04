@@ -68,7 +68,6 @@ export type {
   PrefixSpec,
   RawFormSpec,
   EscapeSpec,
-  EmitContext,
   DiscoverRegionsOptions,
 } from './types/adapter.js';
 export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';

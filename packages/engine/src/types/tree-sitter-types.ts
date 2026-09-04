@@ -1,8 +1,8 @@
 /**
  * Re-exports of the pieces of `web-tree-sitter`'s public API that the rest
- * of this package needs to reference — `LanguageAdapter`'s `classify` and
- * `emitContext` hooks (`./adapter.ts`), the parser layer (`../parser/`),
- * and everything downstream of it.
+ * of this package needs to reference — `LanguageAdapter`'s `classify` hook
+ * (`./adapter.ts`), the parser layer (`../parser/`), and everything
+ * downstream of it.
  *
  * This file used to define minimal structural stand-ins for these shapes
  * — placeholder `SyntaxNode`/`Tree` types standing in for

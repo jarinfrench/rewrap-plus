@@ -269,14 +269,19 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
  * dissolve→segment→reflow→emit pipeline for `'docstring'` regions — see
  * `./wrap-docstring.ts` and that hook's own doc comment on
  * `../../types/adapter.ts` for why it's one hook rather than several.
- * `emitContext` (`./emit-context.ts`) answers whether a
- * `'stringLiteral'` split needs its own inserted parentheses and which
- * concatenation syntax to preserve; `wrapString` (`./wrap-string.ts`) is
- * that region kind's own whole-pipeline hook, the same shape as
- * `wrapDocstring` for the same reason. `isProseEligible` adds the one
- * context signal `emitContext` already has the tree access to answer
- * exactly (a dict literal's key) on top of the shared text-only
- * `looksLikeProse` heuristic.
+ * `wrapString` (`./wrap-string.ts`) is `'stringLiteral'`'s own
+ * whole-pipeline hook, the same shape as `wrapDocstring` for the same
+ * reason — internally, it resolves whether a split needs its own inserted
+ * parentheses and which concatenation syntax to preserve via
+ * `./emit-context.ts`'s `emitContext`, called directly as a plain function
+ * rather than through a `LanguageAdapter` member (that hook existed on the
+ * interface once; nothing in the engine ever dispatched through it — every
+ * real caller, here and in `isProseEligible` below, already called this
+ * exact function directly — so it was removed from the interface rather
+ * than kept as a second, unused way to reach the same logic).
+ * `isProseEligible` adds the one context signal `emitContext` already has
+ * the tree access to answer exactly (a dict literal's key) on top of the
+ * shared text-only `looksLikeProse` heuristic.
  */
 export const pythonAdapter: LanguageAdapter = {
   descriptor: pythonDescriptor,
@@ -285,7 +290,6 @@ export const pythonAdapter: LanguageAdapter = {
   isSafeToWrap,
   isProseEligible,
   proseText,
-  emitContext,
   wrapDocstring,
   wrapString,
 };

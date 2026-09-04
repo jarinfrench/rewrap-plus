@@ -7,11 +7,11 @@ import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
  *
  * `WrappableRegion` deliberately carries no live `SyntaxNode` reference —
  * only `span`/`parts`/`rawText` (see `discoverRegions`'s doc comment on why
- * `isSafeToWrap`'s signature looks the way it does) — but the
- * paren-insertion logic (`./emit-context.ts`) needs real tree access to
- * walk a concatenation's syntactic ancestors, and `emitContext`'s own
- * signature (`../types/adapter.ts`) hands it a `Tree`, not a node. This
- * bridges the two.
+ * `isSafeToWrap`'s signature looks the way it does) — but Python's
+ * paren-insertion logic (`../languages/python/emit-context.ts`) needs real
+ * tree access to walk a concatenation's syntactic ancestors, and its own
+ * `emitContext` function is handed a `Tree`, not a node. This bridges the
+ * two.
  *
  * `Node#descendantForPosition(start, end)` returns the *smallest* node
  * whose own span contains `[start, end]`. Since `span` was itself derived

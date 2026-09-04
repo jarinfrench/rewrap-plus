@@ -108,7 +108,7 @@ what step 3 actually found. **An adapter is data first, code second** —
 anything expressible as a descriptor field must not be a method,
 because that's what keeps "add a language" a configuration task. Only
 add a hook to `adapter.ts` (`classify`, `groupRegions`, `isSafeToWrap`,
-`emitContext`) once a specific, probed grammar behavior actually needs
+`proseText`) once a specific, probed grammar behavior actually needs
 one — e.g. JavaScript's `classify` override exists because one grammar
 node type (`comment`) covers three different comment forms that need
 telling apart by text, not by node type; most languages need nothing

@@ -5,7 +5,7 @@ import { wrapMarkdownProse } from './wrap-prose.js';
 
 /**
  * Markdown's `LanguageAdapter`. `classify`/`groupRegions`/`isSafeToWrap`/
- * `emitContext` are all comment/string-region hooks with nothing to
+ * `proseText` are all comment/string-region hooks with nothing to
  * override here (this descriptor discovers neither kind at all — see
  * `./descriptor.ts`'s own doc comment). `discoverProse`/`wrapProse` are
  * `./discover-prose.ts`/`./wrap-prose.ts`'s real implementations, the

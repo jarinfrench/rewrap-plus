@@ -114,13 +114,4 @@ describe('javascriptAdapter', () => {
 
     expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(true);
   });
-
-  it('emitContext never needs parens and always resolves to operator style', () => {
-    const source = 'const x = "a" + "b";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
-
-    const ctx = javascriptAdapter.emitContext!(region!, tree, {} as never);
-    expect(ctx).toEqual({ needsParens: false, concatenationStyle: 'operator' });
-  });
 });

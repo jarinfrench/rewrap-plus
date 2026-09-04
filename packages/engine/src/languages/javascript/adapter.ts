@@ -4,7 +4,6 @@ import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { javascriptDescriptor } from './descriptor.js';
 import {
   classifyEcmaScriptNode,
-  ecmaScriptEmitContext,
   isEcmaScriptStringSafeToWrap,
   wrapEcmaScriptString,
 } from '../ecmascript/adapter-support.js';
@@ -19,9 +18,9 @@ function classify(node: SyntaxNode): RegionKind | null {
  * `classify` distinguishes `//`/JSDoc-shaped `/**`/plain `/* * /`
  * comments (excluding the last, per `../ecmascript/adapter-support.ts`'s
  * own doc comment) and marks every `string` node `'stringLiteral'`.
- * `isSafeToWrap`, `emitContext`, and `wrapString` are the shared
- * ECMAScript-family implementations — nothing about JavaScript itself
- * needs its own version of any of them. No `proseText` override either:
+ * `isSafeToWrap` and `wrapString` are the shared ECMAScript-family
+ * implementations — nothing about JavaScript itself needs its own version
+ * of either. No `proseText` override either:
  * the engine's own default (`../../types/adapter.ts`'s own doc comment)
  * already does the same `dissolveString` lookup every quote-delimited
  * string syntax needs. No `groupRegions`
@@ -34,6 +33,5 @@ export const javascriptAdapter: LanguageAdapter = {
   descriptor: javascriptDescriptor,
   classify,
   isSafeToWrap: isEcmaScriptStringSafeToWrap,
-  emitContext: ecmaScriptEmitContext,
   wrapString: wrapEcmaScriptString,
 };

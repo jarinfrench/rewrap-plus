@@ -887,14 +887,20 @@ prose-heuristic refusals do.
   directly against Java's own grammar rather than assumed to transfer.
   Already handled by `discoverRegions`'s existing `trimTrailingCR`
   safeguard; no adapter-specific fix needed.
-- **`isSafeToWrap`/`emitContext`/`proseText`/`wrapString` written as
-  Java's own local functions**, not imported from
-  `languages/ecmascript/adapter-support.ts` despite near-identical logic
-  (operator style, no grouping, the same line-continuation/irregular-
-  whitespace refusals) — Java isn't an ECMAScript-family grammar, and
-  `languages/cpp/wrap-string.ts` already established the precedent of
-  keeping a language's thin wrapper local rather than risking a change to
-  already-hardened JS/TS code for a purely cosmetic dedup.
+- **`isSafeToWrap`/`proseText` written as Java's own local functions**, not
+  imported from `languages/ecmascript/adapter-support.ts` despite
+  near-identical logic (operator style, no grouping, the same
+  line-continuation/irregular-whitespace refusals) — Java isn't an
+  ECMAScript-family grammar, and keeping a language's thin wrapper local
+  was, at the time, judged worth the duplication rather than risking a
+  change to already-hardened JS/TS code for a purely cosmetic dedup.
+  `wrapString` itself no longer duplicates anything: once the interface's
+  `emitContext` hook turned out to have no dispatch site anywhere in the
+  engine (nothing called `adapter.emitContext(...)`; Java's own version,
+  like C++'s and every ECMAScript-family adapter's, was pure interface
+  boilerplate with a fixed, never-varying answer), Java's `wrapString`
+  moved onto the shared `strings/wrap-string-default.ts` pipeline instead
+  of keeping its own copy.
 - **The `javadoc` documentation dialect** mirrors `jsdoc.ts`/`doxygen.ts`'s
   field-list shape exactly (a flush-left `@tag` marker, `groupFieldEntries`
   folding continuation lines) — kept as its own dialect id rather than

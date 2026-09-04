@@ -22,8 +22,8 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * If this file's suite passes, it confirms the hard gate every earlier
  * adapter's own conformance run already confirmed: no engine change was
  * needed to add Java beyond what the vendored grammar and this adapter's
- * own descriptor/classify/isSafeToWrap/emitContext/wrapString already
- * provide. See `docs/adapters.md`'s Java section for the full write-up.
+ * own descriptor/classify/isSafeToWrap/wrapString already provide. See
+ * `docs/adapters.md`'s Java section for the full write-up.
  */
 const CRLF_SOURCE =
   'class Greeter {\r\n' +

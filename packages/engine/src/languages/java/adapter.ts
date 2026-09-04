@@ -1,4 +1,4 @@
-import type { EmitContext, LanguageAdapter } from '../../types/adapter.js';
+import type { LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
@@ -110,21 +110,6 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
 }
 
 /**
- * Java's `emitContext`: always "no parens, operator style" — `"a" + "b"`
- * is valid wherever an expression already is, with no enclosing-bracket
- * requirement the way Python's bare implicit-concatenation juxtaposition
- * has, and there is no second concatenation style to resolve between,
- * since `javaDescriptor` declares only `'operator'`. `region`/`tree`/`cfg`
- * are accepted only to match `LanguageAdapter.emitContext`'s signature;
- * none is consulted — the identical shape
- * `../ecmascript/adapter-support.ts`'s `ecmaScriptEmitContext` and
- * `../cpp/adapter.ts`'s local `emitContext` both use.
- */
-function emitContext(): EmitContext {
-  return { needsParens: false, concatenationStyle: 'operator' as const };
-}
-
-/**
  * Java's `LanguageAdapter`.
  *
  * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
@@ -136,15 +121,14 @@ function emitContext(): EmitContext {
  * (`docs/adapters.md`) — and Java has no `///`-repeated doc-comment form
  * needing the merge C++'s own `groupRegions` exists for. `isSafeToWrap`
  * flags line-continuation escapes and irregular whitespace as unsafe to
- * wrap. `emitContext`/`wrapString` are Java's whole `'stringLiteral'`
- * pipeline, the same shape every adapter with string support uses. No
- * `wrapDocstring`: Java has no string-literal-as-documentation
- * convention.
+ * wrap. `wrapString` is Java's whole `'stringLiteral'` pipeline — see
+ * `./wrap-string.ts` for why it needs no `emitContext`-shaped resolution
+ * the way Python's own does. No `wrapDocstring`: Java has no
+ * string-literal-as-documentation convention.
  */
 export const javaAdapter: LanguageAdapter = {
   descriptor: javaDescriptor,
   classify,
   isSafeToWrap,
-  emitContext,
   wrapString: wrapJavaString,
 };

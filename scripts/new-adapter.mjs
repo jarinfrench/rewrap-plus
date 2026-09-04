@@ -179,7 +179,7 @@ import { ${constName}Descriptor } from './descriptor.js';
 /**
  * TODO: ${pascalName}'s \`LanguageAdapter\`, scaffolded by
  * \`npm run new-adapter\`. Every hook (\`classify\`, \`groupRegions\`,
- * \`isSafeToWrap\`, \`emitContext\`) is optional — the engine's default,
+ * \`isSafeToWrap\`, \`proseText\`) is optional — the engine's default,
  * descriptor-driven behavior applies to any hook left unset. Most
  * languages should override nothing; only add a hook once a specific,
  * probed grammar behavior actually needs one (see

@@ -1,4 +1,4 @@
-import type { EmitContext, LanguageAdapter } from '../../types/adapter.js';
+import type { LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
@@ -159,18 +159,6 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
 }
 
 /**
- * C++'s `emitContext`: always "no parens, bare-adjacency style" — see
- * `./descriptor.ts`'s own doc comment for why C++ has no second
- * concatenation style to resolve between and no grouping construct ever
- * needs inserting. `region`/`tree`/`cfg` are accepted only to match
- * `LanguageAdapter.emitContext`'s signature; none is consulted, the same
- * shape as `../ecmascript/adapter-support.ts`'s `ecmaScriptEmitContext`.
- */
-function emitContext(): EmitContext {
-  return { needsParens: false, concatenationStyle: 'implicit' as const };
-}
-
-/**
  * C++'s `LanguageAdapter`.
  *
  * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
@@ -181,14 +169,14 @@ function emitContext(): EmitContext {
  * block, the `///`-specific counterpart to Python's own `'lineComment'`
  * merging. `isSafeToWrap` flags mixed-prefix concatenation runs,
  * line-continuation escapes, and irregular whitespace as unsafe to wrap.
- * `emitContext`/`wrapString` are C++'s whole `'stringLiteral'` pipeline,
- * the same shape every adapter with string support uses.
+ * `wrapString` is C++'s whole `'stringLiteral'` pipeline — see
+ * `./wrap-string.ts` for why it needs no `emitContext`-shaped resolution
+ * the way Python's own does.
  */
 export const cppAdapter: LanguageAdapter = {
   descriptor: cppDescriptor,
   classify,
   groupRegions,
   isSafeToWrap,
-  emitContext,
   wrapString: wrapCppString,
 };

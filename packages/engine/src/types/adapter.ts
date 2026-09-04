@@ -275,22 +275,11 @@ export interface LanguageDescriptor {
 }
 
 /**
- * Context threaded from an adapter's `emitContext` hook into the emit step.
- * Deliberately a small, open bag of adapter-specific data, e.g. Python's
- * "does this concatenation run already sit inside a grouping construct"
- * check, which decides whether parentheses must be inserted on emit.
- */
-export interface EmitContext {
-  readonly [key: string]: unknown;
-}
-
-/**
  * Escape hatches for behavior a descriptor can't express as data. All
  * optional — a language needing none of them is pure data. The engine
  * provides a default implementation of each, driven entirely by the
- * descriptor; Python overrides `classify` (docstring-by-position) and
- * `emitContext` (paren insertion). Most languages are expected to
- * override nothing.
+ * descriptor; Python overrides `classify` (docstring-by-position), among
+ * others. Most languages are expected to override nothing.
  */
 export interface LanguageAdapter {
   readonly descriptor: LanguageDescriptor;
@@ -362,19 +351,6 @@ export interface LanguageAdapter {
    * triple-quote-aware dissolve — see `../languages/python/adapter.ts`).
    */
   proseText?(region: WrappableRegion, source: string): string;
-
-  /**
-   * Compute emit-time context for a region, e.g. whether enclosing
-   * grouping already exists and parentheses must be added.
-   *
-   * Takes `cfg` alongside `region`/`tree` — refined from an earlier
-   * two-argument shape, since resolving Python's own concatenation style
-   * needs `cfg.concatStyle` (an adapter-
-   * interpreted override, per that field's own doc comment on
-   * `./config.ts`) alongside the syntax-tree lookup
-   * (`../languages/python/emit-context.ts`).
-   */
-  emitContext?(region: WrappableRegion, tree: Tree, cfg: WrapConfig): EmitContext;
 
   /**
    * Dissolve, dialect-segment, reflow, and emit one `'docstring'` region,

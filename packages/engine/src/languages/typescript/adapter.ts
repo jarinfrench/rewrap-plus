@@ -4,7 +4,6 @@ import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { typescriptDescriptor, typescriptReactDescriptor } from './descriptor.js';
 import {
   classifyEcmaScriptNode,
-  ecmaScriptEmitContext,
   isEcmaScriptStringSafeToWrap,
   wrapEcmaScriptString,
 } from '../ecmascript/adapter-support.js';
@@ -24,7 +23,6 @@ function buildAdapter(descriptor: LanguageDescriptor): LanguageAdapter {
     descriptor,
     classify,
     isSafeToWrap: isEcmaScriptStringSafeToWrap,
-    emitContext: ecmaScriptEmitContext,
     wrapString: wrapEcmaScriptString,
   };
 }

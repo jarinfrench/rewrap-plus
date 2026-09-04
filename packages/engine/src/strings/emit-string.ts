@@ -6,15 +6,14 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * juxtaposition with no operator (Python's default, `"a" "b"`) or an
  * explicit operator between parts (Python's `+`-style, and the only style
  * JavaScript/TypeScript's descriptor declares — see
- * `../languages/typescript/emit-context.ts`).
+ * `../languages/ecmascript/adapter-support.ts`).
  *
  * Promoted here (from Python's own `languages/python/emit-context.ts`)
  * alongside `emitString`/`dissolveString`/`escapeQuoteCollisions`
  * — this type is `emitString`'s own vocabulary (its `style` parameter),
- * not something specific to how any one adapter's `emitContext` hook
- * happens to resolve it, so it belongs with the function that actually
- * consumes it rather than with one adapter's implementation of the hook
- * that produces it.
+ * not something specific to how any one adapter's `wrapString` happens to
+ * resolve it, so it belongs with the function that actually consumes it
+ * rather than with one adapter's own resolution logic that produces it.
  */
 export type ConcatenationStyle = 'implicit' | 'operator';
 
