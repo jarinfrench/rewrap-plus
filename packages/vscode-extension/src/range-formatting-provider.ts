@@ -30,7 +30,7 @@ export function createRangeFormattingProvider(): vscode.DocumentRangeFormattingE
       const mapper = new engine.PositionMapper(document.getText());
       const target = rangeTargetSpan(mapper, document, range);
 
-      const outcome = await computeWrapResult(document, [target]);
+      const outcome = await computeWrapResult(document, [target], undefined, { mapper });
       if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged) {
         return [];
       }

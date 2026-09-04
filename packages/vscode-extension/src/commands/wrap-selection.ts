@@ -31,5 +31,5 @@ async function wrapSelection(): Promise<void> {
   // span, not just the first match.
   const targets = selections.map((selection) => rangeTargetSpan(mapper, document, selection));
 
-  await computeAndApplyWrap(document, targets);
+  await computeAndApplyWrap(document, targets, undefined, mapper);
 }

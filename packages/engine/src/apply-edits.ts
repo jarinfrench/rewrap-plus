@@ -44,13 +44,24 @@ function lineStartOffsets(source: string): number[] {
  * machinery exists for tree-sitter's byte-indexed world, which this
  * function never touches).
  *
- * Edits are applied in descending order of start offset — from the end
- * of the document backward — so that applying one edit never invalidates
- * the offsets already computed for the others. This assumes
- * non-overlapping edits, which is what `wrapRegions` always produces
- * (one edit per wrapped region, and regions are, by construction, either
- * disjoint spans or nested via `parts` rather than overlapping siblings);
- * behavior for genuinely overlapping input edits is unspecified.
+ * Edits are processed in ascending order of start offset, in a single
+ * forward pass over `source`: each edit's own unedited prefix (everything
+ * since the previous edit's end) and its `newText` are pushed onto a
+ * `segments` array rather than spliced into a growing `result` string, and
+ * the whole array is joined once at the end. This assumes non-overlapping
+ * edits, which is what `wrapRegions` always produces (one edit per wrapped
+ * region, and regions are, by construction, either disjoint spans or
+ * nested via `parts` rather than overlapping siblings); behavior for
+ * genuinely overlapping input edits is unspecified — same as before this
+ * was a forward pass rather than a backward one.
+ *
+ * A single join, rather than accumulating `result = result.slice(...) +
+ * edit.newText + result.slice(...)` once per edit against the whole
+ * current `result` string (this function's first version): the earlier
+ * shape re-copied the entire in-progress document on every edit, making
+ * this function's own cost scale with `edits.length × source.length`
+ * rather than the `O(source.length)` a single-pass splice-and-join gives
+ * regardless of how many edits there are.
  */
 export function applyTextEdits(source: string, edits: readonly TextEdit[]): string {
   if (edits.length === 0) {
@@ -58,16 +69,21 @@ export function applyTextEdits(source: string, edits: readonly TextEdit[]): stri
   }
 
   const starts = lineStartOffsets(source);
-  const withOffsets = edits.map((edit) => ({
-    edit,
-    startOffset: starts[edit.span.startRow]! + edit.span.startColumn,
-    endOffset: starts[edit.span.endRow]! + edit.span.endColumn,
-  }));
-  withOffsets.sort((a, b) => b.startOffset - a.startOffset);
+  const withOffsets = edits
+    .map((edit) => ({
+      edit,
+      startOffset: starts[edit.span.startRow]! + edit.span.startColumn,
+      endOffset: starts[edit.span.endRow]! + edit.span.endColumn,
+    }))
+    .sort((a, b) => a.startOffset - b.startOffset);
 
-  let result = source;
+  const segments: string[] = [];
+  let cursor = 0;
   for (const { edit, startOffset, endOffset } of withOffsets) {
-    result = result.slice(0, startOffset) + edit.newText + result.slice(endOffset);
+    segments.push(source.slice(cursor, startOffset), edit.newText);
+    cursor = endOffset;
   }
-  return result;
+  segments.push(source.slice(cursor));
+
+  return segments.join('');
 }

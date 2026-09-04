@@ -105,6 +105,20 @@ export interface ComputeWrapResultOptions {
    * the explicit wrap commands.
    */
   readonly wrapStrings?: boolean;
+
+  /**
+   * A `PositionMapper` the caller already built from this same
+   * `document`'s text — every caller that's about to pass a span-shaped
+   * `targets` (as opposed to `'all'`) needs one of these first, to turn a
+   * cursor position or selection into that `SourceSpan` via
+   * `rangeTargetSpan`. Threaded straight through to `engine.wrapRegions`
+   * below so it can reuse that instance instead of building its own
+   * second copy of the same document's checkpoint table (see
+   * `wrapRegions`'s own doc comment on its `mapper` parameter). Omitted by
+   * `wrapDocument`/`document-formatting-provider.ts`, whose `targets` is
+   * always `'all'` and so never need one in the first place.
+   */
+  readonly mapper?: PositionMapper;
 }
 
 export async function computeWrapResult(
@@ -138,6 +152,7 @@ export async function computeWrapResult(
     wrapConfig,
     parserManager,
     cancellation,
+    options?.mapper,
   );
   const documentVersionChanged = document.version !== capturedVersion;
 
@@ -210,13 +225,22 @@ export async function applyWrapEdits(
  * itself changed while this wrap was still computing, so `edits`' spans no
  * longer describe the document as it currently exists (see
  * `WrapOutcome.documentVersionChanged`'s own doc comment).
+ *
+ * `mapper` is forwarded to `computeWrapResult` as-is — see
+ * `ComputeWrapResultOptions.mapper`'s own doc comment. Both existing
+ * callers (`wrap-at-cursor.ts`, `wrap-selection.ts`) already build one to
+ * turn their own cursor/selection into `targets` via `rangeTargetSpan`
+ * before calling in here, so passing it through costs them nothing extra.
  */
 export async function computeAndApplyWrap(
   document: vscode.TextDocument,
   targets: readonly SourceSpan[] | 'all',
   cancellation?: vscode.CancellationToken,
+  mapper?: PositionMapper,
 ): Promise<WrapOutcome | undefined> {
-  const outcome = await computeWrapResult(document, targets, cancellation);
+  const outcome = await computeWrapResult(document, targets, cancellation, {
+    ...(mapper ? { mapper } : {}),
+  });
   if (!outcome) {
     return undefined;
   }

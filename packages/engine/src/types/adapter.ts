@@ -1,6 +1,7 @@
 import type { RegionKind, WrappableRegion } from './region.js';
 import type { WrapConfig } from './config.js';
 import type { DocDialectId } from './doc-dialect.js';
+import type { PositionMapper } from './position-mapper.js';
 import type { SyntaxNode, Tree } from './tree-sitter-types.js';
 
 /**
@@ -18,6 +19,30 @@ export interface DiscoverRegionsOptions {
    * `WrapConfig.tabSize` isn't threaded through yet.
    */
   readonly tabSize?: number;
+
+  /**
+   * An already-built `PositionMapper` for the same `source` text
+   * `discoverRegions` is about to run against. Several callers upstream
+   * (`../wrap.ts`, and the VSCode extension's cursor/selection/range
+   * commands) already need one of these to turn a cursor position or
+   * selection into a `SourceSpan` before calling in here — passing that
+   * same instance through lets `discoverRegions` skip building its own
+   * second copy of the identical per-line checkpoint table. Falls back to
+   * constructing one internally when omitted, so every existing direct
+   * caller (this package's own tests, the conformance kit) is unaffected.
+   */
+  readonly mapper?: PositionMapper;
+
+  /**
+   * An already-computed `source.split('\n')` for the same `source` text.
+   * `../wrap.ts` already splits `source` once, up front, for its own
+   * line-ending detection (see `detectLineEndingNear`'s doc comment on
+   * why that split must happen exactly once per call) — passing the same
+   * array through here lets `discoverRegions`'s own per-line indent
+   * lookups reuse it instead of re-splitting the same string a second
+   * time. Falls back to splitting internally when omitted.
+   */
+  readonly sourceLines?: readonly string[];
 }
 
 /** One recognized quote form, e.g. Python's `'`, `"`, `'''`, `"""`. */

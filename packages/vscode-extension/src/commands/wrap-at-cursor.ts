@@ -32,5 +32,5 @@ async function wrapAtCursor(): Promise<void> {
     rangeTargetSpan(mapper, document, new vscode.Range(selection.active, selection.active)),
   );
 
-  await computeAndApplyWrap(document, targets);
+  await computeAndApplyWrap(document, targets, undefined, mapper);
 }

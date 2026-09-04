@@ -53,6 +53,25 @@ function splitLinesCached(source: string): string[] {
   return lines;
 }
 
+/**
+ * Prime this module's single-entry cache with a `source.split('\n')` the
+ * caller already computed, so the first `sliceSpanText` call for `source`
+ * reuses it instead of redundantly re-splitting — `wrapRegions` (`../wrap.ts`)
+ * already splits `source` once, up front, for its own line-ending
+ * detection, and calls this immediately after so that split is the *only*
+ * one paid per `wrapRegions` invocation rather than one more on top of it.
+ *
+ * Safe to call with the exact array a caller is about to reuse elsewhere
+ * too (nothing in this module ever mutates `cachedLines`), and safe to
+ * call multiple times or not at all — same reference-equality contract
+ * `splitLinesCached` above already has, just populated eagerly instead of
+ * lazily on first `sliceSpanText` call.
+ */
+export function primeSliceSpanCache(source: string, lines: string[]): void {
+  cachedSource = source;
+  cachedLines = lines;
+}
+
 export function sliceSpanText(source: string, span: SourceSpan): string {
   const lines = splitLinesCached(source);
   const startLine = lines[span.startRow];

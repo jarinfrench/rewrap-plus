@@ -1,8 +1,9 @@
 import type { ParserManager } from './parser/parser-manager.js';
 import { parseWithErrors } from './parser/parse-result.js';
 import { discoverRegions } from './discovery/discover-regions.js';
-import { sliceSpanText } from './discovery/slice-span.js';
+import { primeSliceSpanCache, sliceSpanText } from './discovery/slice-span.js';
 import { applyLineEnding, detectLineEndingNear } from './detect-line-ending.js';
+import { PositionMapper } from './types/position-mapper.js';
 import type { LanguageDescriptor } from './types/adapter.js';
 import type { WrapConfig } from './types/config.js';
 import type { SourceSpan, TextEdit } from './types/span.js';
@@ -191,20 +192,40 @@ export async function wrapRegions(
   cfg: WrapConfig,
   parserManager: ParserManager,
   cancellation?: CancellationSignal,
+  mapper?: PositionMapper,
 ): Promise<WrapResult> {
   const adapter = parserManager.adapterFor(languageId);
   const { descriptor } = adapter;
 
   const parser = await parserManager.parserFor(languageId);
   const { tree, errorSpans } = parseWithErrors(parser, source);
-  // Split once, up front, and reused by every `detectLineEndingNear`
-  // call below — see that function's own doc comment for why re-
-  // splitting `source` per region (this function's first version) made
-  // wrapping every region in a large file quadratic in file size.
+  // Split once, up front, and reused by every `detectLineEndingNear` call
+  // below, by `discoverRegions` (via its own `sourceLines` option), and by
+  // `sliceSpanText` (via `primeSliceSpanCache`, right below) — see
+  // `detectLineEndingNear`'s own doc comment for why re-splitting `source`
+  // per region (this function's first version) made wrapping every region
+  // in a large file quadratic in file size, and `primeSliceSpanCache`'s own
+  // doc comment for why this one split is the only one this function pays,
+  // rather than one more independent split per consumer.
   const sourceLines = source.split('\n');
+  primeSliceSpanCache(source, sourceLines);
+
+  // A pre-built `PositionMapper` a caller already had in hand (the VSCode
+  // extension's cursor/selection/range commands each need one to turn a
+  // position into a `SourceSpan` before ever calling in here) is reused
+  // as-is rather than discarded — `mapper` and this function's own
+  // `source` describe the exact same text for the whole of one
+  // `wrapRegions` call, so a second `PositionMapper` built internally
+  // would just redo the identical per-line checkpoint-table construction.
+  // Built internally, as before, when no caller has one yet (every
+  // existing caller that doesn't need position mapping ahead of time —
+  // `wrapDocument`, the CLI, this package's own tests).
+  const resolvedMapper = mapper ?? new PositionMapper(source);
 
   const allRegions = discoverRegions(adapter, tree, source, languageId, {
     tabSize: cfg.tabSize,
+    mapper: resolvedMapper,
+    sourceLines,
   });
   const candidates =
     targets === 'all'

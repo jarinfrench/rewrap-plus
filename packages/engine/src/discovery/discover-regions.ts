@@ -82,8 +82,8 @@ export function discoverRegions(
   options: DiscoverRegionsOptions = {},
 ): WrappableRegion[] {
   const tabSize = options.tabSize ?? 4;
-  const mapper = new PositionMapper(source);
-  const lines = source.split('\n');
+  const mapper = options.mapper ?? new PositionMapper(source);
+  const lines = options.sourceLines ?? source.split('\n');
   const { descriptor } = adapter;
 
   const spanOf = (node: SyntaxNode): SourceSpan => trimTrailingCR(spanFromNode(node, mapper), node);

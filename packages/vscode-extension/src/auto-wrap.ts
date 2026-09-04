@@ -267,6 +267,7 @@ async function handleDocumentChange(
     const outcome = await computeWrapResult(document, [target], undefined, {
       report: false,
       wrapStrings: false,
+      mapper,
     });
     if (!outcome || outcome.result.cancelled || outcome.documentVersionChanged || outcome.result.edits.length === 0) {
       return;
