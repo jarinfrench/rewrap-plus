@@ -1,4 +1,5 @@
 import type { Atom, Block } from '../types/document.js';
+import type { WrapConfig } from '../types/config.js';
 import { decorateFirstLine } from './decorate-block.js';
 
 /**
@@ -49,6 +50,18 @@ export interface ReflowOptions {
    * `reflowBlock` should assume generally.
    */
   readonly firstLineReserve?: number;
+}
+
+/**
+ * Translate `WrapConfig.balancedWrapping` into `ReflowOptions.mode` — every
+ * adapter's own `wrapString`/`wrapDocstring`/`wrapProse` pipeline needs
+ * exactly this one-line translation and nothing more (`firstLineReserve`,
+ * where needed, is still set by the caller after this returns), so it's
+ * factored out here rather than each of those ~8 call sites re-writing the
+ * identical ternary.
+ */
+export function reflowOptionsFrom(cfg: WrapConfig): ReflowOptions {
+  return { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
 }
 
 /**

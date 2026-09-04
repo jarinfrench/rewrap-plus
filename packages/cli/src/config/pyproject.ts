@@ -20,23 +20,22 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { parseTomlSubset, type TomlValue } from './toml-subset.js';
 import type { PartialCliConfig } from './types.js';
+import { walkUpToRoot } from './walk-up-to-root.js';
 
 const TOOL_TABLE = 'tool.rewrap-plus';
 
 /** Walk from `startDir` up to the filesystem root looking for the nearest `pyproject.toml`; returns its path, or `undefined` if none exists. */
 export function findNearestPyproject(startDir: string): string | undefined {
-  let dir = startDir;
-  for (;;) {
+  let found: string | undefined;
+  walkUpToRoot(startDir, (dir) => {
     const candidate = join(dir, 'pyproject.toml');
     if (existsSync(candidate)) {
-      return candidate;
+      found = candidate;
+      return 'stop';
     }
-    const parent = dirname(dir);
-    if (parent === dir) {
-      return undefined;
-    }
-    dir = parent;
-  }
+    return 'continue';
+  });
+  return found;
 }
 
 /**

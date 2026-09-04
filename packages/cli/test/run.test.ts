@@ -7,25 +7,13 @@
  * captured stdout/stderr, exactly like `./src/cli.ts`'s real entry point
  * does with the real ones.
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { run, type RunIo } from '../src/run.js';
+import { makeTempDirHelper } from '../src/test-helpers/make-temp-dir.js';
 
-let tempDir: string | undefined;
-
-afterEach(() => {
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-    tempDir = undefined;
-  }
-});
-
-function makeTempDir(): string {
-  tempDir = mkdtempSync(join(tmpdir(), 'rewrap-plus-cli-run-'));
-  return tempDir;
-}
+const makeTempDir = makeTempDirHelper('rewrap-plus-cli-run-');
 
 function captureIo(): RunIo & { readonly stdoutLines: string[]; readonly stderrLines: string[] } {
   const stdoutLines: string[] = [];

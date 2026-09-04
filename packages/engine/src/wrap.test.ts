@@ -1,15 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AdapterRegistry } from './adapter-registry.js';
+import { createTestParserManager } from '../test/helpers/create-test-parser-manager.js';
 import { applyTextEdits } from './apply-edits.js';
 import { discoverRegions } from './discovery/discover-regions.js';
 import { ParserManager } from './parser/parser-manager.js';
 import type { WrapConfig } from './types/config.js';
 import { pythonAdapter } from './languages/python/adapter.js';
 import { wrapRegions } from './wrap.js';
-
-// See `./parser/parser-manager.test.ts` for why `'.'` is the right
-// `wasmDir` under Vitest (cwd is this package's root).
-const engineRoot = '.';
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
   return {
@@ -28,9 +24,7 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
 let parserManager: ParserManager;
 
 beforeAll(async () => {
-  const registry = new AdapterRegistry();
-  registry.register(pythonAdapter);
-  parserManager = await ParserManager.create({ wasmDir: engineRoot, registry });
+  parserManager = await createTestParserManager(pythonAdapter);
 });
 
 describe('wrapRegions', () => {

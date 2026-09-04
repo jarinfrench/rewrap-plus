@@ -334,22 +334,32 @@ export interface LanguageAdapter {
 
   /**
    * Override the text `../prose-heuristic.ts`'s shared `looksLikeProse`
-   * scores for a region. Defaults to the region's own raw source text
-   * (`sliceSpanText(source, region.span)` — quote delimiters, prefix
-   * letters, and all) when this hook is absent.
+   * scores for a region. Defaults to `dissolveString`'s own logical text
+   * (`../strings/dissolve-string.ts`'s `text` — quote delimiters and
+   * prefix letters stripped) when this hook is absent, since every
+   * `'stringLiteral'` region this default is ever consulted for comes
+   * from a language that declares `LanguageDescriptor.strings` in the
+   * first place — there is no `'stringLiteral'` region kind without one.
    *
-   * That default is wrong for a language whose string syntax has real
-   * quote/prefix characters at the edges: a `looksLikeProse` check that
-   * anchors to the *whole* trimmed text (e.g. "is this a single dotted
-   * identifier, start to end") is defeated by a literal `"`/`'` sitting
-   * right at each end, since the anchored pattern no longer matches
-   * across the whole string. Found via a dict/i18n-key gold fixture:
-   * `"errors.validation.some_key"` (with its quotes)
-   * scored as prose — the identifier-shape check's `^...$` anchors
-   * couldn't match through the surrounding quote characters — while the
-   * same text with its quotes stripped correctly scored as not-prose.
-   * Python's implementation returns `dissolveString`'s own logical text
-   * (`../strings/dissolve-string.ts`) for exactly this reason.
+   * The raw source slice this default used to fall back to
+   * (`sliceSpanText(source, region.span)`) is wrong for a language whose
+   * string syntax has real quote/prefix characters at the edges: a
+   * `looksLikeProse` check that anchors to the *whole* trimmed text (e.g.
+   * "is this a single dotted identifier, start to end") is defeated by a
+   * literal `"`/`'` sitting right at each end, since the anchored pattern
+   * no longer matches across the whole string. Found via a dict/i18n-key
+   * gold fixture: `"errors.validation.some_key"` (with its quotes) scored
+   * as prose — the identifier-shape check's `^...$` anchors couldn't
+   * match through the surrounding quote characters — while the same text
+   * with its quotes stripped correctly scored as not-prose. Every
+   * adapter with string support needed the identical fix (Python's own
+   * `proseText` override predates this default; C++/Java/JavaScript/
+   * TypeScript no longer need one at all now that the engine's own
+   * default does the same `dissolveString` lookup), which is why this is
+   * the engine's default rather than a per-adapter override: overriding
+   * this hook is now needed only for a region kind `dissolveString`
+   * doesn't handle (Python's `'docstring'`, which needs its own
+   * triple-quote-aware dissolve — see `../languages/python/adapter.ts`).
    */
   proseText?(region: WrappableRegion, source: string): string;
 

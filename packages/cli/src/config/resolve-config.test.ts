@@ -1,22 +1,10 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { resolveConfigForFile } from './resolve-config.js';
+import { makeTempDirHelper } from '../test-helpers/make-temp-dir.js';
 
-let tempDir: string | undefined;
-
-afterEach(() => {
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-    tempDir = undefined;
-  }
-});
-
-function makeTempDir(): string {
-  tempDir = mkdtempSync(join(tmpdir(), 'rewrap-plus-resolve-config-'));
-  return tempDir;
-}
+const makeTempDir = makeTempDirHelper('rewrap-plus-resolve-config-');
 
 describe('resolveConfigForFile', () => {
   it('falls all the way through to built-in defaults with no config files and no flags', () => {

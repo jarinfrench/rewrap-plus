@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AdapterRegistry } from '../../src/adapter-registry.js';
+import { createTestParserManager } from '../helpers/create-test-parser-manager.js';
 import { applyTextEdits } from '../../src/apply-edits.js';
 import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
@@ -135,16 +135,10 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
   },
 ];
 
-const engineRoot = '.';
-
 let parserManager: ParserManager;
 
 beforeAll(async () => {
-  const registry = new AdapterRegistry();
-  for (const { adapter } of LANGUAGE_SETS) {
-    registry.register(adapter);
-  }
-  parserManager = await ParserManager.create({ wasmDir: engineRoot, registry });
+  parserManager = await createTestParserManager(LANGUAGE_SETS.map(({ adapter }) => adapter));
 });
 
 describe.each(LANGUAGE_SETS)(

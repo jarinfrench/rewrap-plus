@@ -2,7 +2,7 @@ import type { EmitContext, LanguageDescriptor } from '../../types/adapter.js';
 import type { WrapConfig } from '../../types/config.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
-import type { ReflowOptions } from '../../reflow/reflow-block.js';
+import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 import { dissolveString } from '../../strings/dissolve-string.js';
@@ -41,10 +41,17 @@ import { emitString } from '../../strings/emit-string.js';
  * - `string` nodes are always `'stringLiteral'` — no docstring concept in
  *   any of these languages.
  * - `//` line comments are `'lineComment'`.
- * - A comment starting with `descriptor.comments.doc`'s configured marker
- *   (`'/**'`) is `'docComment'` — JSDoc-shaped, eligible for dialect-aware
- *   wrapping (`../../comments/wrap-doc-comment.ts`) via the `jsdoc`
- *   dialect once `wrap.ts` dispatches it.
+ * - A comment starting with any of `descriptor.comments.doc`'s configured
+ *   markers (`'/**'` for every current ECMAScript-family descriptor) is
+ *   `'docComment'` — JSDoc-shaped, eligible for dialect-aware wrapping
+ *   (`../../comments/wrap-doc-comment.ts`) via the `jsdoc` dialect once
+ *   `wrap.ts` dispatches it. Checked against *every* configured marker,
+ *   not just the first — the same posture `../cpp/adapter.ts`'s own
+ *   `classify` already takes for its two Doxygen markers (`/**`/`///`);
+ *   every current ECMAScript-family descriptor happens to declare only
+ *   one, so this was previously equivalent in practice, but a
+ *   `markers[0]`-only check would have silently stopped recognizing a
+ *   second marker the moment one was ever added.
  * - A plain `/* ... * /` comment (single-star, no JSDoc marker) is
  *   `'blockComment'` when the descriptor declares `comments.plainBlock`
  *   (every real ECMAScript-family descriptor does — see
@@ -74,8 +81,8 @@ export function classifyEcmaScriptNode(
     return 'lineComment';
   }
 
-  const docMarker = descriptor.comments.doc?.markers[0];
-  if (docMarker !== undefined && text.startsWith(docMarker)) {
+  const docMarkers = descriptor.comments.doc?.markers ?? [];
+  if (docMarkers.some((marker) => text.startsWith(marker))) {
     return 'docComment';
   }
 
@@ -132,18 +139,6 @@ export function ecmaScriptEmitContext(): EmitContext {
 }
 
 /**
- * `proseText` shared across every ECMAScript-family adapter: the
- * dissolved logical text (quotes stripped) rather than the raw source
- * slice `LanguageAdapter.proseText`'s own doc comment names as the wrong
- * default — the identical quote-anchoring hazard Python's own `proseText`
- * override exists to fix (`../python/adapter.ts`), since JS/TS strings are
- * equally quote-delimited.
- */
-export function ecmaScriptProseText(region: WrappableRegion, source: string): string {
-  return dissolveString(region, source).text;
-}
-
-/**
  * `wrapString` shared across every ECMAScript-family adapter: dissolve,
  * normalize quote collisions, and emit — the identical pipeline shape as
  * Python's own `../python/wrap-string.ts`, with `needsParens` always
@@ -170,7 +165,7 @@ export function wrapEcmaScriptString(
   const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
   const hangingIndentColumns = statementIndentColumns + 4;
 
-  const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
+  const reflowOptions = reflowOptionsFrom(cfg);
 
   return emitString(
     safeText,

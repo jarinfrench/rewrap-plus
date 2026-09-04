@@ -1,3 +1,5 @@
+import type { ResolvedColumnLimit as GenericResolvedColumnLimit } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
+
 /**
  * Column limit resolution: the precedence chain a wrap command actually
  * needs (commit 2), as a pure function over already-extracted values.
@@ -15,7 +17,7 @@
  * 2. Language-scoped `editor.rulers` for the document's language.
  * 3. `.editorconfig` `max_line_length`.
  * 4. Global (non-language-scoped) `editor.rulers`.
- * 5. Built-in default, 80.
+ * 5. Built-in default, `DEFAULT_COLUMN_LIMIT` below.
  */
 
 /** `editor.rulers` entries may be a bare column number or `{ column, color }`. */
@@ -28,10 +30,27 @@ export type ColumnLimitSourceName =
   | 'editor.rulers (global)'
   | 'default';
 
-export interface ResolvedColumnLimit {
-  readonly value: number;
-  readonly source: ColumnLimitSourceName;
-}
+export type ResolvedColumnLimit = GenericResolvedColumnLimit<ColumnLimitSourceName>;
+
+/**
+ * `@rewrap-plus/engine`'s own `DEFAULT_COLUMN_LIMIT`
+ * (`packages/engine/src/types/column-limit-resolution.ts`) has the
+ * identical value and exists for exactly this reuse — but as a runtime
+ * *value*, not a type, it can't be statically imported here the way
+ * `ResolvedColumnLimit` above is: `@rewrap-plus/engine` is ESM-only and
+ * this package compiles to CommonJS, and `tsc` refuses to emit a
+ * `require()` for a static value import across that boundary (TS1479 —
+ * see `../engine-host.ts`'s own doc comment, "Why `getEngine()` uses a
+ * dynamic `import()`, not a static one," for the full explanation). Every
+ * other runtime value this package needs from the engine goes through
+ * that file's cached `getEngine()` promise instead — not a fit here,
+ * since forcing this function's own column-limit resolution onto an
+ * async engine load would break the exact "unit-testable with plain
+ * fixture objects, no editor host" property this file's own doc comment
+ * above calls out as the reason it's written this way. Kept as a
+ * hardcoded literal instead, same as before this consolidation pass.
+ */
+const DEFAULT_COLUMN_LIMIT = 80;
 
 export interface ColumnLimitInputs {
   /**
@@ -64,8 +83,6 @@ export interface ColumnLimitInputs {
   /** `rewrapPlus.rulerIndex` — which ruler entry to use when a tier's rulers array has more than one. */
   readonly rulerIndex: number;
 }
-
-const DEFAULT_COLUMN_LIMIT = 80;
 
 export function resolveColumnLimit(inputs: ColumnLimitInputs): ResolvedColumnLimit {
   if (inputs.rewrapPlusColumnLimit != null) {

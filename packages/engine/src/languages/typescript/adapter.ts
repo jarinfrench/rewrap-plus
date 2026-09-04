@@ -5,7 +5,6 @@ import { typescriptDescriptor, typescriptReactDescriptor } from './descriptor.js
 import {
   classifyEcmaScriptNode,
   ecmaScriptEmitContext,
-  ecmaScriptProseText,
   isEcmaScriptStringSafeToWrap,
   wrapEcmaScriptString,
 } from '../ecmascript/adapter-support.js';
@@ -26,7 +25,6 @@ function buildAdapter(descriptor: LanguageDescriptor): LanguageAdapter {
     classify,
     isSafeToWrap: isEcmaScriptStringSafeToWrap,
     emitContext: ecmaScriptEmitContext,
-    proseText: ecmaScriptProseText,
     wrapString: wrapEcmaScriptString,
   };
 }

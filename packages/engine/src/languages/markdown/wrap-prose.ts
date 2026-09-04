@@ -2,7 +2,7 @@ import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
 import type { SourceSpan } from '../../types/span.js';
 import type { Tree } from '../../types/tree-sitter-types.js';
-import type { ReflowOptions } from '../../reflow/reflow-block.js';
+import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { dissolveProse, type ProseSpec } from '../../prose/dissolve-prose.js';
 import { emitProse } from '../../prose/emit-prose.js';
@@ -61,6 +61,6 @@ export function wrapMarkdownProse(
   const continuationPrefix = markdownContinuationPrefix(firstLinePrefix);
 
   const document = dissolveProse(region, source, markdownProseSpec);
-  const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
+  const reflowOptions = reflowOptionsFrom(cfg);
   return emitProse(document, cfg.columnLimit, { continuationPrefix }, reflowOptions);
 }

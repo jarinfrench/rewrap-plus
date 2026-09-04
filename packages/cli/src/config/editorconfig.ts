@@ -25,6 +25,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { walkUpToRoot } from './walk-up-to-root.js';
 
 interface EditorConfigSection {
   /** `null` for properties that appear before any `[glob]` header — treated as applying unconditionally, matching how most EditorConfig parsers handle a bare preamble. */
@@ -92,24 +93,18 @@ export function resolveEditorConfigMaxLineLength(filePath: string): number | und
 function collectEditorConfigFiles(startDir: string): EditorConfigFile[] {
   const collected: EditorConfigFile[] = [];
 
-  let dir = startDir;
-  for (;;) {
+  walkUpToRoot(startDir, (dir) => {
     const path = join(dir, '.editorconfig');
     if (existsSync(path)) {
       const content = readFileSync(path, 'utf8');
       const sections = parseEditorConfig(content);
       collected.push({ dir, sections });
       if (isRoot(sections)) {
-        break;
+        return 'stop';
       }
     }
-
-    const parent = dirname(dir);
-    if (parent === dir) {
-      break; // reached the filesystem root without finding root = true
-    }
-    dir = parent;
-  }
+    return 'continue';
+  });
 
   return collected.reverse();
 }

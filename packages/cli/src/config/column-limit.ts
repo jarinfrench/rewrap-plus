@@ -1,3 +1,5 @@
+import { DEFAULT_COLUMN_LIMIT, type ResolvedColumnLimit as GenericResolvedColumnLimit } from '@rewrap-plus/engine';
+
 /**
  * Column limit resolution for the CLI: a pure function over already-
  * extracted values, the same shape as
@@ -12,7 +14,7 @@
  * 4. `.editorconfig` `max_line_length` (only when `respectEditorConfig`
  *    — itself resolved through the same four sources, minus this tier —
  *    is `true`).
- * 5. Built-in default, 80.
+ * 5. Built-in default (`DEFAULT_COLUMN_LIMIT`, 80).
  */
 export type ColumnLimitSourceName =
   | 'flag'
@@ -21,10 +23,7 @@ export type ColumnLimitSourceName =
   | '.editorconfig'
   | 'default';
 
-export interface ResolvedColumnLimit {
-  readonly value: number;
-  readonly source: ColumnLimitSourceName;
-}
+export type ResolvedColumnLimit = GenericResolvedColumnLimit<ColumnLimitSourceName>;
 
 export interface ColumnLimitInputs {
   readonly flagColumnLimit: number | undefined;
@@ -33,8 +32,6 @@ export interface ColumnLimitInputs {
   /** Already gated by `respectEditorConfig` by the caller — `undefined` here means either no matching section or that this tier is disabled entirely. */
   readonly editorConfigMaxLineLength: number | undefined;
 }
-
-const DEFAULT_COLUMN_LIMIT = 80;
 
 export function resolveColumnLimit(inputs: ColumnLimitInputs): ResolvedColumnLimit {
   if (inputs.flagColumnLimit != null) {

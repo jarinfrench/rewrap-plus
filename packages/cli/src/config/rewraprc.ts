@@ -19,25 +19,24 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { PartialCliConfig } from './types.js';
+import { walkUpToRoot } from './walk-up-to-root.js';
 
 const CANDIDATE_FILENAMES = ['.rewraprc', '.rewraprc.json'];
 
 /** Walk from `startDir` up to the filesystem root looking for the nearest `.rewraprc`/`.rewraprc.json`; returns its path, or `undefined` if neither exists anywhere on the way up. */
 export function findNearestRewraprc(startDir: string): string | undefined {
-  let dir = startDir;
-  for (;;) {
+  let found: string | undefined;
+  walkUpToRoot(startDir, (dir) => {
     for (const filename of CANDIDATE_FILENAMES) {
       const candidate = join(dir, filename);
       if (existsSync(candidate)) {
-        return candidate;
+        found = candidate;
+        return 'stop';
       }
     }
-    const parent = dirname(dir);
-    if (parent === dir) {
-      return undefined;
-    }
-    dir = parent;
-  }
+    return 'continue';
+  });
+  return found;
 }
 
 const STRING_POLICIES = ['prose', 'all', 'off'] as const;

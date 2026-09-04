@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AdapterRegistry } from '../../src/adapter-registry.js';
+import { createTestParserManager } from '../helpers/create-test-parser-manager.js';
 import { ParserManager } from '../../src/parser/parser-manager.js';
 import { pythonAdapter } from '../../src/languages/python/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
@@ -67,9 +67,7 @@ function generateFile(lineCount: number): string {
 let parserManager: ParserManager;
 
 beforeAll(async () => {
-  const registry = new AdapterRegistry();
-  registry.register(pythonAdapter);
-  parserManager = await ParserManager.create({ wasmDir: '.', registry });
+  parserManager = await createTestParserManager(pythonAdapter);
   await wrapRegions('# warm\n', 'python', 'all', cfg, parserManager); // warm the grammar before timing
 });
 

@@ -1,6 +1,6 @@
 import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
-import type { ReflowOptions } from '../../reflow/reflow-block.js';
+import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 import { dissolveString } from '../../strings/dissolve-string.js';
 import { escapeQuoteCollisions } from '../../strings/escape-quote-collisions.js';
@@ -39,7 +39,7 @@ export function wrapCppString(region: WrappableRegion, source: string, cfg: Wrap
   const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
   const hangingIndentColumns = statementIndentColumns + 4;
 
-  const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
+  const reflowOptions = reflowOptionsFrom(cfg);
 
   return emitString(
     safeText,

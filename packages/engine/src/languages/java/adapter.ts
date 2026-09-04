@@ -2,7 +2,6 @@ import type { EmitContext, LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
-import { dissolveString } from '../../strings/dissolve-string.js';
 import { javaDescriptor } from './descriptor.js';
 import { wrapJavaString } from './wrap-string.js';
 
@@ -126,18 +125,6 @@ function emitContext(): EmitContext {
 }
 
 /**
- * Java's `proseText` override: the dissolved logical text (quote
- * stripped) rather than the raw source slice — the identical
- * quote-anchoring fix every other quote-delimited-string adapter's own
- * `proseText` override exists for (`../../types/adapter.ts`'s own doc
- * comment on why the raw-text default is wrong for any quote-delimited
- * string syntax).
- */
-function proseText(region: WrappableRegion, source: string): string {
-  return dissolveString(region, source).text;
-}
-
-/**
  * Java's `LanguageAdapter`.
  *
  * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
@@ -158,7 +145,6 @@ export const javaAdapter: LanguageAdapter = {
   descriptor: javaDescriptor,
   classify,
   isSafeToWrap,
-  proseText,
   emitContext,
   wrapString: wrapJavaString,
 };

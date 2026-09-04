@@ -1,22 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { discoverFiles } from './file-discovery.js';
+import { makeTempDirHelper } from './test-helpers/make-temp-dir.js';
 
-let tempDir: string | undefined;
-
-afterEach(() => {
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-    tempDir = undefined;
-  }
-});
-
-function makeTempDir(): string {
-  tempDir = mkdtempSync(join(tmpdir(), 'rewrap-plus-discovery-'));
-  return tempDir;
-}
+const makeTempDir = makeTempDirHelper('rewrap-plus-discovery-');
 
 describe('discoverFiles', () => {
   it('detects the language of an explicit file argument', () => {

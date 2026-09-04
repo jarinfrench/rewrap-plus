@@ -8,7 +8,8 @@ import type { LanguageDescriptor } from './types/adapter.js';
 import type { WrapConfig } from './types/config.js';
 import type { SourceSpan, TextEdit } from './types/span.js';
 import type { WrappableRegion } from './types/region.js';
-import type { ReflowOptions } from './reflow/reflow-block.js';
+import { reflowOptionsFrom, type ReflowOptions } from './reflow/reflow-block.js';
+import { dissolveString } from './strings/dissolve-string.js';
 import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
@@ -320,7 +321,7 @@ export async function wrapRegions(
         // structural refusals above, which stay in effect regardless.
         const textToScore = adapter.proseText
           ? adapter.proseText(region, source)
-          : sliceSpanText(source, region.span);
+          : dissolveString(region, source).text;
         const eligible =
           looksLikeProse(textToScore) &&
           (adapter.isProseEligible?.(region, source, tree, cfg) ?? true);
@@ -347,7 +348,7 @@ export async function wrapRegions(
       continue;
     }
 
-    const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
+    const reflowOptions = reflowOptionsFrom(cfg);
     const emitted =
       region.kind === 'lineComment'
         ? emitWrappedLineComment(region, source, descriptor, cfg.columnLimit, reflowOptions)

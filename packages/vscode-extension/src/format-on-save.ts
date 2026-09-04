@@ -27,6 +27,7 @@
  */
 import * as vscode from 'vscode';
 import { computeWrapResult, toVSCodeTextEdits } from './commands/apply-wrap.js';
+import { describeError } from './describe-error.js';
 import { getSupportedLanguages } from './engine-host.js';
 import { readExtensionSettings } from './config/settings.js';
 import { getOutputChannel } from './output-channel.js';
@@ -85,7 +86,7 @@ async function computeFormatOnSaveEdits(document: vscode.TextDocument): Promise<
     }
     return toVSCodeTextEdits(outcome.result.edits);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = describeError(error);
     getOutputChannel().appendLine(`${document.uri.fsPath}: format-on-save skipped — wrap failed: ${message}`);
     return [];
   } finally {

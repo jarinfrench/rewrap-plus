@@ -75,6 +75,12 @@ export async function processFile(
   }
 }
 
+/**
+ * `packages/vscode-extension/src/describe-error.ts` has the identical
+ * one-liner, kept as its own separate copy for the same "independent
+ * peer packages" reason `packages/cli/src/config/editorconfig.ts`'s own
+ * doc comment gives in full.
+ */
 function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

@@ -2,7 +2,6 @@ import type { EmitContext, LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
-import { dissolveString } from '../../strings/dissolve-string.js';
 import { groupAdjacentRegions } from '../../comments/group-adjacent-regions.js';
 import { cppDescriptor } from './descriptor.js';
 import { extractPrefix } from './prefix.js';
@@ -172,18 +171,6 @@ function emitContext(): EmitContext {
 }
 
 /**
- * C++'s `proseText` override: the dissolved logical text (quote/prefix
- * stripped) rather than the raw source slice — the identical quote-
- * anchoring fix Python's and every ECMAScript-family adapter's own
- * `proseText` override exists for (`../../types/adapter.ts`'s own doc
- * comment on why the raw-text default is wrong for any quote-delimited
- * string syntax).
- */
-function proseText(region: WrappableRegion, source: string): string {
-  return dissolveString(region, source).text;
-}
-
-/**
  * C++'s `LanguageAdapter`.
  *
  * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
@@ -202,7 +189,6 @@ export const cppAdapter: LanguageAdapter = {
   classify,
   groupRegions,
   isSafeToWrap,
-  proseText,
   emitContext,
   wrapString: wrapCppString,
 };

@@ -1,22 +1,10 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { findNearestPyproject, resolvePyprojectConfig } from './pyproject.js';
+import { makeTempDirHelper } from '../test-helpers/make-temp-dir.js';
 
-let tempDir: string | undefined;
-
-afterEach(() => {
-  if (tempDir) {
-    rmSync(tempDir, { recursive: true, force: true });
-    tempDir = undefined;
-  }
-});
-
-function makeTempDir(): string {
-  tempDir = mkdtempSync(join(tmpdir(), 'rewrap-plus-pyproject-'));
-  return tempDir;
-}
+const makeTempDir = makeTempDirHelper('rewrap-plus-pyproject-');
 
 describe('findNearestPyproject', () => {
   it('finds a pyproject.toml in an ancestor directory', () => {

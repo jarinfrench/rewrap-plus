@@ -1,6 +1,6 @@
 import { Parser, Language } from 'web-tree-sitter';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AdapterRegistry } from '../../src/adapter-registry.js';
+import { createTestParserManager } from '../helpers/create-test-parser-manager.js';
 import { applyTextEdits } from '../../src/apply-edits.js';
 import { discoverRegions } from '../../src/discovery/discover-regions.js';
 import { ParserManager } from '../../src/parser/parser-manager.js';
@@ -99,15 +99,11 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
   };
 }
 
-const engineRoot = '.';
-
 let parserManager: ParserManager;
 let parser: Parser;
 
 beforeAll(async () => {
-  const registry = new AdapterRegistry();
-  registry.register(markdownAdapter);
-  parserManager = await ParserManager.create({ wasmDir: engineRoot, registry });
+  parserManager = await createTestParserManager(markdownAdapter);
 
   await Parser.init();
   const language = await Language.load('grammars/tree-sitter-markdown.wasm');

@@ -2,7 +2,7 @@ import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
 import type { SourceSpan } from '../../types/span.js';
 import type { Tree } from '../../types/tree-sitter-types.js';
-import type { ReflowOptions } from '../../reflow/reflow-block.js';
+import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import { sliceSpanText } from '../../discovery/slice-span.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 import { dissolveProse, type ProseSpec } from '../../prose/dissolve-prose.js';
@@ -117,9 +117,6 @@ export function wrapLatexProse(region: WrappableRegion, source: string, cfg: Wra
   const firstLineReserve = Math.max(0, contentColumn - region.indentColumn);
 
   const document = dissolveProse(region, source, latexProseSpec);
-  const reflowOptions: ReflowOptions = {
-    mode: cfg.balancedWrapping ? 'balanced' : 'greedy',
-    firstLineReserve,
-  };
+  const reflowOptions = { ...reflowOptionsFrom(cfg), firstLineReserve };
   return emitProse(document, cfg.columnLimit, { continuationPrefix }, reflowOptions);
 }

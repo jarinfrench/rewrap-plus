@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AdapterRegistry } from '../../src/adapter-registry.js';
+import { createTestParserManager } from '../helpers/create-test-parser-manager.js';
 import { applyTextEdits } from '../../src/apply-edits.js';
 import { ParserManager } from '../../src/parser/parser-manager.js';
 import type { WrapConfig } from '../../src/types/config.js';
@@ -43,14 +43,10 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
   };
 }
 
-const engineRoot = '.';
-
 let parserManager: ParserManager;
 
 beforeAll(async () => {
-  const registry = new AdapterRegistry();
-  registry.register(cppAdapter);
-  parserManager = await ParserManager.create({ wasmDir: engineRoot, registry });
+  parserManager = await createTestParserManager(cppAdapter);
 });
 
 describe('C++ blockComment (plain /* */) wrapping — end-to-end gold fixtures', () => {

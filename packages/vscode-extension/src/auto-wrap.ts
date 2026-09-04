@@ -26,6 +26,7 @@ import { getEngine, getSupportedLanguages } from './engine-host.js';
 import { readExtensionSettings } from './config/settings.js';
 import { resolveWrapConfigForDocument } from './config/resolve-wrap-config.js';
 import { computeWrapResult, rangeTargetSpan, toVSCodeTextEdits } from './commands/apply-wrap.js';
+import { describeError } from './describe-error.js';
 import { getOutputChannel } from './output-channel.js';
 
 export const TOGGLE_AUTO_WRAP_COMMAND = 'rewrapPlus.toggleAutoWrap';
@@ -308,7 +309,7 @@ async function handleDocumentChange(
       pendingSelfEdits.delete(document);
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = describeError(error);
     getOutputChannel().appendLine(`${document.uri.fsPath}: auto-wrap skipped a keystroke — ${message}`);
   }
 }

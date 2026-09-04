@@ -1,6 +1,6 @@
 import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
-import type { ReflowOptions } from '../../reflow/reflow-block.js';
+import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
 import type { SplitBlocksOptions } from '../../segmentation/split-blocks.js';
 import { plainDialect } from '../../docs/plain.js';
 import { dissolveDocstring } from './dissolve-docstring.js';
@@ -62,6 +62,6 @@ export function wrapCodeString(region: WrappableRegion, source: string, cfg: Wra
   const splitOptions: SplitBlocksOptions = { preserveIndentedBlocks: cfg.preserveIndentedBlocks };
   const blocks = plainDialect.segment(dissolved.text, splitOptions);
 
-  const reflowOptions: ReflowOptions = { mode: cfg.balancedWrapping ? 'balanced' : 'greedy' };
+  const reflowOptions = reflowOptionsFrom(cfg);
   return emitDocstring(blocks, dissolved, cfg.columnLimit, reflowOptions);
 }
