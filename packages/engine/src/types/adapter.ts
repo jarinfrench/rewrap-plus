@@ -298,10 +298,21 @@ export interface LanguageAdapter {
   groupRegions?(regions: readonly WrappableRegion[]): WrappableRegion[];
 
   /**
-   * Override eligibility beyond the shared prose heuristic — e.g. refusing
-   * raw strings, byte strings, or mixed-prefix concatenation runs. A hard
-   * gate: `false` here means "would be wrong to attempt," checked
-   * regardless of `WrapConfig.stringPolicy`.
+   * Override eligibility beyond both the shared prose heuristic *and* the
+   * engine's own unconditional baseline (`../strings/is-string-safe-to-wrap-baseline.js`
+   * — line-continuation escapes, irregular whitespace) that `../wrap.js`
+   * applies to every `'stringLiteral'` region before ever consulting this
+   * hook, hook present or not. Use this for further, language-specific
+   * refusals the baseline can't know about — e.g. refusing raw strings,
+   * byte strings, or mixed-prefix concatenation runs. A hard gate: `false`
+   * here means "would be wrong to attempt," checked regardless of
+   * `WrapConfig.stringPolicy`, and *in addition to* the baseline (AND —
+   * both must return `true`, and neither can waive the other). Omitting
+   * this hook no longer means "every region is safe" on its own; it means
+   * "no further refusals beyond the baseline" — the baseline alone is
+   * enough for a language with no string-shape hazards of its own (see
+   * `../languages/java/adapter.js`, `../languages/ecmascript/adapter-support.js`,
+   * neither of which declares this hook at all).
    */
   isSafeToWrap?(region: WrappableRegion, source: string): boolean;
 

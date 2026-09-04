@@ -91,27 +91,9 @@ describe('javascriptAdapter', () => {
     expect(regions.every((r) => r.parts.length === 1)).toBe(true);
   });
 
-  it('isSafeToWrap refuses a string with a line-continuation escape', () => {
-    const source = 'const x = "foo\\\nbar";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
-
-    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('isSafeToWrap refuses a string with a tab or double space', () => {
-    const source = 'const x = "foo  bar";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
-
-    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('isSafeToWrap allows an ordinary string', () => {
-    const source = 'const x = "a perfectly ordinary string";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javascriptAdapter, tree, source, 'javascript');
-
-    expect(javascriptAdapter.isSafeToWrap!(region!, source)).toBe(true);
-  });
+  // javascriptAdapter no longer declares its own isSafeToWrap at all —
+  // JavaScript has no string-shape hazard beyond
+  // `isStringSafeToWrapBaseline`'s own line-continuation/irregular-
+  // whitespace refusals (`../../strings/is-string-safe-to-wrap-baseline.test.ts`),
+  // applied unconditionally by `wrap.ts` regardless of adapter.
 });

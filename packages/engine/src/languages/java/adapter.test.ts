@@ -102,31 +102,9 @@ describe('javaAdapter', () => {
     expect(regions[0]!.kind).toBe('stringLiteral');
   });
 
-  it('isSafeToWrap refuses a string with a line-continuation escape', () => {
-    const source = 'class Foo { String x = "foo\\\nbar"; }\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javaAdapter, tree, source, 'java');
-    expect(javaAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('isSafeToWrap refuses a string containing a real embedded tab character', () => {
-    const source = 'class Foo { String x = "foo\tbar"; }\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javaAdapter, tree, source, 'java');
-    expect(javaAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('accepts a string containing the two-character \\t escape sequence, not a real tab', () => {
-    const source = 'class Foo { String x = "foo\\tbar"; }\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javaAdapter, tree, source, 'java');
-    expect(javaAdapter.isSafeToWrap!(region!, source)).toBe(true);
-  });
-
-  it('isSafeToWrap accepts an ordinary string with no hazards', () => {
-    const source = 'class Foo { String x = "hello world"; }\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(javaAdapter, tree, source, 'java');
-    expect(javaAdapter.isSafeToWrap!(region!, source)).toBe(true);
-  });
+  // javaAdapter no longer declares its own isSafeToWrap at all — Java has
+  // no string-shape hazard beyond `isStringSafeToWrapBaseline`'s own
+  // line-continuation/irregular-whitespace refusals
+  // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied
+  // unconditionally by `wrap.ts` regardless of adapter.
 });

@@ -10,6 +10,7 @@ import type { SourceSpan, TextEdit } from './types/span.js';
 import type { WrappableRegion } from './types/region.js';
 import { reflowOptionsFrom, type ReflowOptions } from './reflow/reflow-block.js';
 import { dissolveString } from './strings/dissolve-string.js';
+import { isStringSafeToWrapBaseline } from './strings/is-string-safe-to-wrap-baseline.js';
 import { dissolveLineComments } from './comments/dissolve-line-comments.js';
 import { emitLineComments } from './comments/emit-line-comments.js';
 import { dissolveBlockComments } from './comments/dissolve-block-comments.js';
@@ -154,7 +155,9 @@ function yieldToEventLoop(): Promise<void> {
  *
  * `'stringLiteral'` additionally passes through gates no other kind does
  * before reaching `wrapString` — a master `cfg.wrapStrings`/
- * `cfg.stringPolicy` switch, `isSafeToWrap`'s hard structural refusals,
+ * `cfg.stringPolicy` switch, an unconditional engine-level baseline of
+ * hard structural refusals (`isStringSafeToWrapBaseline`) followed by
+ * whatever further refusals the adapter's own `isSafeToWrap` hook adds,
  * and, under the conservative `'prose'` policy, both the shared
  * `looksLikeProse` text heuristic (`./prose-heuristic.js`) and whatever
  * context signal the adapter's own `isProseEligible` can answer exactly
@@ -299,14 +302,24 @@ export async function wrapRegions(
 
     if (region.kind === 'stringLiteral') {
       // `'stringLiteral'` gets its own gates entirely separate from
-      // `cfg.wrapComments` below: a master `wrapStrings` switch,
-      // `isSafeToWrap`'s hard structural refusals (raw/byte/mixed-prefix/
-      // triple-quoted/line-continuation — `./languages/python/adapter.ts`),
-      // and, for the conservative `'prose'` policy, both the shared
-      // text-only heuristic and whatever context signal the adapter can
-      // answer exactly (`isProseEligible` — a dict key, for Python).
+      // `cfg.wrapComments` below: a master `wrapStrings` switch, an
+      // unconditional engine-level baseline of hard structural refusals
+      // (`isStringSafeToWrapBaseline` — line-continuation/irregular
+      // whitespace, `./strings/is-string-safe-to-wrap-baseline.js`)
+      // followed by whatever further, language-specific refusals the
+      // adapter's own `isSafeToWrap` hook adds on top (raw/byte/mixed-
+      // prefix/triple-quoted — `./languages/python/adapter.js`) — both
+      // must pass (AND), and neither is bypassable by the adapter or by
+      // `WrapConfig.stringPolicy` — and, for the conservative `'prose'`
+      // policy, both the shared text-only heuristic and whatever context
+      // signal the adapter can answer exactly (`isProseEligible` — a dict
+      // key, for Python).
       if (!cfg.wrapStrings || cfg.stringPolicy === 'off') {
         skipped.push({ region, reason: 'string wrapping disabled (wrapStrings/stringPolicy)' });
+        continue;
+      }
+      if (!isStringSafeToWrapBaseline(region, source)) {
+        skipped.push({ region, reason: 'string is not safe to wrap' });
         continue;
       }
       if (adapter.isSafeToWrap && !adapter.isSafeToWrap(region, source)) {

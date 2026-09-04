@@ -164,31 +164,14 @@ function classify(node: SyntaxNode): RegionKind | null {
  *   expected to fail this heuristic and stay untouched, exactly as
  *   expected for triple-quoted strings in general ("likely to fail the
  *   prose heuristic anyway").
- * - **Contains a line-continuation escape** (`\` immediately followed by a
- *   real newline) in any part. This is a refusal case by design: a
- *   line-continuation escape consumes the newline itself (it contributes
- *   nothing to the string's value), which
- *   `dissolveString`'s "never decode, just concatenate bodies verbatim"
- *   design has no way to represent — concatenating a body that still
- *   contains `\` + a real newline character straight through would hand
- *   `atomizeWords` a body containing an actual line break, which its
- *   single-line contract doesn't expect.
- * - **Contains a tab, or a run of two or more consecutive spaces.** This
- *   one wasn't anticipated up front — it surfaced while generating this
- *   adapter's gold fixtures, when running the actual pipeline against
- *   real prose text revealed it. `atomizeWords`
- *   (`../../segmentation/atomize-words.ts`) is prose-reflow machinery: it
- *   treats *any* run of whitespace as a plain word boundary and always
- *   re-renders exactly one space between words, discarding the original
- *   run's actual width. That's the right behavior for a comment or
- *   docstring paragraph (cosmetic prose formatting is the entire point),
- *   but it would silently change a string literal's real *value* —
- *   `"foo  bar"` (two spaces) or `"foo\tbar"` re-rendering as `"foo bar"`
- *   — even on a single line that was never split at all. Refusing any
- *   string whose word-separating whitespace isn't already a plain single
- *   space sidesteps the problem entirely rather than teaching the
- *   segmentation layer to preserve exact whitespace width, which no other
- *   caller of `atomizeWords` needs and would be real, separate work.
+ *
+ * A line-continuation escape or irregular (tab/multi-space) whitespace in
+ * any part is refused too, but that's no longer this function's own
+ * doing: `../../wrap.ts` applies that check unconditionally, for every
+ * `'stringLiteral'` region, before ever reaching this hook (see
+ * `../../strings/is-string-safe-to-wrap-baseline.ts`) — an engine-level
+ * baseline, not a Python-specific rule, since nothing about it depends on
+ * Python syntax.
  */
 function isSafeToWrap(region: WrappableRegion, source: string): boolean {
   if (region.kind !== 'stringLiteral' && region.kind !== 'docstring') {
@@ -220,20 +203,12 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
       }
       return looksLikeProse(dissolveDocstring(region, source).text);
     }
-    if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
-      return false;
-    }
-    if (partTexts.some((text) => IRREGULAR_WHITESPACE.test(text))) {
-      return false;
-    }
   }
 
   return true;
 }
 
 const TRIPLE_QUOTE_BODY = /^[A-Za-z]{0,3}('''|""")/;
-const LINE_CONTINUATION = /\\\r?\n/;
-const IRREGULAR_WHITESPACE = /\t| {2}/;
 
 /**
  * Python's `groupRegions` override: merges consecutive `'lineComment'`

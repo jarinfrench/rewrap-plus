@@ -169,10 +169,11 @@ describe('pythonAdapter.isSafeToWrap', () => {
     expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(true);
   });
 
-  it('is unsafe for a string containing a line-continuation escape', () => {
-    const { region, source } = discoverOne('x = "a\\\nb"\n');
-    expect(pythonAdapter.isSafeToWrap?.(region, source)).toBe(false);
-  });
+  // Line-continuation-escape and irregular-whitespace refusals are no
+  // longer pythonAdapter's own concern for 'stringLiteral' regions —
+  // they're `isStringSafeToWrapBaseline`'s
+  // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied
+  // unconditionally by `wrap.ts` before this hook is ever consulted.
 });
 
 describe('pythonAdapter groupRegions — line comment merging', () => {

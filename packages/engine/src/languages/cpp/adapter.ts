@@ -85,9 +85,6 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
   );
 }
 
-const LINE_CONTINUATION = /\\\r?\n/;
-const IRREGULAR_WHITESPACE = /\t| {2}/;
-
 /**
  * C++'s `isSafeToWrap` override.
  *
@@ -96,7 +93,13 @@ const IRREGULAR_WHITESPACE = /\t| {2}/;
  * `neverReflow` directive patterns are `wrapRegions`'s own concern, not
  * this hook's) always returns `true`.
  *
- * A string-shaped region is unsafe when:
+ * A line-continuation escape or irregular (tab/multi-space) whitespace in
+ * any part is refused too, but not by this function — `../../wrap.ts`
+ * applies that check unconditionally, for every `'stringLiteral'` region,
+ * before ever reaching this hook (see
+ * `../../strings/is-string-safe-to-wrap-baseline.ts`) — an engine-level
+ * baseline, not a C++-specific rule. What's left here is genuinely
+ * C++-specific:
  *
  * - **Any part's prefix doesn't parse** (`extractPrefix` returning
  *   `null`) — reachable in principle for a hand-built `WrappableRegion`
@@ -121,17 +124,6 @@ const IRREGULAR_WHITESPACE = /\t| {2}/;
  *   cosmetic. Refusing any mismatch at all sidesteps needing new
  *   representative-prefix-selection logic in shared emit code that no
  *   other adapter needs.
- * - **Contains a line-continuation escape** (`\` immediately followed by
- *   a real newline) — the identical refusal, and identical rationale,
- *   Python's and every ECMAScript-family adapter's `isSafeToWrap` already
- *   apply: `dissolveString`'s "never decode, just concatenate bodies
- *   verbatim" design has no way to represent a body that still contains
- *   an actual embedded line break.
- * - **Contains a tab, or a run of two or more consecutive spaces** — the
- *   identical refusal every other adapter's string-wrapping
- *   `isSafeToWrap` already applies, for the identical reason
- *   (`atomizeWords` collapses any whitespace run to one rendered space,
- *   which would silently change such a string's real value).
  */
 function isSafeToWrap(region: WrappableRegion, source: string): boolean {
   if (region.kind !== 'stringLiteral') {
@@ -148,13 +140,6 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
     return false; // mixed prefixes within one concatenation run — see doc comment above
   }
 
-  if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
-    return false;
-  }
-  if (partTexts.some((text) => IRREGULAR_WHITESPACE.test(text))) {
-    return false;
-  }
-
   return true;
 }
 
@@ -167,9 +152,11 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
  * `/* * /` block comment (see `classify`'s own doc comment). `groupRegions`
  * merges consecutive `///` lines at the same indent into one logical
  * block, the `///`-specific counterpart to Python's own `'lineComment'`
- * merging. `isSafeToWrap` flags mixed-prefix concatenation runs,
- * line-continuation escapes, and irregular whitespace as unsafe to wrap.
- * `wrapString` is C++'s whole `'stringLiteral'` pipeline — see
+ * merging. `isSafeToWrap` flags mixed-prefix concatenation runs and
+ * unparseable prefixes as unsafe to wrap, on top of the line-continuation/
+ * irregular-whitespace baseline `../../wrap.ts` already applies to every
+ * `'stringLiteral'` region regardless of adapter (see `isSafeToWrap`'s own
+ * doc comment). `wrapString` is C++'s whole `'stringLiteral'` pipeline — see
  * `./wrap-string.ts` for why it needs no `emitContext`-shaped resolution
  * the way Python's own does.
  */

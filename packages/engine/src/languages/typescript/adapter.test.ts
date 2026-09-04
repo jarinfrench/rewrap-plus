@@ -54,12 +54,11 @@ describe('typescriptAdapter', () => {
     expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'stringLiteral']);
   });
 
-  it('isSafeToWrap refuses a string with a line-continuation escape', () => {
-    const source = 'const x = "foo\\\nbar";\n';
-    const tree = tsParser.parse(source)!;
-    const [region] = discoverRegions(typescriptAdapter, tree, source, 'typescript');
-    expect(typescriptAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
+  // typescriptAdapter no longer declares its own isSafeToWrap at all —
+  // TypeScript has no string-shape hazard beyond
+  // `isStringSafeToWrapBaseline`'s own line-continuation/irregular-
+  // whitespace refusals (`../../strings/is-string-safe-to-wrap-baseline.test.ts`),
+  // applied unconditionally by `wrap.ts` regardless of adapter.
 });
 
 describe('typescriptReactAdapter (TSX)', () => {

@@ -122,26 +122,10 @@ describe('cppAdapter', () => {
     expect(cppAdapter.isSafeToWrap!(region!, source)).toBe(true);
   });
 
-  it('isSafeToWrap refuses a string with a line-continuation escape', () => {
-    const source = 'const char* x = "foo\\\nbar";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(cppAdapter, tree, source, 'cpp');
-    expect(cppAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('isSafeToWrap refuses a string containing a real embedded tab character', () => {
-    const source = 'const char* x = "foo\tbar";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(cppAdapter, tree, source, 'cpp');
-    expect(cppAdapter.isSafeToWrap!(region!, source)).toBe(false);
-  });
-
-  it('accepts a string containing the two-character \\t escape sequence, not a real tab', () => {
-    const source = 'const char* x = "foo\\tbar";\n';
-    const tree = parser.parse(source)!;
-    const [region] = discoverRegions(cppAdapter, tree, source, 'cpp');
-    expect(cppAdapter.isSafeToWrap!(region!, source)).toBe(true);
-  });
+  // Line-continuation-escape and irregular-whitespace refusals are no
+  // longer cppAdapter's own concern — they're `isStringSafeToWrapBaseline`'s
+  // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied
+  // unconditionally by `wrap.ts` before this hook is ever consulted.
 
   it('excludes strings and comments inside a macro body from discovery entirely', () => {
     const source = [

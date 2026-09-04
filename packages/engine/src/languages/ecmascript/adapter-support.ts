@@ -2,7 +2,6 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
 import type { WrapConfig } from '../../types/config.js';
 import type { RegionKind, WrappableRegion } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
-import { sliceSpanText } from '../../discovery/slice-span.js';
 import { wrapStringDefault } from '../../strings/wrap-string-default.js';
 
 /**
@@ -88,35 +87,6 @@ export function classifyEcmaScriptNode(
   }
 
   return null;
-}
-
-const LINE_CONTINUATION = /\\\r?\n/;
-const IRREGULAR_WHITESPACE = /\t| {2}/;
-
-/**
- * `isSafeToWrap` shared across every ECMAScript-family adapter: refuses a
- * `'stringLiteral'` containing a line-continuation escape or irregular
- * (tab/multi-space) whitespace, for the identical reason Python's own
- * `isSafeToWrap` refuses them (`../python/adapter.ts`'s own doc comment)
- * — `atomizeWords`/`reflowBlock` are prose-reflow machinery that would
- * otherwise silently change a string's real value, not just its
- * formatting. JavaScript/TypeScript strings support the exact same `\`
- * + real-newline line-continuation escape Python's do, so this refusal
- * transfers unchanged; there is no raw/byte/prefix concept to refuse
- * here the way Python's own version additionally checks.
- */
-export function isEcmaScriptStringSafeToWrap(region: WrappableRegion, source: string): boolean {
-  if (region.kind !== 'stringLiteral') {
-    return true;
-  }
-  const partTexts = region.parts.map((part) => sliceSpanText(source, part));
-  if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
-    return false;
-  }
-  if (partTexts.some((text) => IRREGULAR_WHITESPACE.test(text))) {
-    return false;
-  }
-  return true;
 }
 
 /**

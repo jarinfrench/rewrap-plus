@@ -2,11 +2,7 @@ import type { LanguageAdapter } from '../../types/adapter.js';
 import type { RegionKind } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
 import { javascriptDescriptor } from './descriptor.js';
-import {
-  classifyEcmaScriptNode,
-  isEcmaScriptStringSafeToWrap,
-  wrapEcmaScriptString,
-} from '../ecmascript/adapter-support.js';
+import { classifyEcmaScriptNode, wrapEcmaScriptString } from '../ecmascript/adapter-support.js';
 
 function classify(node: SyntaxNode): RegionKind | null {
   return classifyEcmaScriptNode(node, javascriptDescriptor);
@@ -18,9 +14,13 @@ function classify(node: SyntaxNode): RegionKind | null {
  * `classify` distinguishes `//`/JSDoc-shaped `/**`/plain `/* * /`
  * comments (excluding the last, per `../ecmascript/adapter-support.ts`'s
  * own doc comment) and marks every `string` node `'stringLiteral'`.
- * `isSafeToWrap` and `wrapString` are the shared ECMAScript-family
- * implementations — nothing about JavaScript itself needs its own version
- * of either. No `proseText` override either:
+ * `wrapString` is the shared ECMAScript-family implementation — nothing
+ * about JavaScript itself needs its own version. No `isSafeToWrap`
+ * override: JavaScript strings have no prefix concept and no other
+ * string-shape hazard beyond `../../wrap.ts`'s own unconditional baseline
+ * (line-continuation escapes, irregular whitespace — see
+ * `../../strings/is-string-safe-to-wrap-baseline.ts`), so there is
+ * nothing language-specific left to add. No `proseText` override either:
  * the engine's own default (`../../types/adapter.ts`'s own doc comment)
  * already does the same `dissolveString` lookup every quote-delimited
  * string syntax needs. No `groupRegions`
@@ -32,6 +32,5 @@ function classify(node: SyntaxNode): RegionKind | null {
 export const javascriptAdapter: LanguageAdapter = {
   descriptor: javascriptDescriptor,
   classify,
-  isSafeToWrap: isEcmaScriptStringSafeToWrap,
   wrapString: wrapEcmaScriptString,
 };

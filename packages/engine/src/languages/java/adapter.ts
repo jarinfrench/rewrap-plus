@@ -1,7 +1,6 @@
 import type { LanguageAdapter } from '../../types/adapter.js';
-import type { RegionKind, WrappableRegion } from '../../types/region.js';
+import type { RegionKind } from '../../types/region.js';
 import type { SyntaxNode } from '../../types/tree-sitter-types.js';
-import { sliceSpanText } from '../../discovery/slice-span.js';
 import { javaDescriptor } from './descriptor.js';
 import { wrapJavaString } from './wrap-string.js';
 
@@ -60,55 +59,6 @@ function classify(node: SyntaxNode): RegionKind | null {
   return null;
 }
 
-const LINE_CONTINUATION = /\\\r?\n/;
-const IRREGULAR_WHITESPACE = /\t| {2}/;
-
-/**
- * Java's `isSafeToWrap` override.
- *
- * Only `'stringLiteral'` regions are ever flagged unsafe here — text
- * blocks never reach this point at all, since `classify` above excludes
- * them from discovery before `isSafeToWrap` is ever consulted, unlike
- * (say) a prefix mismatch, which is a genuine per-region safety check
- * rather than a blanket exclusion.
- *
- * A string-shaped region is unsafe when:
- *
- * - **Contains a line-continuation escape** (`\` immediately followed by
- *   a real newline) — the identical refusal, and identical rationale,
- *   every other adapter's `isSafeToWrap` already applies:
- *   `dissolveString`'s "never decode, just concatenate bodies verbatim"
- *   design has no way to represent a body that still contains an actual
- *   embedded line break. (Java string literals can't actually contain
- *   this — an ordinary `string_literal` is a parse error across a real
- *   newline — but the check costs nothing to keep and matches every
- *   sibling adapter's own defensive posture.)
- * - **Contains a tab, or a run of two or more consecutive spaces** — the
- *   identical refusal every other adapter's string-wrapping
- *   `isSafeToWrap` already applies, for the identical reason
- *   (`atomizeWords` collapses any whitespace run to one rendered space,
- *   which would silently change such a string's real value).
- *
- * No prefix-mismatch check the way C++'s own `isSafeToWrap` has — Java
- * string literals have no prefix concept at all (`javaDescriptor.strings.prefixes`
- * is empty), so there is nothing to mismatch.
- */
-function isSafeToWrap(region: WrappableRegion, source: string): boolean {
-  if (region.kind !== 'stringLiteral') {
-    return true;
-  }
-
-  const partTexts = region.parts.map((part) => sliceSpanText(source, part));
-  if (partTexts.some((text) => LINE_CONTINUATION.test(text))) {
-    return false;
-  }
-  if (partTexts.some((text) => IRREGULAR_WHITESPACE.test(text))) {
-    return false;
-  }
-
-  return true;
-}
-
 /**
  * Java's `LanguageAdapter`.
  *
@@ -119,16 +69,24 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
  * way Python's are, the same open question left for JavaScript/
  * TypeScript's and C++'s own ordinary `//` comments too
  * (`docs/adapters.md`) — and Java has no `///`-repeated doc-comment form
- * needing the merge C++'s own `groupRegions` exists for. `isSafeToWrap`
- * flags line-continuation escapes and irregular whitespace as unsafe to
- * wrap. `wrapString` is Java's whole `'stringLiteral'` pipeline — see
- * `./wrap-string.ts` for why it needs no `emitContext`-shaped resolution
- * the way Python's own does. No `wrapDocstring`: Java has no
- * string-literal-as-documentation convention.
+ * needing the merge C++'s own `groupRegions` exists for. No `isSafeToWrap`
+ * override: Java string literals have no prefix concept at all
+ * (`javaDescriptor.strings.prefixes` is empty) and no other Java-specific
+ * hazard beyond what `../../wrap.ts`'s own unconditional baseline already
+ * refuses for every `'stringLiteral'` region regardless of adapter (line-
+ * continuation escapes, irregular whitespace — see
+ * `../../strings/is-string-safe-to-wrap-baseline.ts`), so there is nothing
+ * left for a Java-specific hook to add; omitting it entirely (rather than
+ * declaring a hook that always returns `true`) is exactly what
+ * `LanguageAdapter.isSafeToWrap`'s own doc comment describes as "no
+ * further refusals beyond the baseline." `wrapString` is Java's whole
+ * `'stringLiteral'` pipeline — see `./wrap-string.ts` for why it needs no
+ * `emitContext`-shaped resolution the way Python's own does. No
+ * `wrapDocstring`: Java has no string-literal-as-documentation
+ * convention.
  */
 export const javaAdapter: LanguageAdapter = {
   descriptor: javaDescriptor,
   classify,
-  isSafeToWrap,
   wrapString: wrapJavaString,
 };
