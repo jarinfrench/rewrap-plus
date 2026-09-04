@@ -894,6 +894,14 @@ prose-heuristic refusals do.
   ECMAScript-family grammar, and keeping a language's thin wrapper local
   was, at the time, judged worth the duplication rather than risking a
   change to already-hardened JS/TS code for a purely cosmetic dedup.
+  (Revisited later, once the duplication turned out to run four adapters
+  deep rather than two — see "Consolidating four adapters' identical
+  `isSafeToWrap` line-continuation/irregular-whitespace refusal" below:
+  Java's `isSafeToWrap` was deleted outright, not merely deduplicated
+  against `adapter-support.ts`, once the check itself moved to the
+  engine. `proseText` was never part of that consolidation and is
+  unaffected — Java still has no override, matching every other
+  ECMAScript-family adapter.)
   `wrapString` itself no longer duplicates anything: once the interface's
   `emitContext` hook turned out to have no dispatch site anywhere in the
   engine (nothing called `adapter.emitContext(...)`; Java's own version,
@@ -1480,3 +1488,99 @@ chain-detection lesson is that "does this line match one thing" and
 questions, worth asking explicitly rather than assuming the simpler one
 covers real-world input once real-world input is what a fixture
 actually exercises.
+
+## Consolidating four adapters' identical `isSafeToWrap` line-continuation/irregular-whitespace refusal
+
+Not a new-language phase — a post-hoc dedup pass across every adapter
+already shipped by that point. Python, C++, Java, and every
+ECMAScript-family adapter (JavaScript, TypeScript, TSX) each declared an
+`isSafeToWrap` check refusing a `'stringLiteral'` region containing a
+line-continuation escape (`\` immediately before a real newline) or
+irregular whitespace (a tab, or a run of two or more consecutive
+spaces), byte-identical across all four — the exact duplication the
+Java section above ("Everything else: established precedent") already
+flagged and, "at the time," judged worth keeping rather than importing
+from `languages/ecmascript/adapter-support.ts`. What that earlier note
+didn't yet know was that the duplication ran two adapters deeper still
+(Python's and C++'s own copies, each embedded inside a larger
+language-specific `isSafeToWrap`, not a standalone shared function the
+way Java's and ECMAScript's were). Once the scope was actually four
+adapters, not two, the calculus changed: this isn't language-specific
+behavior at all. `atomizeWords`/`reflowBlock` (the shared prose-reflow
+machinery every adapter's `wrapString` ultimately reaches through)
+collapse any whitespace run to one rendered space and have no way to
+represent an embedded raw newline — true of the segmentation pipeline
+itself, regardless of which language's string is being reflowed.
+
+**Fix:** extracted to a new `strings/is-string-safe-to-wrap-baseline.ts`,
+applied unconditionally by `wrap.ts`'s dispatch *before* it ever
+consults an adapter's own `isSafeToWrap` hook — both must return `true`
+(AND), with no way for an adapter to waive the baseline, since nothing
+about the refusal is language-specific. For Java and the whole
+ECMAScript family, this baseline turned out to be their *entire*
+`isSafeToWrap` — neither language has a string-prefix concept or any
+other string-shape hazard beyond it. Both had the hook deleted outright
+rather than merely deduplicated (`languages/java/adapter.ts`'s own
+`isSafeToWrap`, `languages/ecmascript/adapter-support.ts`'s
+`isEcmaScriptStringSafeToWrap`), matching `LanguageAdapter.isSafeToWrap`'s
+revised contract: omitting the hook now means "no further refusals
+beyond the baseline," not "no refusal at all." Python and C++ keep a
+smaller `isSafeToWrap` for what's genuinely left once the baseline is
+factored out (raw/byte/mixed-prefix and triple-quote handling for
+Python, prefix-mismatch handling for C++).
+
+**A real correctness wrinkle, found only by running the fixture suites
+— not by the design-phase analysis, which never executed any code.**
+Python's original `isSafeToWrap` never reached its own line-continuation/
+whitespace checks for a single-part triple-quoted string at all: the
+triple-quote branch returns early via `looksLikeProse` before those
+checks are ever reached (see "The safety gate had to become stricter
+than every other `'stringLiteral'`" above). That early return is
+load-bearing, not incidental — a multi-line docstring-shaped string's
+own paragraph indentation legitimately contains runs of two or more
+spaces, and `wrapCodeString`'s own pipeline already accepts
+responsibility for normalizing whitespace on purpose (the same section
+above), unlike the concatenation pipeline this baseline actually exists
+to guard. An unconditional, span-blind version of the irregular-
+whitespace check broke `test/fixtures/python/strings/009-triple-quoted-
+multiline-prose` outright the first time it was run for real — refusing
+that fixture's own expected paragraph indentation as if it were a hazard.
+
+**Resolved** by scoping the irregular-whitespace check to
+single-physical-line parts only (`part.startRow === part.endRow`); the
+line-continuation check stays unconditional across row spans, since a
+raw embedded newline is exactly the shape it exists to catch regardless
+of how many rows a part spans. This isn't a Python-specific carve-out
+smuggled into an otherwise language-agnostic engine function — it falls
+out of what the check actually protects. The concatenation pipeline
+every adapter here shares (`dissolveString` → `atomizeWords` →
+`emitString`, reached via `strings/wrap-string-default.ts` for Java and
+every ECMAScript-family adapter, or Python's own `wrap-string.ts`) never
+itself produces a part spanning more than one physical source line: an
+ordinary string containing a raw embedded newline is either a parse
+error (Java, C++, ECMAScript-family) or a genuine line-continuation
+escape, still caught regardless of row span. A part that *does* span
+multiple physical lines is necessarily some other shape a specific
+adapter's own `isSafeToWrap`/`wrapString` already has bespoke handling
+for — Python's single-part triple-quoted string is the only current
+example. Verified by rerunning `test/wrap/idempotency-all-fixtures.test.ts`
+and `test/hardening/round-trip-property.test.ts` (both of which name
+`isSafeToWrap`'s refusals explicitly in their own doc comments) plus
+every per-language string gold-fixture suite, alongside the full
+`typecheck && test && lint && build` gate.
+
+## What this means for future adapters
+
+The lesson isn't "always centralize on first duplication" — the Java
+section above already made the opposite, and at the time correct, call
+for a two-adapter duplication of unclear future scope. It's that a
+byte-identical check surviving across *four independently-written*
+adapters is itself evidence the check was never actually about any one
+language, and that evidence is worth re-examining the original
+"duplication is fine, low risk" judgment against. The second lesson is
+narrower but sharper: a design investigation that reads code without
+running it can still miss a load-bearing early return — Python's
+triple-quote branch's own control flow, not its regex, was what made
+the original per-adapter placement safe. Consolidating "the same regex"
+without also consolidating "the same reachability" was the actual bug,
+and only the fixture suite, not the source reading, caught it.
