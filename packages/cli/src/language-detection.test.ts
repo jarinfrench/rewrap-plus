@@ -26,6 +26,9 @@ describe('detectLanguageFromPath', () => {
     ['README.md', 'markdown'],
     ['README.MD', 'markdown'],
     ['docs/notes.markdown', 'markdown'],
+    ['paper.tex', 'latex'],
+    ['paper.TEX', 'latex'],
+    ['thesis.latex', 'latex'],
   ])('detects %s as %s', (path, expected) => {
     expect(detectLanguageFromPath(path)).toBe(expected);
   });
@@ -59,6 +62,7 @@ describe('knownExtensions', () => {
     expect(extensions).toContain('.tsx');
     expect(extensions).toContain('.cpp');
     expect(extensions).toContain('.md');
+    expect(extensions).toContain('.tex');
     expect(new Set(extensions).size).toBe(extensions.length);
   });
 });

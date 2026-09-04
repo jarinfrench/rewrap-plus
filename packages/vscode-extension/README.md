@@ -1,18 +1,18 @@
 # Rewrap+
 
-Rewraps comments, docstrings, string literals, and (for Markdown)
-ordinary prose to a configured column limit — preserving formatted
+Rewraps comments, docstrings, string literals, and (for Markdown and
+LaTeX) ordinary prose to a configured column limit — preserving formatted
 structure (lists, doc-comment sections, fenced code, tables) and emitting
 language-valid concatenation syntax when a string literal has to split
 across lines.
 
-**Language support: Python, JavaScript, TypeScript, TSX, C++, Java, and
-Markdown.** The three wrap commands gray themselves out automatically in
-any other language. This isn't a permanent ceiling — the engine's adapter
-interface is deliberately data-first (a language is a declarative
-descriptor plus fixtures, not new engine code — see the repo root
-[README](../../README.md) and `docs/adapters.md`), and more languages are
-on the roadmap.
+**Language support: Python, JavaScript, TypeScript, TSX, C++, Java,
+Markdown, and LaTeX.** The three wrap commands gray themselves out
+automatically in any other language. This isn't a permanent ceiling — the
+engine's adapter interface is deliberately data-first (a language is a
+declarative descriptor plus fixtures, not new engine code — see the repo
+root [README](../../README.md) and `docs/adapters.md`), and more
+languages are on the roadmap.
 
 ## Features
 
@@ -95,6 +95,30 @@ on the roadmap.
   Directives use an HTML comment instead of a line-comment marker
   (Markdown has none): `<!-- rewrap: off -->` / `<!-- rewrap: on -->` /
   `<!-- rewrap: ignore -->`.
+- **LaTeX** wraps ordinary prose the same way Markdown does — the prose
+  *is* the document here too, so this isn't gated by `wrapComments`/
+  `wrapStrings` either. `%` comment paragraphs wrap through the same path
+  as Python's `#` comments, and directives use `%` directly
+  (`% rewrap: off` / `% rewrap: on` / `% rewrap: ignore` / `% rewrap: force`)
+  since, unlike Markdown, LaTeX already has its own line-comment marker.
+  A line beginning `\item` always starts a fresh region at the item's own
+  content column, with continuation lines aligned under the marker
+  itself rather than the text. Chained structural commands on one line
+  (`\section{Title}\label{sec:foo}`) are recognized as a unit and never
+  wrapped as prose, along with every other sectioning command
+  (`\chapter`/`\section`/.../`\subparagraph`) and generic command/
+  `\newtheorem`-style declaration. `\\`, `\newline`, `\linebreak`,
+  `\break`, and `\hline` are hard breaks, preserved exactly like
+  Markdown's own. `\verb`/`\lstinline` spans are never split internally,
+  regardless of delimiter character. A trailing `%` comment on an
+  otherwise-prose line is carried forward with that line rather than
+  reflowed — wrapping the *code* before a trailing comment could silently
+  change what the comment applies to. Verbatim-like environments
+  (`verbatim`, `Verbatim`, `BVerbatim`, `lstlisting`/`listing`, `alltt`,
+  `tikzpicture`, `tabular`/`tabular*`/`tabularx`, the `comment` package's
+  block environment, `\iffalse ... \fi`, and every math environment —
+  `equation`, `align`, `gather`, `multline`, `displaymath`, `$$...$$`,
+  `\[...\]`) are preserved byte-for-byte, never treated as prose at all.
 
 ## Commands and keybindings
 
@@ -277,6 +301,12 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
   `<!-- rewrap: off -->` itself lives), link reference and footnote
   definitions, and a paragraph containing a `$$` display-math line — none
   of these are wrapped at all.
+- **In LaTeX**: every verbatim-like environment and math environment
+  named in the LaTeX feature bullet above, every sectioning/structural
+  command line (including a chain of them, e.g. a `\section{...}`
+  immediately followed by its own `\label{...}`), and a trailing `%`
+  comment's own text (carried forward untouched with the prose line it
+  trails) — none of these are wrapped at all.
 
 One thing worth naming as a **known, deliberate limitation** rather than
 a bug to report: continuation-line indentation for a split string
@@ -295,9 +325,10 @@ can conflict if both are enabled.
 The table below compares Rewrap+ against the other actively-installable
 general-purpose comment/text wrappers on the Marketplace, as of this
 writing. It's deliberately not all wins for Rewrap+ — a table that only
-lists advantages reads as marketing, and the honest gaps are exactly
-what should steer a LaTeX-heavy or non-Python user toward one of the
-others instead of filing a bug here.
+lists advantages reads as marketing, and the honest gaps (no Visual
+Studio build, narrower language coverage than "many") are exactly what
+should steer a user who needs one of those specifically toward one of
+the others instead of filing a bug here.
 
 | Capability | [Rewrap](https://marketplace.visualstudio.com/items?itemName=stkb.rewrap) (stkb) | [Rewrap Revived](https://marketplace.visualstudio.com/items?itemName=dnut.rewrap-revived) (dnut) | [Reflow Markdown](https://marketplace.visualstudio.com/items?itemName=marvhen.reflow-markdown) | **Rewrap+** |
 |---|---|---|---|---|
@@ -307,8 +338,8 @@ others instead of filing a bug here.
 | **Language-valid concatenation on split** | **No** | **No** | **No** | **Yes** |
 | **Prose-vs-code string heuristic** | **No** | **No** | **No** | **Yes** |
 | Parser | Line/regex-based | Line/regex-based | Markdown-aware | **tree-sitter AST** |
-| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++, Java, Markdown |
-| Markdown / LaTeX / plain-text files | Yes | Yes | Markdown only | **Markdown** |
+| Language coverage | Many | Many | Markdown only | Python, JavaScript, TypeScript, TSX, C++, Java, Markdown, LaTeX |
+| Markdown / LaTeX / plain-text files | Yes | Yes | Markdown only | **Markdown, LaTeX** |
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
 | Format-on-save | No | Yes (`Run rewrap on save`, added v17.7) | — | Yes |

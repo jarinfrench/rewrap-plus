@@ -60,6 +60,9 @@ const EXTENSION_TO_LANGUAGE: ReadonlyMap<string, string> = new Map([
   // comment above draws for C vs. C++.
   ['.md', 'markdown'],
   ['.markdown', 'markdown'],
+
+  ['.tex', 'latex'],
+  ['.latex', 'latex'],
 ]);
 
 /**

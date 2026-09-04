@@ -45,24 +45,27 @@ rewrap-plus --check src/
 
 ### Supported languages
 
-The same seven the VSCode extension registers: Python (`.py`, `.pyi`),
+The same eight the VSCode extension registers: Python (`.py`, `.pyi`),
 JavaScript (`.js`, `.mjs`, `.cjs`, `.jsx`), TypeScript (`.ts`, `.mts`,
 `.cts`), TSX (`.tsx`), C++ (`.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`,
-`.hh`, `.hxx`, `.h++`, `.h`), Java (`.java`), and Markdown (`.md`,
-`.markdown`). See [`src/language-detection.ts`](src/language-detection.ts)
-for the exact table, including the `.h` ambiguity note (there's no
-separate C adapter, so a plain `.h` file is assumed to be C++).
+`.hh`, `.hxx`, `.h++`, `.h`), Java (`.java`), Markdown (`.md`,
+`.markdown`), and LaTeX (`.tex`, `.latex`). See
+[`src/language-detection.ts`](src/language-detection.ts) for the exact
+table, including the `.h` ambiguity note (there's no separate C adapter,
+so a plain `.h` file is assumed to be C++).
 
-**Markdown changes this tool's blast radius, worth knowing before running
-it over an existing tree.** Every prior language here is *comments and
-strings inside code* — a directory walk mostly leaves ordinary code lines
-untouched. Markdown inverts that: the prose *is* the document, so a bare
-`rewrap-plus .` now rewraps every `README.md` and every `docs/*.md` it
-finds, and `--check` starts failing on any of them whose paragraphs
-aren't already wrapped at the resolved column limit. There's no opt-out
-flag for this — the existing `--language`, explicit path arguments, and
-`<!-- rewrap: off/ignore -->` directive comments are the tools for
-narrowing scope if a bare directory walk is too broad for a given repo.
+**Markdown and LaTeX change this tool's blast radius, worth knowing
+before running it over an existing tree.** Every prior language here is
+*comments and strings inside code* — a directory walk mostly leaves
+ordinary code lines untouched. Markdown and LaTeX invert that: the prose
+*is* the document, so a bare `rewrap-plus .` now rewraps every
+`README.md`, every `docs/*.md`, and every `.tex` source it finds, and
+`--check` starts failing on any of them whose paragraphs aren't already
+wrapped at the resolved column limit. There's no opt-out flag for this —
+the existing `--language`, explicit path arguments, and directive
+comments (`<!-- rewrap: off/ignore -->` for Markdown, `% rewrap:
+off/ignore` for LaTeX) are the tools for narrowing scope if a bare
+directory walk is too broad for a given repo.
 
 ## Configuration
 

@@ -189,6 +189,38 @@ eventually ships this.
   callout — a bare directory walk over an existing repo now touches every
   Markdown file it finds, which no prior language here did.
 
+- **LaTeX support**, the second prose-is-the-document language after
+  Markdown — but a structurally different one: this grammar has no
+  paragraph node at all, so `discoverProse` is a masked line scan over
+  `source`'s own physical lines rather than a query capture
+  (`docs/adapters.md`'s "Markdown and LaTeX — prose languages" section).
+  `%` comment paragraphs wrap through the same `'lineComment'` machinery
+  Python's `#` comments use, needing no LaTeX-specific dissolve/emit code
+  at all. A line beginning `\item` starts a fresh region at the item's
+  own content column, with continuation lines aligned under the marker
+  itself rather than the text. Every sectioning command
+  (`\part`/`\chapter`/.../`\subparagraph`), generic command/
+  `\newtheorem`-style declaration, and display-math delimiter is
+  recognized as structural and never wrapped as prose — including a
+  *chain* of them on one line (`\section{Title}\label{sec:foo}`, an
+  extremely common idiom, recognized as a unit rather than swallowed
+  into surrounding prose). `\\`, `\newline`, `\linebreak`, `\break`, and
+  `\hline` are hard breaks, preserved exactly. `\verb`/`\lstinline`
+  spans are never split internally regardless of delimiter character. A
+  trailing `%` comment on an otherwise-prose line is carried forward
+  with that line rather than reflowed, since wrapping the text before it
+  could silently change what the comment applies to. Verbatim-like
+  environments (`verbatim`, `Verbatim`, `BVerbatim`, `lstlisting`/
+  `listing`, `alltt`, `tikzpicture`, `tabular`/`tabular*`/`tabularx`,
+  the `comment` package's block environment, `\iffalse ... \fi`) and
+  every math environment (`equation`, `align`, `gather`, `multline`,
+  `displaymath`, `$$...$$`, `\[...\]`) are preserved byte-for-byte,
+  never discovered as prose at all. Directives use `%` directly
+  (`% rewrap: off`/`on`/`ignore`/`force`) — unlike Markdown, LaTeX
+  already has its own line-comment marker, so this needed no HTML-
+  comment-style workaround. `.tex`/`.latex` recognized by the CLI,
+  subject to the same "blast radius" note as Markdown.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
@@ -205,10 +237,18 @@ eventually ships this.
 - The CLI has no `.gitignore` awareness beyond a fixed default-ignored
   directory list, and doesn't follow symlinked directories during a
   recursive walk.
-- LaTeX and plain-text prose support, and a plain-C adapter, are not yet
+- Plain-text prose support, and a plain-C adapter, are not yet
   implemented.
 - Markdown setext headings' own text is never wrapped (v1 canonicalizes
   everything else about a paragraph's continuation but leaves this one
   form alone — "bias toward verbatim when uncertain"); link reference and
   footnote definitions are left alone rather than wrapped with their own
   4-space continuation indent.
+- LaTeX's Wrap at Cursor (and auto-wrap, and format-on-save) grows with
+  file size, unlike every other language here — its masked-line-scan
+  `discoverProse` has no cheaper way yet to scope discovery to a single
+  requested region before scanning the whole file (`docs/benchmarks.md`'s
+  "LaTeX" section, `docs/planning/implementation-plan.md`'s Phase 12f).
+  Comfortably fast (well under 100ms) for any real LaTeX document under a
+  few thousand lines; only noticeable on a single file in the tens of
+  thousands of lines.
