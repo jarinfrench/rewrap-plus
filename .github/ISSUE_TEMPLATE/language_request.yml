@@ -1,0 +1,51 @@
+name: Language / adapter request
+description: Request support for a language Rewrap+ doesn't wrap yet.
+labels: ["type:feature", "area:language-adapter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a language to Rewrap+ is meant to touch no engine code —
+        it's a self-contained descriptor. See
+        [`docs/adding-a-language.md`](../../docs/adding-a-language.md) if
+        you're interested in contributing the adapter yourself; this
+        template just collects what a contributor (you or someone else)
+        would need to get started.
+
+  - type: input
+    id: language
+    attributes:
+      label: Target language
+    validations:
+      required: true
+
+  - type: input
+    id: grammar
+    attributes:
+      label: tree-sitter grammar
+      description: Link to the grammar's repo, and note whether it ships a prebuilt WASM binary (vs. requiring a from-scratch build — see `docs/parsing.md` for why that distinction matters here).
+    validations:
+      required: true
+
+  - type: textarea
+    id: syntax-quirks
+    attributes:
+      label: Comment / string / doc-comment syntax quirks
+      description: >
+        Anything a naive port from a similar language would get wrong:
+        raw string prefixes, string concatenation style (adjacent-literal
+        vs. an explicit operator), doc-comment dialect (JSDoc, Doxygen,
+        docstrings...), multi-line comment nesting, etc.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: willing-to-contribute
+    attributes:
+      label: Are you willing to contribute the adapter?
+      options:
+        - "Yes"
+        - "No — requesting only"
+        - "Maybe, with some guidance"
+    validations:
+      required: true

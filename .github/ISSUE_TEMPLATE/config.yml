@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "\U0001F4AC Questions and discussion"
+    url: https://github.com/jarinfrench/rewrap-plus/discussions
+    about: Not sure if something is a bug, or just have a question? Ask here instead of opening an issue.
+  - name: "\U0001F914 Why did it wrap at column N?"
+    url: https://github.com/jarinfrench/rewrap-plus/blob/main/packages/vscode-extension/README.md#column-limit-precedence
+    about: "Check the column-limit precedence chain and run \"Rewrap+: Show Resolved Configuration\" before filing a bug about unexpected wrap width."

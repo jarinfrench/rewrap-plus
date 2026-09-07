@@ -1,0 +1,65 @@
+name: "\U0001F6A8 String corruption (runtime value changed)"
+description: A string literal's actual runtime value changed after wrapping — not just its formatting.
+labels: ["type:bug", "severity:string-corruption"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the project's single most dangerous failure mode: wrapping
+        is supposed to be eval-equivalent for string literals (that's what
+        the eval-equivalence test suite exists to catch pre-release). If
+        you're seeing this, something slipped through. Please fill in every
+        field below exactly — the precise before/after text matters more
+        than usual here.
+
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: e.g. Python, JavaScript, C++...
+    validations:
+      required: true
+
+  - type: textarea
+    id: before
+    attributes:
+      label: Exact string literal before wrapping
+      description: Paste the literal source text, including quote characters, exactly as it appeared before Rewrap+ touched it.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: after
+    attributes:
+      label: Exact string literal after wrapping
+      description: Paste the literal source text, including quote characters, exactly as Rewrap+ left it.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: value-diff
+    attributes:
+      label: How the runtime value differs
+      description: e.g. "a space was lost at the join point", "an escape sequence changed meaning", "a raw string became a non-raw string". If you evaluated both versions, paste the two resulting values.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: force-directive
+    attributes:
+      label: "Was `# rewrap: force` (or the language's equivalent, e.g. `% rewrap: force` in LaTeX) present on or near this string?"
+      options:
+        - "No"
+        - "Yes"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Rewrap+ extension version
+    validations:
+      required: true
