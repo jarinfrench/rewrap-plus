@@ -173,6 +173,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.markdownAdapter);
   registry.register(engine.latexAdapter);
   registry.register(engine.tomlAdapter);
+  registry.register(engine.shellscriptAdapter);
   return registry;
 }
 

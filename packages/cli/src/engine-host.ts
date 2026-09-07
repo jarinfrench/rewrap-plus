@@ -51,6 +51,7 @@ import {
   latexAdapter,
   markdownAdapter,
   pythonAdapter,
+  shellscriptAdapter,
   tomlAdapter,
   typescriptAdapter,
   typescriptReactAdapter,
@@ -86,6 +87,7 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(markdownAdapter);
   registry.register(latexAdapter);
   registry.register(tomlAdapter);
+  registry.register(shellscriptAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

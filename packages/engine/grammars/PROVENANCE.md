@@ -389,3 +389,35 @@ Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
 6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
    typecheck && npm run build`.
 
+## `tree-sitter-bash.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-bash`](https://www.npmjs.com/package/tree-sitter-bash) |
+| Package version | `0.25.1` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-bash |
+| Upstream commit | `801326684a26ffc4e749bb016c50c6c30bdfa345` |
+| npm tarball shasum | `78499ecf8930db57bfe46581f948387ed78a0470` |
+| npm tarball integrity | `sha512-7hMytuYIMoXOq24yRulgIxthE9YmggZIOHCyPTTuJcu6EU54tYD+4G39cUb28kxC6jMf/AbPfWGLQtgPTdh3xw==` |
+| Vendored file sha256 | `8292919c88a0f7d3fb31d0cd0253ca5a9531bc1ede82b0537f2c63dd8abe6a7a` |
+| Grammar ABI version | `15` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `shellscript` language adapter
+(`../src/languages/shellscript/`), one of five comment-only-batch
+languages (`docs/language-candidates.md`'s Pass 4 "High" priority row).
+`0.25.1` publishes a prebuilt `tree-sitter-bash.wasm` at its package root,
+same low-risk vendoring path as Python/JavaScript/CSS/PowerShell below —
+confirmed, not assumed, per Finding D's "prebuilt and loadable are two
+separate things to verify" (`docs/language-candidates.md` Pass 2): loaded
+directly with this project's pinned `web-tree-sitter@0.26.13` and parsed a
+shebang + line comment + trailing comment snippet cleanly (`hasError:
+false`) via `docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+(`MIN_COMPATIBLE_VERSION` 13, `LANGUAGE_VERSION` 15) — this grammar's own
+`abiVersion` is `15`, the newest supported.
+
+Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
+above documents, substituting `tree-sitter-bash` throughout.
+

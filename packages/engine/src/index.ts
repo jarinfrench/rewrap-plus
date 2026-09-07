@@ -99,6 +99,8 @@ export { latexAdapter } from './languages/latex/adapter.js';
 export { latexDescriptor } from './languages/latex/descriptor.js';
 export { tomlAdapter } from './languages/toml/adapter.js';
 export { tomlDescriptor } from './languages/toml/descriptor.js';
+export { shellscriptAdapter } from './languages/shellscript/adapter.js';
+export { shellscriptDescriptor } from './languages/shellscript/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';
