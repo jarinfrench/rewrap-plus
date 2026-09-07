@@ -142,4 +142,51 @@ describe('rewrapPlus.wrapDocument', () => {
       (vscode.workspace as { applyEdit: typeof vscode.workspace.applyEdit }).applyEdit = originalApplyEdit;
     }
   });
+
+  it('shows the cancellable large-document guardrail for one pathologically long line, not just a high line count', async () => {
+    // Adversarial-audit finding #4: `LARGE_DOCUMENT_LINE_THRESHOLD` alone
+    // missed this shape entirely — a single 500,000-character line
+    // (minified/generated content) has `lineCount === 1` regardless of
+    // how many characters it holds, so it used to skip the
+    // cancellable-progress guardrail no matter how large it actually
+    // was. This document is two lines total (one huge line plus the
+    // trailing-newline's own empty final line) — proof the character
+    // count, not the line count, is what triggers the guardrail here.
+    const config = vscode.workspace.getConfiguration('rewrapPlus');
+    await config.update('columnLimit', 60, vscode.ConfigurationTarget.Global);
+
+    let withProgressCalled = false;
+    const originalWithProgress = vscode.window.withProgress;
+    (vscode.window as { withProgress: typeof vscode.window.withProgress }).withProgress = ((
+      options: vscode.ProgressOptions,
+      task: Parameters<typeof vscode.window.withProgress>[1],
+    ) => {
+      withProgressCalled = true;
+      return originalWithProgress.call(vscode.window, options, task);
+    }) as typeof vscode.window.withProgress;
+
+    try {
+      // ~440,000 characters, comfortably over LARGE_DOCUMENT_CHAR_THRESHOLD
+      // (200,000) — see that constant's own doc comment in
+      // ../../src/commands/wrap-document.ts for where 200,000 came from.
+      const words = Array.from({ length: 45_000 }, (_, i) => `word${i}`).join(' ');
+      const editor = await openScratchDocument(`# ${words}\n`, 'python');
+      assert.strictEqual(
+        editor.document.lineCount,
+        2,
+        'sanity: still a tiny line count despite the huge character count',
+      );
+      assert.ok(editor.document.getText().length > 200_000, 'sanity: comfortably over the character threshold');
+
+      await vscode.commands.executeCommand('rewrapPlus.wrapDocument');
+      await settle();
+
+      assert.ok(
+        withProgressCalled,
+        'expected the cancellable progress guardrail to trigger for a pathologically long single line',
+      );
+    } finally {
+      (vscode.window as { withProgress: typeof vscode.window.withProgress }).withProgress = originalWithProgress;
+    }
+  });
 });
