@@ -42,23 +42,7 @@
  */
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
-import {
-  AdapterRegistry,
-  ParserManager,
-  cppAdapter,
-  cssAdapter,
-  javaAdapter,
-  javascriptAdapter,
-  latexAdapter,
-  markdownAdapter,
-  powershellAdapter,
-  pythonAdapter,
-  scssAdapter,
-  shellscriptAdapter,
-  tomlAdapter,
-  typescriptAdapter,
-  typescriptReactAdapter,
-} from '@rewrap-plus/engine';
+import { AdapterRegistry, ParserManager, registerAllAdapters } from '@rewrap-plus/engine';
 
 const require = createRequire(import.meta.url);
 
@@ -70,10 +54,14 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
- * Registers every adapter `packages/vscode-extension/src/engine-host.ts`
- * does -- the CLI supports exactly the same language set as the
- * extension, deliberately, rather than the two glue layers drifting
- * apart on which languages are "really" supported.
+ * Delegates to the engine's own `registerAllAdapters()` -- the single
+ * source of truth for "every adapter this project ships" -- rather than
+ * a second hardcoded `registry.register(...)` list kept in sync with
+ * `packages/vscode-extension/src/engine-host.ts`'s own copy by hand; see
+ * that file's doc comment and `packages/engine/src/all-adapters.ts` for
+ * why this moved. The CLI still supports exactly the same language set
+ * as the extension, deliberately -- now structurally guaranteed rather
+ * than by convention, since both glue layers call the identical function.
  */
 function getRegistry(): Promise<AdapterRegistry> {
   const existing = registryPromise;
@@ -81,19 +69,7 @@ function getRegistry(): Promise<AdapterRegistry> {
     return existing;
   }
   const registry = new AdapterRegistry();
-  registry.register(pythonAdapter);
-  registry.register(javascriptAdapter);
-  registry.register(typescriptAdapter);
-  registry.register(typescriptReactAdapter);
-  registry.register(cppAdapter);
-  registry.register(javaAdapter);
-  registry.register(markdownAdapter);
-  registry.register(latexAdapter);
-  registry.register(tomlAdapter);
-  registry.register(shellscriptAdapter);
-  registry.register(cssAdapter);
-  registry.register(scssAdapter);
-  registry.register(powershellAdapter);
+  registerAllAdapters(registry);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

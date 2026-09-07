@@ -71,6 +71,7 @@ export type {
   DiscoverRegionsOptions,
 } from './types/adapter.js';
 export { AdapterRegistry, validateDescriptor } from './adapter-registry.js';
+export { allAdapters, registerAllAdapters } from './all-adapters.js';
 export type { Atom, Block, DocMeta, LogicalDocument } from './types/document.js';
 export { PositionMapper } from './types/position-mapper.js';
 export type { Position } from './types/position-mapper.js';

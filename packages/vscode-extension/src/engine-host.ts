@@ -110,48 +110,31 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * `createRegistry()` (below) registers thirteen adapters -- `pythonAdapter`,
+ * `createRegistry()` (below) delegates to the engine's own
+ * `registerAllAdapters()` -- the single source of truth for "every
+ * adapter this project ships" -- rather than listing `pythonAdapter`,
  * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`,
  * `cppAdapter`, `javaAdapter`, `markdownAdapter`, `latexAdapter`,
  * `tomlAdapter`, `shellscriptAdapter`, `cssAdapter`, `scssAdapter`, and
- * `powershellAdapter` -- and this list is the one deliberate place deciding what's actually user-facing, since
- * `getSupportedLanguages()` (below) drives
- * which documents the extension's commands and formatters activate for.
- * The engine's `javascriptAdapter` didn't start out registered here: it
- * began as a conformance canary proving the adapter interface generalizes
- * beyond Python (see `docs/adapters.md`'s JavaScript canary section),
- * deliberately *not* registered here so `getSupportedLanguages()` wouldn't
- * advertise JS support that didn't actually exist yet. That canary is now
- * the real, full adapter (strings, concatenation, JSDoc doc comments) --
- * see `docs/adapters.md`'s JavaScript/TypeScript/TSX -- full adapters
- * section -- so it's registered alongside its `typescript`/`typescriptreact`
- * siblings. `javascriptAdapter`'s own `javascriptreact` alias and
- * `AdapterRegistry.supportedLanguages()` (which includes aliases -- see
- * that method's own doc comment) are what make `.jsx` files supported
- * here too, with no separate registration needed for it the way `.tsx`
- * needs one (a genuinely different grammar, not an alias --
- * `../../engine/src/languages/typescript/descriptor.ts`'s own doc comment
- * explains why). `cppAdapter` (`'cpp'`) and `javaAdapter` (`'java'`) are
- * each real adapters from the start, unlike JavaScript's canary-then-real
- * path, since neither C++ nor Java had an equivalent thin precursor to
- * extend. `markdownAdapter` (`'markdown'`) is the first `'prose'`-only
- * adapter registered here -- no comment/string discovery at all, see
- * `docs/adapters.md`'s "Markdown and LaTeX -- prose languages" section and
- * `../../engine/src/languages/markdown/descriptor.ts`'s own doc comment.
- * `latexAdapter` (`'latex'`) is the second `'prose'`-only adapter: unlike
- * Markdown, LaTeX's grammar has no paragraph node at all, so its own
- * `discoverProse` is a masked line scan rather than a query capture (see
- * `../../engine/src/languages/latex/discover-prose.ts`'s own doc comment)
- * -- a real, measured, file-size-proportional cost for a single-region
- * "wrap at cursor" request that every other adapter here doesn't pay
- * (`docs/benchmarks.md`'s "LaTeX" section). `tomlAdapter`, `shellscriptAdapter`,
- * `cssAdapter`, `scssAdapter`, and `powershellAdapter` are the five
- * comment-only-batch adapters (`docs/language-candidates.md`'s Pass 4
- * "High" priority row) -- each declares no `strings`/`queries.strings` at
- * all, matching Markdown/LaTeX's own precedent for a language with
- * nothing safe to wrap outside comments, but (unlike Markdown/LaTeX) each
- * discovers ordinary `queries.comments`-driven regions rather than
- * `'prose'` ones.
+ * `powershellAdapter` here individually. This file previously did list
+ * them individually, identically to `packages/cli/src/engine-host.ts`'s
+ * own copy of the same list -- correct only because both files were kept
+ * in sync by hand every time a language was added. Deliberately
+ * documented here as a decision-of-record, not a silent refactor: moving
+ * the list into `packages/engine/src/all-adapters.ts` is a structural
+ * change to the engine's public surface (a new exported
+ * `registerAllAdapters()` function), not a new engine *capability* --
+ * no adapter's own internals changed, so "adding a language touches no
+ * engine code" still holds exactly as before. What each adapter *is* --
+ * `javascriptAdapter`'s canary-to-real history, `markdownAdapter`/
+ * `latexAdapter`'s `'prose'`-only shape, the `tomlAdapter`/
+ * `shellscriptAdapter`/`cssAdapter`/`scssAdapter`/`powershellAdapter`
+ * comment-only batch -- is still worth knowing, but that's now
+ * `packages/engine/src/all-adapters.ts`'s own doc comment to own, not a
+ * second copy of it here.
+ *
+ * `getSupportedLanguages()` (below) is what actually drives which
+ * documents the extension's commands and formatters activate for.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -172,19 +155,7 @@ function getRegistry(): Promise<AdapterRegistry> {
 async function createRegistry(): Promise<AdapterRegistry> {
   const engine = await getEngine();
   const registry = new engine.AdapterRegistry();
-  registry.register(engine.pythonAdapter);
-  registry.register(engine.javascriptAdapter);
-  registry.register(engine.typescriptAdapter);
-  registry.register(engine.typescriptReactAdapter);
-  registry.register(engine.cppAdapter);
-  registry.register(engine.javaAdapter);
-  registry.register(engine.markdownAdapter);
-  registry.register(engine.latexAdapter);
-  registry.register(engine.tomlAdapter);
-  registry.register(engine.shellscriptAdapter);
-  registry.register(engine.cssAdapter);
-  registry.register(engine.scssAdapter);
-  registry.register(engine.powershellAdapter);
+  engine.registerAllAdapters(registry);
   return registry;
 }
 
