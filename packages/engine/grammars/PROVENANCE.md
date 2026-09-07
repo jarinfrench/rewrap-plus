@@ -449,3 +449,61 @@ Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
 Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
 above documents, substituting `tree-sitter-css` throughout.
 
+## `tree-sitter-scss.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-scss`](https://www.npmjs.com/package/tree-sitter-scss) |
+| Package version | `1.0.0` |
+| Upstream repo | https://github.com/tree-sitter-grammars/tree-sitter-scss |
+| Upstream commit | `eb69c8f55ecc17235f43358c65ec644578554f92` |
+| npm tarball shasum | `85ffb8604f28e443fb2e8659663f0685548a231d` |
+| npm tarball integrity | `sha512-CYHEkSG4RTGHfwwQSXwsnagRUNr2Gh2jzrvNUXz95OfSzOdUAtPx4aM1zOGSprAzOPnwlBQfbYs0vVsklf3WWA==` |
+| Built with | `tree-sitter-cli@0.26.13` (`tree-sitter build --wasm`), pinned to match this project's `web-tree-sitter@0.26.13` |
+| wasi-sdk version used by the CLI | `29.0`, the identical cached toolchain `tree-sitter-latex.wasm` and `tree-sitter-toml.wasm` (below) were built with — no Emscripten/Docker step |
+| Build host OS | Windows 10 (the vendoring machine) |
+| Vendored file sha256 | `96b9e533fa1c5ac9f525e6fee84fb6c89fbeb4a4b264fa32210cfa97ab116c66` |
+| Grammar ABI version | `14` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `scss` language adapter (`../src/languages/scss/`), one
+of the five comment-only-batch languages. Unlike `tree-sitter-css` above,
+`1.0.0` ships no prebuilt `.wasm` at its package root — only a generated
+`src/parser.c` plus a plain-C `src/scanner.c` (no C++ external scanner,
+unlike `tree-sitter-yaml`'s build failure documented in
+`docs/language-candidates.md`'s Finding Y) — so this file is a local build
+from that tarball, the same low-risk path `tree-sitter-toml.wasm` below
+and `tree-sitter-latex.wasm` above both already used: `npx --package
+tree-sitter-cli@0.26.13 tree-sitter build --wasm <extracted dir>`, no
+`tree-sitter generate` step needed since the tarball already ships a
+generated parser. Confirmed loadable with this project's pinned
+`web-tree-sitter@0.26.13` and parses a `//` line comment (`js_comment`
+node) alongside a `/* ... */` block comment (`comment` node — two
+distinct node types, the same two-comment-node-type shape
+`docs/adapters.md` already found and solved for Java, just under
+different node names) cleanly (`hasError: false`), per
+`docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+— this grammar's own `abiVersion` is `14`, one older than the newest
+supported (`15`) but still inside the supported range.
+
+### Regenerating / updating
+
+1. `npm view tree-sitter-scss versions --json` for what's published;
+   confirm the tarball still ships a generated `src/parser.c` (`npm pack
+   --dry-run`) and a plain-`.c` (not `.cc`) external scanner, so no
+   `tree-sitter generate` step is needed and the C++-external-scanner
+   hazard (`docs/language-candidates.md` Finding Y) doesn't apply.
+2. `npm pack tree-sitter-scss@<version>` and extract the tarball.
+3. `npx --package tree-sitter-cli@0.26.13 tree-sitter build --wasm
+   <extracted dir> -o tree-sitter-scss.wasm` — keep the CLI version pinned
+   to match this project's `web-tree-sitter` version.
+4. Re-run `docs/spikes/tree-sitter-comment-langs-batch-probe.mjs` against
+   the new file before replacing the vendored one.
+5. Copy the file over this one; update the table above (package version,
+   upstream commit, tarball shasum/integrity, wasi-sdk version if it
+   changed, the vendored file's own sha256, and `abiVersion`).
+6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
+   typecheck && npm run build`.
+
