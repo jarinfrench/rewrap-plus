@@ -1,4 +1,4 @@
-# Known gaps — tracked, not forgotten
+# Known gaps -- tracked, not forgotten
 
 A short tracking list for real gaps found during project self-review that
 are deliberately deferred rather than fixed, distinct from `CHANGELOG.md`'s
@@ -6,14 +6,14 @@ are deliberately deferred rather than fixed, distinct from `CHANGELOG.md`'s
 `docs/adapters.md`/`docs/parsing.md` (findings already resolved, with the
 fix recorded alongside the leak). This document is the opposite of a design
 proposal: each entry is what the gap is, why it's deferred, and the
-concrete next step that would close it — nothing more.
+concrete next step that would close it -- nothing more.
 
 ## Notebook cell support is unverified
 
 **What's missing.** Whether Rewrap+'s commands and formatting providers
-actually work correctly against a Jupyter notebook (`.ipynb`) code cell —
+actually work correctly against a Jupyter notebook (`.ipynb`) code cell --
 a very plausible place for a Python-focused wrapping extension to get
-used — has never been tested or documented. `packages/vscode-extension/src`
+used -- has never been tested or documented. `packages/vscode-extension/src`
 has no reference to notebooks anywhere: the document/range-formatting
 providers register with a plain `{language}` `DocumentSelector`
 (`../packages/vscode-extension/src/extension.ts`), and every command's
@@ -24,16 +24,16 @@ one way or the other.
 **Why deferred.** VS Code very likely routes a focused Python cell's
 "Format Cell"/`rewrapPlus.wrapAtCursor` through the same APIs as an
 ordinary file, since a notebook cell is itself a `TextDocument` with a
-`languageId` — but "very likely" is exactly the kind of unverified
+`languageId` -- but "very likely" is exactly the kind of unverified
 assumption this project's own `CLAUDE.md` says not to trust for anything
 parser- or host-API-adjacent. There is no evidence either way yet, only an
-untested plausibility, and no known bug report driving this — nothing
+untested plausibility, and no known bug report driving this -- nothing
 justifies spending implementation effort here before finding out whether
 there's actually a problem to solve.
 
 **Next step.** Add an `@vscode/test-electron` integration test that opens
 a `.ipynb` fixture, selects a Python code cell, and runs
-`rewrapPlus.wrapAtCursor` / `rewrapPlus.wrapDocument` against it — the same
+`rewrapPlus.wrapAtCursor` / `rewrapPlus.wrapDocument` against it -- the same
 shape `packages/vscode-extension/test/integration/suite/wrap-at-cursor.test.ts`
 already uses for ordinary files, adapted to the notebook API surface
 (`vscode.workspace.openNotebookDocument`, `vscode.window.showNotebookDocument`).
@@ -43,10 +43,10 @@ needed.
 
 ## No internationalization (`vscode.l10n`)
 
-**What's missing.** Every user-facing string — command titles, setting
+**What's missing.** Every user-facing string -- command titles, setting
 descriptions in `package.json`'s `contributes.configuration`, output
 channel lines, status bar messages, and the one warning toast added by
-finding #1 above — is hardcoded English. Nothing in this repository uses
+finding #1 above -- is hardcoded English. Nothing in this repository uses
 `vscode.l10n`, `package.nls.json`, or `vscode-nls`.
 
 **Why deferred.** Reasonable to leave at this project's current scale

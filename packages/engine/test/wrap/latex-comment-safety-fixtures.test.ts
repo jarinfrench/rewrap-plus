@@ -21,17 +21,17 @@ import lstinlineOut from '../fixtures/latex/verb/002-lstinline-unbreakable.out.t
  * Phase D commit 17: trailing-`%`-comment safety and `\verb`/`\lstinline`
  * unbreakability.
  * Each `.out.tex` was produced by actually running `wrapRegions` against
- * the paired `.in.tex` (not hand-computed), then verified — idempotent,
+ * the paired `.in.tex` (not hand-computed), then verified -- idempotent,
  * no line over the column limit *except* the two `\verb`/`\lstinline`
  * fixtures, whose whole point is that their unbreakable span survives
  * intact even though it exceeds the limit (the same "overflow rule" a
- * lone long URL already relies on) — before being committed as gold.
+ * lone long URL already relies on) -- before being committed as gold.
  *
  * `verb/002-lstinline-unbreakable` is the fixture that caught a real bug
  * in this commit's own first attempt: two separate `extraUnbreakable`
  * patterns (`\verb`'s and `\lstinline`'s), each with its own `(.)`/`\1`
  * capture-and-backreference, get capture-group-renumbered when
- * `findUnbreakableSpans` combines them into one `RegExp` — `\lstinline`'s
+ * `findUnbreakableSpans` combines them into one `RegExp` -- `\lstinline`'s
  * own `\1` silently started meaning `\verb`'s group instead, truncating
  * every real `\lstinline|...|` match at its first internal space. Fixed
  * in `../../src/languages/latex/wrap-prose.ts` by merging both commands
@@ -81,7 +81,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(latexAdapter);
 });
 
-describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability — end-to-end gold fixtures', () => {
+describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'latex', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -94,7 +94,7 @@ describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability 
     }
   });
 
-  it('is idempotent — wrapping already-wrapped output produces zero further edits', async () => {
+  it('is idempotent -- wrapping already-wrapped output produces zero further edits', async () => {
     for (const fixture of fixtures) {
       const result = await wrapRegions(fixture.expected, 'latex', 'all', config(), parserManager);
       const reapplied = applyTextEdits(fixture.expected, result.edits);
@@ -115,14 +115,14 @@ describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability 
     }
   });
 
-  it('the trailing-comment stays glued to its preceding word — never appears alone on its own line', () => {
+  it('the trailing-comment stays glued to its preceding word -- never appears alone on its own line', () => {
     const lines = reflowBeforeOut.split('\n');
     expect(lines).toContain('appears % a note here');
   });
 
   it('never pulls a following line\'s words up onto a comment line, even when there would be room', () => {
     const lines = reflowAfterOut.split('\n');
-    // "Short intro % a brief note" is 27 columns — 13 columns of room
+    // "Short intro % a brief note" is 27 columns -- 13 columns of room
     // remain under the 40-column limit, but "This" (the next line's own
     // first word) must never be pulled up onto it.
     expect(lines[0]).toBe('Short intro % a brief note');
@@ -132,7 +132,7 @@ describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability 
   it('an escaped \\% reflows as ordinary text; the real % after it stays a protected comment', () => {
     expect(escapedPercentOut).toContain('100\\%');
     // The escaped percent sign survived being reflowed onto a different
-    // line than it started on — proof it was treated as ordinary
+    // line than it started on -- proof it was treated as ordinary
     // reflowable text, not specially protected or corrupted.
     const lines = escapedPercentOut.split('\n');
     expect(lines.some((line) => line.includes('100\\%'))).toBe(true);
@@ -147,7 +147,7 @@ describe('LaTeX trailing-% comment safety and \\verb/\\lstinline unbreakability 
     expect(verbLine.length).toBeGreaterThan(COLUMN_LIMIT);
   });
 
-  it('a \\lstinline span survives whole even though it exceeds the column limit — the bug this fixture caught', () => {
+  it('a \\lstinline span survives whole even though it exceeds the column limit -- the bug this fixture caught', () => {
     const lstinlineLine = lstinlineOut.split('\n').find((line) => line.includes('\\lstinline'))!;
     expect(lstinlineLine).toBe('\\lstinline|some_function_name(argument_one, argument_two)|');
     expect(lstinlineLine.length).toBeGreaterThan(COLUMN_LIMIT);

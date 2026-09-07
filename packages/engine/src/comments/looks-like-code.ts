@@ -2,17 +2,17 @@
  * Heuristic for recognizing a run of dissolved comment lines as
  * commented-out code rather than prose, so dissolve can route it to a
  * `verbatim` block instead of reflowing it (the gold-fixture list
- * calls this out explicitly: "commented-out code (should be verbatim —
+ * calls this out explicitly: "commented-out code (should be verbatim --
  * detect via high punctuation density / parseability)").
  *
  * This is the comment-side counterpart to the prose heuristic for
- * string literals — same motivation (don't mangle something that isn't
+ * string literals -- same motivation (don't mangle something that isn't
  * prose), much simpler scope. A wrong "prose" guess reflows a disabled
  * function definition into something that no longer round-trips back to
  * valid source if someone re-enables it; a wrong "code" guess merely
  * leaves a few lines of ordinary prose unwrapped, which is cosmetically
  * worse but never corrupts anything. That asymmetry is why ties lean
- * toward "code" — see the threshold chosen below.
+ * toward "code" -- see the threshold chosen below.
  *
  * Deliberately line-oriented and majority-voted over a whole run rather
  * than per-line: a single stray line inside an otherwise prose comment
@@ -25,15 +25,15 @@
  * An earlier version of this hardcoded Python's own leading-keyword
  * list (`def `, `class `, `import `, ...) directly inside the function,
  * imported straight into `dissolveLineComments`. That made
- * `dissolveLineComments` — otherwise fully generic, driven entirely by a
- * `LanguageDescriptor` — secretly Python-only: the JavaScript
+ * `dissolveLineComments` -- otherwise fully generic, driven entirely by a
+ * `LanguageDescriptor` -- secretly Python-only: the JavaScript
  * canary would have needed either its own fork of the whole function or
  * a duplicate of this one with `function `/`const `/`let `/... swapped
  * in. Splitting the *pattern* out to
  * `LanguageDescriptor.comments.codeLikeKeywords` (data, per the
  * project's "adapter is data first" rule) and keeping only the shared
  * punctuation-density math here is what makes this genuinely
- * language-agnostic — exactly the kind of leaked assumption the
+ * language-agnostic -- exactly the kind of leaked assumption the
  * conformance kit and canary exist to surface early (see
  * `docs/adapters.md`, "Commented-out-code detection hardcoded Python's
  * keyword list").
@@ -43,7 +43,7 @@
  * Symbol characters counted toward punctuation density. Chosen to be the
  * characters that show up constantly in code (call/subscript/block
  * syntax, operators, assignment) and rarely, in this concentration, in
- * prose — an ordinary sentence has commas and the occasional colon, not
+ * prose -- an ordinary sentence has commas and the occasional colon, not
  * a run of parens and equals signs. Deliberately language-agnostic: every
  * C-family-descended language this project targets (Python, JavaScript/
  * TypeScript, C++) uses this same symbol vocabulary for the same
@@ -59,7 +59,7 @@ const CODE_PUNCTUATION = /[(){}[\]=:;.,<>+\-*/%&|^~!]/g;
  * Two independent signals, either sufficient on its own:
  *
  * - A leading keyword/decorator/shebang match against
- *   `leadingKeywordPattern`, if the descriptor supplied one — the
+ *   `leadingKeywordPattern`, if the descriptor supplied one -- the
  *   strong, low-false-positive signal.
  * - Punctuation density: more than 40% of a line's letters are
  *   accompanied by a code-punctuation character, *and* at least one of
@@ -90,11 +90,11 @@ function isCodeLikeLine(line: string, leadingKeywordPattern: RegExp | undefined)
 
 /**
  * True if `lines` (dissolved comment content, one paragraph-eligible run
- * — no directive lines mixed in, those are filtered out before this is
+ * -- no directive lines mixed in, those are filtered out before this is
  * called) reads as commented-out code as a whole.
  *
  * `leadingKeywordPattern` is normally `descriptor.comments.codeLikeKeywords`
- * — optional, per that field's own doc comment: a language that doesn't
+ * -- optional, per that field's own doc comment: a language that doesn't
  * supply one still gets the punctuation-density signal alone, weaker but
  * never absent.
  *

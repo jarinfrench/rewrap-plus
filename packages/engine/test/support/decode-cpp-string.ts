@@ -1,7 +1,7 @@
 /**
  * Test-only reimplementation of enough of C++'s own non-raw string escape
  * decoding to support an eval-equivalence check for the C++ adapter's
- * string-wrap gold fixtures (`../wrap/cpp-string-wrap-fixtures.test.ts`) —
+ * string-wrap gold fixtures (`../wrap/cpp-string-wrap-fixtures.test.ts`) --
  * the C++ counterpart to `./decode-python-string.ts`. See that module's own
  * doc comment for the shared rationale: never shipped in engine runtime
  * code, a test-only oracle independent of the engine's own dissolve/emit,
@@ -9,12 +9,12 @@
  * forms this project's own gold fixtures actually use.
  *
  * `eval` isn't an option here the way it is for
- * `./decode-js-string.ts` — a C++ string literal isn't valid JavaScript —
+ * `./decode-js-string.ts` -- a C++ string literal isn't valid JavaScript --
  * so this hand-decodes, same approach as the Python oracle.
  *
  * Scope, mirroring `decode-python-string.ts`'s own named exclusions:
  * - Raw string literals (`R"delim(...)delim"`) are skipped as opaque,
- *   never decoded — they're never eligible for wrapping (`isSafeToWrap`)
+ *   never decoded -- they're never eligible for wrapping (`isSafeToWrap`)
  *   the same way Python's raw strings aren't, and their backslashes carry
  *   no escape meaning at all.
  * - Encoding prefixes (`L`, `u8`, `u`, `U`, and their raw-string
@@ -24,7 +24,7 @@
  *   would apply, since none of this project's fixtures depend on that
  *   distinction.
  * - `\x` hex escapes take as many hex digits as follow, per the C++
- *   standard's own (notoriously unbounded) rule — not a fixed width the
+ *   standard's own (notoriously unbounded) rule -- not a fixed width the
  *   way `\u`/`\U` are.
  */
 
@@ -96,7 +96,7 @@ const PREFIX_RE = /^(u8|[LuU])?(R)?$/;
 
 /**
  * Find every double-quoted string literal token in `source` (never
- * single-quoted — those are C++ *character* literals, a different
+ * single-quoted -- those are C++ *character* literals, a different
  * construct with no wrapping relevance), respecting backslash escapes, and
  * concatenate their decoded values in order. Same whole-file scanning
  * strategy as `decode-python-string.ts`'s own
@@ -124,7 +124,7 @@ export function extractConcatenatedStringValue(source: string): string {
     const isRaw = PREFIX_RE.test(prefix) && prefix.includes('R');
 
     if (isRaw) {
-      // R"delim(...)delim" — find the delimiter (text before the opening
+      // R"delim(...)delim" -- find the delimiter (text before the opening
       // paren) and the matching `)delim"` close; skip over it opaquely.
       const delimMatch = /^[^\s\\()]*\(/.exec(source.slice(i + 1));
       if (delimMatch) {

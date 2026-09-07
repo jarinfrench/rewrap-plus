@@ -7,20 +7,20 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 /**
  * Doxygen's flush-left tag marker: `\param`, `@param`, `\return`,
- * `@brief`, ... — the same field-list shape `./jsdoc.ts`'s `JSDOC_TAG`
+ * `@brief`, ... -- the same field-list shape `./jsdoc.ts`'s `JSDOC_TAG`
  * already matches, generalized to accept *either* prefix character.
  * Doxygen genuinely supports both spellings of every command
- * interchangeably (unlike JSDoc, which only ever uses `@`) — this isn't
+ * interchangeably (unlike JSDoc, which only ever uses `@`) -- this isn't
  * two dialects merged, just one dialect with two equally valid marker
  * characters for the same tag vocabulary.
  *
  * `label` preserves whichever character the source actually used (`line[0]`,
  * guaranteed to be `\` or `@` by this pattern matching at all) rather than
- * normalizing to one — a doc comment mixing `\param` and `@return` across
+ * normalizing to one -- a doc comment mixing `\param` and `@return` across
  * different tags is unusual but legal Doxygen, and there's no reason to
  * silently rewrite a user's chosen style on wrap. See `./jsdoc.ts`'s own
  * doc comment for why the label is just the bare tag (`\param`/`@param`),
- * not `\param name` or `\param {Type} name` — the identical "don't
+ * not `\param name` or `\param {Type} name` -- the identical "don't
  * hardcode a per-tag argument grammar" reasoning applies unchanged.
  */
 const DOXYGEN_TAG = /^([\\@])([a-zA-Z][\w-]*)\s*(.*)$/;
@@ -40,7 +40,7 @@ function matchDoxygenEntry(line: string): EntryStartMatch | null {
 /**
  * Doxygen-style doc comments: a brief/detailed description, then a flat
  * run of `\param`/`@param`, `\return`/`@return`, `\throws`/`@throws`, ...
- * tags — structurally identical to JSDoc's field-list shape
+ * tags -- structurally identical to JSDoc's field-list shape
  * (`./jsdoc.ts`), which this module deliberately mirrors rather than
  * reinventing, differing only in accepting the `\`-prefixed spelling
  * alongside `@`. Governs a `'docComment'` region (a `/** ... * /` block
@@ -48,7 +48,7 @@ function matchDoxygenEntry(line: string): EntryStartMatch | null {
  * adapters, the way `jsdocDialect` does for ECMAScript-family ones.
  *
  * Deliberately does not attempt Doxygen's other comment forms
- * (`///`-repeated triple-slash lines, `//!`, `/*! ... * /`) — those are a
+ * (`///`-repeated triple-slash lines, `//!`, `/*! ... * /`) -- those are a
  * genuinely different delimiter *shape* (no single open/close pair the
  * existing `comments.block`-driven dissolve/emit machinery can express;
  * see `docs/adapters.md`'s C++ section for the full reasoning), not
@@ -60,7 +60,7 @@ export const doxygenDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized tag lines found,
-   * saturating quickly — the identical curve and rationale as
+   * saturating quickly -- the identical curve and rationale as
    * `jsdocDialect.detect`: a single `@return`/`\return` is already
    * strong, distinctive evidence.
    */

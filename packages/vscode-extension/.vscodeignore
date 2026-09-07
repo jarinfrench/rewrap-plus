@@ -2,17 +2,17 @@
 # (.git, .vscodeignore itself, and similar). Packaging always runs with
 # `--no-dependencies` (see package.json's `package` script): this
 # package's own runtime dependencies are fully satisfied without vsce's
-# built-in dependency walk — @rewrap-plus/engine bundles directly into
+# built-in dependency walk -- @rewrap-plus/engine bundles directly into
 # dist/extension.js, and web-tree-sitter loads via a runtime-computed
 # path from dist/web-tree-sitter-runtime/ (src/web-tree-sitter-runtime.ts)
-# — and that walk is actively harmful here: it shells out to `npm list
+# -- and that walk is actively harmful here: it shells out to `npm list
 # --production`, which in this npm-workspaces monorepo reports the
 # *workspace root* as a "dependency directory" too, so vsce tries to
 # glob-and-package the entire repository (confirmed directly: `vsce ls`
 # without `--no-dependencies` listed `../../.git/**` and every unrelated
 # doc in the repo).
 
-# TypeScript sources — dist/extension.js is what ships.
+# TypeScript sources -- dist/extension.js is what ships.
 src/**
 
 # Test sources and their compiled/downloaded artifacts. None of this is
@@ -22,7 +22,7 @@ test/**
 out-test/**
 .vscode-test/**
 
-# The build script itself — its job is done once dist/ and grammars/
+# The build script itself -- its job is done once dist/ and grammars/
 # exist; it has no reason to ship.
 scripts/**
 
@@ -32,7 +32,7 @@ tsconfig.test.json
 *.tsbuildinfo
 vitest.config.mts
 
-# Source maps — useful for local debugging, not for the packaged
+# Source maps -- useful for local debugging, not for the packaged
 # extension; dropping them keeps the .vsix meaningfully smaller. Covers
 # both dist/extension.js.map and dist/web-tree-sitter-runtime/*.map.
 dist/**/*.map

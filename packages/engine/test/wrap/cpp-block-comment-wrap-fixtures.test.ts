@@ -11,7 +11,7 @@ import plainOut from '../fixtures/cpp/block-comments/001-plain-narrative.out.cpp
 
 /**
  * Gold fixtures for a plain single-star `/* ... * /` `'blockComment'`
- * region (no Doxygen marker) — `descriptor.comments.plainBlock`'s
+ * region (no Doxygen marker) -- `descriptor.comments.plainBlock`'s
  * distinct open delimiter, dissolved/emitted through
  * `dissolveBlockComments`/`emitBlockComments`
  * (`../../src/comments/dissolve-block-comments.ts`,
@@ -49,7 +49,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(cppAdapter);
 });
 
-describe('C++ blockComment (plain /* */) wrapping — end-to-end gold fixtures', () => {
+describe('C++ blockComment (plain /* */) wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'cpp', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

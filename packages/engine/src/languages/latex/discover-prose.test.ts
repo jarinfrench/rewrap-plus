@@ -49,14 +49,14 @@ describe('discoverLatexProse', () => {
     expect(sliceSpanText(source, comments[0]!.span)).toBe('% a standalone comment');
   });
 
-  it('folds a trailing % comment into the surrounding prose region — no separate lineComment region (commit 17, §6.4)', () => {
+  it('folds a trailing % comment into the surrounding prose region -- no separate lineComment region (commit 17, Sec. 6.4)', () => {
     const source = 'text before % a trailing note\nmore text after\n';
     const regions = discover(source);
     const prose = regions.filter((r) => r.kind === 'prose');
     const comments = regions.filter((r) => r.kind === 'lineComment');
     expect(prose).toHaveLength(1);
     expect(comments).toHaveLength(0);
-    // The comment's own text is included in the region's first part — it
+    // The comment's own text is included in the region's first part -- it
     // is `wrapLatexProse`'s trailing-comment hard-break pattern
     // (`./trailing-comment.ts`), not discovery, that keeps it from ever
     // being reflowed once dissolveProse sees it.
@@ -109,7 +109,7 @@ describe('discoverLatexProse', () => {
     expect(proseText(source, regions[1]!)).toBe('Text after.');
   });
 
-  it('does NOT mask abstract — the prose inside reflows normally', () => {
+  it('does NOT mask abstract -- the prose inside reflows normally', () => {
     const source = '\\begin{abstract}\nThis is the abstract text that should wrap normally.\n\\end{abstract}\n';
     const prose = discover(source).filter((r) => r.kind === 'prose');
     expect(prose).toHaveLength(1);
@@ -118,7 +118,7 @@ describe('discoverLatexProse', () => {
     );
   });
 
-  it('does NOT mask itemize — \\item content is prose-eligible', () => {
+  it('does NOT mask itemize -- \\item content is prose-eligible', () => {
     const source = '\\begin{itemize}\n\\item First item text.\n\\item Second item text.\n\\end{itemize}\n';
     const prose = discover(source).filter((r) => r.kind === 'prose');
     expect(prose).toHaveLength(2);
@@ -144,11 +144,11 @@ describe('discoverLatexProse', () => {
     it('is the \\item marker\'s own column, shorter than the item\'s real content-start column', () => {
       const source = '\\begin{itemize}\n  \\item \\label{item:foo} Item text.\n\\end{itemize}\n';
       const [region] = discover(source).filter((r) => r.kind === 'prose');
-      // "  \item \label{item:foo} " is 25 columns wide — the region's own
+      // "  \item \label{item:foo} " is 25 columns wide -- the region's own
       // content (region.parts[0].startColumn) starts there, but
       // indentColumn must stay at 2 (the marker's own column) for
       // wrapLatexProse's firstLineReserve derivation to produce correctly
-      // wide continuation lines instead of needlessly narrow ones — see
+      // wide continuation lines instead of needlessly narrow ones -- see
       // ./wrap-prose.ts's own doc comment on firstLineReserve.
       expect(region!.indentColumn).toBe(2);
       expect(region!.parts[0]!.startColumn).toBe(25);
@@ -249,7 +249,7 @@ describe('discoverLatexProse', () => {
 
     it('still does NOT exclude real prose text following a structural command on the same line (documented remaining gap)', () => {
       // \section{Title} is itself excludable, but "extra text" after it is
-      // real content the command/tree scanner can't consume — the whole
+      // real content the command/tree scanner can't consume -- the whole
       // line still isn't recognized as structural, and (unlike the
       // pure-chain case above) there's no fix for this one yet: splitting
       // one physical line into an excluded header prefix plus a *new*

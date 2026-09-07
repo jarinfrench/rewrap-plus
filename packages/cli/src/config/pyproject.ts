@@ -1,16 +1,16 @@
 /**
  * Reads `[tool.rewrap-plus]` out of the nearest ancestor `pyproject.toml`
- * — one of the CLI's configuration sources, alongside `.rewraprc` /
+ * -- one of the CLI's configuration sources, alongside `.rewraprc` /
  * `.rewraprc.json` and CLI flags.
  *
  * Keys are kebab-case, matching every other `[tool.*]` table's own
  * convention in the Python packaging ecosystem this file lives
  * alongside (Black's `line-length`, Ruff's `line-length`/`target-version`,
- * ...) — deliberately *not* the camelCase `./rewraprc.ts` uses to mirror
+ * ...) -- deliberately *not* the camelCase `./rewraprc.ts` uses to mirror
  * `rewrapPlus.*` VSCode settings, since `.rewraprc` and `pyproject.toml`
  * are read by different audiences with different naming expectations.
  *
- * Only the nearest `pyproject.toml` is consulted — unlike
+ * Only the nearest `pyproject.toml` is consulted -- unlike
  * `./editorconfig.ts`'s multi-file, root-to-leaf walk, this matches how
  * Python tooling (Black, Ruff) itself treats `pyproject.toml`: the
  * nearest one *is* the project root's config, not one layer in a chain
@@ -42,7 +42,7 @@ export function findNearestPyproject(startDir: string): string | undefined {
  * Resolve the `[tool.rewrap-plus]` config that applies to `filePath`, by
  * finding and parsing the nearest ancestor `pyproject.toml`. Returns an
  * empty config (not `undefined`) both when no `pyproject.toml` exists
- * and when one exists but declares no `[tool.rewrap-plus]` table — a
+ * and when one exists but declares no `[tool.rewrap-plus]` table -- a
  * project's `pyproject.toml` existing for unrelated tools
  * (`[tool.black]`, `[build-system]`, ...) is the common case, not an
  * error.
@@ -83,7 +83,7 @@ export function resolvePyprojectConfig(filePath: string): PartialCliConfig {
 
 // Each helper below returns a one-key (or empty) object rather than
 // mutating a shared accumulator, so the spread chain above reads as a
-// flat list of "this TOML key becomes this config field" declarations —
+// flat list of "this TOML key becomes this config field" declarations --
 // a value of the wrong TOML type (e.g. `column-limit = "wide"`) is
 // silently omitted rather than thrown, the same defensive posture
 // `./toml-subset.ts` itself already takes for unsupported value shapes.

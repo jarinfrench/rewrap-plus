@@ -9,10 +9,10 @@ describe('rewrapPlus.wrapDocument', () => {
     await resetRewrapPlusSettings();
   });
 
-  it('wraps every comment in the document as a single atomic edit — one undo reverts both regions', async () => {
+  it('wraps every comment in the document as a single atomic edit -- one undo reverts both regions', async () => {
     // Adversarial-audit finding #2: this test used to only check the
     // wrapped *result*, never the "single atomic edit" claim its own
-    // title makes — the one thing that actually distinguishes "one
+    // title makes -- the one thing that actually distinguishes "one
     // WorkspaceEdit" from "one edit per region" is what one `undo` does
     // afterward. `two-comments.py` has two independent comment regions
     // specifically so this exercises the multi-region case, not just the
@@ -35,7 +35,7 @@ describe('rewrapPlus.wrapDocument', () => {
     assert.notStrictEqual(
       editor.document.getText(),
       originalText,
-      'the wrap should have changed the document — otherwise the undo assertion below would trivially pass',
+      'the wrap should have changed the document -- otherwise the undo assertion below would trivially pass',
     );
 
     await vscode.commands.executeCommand('undo');
@@ -44,7 +44,7 @@ describe('rewrapPlus.wrapDocument', () => {
     assert.strictEqual(
       editor.document.getText(),
       originalText,
-      'one undo should revert both wrapped regions back to the original document — proof of the "single atomic edit" claim, not just an assertion of it',
+      'one undo should revert both wrapped regions back to the original document -- proof of the "single atomic edit" claim, not just an assertion of it',
     );
   });
 
@@ -65,7 +65,7 @@ describe('rewrapPlus.wrapDocument', () => {
     // just that no line happens to exceed the limit: the fixture's
     // single-line docstring is itself well over 40 characters, so the
     // overLong check above would already fail if wrapRegions skipped it
-    // entirely — this second assertion additionally rules out some
+    // entirely -- this second assertion additionally rules out some
     // other edit coincidentally producing short lines without genuine
     // multi-line reflow.
     assert.ok(
@@ -74,11 +74,11 @@ describe('rewrapPlus.wrapDocument', () => {
     );
   });
 
-  it('reports a failure — not a false "N wrapped" success — when applyEdit returns false', async () => {
+  it('reports a failure -- not a false "N wrapped" success -- when applyEdit returns false', async () => {
     // Adversarial-audit finding #1: `computeAndApplyWrap` used to discard
     // `vscode.workspace.applyEdit`'s return value, so any document VSCode
-    // declines to edit — `applyEdit`'s own documented contract is a
-    // `Thenable<boolean>` precisely because it *can* fail — left the user
+    // declines to edit -- `applyEdit`'s own documented contract is a
+    // `Thenable<boolean>` precisely because it *can* fail -- left the user
     // with only `reportWrapOutcome`'s already-emitted "N wrapped" message:
     // true of the *computed* result, false of what actually happened.
     //
@@ -90,7 +90,7 @@ describe('rewrapPlus.wrapDocument', () => {
     // `workbench.action.files.setActiveEditorReadonlyInSession`, nor
     // closing every editor on a document mid-wrap (`document.isClosed ===
     // true`) actually made `applyEdit` refuse the edit in this project's
-    // pinned `@vscode/test-electron` version (1.134-1.136) — confirmed by
+    // pinned `@vscode/test-electron` version (1.134-1.136) -- confirmed by
     // direct probe in each case, the edit went through regardless. Whatever
     // VSCode's own real refusal conditions are in this version, none of
     // this project's own document-state levers reach them, so this test
@@ -108,7 +108,7 @@ describe('rewrapPlus.wrapDocument', () => {
     const originalApplyEdit = vscode.workspace.applyEdit;
     // Standard extension-test spying/stubbing technique: `vscode.window`/
     // `vscode.workspace`'s exported functions are plain, writable object
-    // properties in the real extension host, not locked-down accessors —
+    // properties in the real extension host, not locked-down accessors --
     // both swapped back in `finally` below regardless of assertion outcome.
     (vscode.window as { showWarningMessage: typeof vscode.window.showWarningMessage }).showWarningMessage = ((
       message: string,
@@ -145,12 +145,12 @@ describe('rewrapPlus.wrapDocument', () => {
 
   it('shows the cancellable large-document guardrail for one pathologically long line, not just a high line count', async () => {
     // Adversarial-audit finding #4: `LARGE_DOCUMENT_LINE_THRESHOLD` alone
-    // missed this shape entirely — a single 500,000-character line
+    // missed this shape entirely -- a single 500,000-character line
     // (minified/generated content) has `lineCount === 1` regardless of
     // how many characters it holds, so it used to skip the
     // cancellable-progress guardrail no matter how large it actually
     // was. This document is two lines total (one huge line plus the
-    // trailing-newline's own empty final line) — proof the character
+    // trailing-newline's own empty final line) -- proof the character
     // count, not the line count, is what triggers the guardrail here.
     const config = vscode.workspace.getConfiguration('rewrapPlus');
     await config.update('columnLimit', 60, vscode.ConfigurationTarget.Global);
@@ -167,7 +167,7 @@ describe('rewrapPlus.wrapDocument', () => {
 
     try {
       // ~440,000 characters, comfortably over LARGE_DOCUMENT_CHAR_THRESHOLD
-      // (200,000) — see that constant's own doc comment in
+      // (200,000) -- see that constant's own doc comment in
       // ../../src/commands/wrap-document.ts for where 200,000 came from.
       const words = Array.from({ length: 45_000 }, (_, i) => `word${i}`).join(' ');
       const editor = await openScratchDocument(`# ${words}\n`, 'python');

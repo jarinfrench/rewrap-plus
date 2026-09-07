@@ -31,7 +31,7 @@ describe('DocumentFormattingEditProvider', () => {
     await vscode.workspace.openTextDocument(uri);
 
     // `plaintext` isn't a registered language, so the selector this
-    // provider is registered under never matches it — VSCode simply
+    // provider is registered under never matches it -- VSCode simply
     // won't route the command here. Kept anyway as the same class of
     // regression guard as wrap-at-cursor.test.ts's own unsupported-
     // language case, in case that routing assumption ever changes.

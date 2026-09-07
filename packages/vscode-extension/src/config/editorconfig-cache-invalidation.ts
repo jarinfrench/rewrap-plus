@@ -3,8 +3,8 @@
  * events: saving a `.editorconfig` document, and the window regaining
  * focus. Kept separate from `editorconfig.ts` itself so that module can
  * stay `vscode`-free and unit-testable under plain `vitest` (its own
- * `vitest.config.mts` excludes anything that imports `vscode` — see that
- * config's own comment) — this file is thin glue only, not unit tested
+ * `vitest.config.mts` excludes anything that imports `vscode` -- see that
+ * config's own comment) -- this file is thin glue only, not unit tested
  * directly, exercised by the @vscode/test-electron integration suite
  * instead (matches `../config/resolve-wrap-config.ts`'s own rationale for
  * the same split).

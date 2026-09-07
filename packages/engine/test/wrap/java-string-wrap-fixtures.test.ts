@@ -31,7 +31,7 @@ import negLoggingIn from '../fixtures/java/strings/neg-008-logging-format-string
 import negLoggingOut from '../fixtures/java/strings/neg-008-logging-format-string.out.java?raw';
 
 /**
- * String-wrapping gold fixtures for the Java adapter — mirrors
+ * String-wrapping gold fixtures for the Java adapter -- mirrors
  * `./javascript-string-wrap-fixtures.test.ts`'s structure and rationale,
  * proving the *shared* `strings/dissolve-string.ts`/`strings/emit-string.ts`
  * behaves correctly for Java's `'operator'`-only, no-grouping-required
@@ -39,11 +39,11 @@ import negLoggingOut from '../fixtures/java/strings/neg-008-logging-format-strin
  *
  * `neg-004-text-block` is Java-specific, with no JS/TS/C++/Python
  * counterpart: a text block deliberately written *over* the column limit,
- * asserting zero edits *and* zero skipped regions — not merely "refused
+ * asserting zero edits *and* zero skipped regions -- not merely "refused
  * by the prose heuristic" (`neg-001`/`neg-002`/`neg-003`'s own shape,
  * where a region is discovered but declines to wrap) but "never
  * discovered at all," proving `javaAdapter`'s `classify` excludes a text
- * block before `wrapRegions` ever sees it as a candidate — see
+ * block before `wrapRegions` ever sees it as a candidate -- see
  * `../../src/languages/java/adapter.ts`'s own doc comment.
  */
 const COLUMN_LIMIT = 60;
@@ -104,7 +104,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(javaAdapter);
 });
 
-describe('Java string-literal wrapping — end-to-end gold fixtures', () => {
+describe('Java string-literal wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'java', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -150,7 +150,7 @@ describe('Java string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('never requires inserted parens — Java operator concatenation needs no grouping', async () => {
+  it('never requires inserted parens -- Java operator concatenation needs no grouping', async () => {
     for (const fixture of fixtures.filter((f) => f.positive)) {
       const result = await wrapRegions(fixture.input, 'java', 'all', config(), parserManager);
       for (const edit of result.edits) {
@@ -162,7 +162,7 @@ describe('Java string-literal wrapping — end-to-end gold fixtures', () => {
   it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
     // Java's counterpart to `./python-string-wrap-fixtures.test.ts`'s own
     // eval-equivalence check. No Java toolchain is available in this
-    // project's toolchain (nor should one need to be) —
+    // project's toolchain (nor should one need to be) --
     // `extractConcatenatedStringValue` reimplements just enough of Java's
     // own escape decoding as a test-only oracle; see
     // `../support/decode-java-string.ts` for the full rationale.

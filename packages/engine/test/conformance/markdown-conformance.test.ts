@@ -2,11 +2,11 @@ import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Real sources, exercising the adapter's full pipeline — Phase C
+ * Real sources, exercising the adapter's full pipeline -- Phase C
  * commit 12, once
  * `discoverProse`/`wrapProse` (commits 9/10) and hard-break/directive
  * support (commit 11) all exist. Two source shapes, each with a CRLF and
- * LF variant: an ordinary paragraph, and a block-quoted one — between
+ * LF variant: an ordinary paragraph, and a block-quoted one -- between
  * them exercising `'prose'`-region discovery, canonical continuation-
  * prefix derivation, and this kit's own new prose-aware checks
  * (`../../src/conformance/run-adapter-conformance.ts`'s loosened
@@ -15,7 +15,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * Deliberately no two-space/backslash/`<br>` hard break in either source:
  * this kit's own trailing-whitespace invariant is kept strict with no
  * carve-out (that decision's own doc comment, `run-adapter-conformance.ts`)
- * — a hard break is tested for real by `../wrap/markdown-hard-break-fixtures.test.ts`'s
+ * -- a hard break is tested for real by `../wrap/markdown-hard-break-fixtures.test.ts`'s
  * region-aware gold fixtures instead, which can tell "expected" trailing
  * whitespace apart from a regression in a way this kit's flat
  * before/after comparison can't.

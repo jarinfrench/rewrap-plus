@@ -10,11 +10,11 @@ import {
 } from './helpers.js';
 
 /**
- * The real-host proof for C++ — the same loop `./typescript.test.ts`
+ * The real-host proof for C++ -- the same loop `./typescript.test.ts`
  * closes for TypeScript below: the engine-level gold fixtures
  * already cover string/Doxygen wrapping in detail
  * (`packages/engine/test/wrap/cpp-*-fixtures.test.ts`), but none of those
- * go through the real VSCode extension host — activation, `AdapterRegistry`
+ * go through the real VSCode extension host -- activation, `AdapterRegistry`
  * wiring (`../../src/engine-host.ts`'s `createRegistry`), command
  * dispatch, and settings resolution all stay untested by the engine suite
  * alone.

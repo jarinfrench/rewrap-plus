@@ -26,35 +26,35 @@ import newlineCommandIn from '../fixtures/latex/hard-breaks/002-newline-command.
 import newlineCommandOut from '../fixtures/latex/hard-breaks/002-newline-command.out.tex?raw';
 
 /**
- * The LaTeX adapter's first real *prose* gold fixtures —
+ * The LaTeX adapter's first real *prose* gold fixtures --
  * Phase D commit 16: `wrapProse`
  * (`../../src/languages/latex/wrap-prose.ts`) dissolving/reflowing/
  * emitting `'prose'` regions through the shared `prose/` pipeline, with
  * LaTeX's own hard-break commands and `\item` indentation. Each `.out.tex`
  * was produced by actually running this adapter's own `wrapRegions`
  * pipeline against the paired `.in.tex` (not hand-computed), then verified
- * — idempotent, no line over the column limit — before being committed as
+ * -- idempotent, no line over the column limit -- before being committed as
  * the gold file.
  *
  * `\verb`/`\lstinline` unbreakability and trailing-`%`-comment safety
- * (§6.4/§4.3) are deliberately not exercised here — the plan assigns both
+ * (Sec. 6.4/Sec. 4.3) are deliberately not exercised here -- the plan assigns both
  * to commit 17, and `wrapLatexProse`'s own `ProseSpec` doesn't set
  * `extraUnbreakable` yet (`../../src/languages/latex/wrap-prose.ts`'s own
  * doc comment).
  *
  * `prose/005-section-with-label` is a post-review addition: a real-world
- * proof that `\section{Title}\label{sec:foo}` — chained structural
- * commands on one line, an extremely common idiom — stays untouched
+ * proof that `\section{Title}\label{sec:foo}` -- chained structural
+ * commands on one line, an extremely common idiom -- stays untouched
  * end-to-end through the full pipeline, not just at the discovery-level
  * unit-test layer (`../../src/languages/latex/discover-prose.test.ts`'s
  * own "chained structural commands" cases). Discovery originally treated
  * this as ordinary prose, confirmed empirically to actually get reflowed
- * for a long enough label — fixed in `discoverLatexProse`'s
+ * for a long enough label -- fixed in `discoverLatexProse`'s
  * `structuralConsumedLength`.
  *
  * `lists/002-item-with-label` is the related follow-up fix: the same
  * `\label{...}` chaining, but immediately after `\item` rather than a
- * sectioning command — `buildEnumItemStartColumns` originally had no
+ * sectioning command -- `buildEnumItemStartColumns` originally had no
  * concept of a chain either, so `\item \label{item:foo} text` folded
  * the label into the item's own discovered prose text. Fixed by reusing
  * `structuralConsumedLength` there too, advancing the item's
@@ -121,7 +121,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(latexAdapter);
 });
 
-describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
+describe('LaTeX prose wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'latex', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -138,7 +138,7 @@ describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('is idempotent — wrapping already-wrapped output produces zero further edits', async () => {
+  it('is idempotent -- wrapping already-wrapped output produces zero further edits', async () => {
     for (const fixture of fixtures) {
       const result = await wrapRegions(fixture.expected, 'latex', 'all', config(), parserManager);
       const reapplied = applyTextEdits(fixture.expected, result.edits);
@@ -170,7 +170,7 @@ describe('LaTeX prose wrapping — end-to-end gold fixtures', () => {
   it('item continuation lines use the width the marker column actually leaves available, not the narrower content-start-column budget (the firstLineReserve fix)', () => {
     // Before the fix, reflow budgeted every line (including continuation
     // lines that only carry a 2-space prefix) as if it started at the
-    // item's own *content* column — needlessly narrow. "wrapping onto a
+    // item's own *content* column -- needlessly narrow. "wrapping onto a
     // continuation line." (35 chars) plus a 2-space prefix is 37 columns,
     // comfortably inside the 40-column limit, and previously got split
     // across two lines regardless.

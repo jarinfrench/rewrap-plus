@@ -1,25 +1,25 @@
 /**
  * Test-only reimplementation of enough of Java's own string escape decoding
  * to support an eval-equivalence check for the Java adapter's string-wrap
- * gold fixtures (`../wrap/java-string-wrap-fixtures.test.ts`) — the Java
+ * gold fixtures (`../wrap/java-string-wrap-fixtures.test.ts`) -- the Java
  * counterpart to `./decode-python-string.ts`. See that module's own doc
  * comment for the shared rationale: never shipped in engine runtime code, a
  * test-only oracle independent of the engine's own dissolve/emit, not a
  * full-fidelity implementation, only faithful enough for the escape forms
  * this project's own gold fixtures actually use.
  *
- * `eval` isn't an option the way it is for `./decode-js-string.ts` — a Java
- * string literal isn't valid JavaScript — so this hand-decodes, same
+ * `eval` isn't an option the way it is for `./decode-js-string.ts` -- a Java
+ * string literal isn't valid JavaScript -- so this hand-decodes, same
  * approach as the Python and C++ oracles.
  *
  * Scope:
- * - Java has no `\x` hex escape (unlike C++/JS) — only `\uXXXX` (always
- *   exactly four hex digits) and octal `\0`–`\377`.
+ * - Java has no `\x` hex escape (unlike C++/JS) -- only `\uXXXX` (always
+ *   exactly four hex digits) and octal `\0`-`\377`.
  * - Real `javac` processes `\uXXXX` as a *pre-lexical* translation applied
- *   to the raw source text before tokenization even begins (JLS §3.3), so
+ *   to the raw source text before tokenization even begins (JLS Sec. 3.3), so
  *   it can appear anywhere, not just inside a string literal. This oracle
  *   only decodes it where it appears inside a scanned string literal's
- *   body, which is sufficient for every fixture this project has — none
+ *   body, which is sufficient for every fixture this project has -- none
  *   place a `\u` escape outside a string.
  * - Text blocks (`"""..."""`, Java 15+) are skipped as opaque, never
  *   decoded: this adapter never wraps them at all

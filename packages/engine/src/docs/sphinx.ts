@@ -7,7 +7,7 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 /**
  * A Sphinx/reST field-list marker: `:field:` or `:field arg:`, flush
- * left — `:param x:`, `:type x:`, `:returns:`, `:rtype:`, `:raises
+ * left -- `:param x:`, `:type x:`, `:returns:`, `:rtype:`, `:raises
  * ValueError:`. Unlike Google/NumPy, Sphinx has no separate "section"
  * concept at all: every field marker is its own entry, and the field
  * list is conventionally just however many of these appear consecutively
@@ -29,7 +29,7 @@ function matchSphinxEntry(line: string): EntryStartMatch | null {
 
 /**
  * Sphinx/reST field-list docstrings: a summary/description, then a flat
- * run of `:param x:`/`:returns:`/`:rtype:`/... entries — no section
+ * run of `:param x:`/`:returns:`/`:rtype:`/... entries -- no section
  * headers, unlike Google or NumPy.
  */
 export const sphinxDialect: DocDialect = {
@@ -37,7 +37,7 @@ export const sphinxDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized field markers found,
-   * saturating quickly — a single `:returns:` is already a strong,
+   * saturating quickly -- a single `:returns:` is already a strong,
    * distinctive signal (the leading-colon field-marker shape has no
    * ordinary-prose false-positive risk the way a bare Google `Name:`
    * line does), so even one match clears the halfway point.

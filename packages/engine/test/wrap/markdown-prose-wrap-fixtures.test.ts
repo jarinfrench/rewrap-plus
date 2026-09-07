@@ -32,11 +32,11 @@ import listInQuoteIn from '../fixtures/markdown/blockquotes/005-list-in-quote.in
 import listInQuoteOut from '../fixtures/markdown/blockquotes/005-list-in-quote.out.md?raw';
 
 /**
- * The Markdown adapter's first real wrapping gold fixtures — Phase C
+ * The Markdown adapter's first real wrapping gold fixtures -- Phase C
  * commit 10. Each `.out.md`
  * was produced by actually running this adapter's own `wrapRegions`
  * pipeline against the paired `.in.md` (not hand-computed), then verified
- * — idempotent, every line within `COLUMN_LIMIT`, no skipped regions —
+ * -- idempotent, every line within `COLUMN_LIMIT`, no skipped regions --
  * before being committed as the gold file; this suite re-asserts all of
  * that on every run so a future regression is caught the same way a
  * hand-written expectation would catch it.
@@ -44,10 +44,10 @@ import listInQuoteOut from '../fixtures/markdown/blockquotes/005-list-in-quote.o
  * `003-lazy-continuation-gains-marker` is the one fixture whose `.in.md`
  * doesn't already look like its `.out.md`: the source's second line has
  * no `>` at all (a lazy continuation, legal CommonMark), and the gold
- * output shows it gaining one — §3.3 item 1's "continuation prefix is
+ * output shows it gaining one -- Sec. 3.3 item 1's "continuation prefix is
  * canonical, not observed" made concrete.
  *
- * No hard-break fixtures here — `wrapMarkdownProse` doesn't support them
+ * No hard-break fixtures here -- `wrapMarkdownProse` doesn't support them
  * yet (`../../src/languages/markdown/wrap-prose.ts`'s own doc comment;
  * Phase C commit 11).
  */
@@ -102,7 +102,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(markdownAdapter);
 });
 
-describe('Markdown prose wrapping — end-to-end gold fixtures', () => {
+describe('Markdown prose wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'markdown', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

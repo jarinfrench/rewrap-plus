@@ -33,12 +33,12 @@ describe('latexDescriptor', () => {
     expect(source.slice(captures[0]!.node.startIndex, captures[0]!.node.endIndex)).toBe('% a comment');
   });
 
-  it('declares no string support — LaTeX has no string-literal syntax', () => {
+  it('declares no string support -- LaTeX has no string-literal syntax', () => {
     expect(latexDescriptor.strings).toBeUndefined();
     expect(latexDescriptor.queries.strings).toBeUndefined();
   });
 
-  it('declares no prose query — discoverProse is a masked line scan, not a query capture', () => {
+  it('declares no prose query -- discoverProse is a masked line scan, not a query capture', () => {
     expect(latexDescriptor.queries.prose).toBeUndefined();
   });
 
@@ -46,7 +46,7 @@ describe('latexDescriptor', () => {
     expect(latexDescriptor.comments.line).toEqual({ marker: '%', spaceAfter: true });
   });
 
-  it('has no block-comment form declared — \\iffalse...\\fi is a discoverProse mask, not a queries.comments capture', () => {
+  it('has no block-comment form declared -- \\iffalse...\\fi is a discoverProse mask, not a queries.comments capture', () => {
     expect(latexDescriptor.comments.block).toBeUndefined();
     expect(latexDescriptor.comments.plainBlock).toBeUndefined();
   });

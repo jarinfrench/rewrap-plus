@@ -5,7 +5,7 @@
  * `vscode.TextEdit`s, and applying them as one atomic `WorkspaceEdit`.
  * Centralized here rather than duplicated per command so "wrap at
  * cursor", "wrap selection", and "wrap document" differ only in what
- * `SourceSpan[] | 'all'` they pass in — everything downstream of that is
+ * `SourceSpan[] | 'all'` they pass in -- everything downstream of that is
  * identical.
  */
 import * as vscode from 'vscode';
@@ -25,14 +25,14 @@ export interface WrapOutcome {
   readonly resolvedConfig: ResolvedWrapConfig;
   /**
    * `true` when `document.version` at the end of the `wrapRegions` call
-   * differs from what it was when `wrapRegions` started — meaning the live
+   * differs from what it was when `wrapRegions` started -- meaning the live
    * document was edited while this wrap was still computing (now possible
    * for a large document, since the engine yields to the event loop
    * periodically once a cancellation signal is in play; see `wrap.ts`'s own
    * `YIELD_INTERVAL_MS`). `result.edits` in that case is a snapshot of a
    * document that no longer exists: its spans were computed against text
    * that's since changed underneath it, and `vscode.workspace.applyEdit`
-   * has no document-version check of its own to catch that — it would
+   * has no document-version check of its own to catch that -- it would
    * apply those (possibly now-misaligned) positions to whatever the
    * document currently contains. Every consumer of `WrapOutcome` must treat
    * this exactly like `result.cancelled`: nothing to apply or return,
@@ -45,34 +45,34 @@ export interface WrapOutcome {
 /**
  * Run `wrapRegions` for `document` against `targets`. Returns `undefined`
  * when `rewrapPlus.enable` is `false` (the one check every command needs
- * to make before doing anything else — `enable` is the setting reached
+ * to make before doing anything else -- `enable` is the setting reached
  * for when debugging a save pipeline with several formatters in it), or
  * when `document.languageId` isn't a registered language.
  *
  * That second check matters because the `"editorLangId in
  * rewrapPlusSupportedLanguages"` `when` clauses gating keybindings/menu
- * entries (`../extension.ts`) only stop *those* invocation paths — the
+ * entries (`../extension.ts`) only stop *those* invocation paths -- the
  * Command Palette's own filtering aside, nothing stops a command from
  * being invoked directly via `vscode.commands.executeCommand` on an
  * unsupported-language document, and `wrapRegions` itself throws loudly
  * for an unregistered language by design (`ParserManager.adapterFor`'s
- * own "fail loudly... rather than a confusing null downstream" policy —
+ * own "fail loudly... rather than a confusing null downstream" policy --
  * correct for a caller bug, but a command handler letting that throw
  * escape as an unhandled rejection is a real one, surfacing to the user
  * as an error toast for what should just be a silent no-op. Caught by
  * running a wrap command against a plaintext file in a live VSCode host
- * during commit 9's own verification pass — exactly the class of gap
+ * during commit 9's own verification pass -- exactly the class of gap
  * that check exists to prevent.
  */
 /**
  * `cancellation` (the large-file guardrails signal) is passed straight
- * through to `engine.wrapRegions` — `vscode.CancellationToken`'s own
+ * through to `engine.wrapRegions` -- `vscode.CancellationToken`'s own
  * `isCancellationRequested: boolean` property already matches the
  * engine's minimal, `vscode`-free `CancellationSignal` shape exactly
  * (see that type's own doc comment on `@rewrap-plus/engine`), so no
  * adapter object is needed here. Omitted entirely by every caller that
  * has no cancellation UI of its own (`wrap-at-cursor`, `wrap-selection`,
- * the range-formatting provider) — a wrap those commands do is expected
+ * the range-formatting provider) -- a wrap those commands do is expected
  * to be fast enough that offering to cancel it would be noise, not help
  * (see `wrap-document.ts`'s own `LARGE_DOCUMENT_LINE_THRESHOLD` for the
  * one caller that does pass one, and why only it needs to).
@@ -82,12 +82,12 @@ export interface ComputeWrapResultOptions {
    * Whether to log this call's outcome to the output channel and flash
    * a status-bar summary via `reportWrapOutcome`. Defaults to `true` for
    * every existing caller (command, format-on-save, formatting
-   * providers) — each of those is one discrete, user-initiated event
+   * providers) -- each of those is one discrete, user-initiated event
    * worth reporting on. `../auto-wrap.ts` is the one caller that passes
    * `false`: it calls this once per triggering keystroke while the user
    * types, so both halves of `reportWrapOutcome` (an output-channel line
    * *and* a status-bar flash) would fire continuously rather than for a
-   * single discrete action — noise, not diagnostics, at that frequency.
+   * single discrete action -- noise, not diagnostics, at that frequency.
    * `rewrapPlus.showResolvedConfig` remains the right tool for
    * inspecting what auto-wrap resolved for a document.
    */
@@ -95,7 +95,7 @@ export interface ComputeWrapResultOptions {
 
   /**
    * When set, overrides `resolveWrapConfigForDocument`'s own
-   * `wrapConfig.wrapStrings` for this call only — the resolved
+   * `wrapConfig.wrapStrings` for this call only -- the resolved
    * `rewrapPlus.wrapStrings`/`stringWrapInclude` settings are left
    * completely untouched (and still what `rewrapPlus.showResolvedConfig`
    * reports); only what actually gets passed to `wrapRegions` changes.
@@ -108,7 +108,7 @@ export interface ComputeWrapResultOptions {
 
   /**
    * A `PositionMapper` the caller already built from this same
-   * `document`'s text — every caller that's about to pass a span-shaped
+   * `document`'s text -- every caller that's about to pass a span-shaped
    * `targets` (as opposed to `'all'`) needs one of these first, to turn a
    * cursor position or selection into that `SourceSpan` via
    * `rangeTargetSpan`. Threaded straight through to `engine.wrapRegions`
@@ -123,16 +123,16 @@ export interface ComputeWrapResultOptions {
   /**
    * Skip re-deriving `../config/resolve-wrap-config.ts`'s
    * `ResolvedWrapConfig` from scratch and use this one instead. Every
-   * caller but `../auto-wrap.ts` omits this — unchanged behavior, resolve
+   * caller but `../auto-wrap.ts` omits this -- unchanged behavior, resolve
    * it internally exactly as before this option existed. Auto-wrap
    * already has to resolve it itself, before this function is ever
    * called, just to answer "did this keystroke cross the column limit?"
    * (`resolveWrapConfigForDocument` is the one step in that check that
-   * can touch the filesystem, via `.editorconfig` — see
+   * can touch the filesystem, via `.editorconfig` -- see
    * `../config/editorconfig.ts`). Without this option, that same
    * resolution ran a second time in here, once per triggering keystroke,
    * purely because this function had no way to know the caller already
-   * had one. Used exactly as if this function had derived it itself —
+   * had one. Used exactly as if this function had derived it itself --
    * `options.wrapStrings` below still overrides
    * `resolvedConfig.wrapConfig.wrapStrings` the same way either way.
    */
@@ -176,7 +176,7 @@ export async function computeWrapResult(
 
   // `resolvedConfig.wrapConfig` is replaced with the actual `wrapConfig`
   // just passed to `wrapRegions` above, so `WrapOutcome` never disagrees
-  // with what really produced `result` — `resolvedConfig.enable` and
+  // with what really produced `result` -- `resolvedConfig.enable` and
   // `.columnLimit` (the fields every existing consumer actually reads)
   // are untouched either way.
   const outcome: WrapOutcome = {
@@ -203,7 +203,7 @@ export function toVSCodeTextEdits(edits: readonly EngineTextEdit[]): vscode.Text
 }
 
 /**
- * Apply `edits` to `document` as one atomic `WorkspaceEdit` — "single
+ * Apply `edits` to `document` as one atomic `WorkspaceEdit` -- "single
  * atomic edit so one undo reverts everything" (the design goal for
  * wrap-document, commit 7, applied uniformly here since it's just as
  * true for a multi-cursor wrap-at-cursor or a selection spanning several
@@ -226,7 +226,7 @@ export async function applyWrapEdits(
 /**
  * `computeWrapResult` followed by `applyWrapEdits`, for the two commands
  * (wrap-at-cursor, wrap-selection) that both compute *and* apply in one
- * step — unlike the range-formatting provider (commit 6), which must
+ * step -- unlike the range-formatting provider (commit 6), which must
  * return its edits for VSCode to apply itself rather than applying them
  * directly. Returns `undefined` in exactly the cases `computeWrapResult`
  * does (`rewrapPlus.enable` is `false`).
@@ -236,7 +236,7 @@ export async function applyWrapEdits(
  * computed before cancellation fired: the "single atomic edit so one
  * undo reverts everything" property this function exists to provide
  * would otherwise become "a *partial*, silently-incomplete wrap of the
- * document," which is a worse outcome than doing nothing — the user
+ * document," which is a worse outcome than doing nothing -- the user
  * asked to cancel specifically because they didn't want to wait for the
  * whole thing. A result where `outcome.documentVersionChanged` is `true`
  * applies nothing for the same reason, but a different cause: the document
@@ -244,7 +244,7 @@ export async function applyWrapEdits(
  * longer describe the document as it currently exists (see
  * `WrapOutcome.documentVersionChanged`'s own doc comment).
  *
- * `mapper` is forwarded to `computeWrapResult` as-is — see
+ * `mapper` is forwarded to `computeWrapResult` as-is -- see
  * `ComputeWrapResultOptions.mapper`'s own doc comment. Both existing
  * callers (`wrap-at-cursor.ts`, `wrap-selection.ts`) already build one to
  * turn their own cursor/selection into `targets` via `rangeTargetSpan`
@@ -253,10 +253,10 @@ export async function applyWrapEdits(
  * `applyWrapEdits`'s own return value is checked here (unlike before this
  * check existed): `computeWrapResult` already reported a "N wrapped"
  * outcome based on the *computed* result, before this function ever
- * attempts to apply it, so a `false` return — VSCode declining the edit
+ * attempts to apply it, so a `false` return -- VSCode declining the edit
  * outright, most commonly because `document` isn't editable at all (a
  * `git show`/diff-view virtual document, one backed by a read-only
- * `TextDocumentContentProvider`) — would otherwise leave that premature
+ * `TextDocumentContentProvider`) -- would otherwise leave that premature
  * success message as the user's only signal, with no actual change made
  * and no indication anything went wrong. `reportWrapApplyFailure`
  * (`../report-wrap-outcome.ts`) exists specifically to correct that.
@@ -291,8 +291,8 @@ export async function computeAndApplyWrap(
  * one character on each side rather than passed through as a zero-width
  * span: `wrapRegions`' overlap test (`a.startByte < b.endByte &&
  * b.startByte < a.endByte`) is a strict interior test a zero-width span
- * can never satisfy, even when the cursor plainly sits inside — or right
- * at the edge of — a wrappable region from the user's point of view.
+ * can never satisfy, even when the cursor plainly sits inside -- or right
+ * at the edge of -- a wrappable region from the user's point of view.
  * `document.offsetAt`/`positionAt` (not manual character arithmetic)
  * handle document-boundary clamping safely in both directions, including
  * right at the start or end of the file.

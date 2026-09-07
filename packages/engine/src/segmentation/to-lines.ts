@@ -4,13 +4,13 @@
  *
  * Shared by `split-blocks.ts` and the per-kind detectors
  * (`list-item.ts`, `verbatim.ts`) so every one of them agrees
- * on what "line N" means — in particular, that a source ending in `\n`
+ * on what "line N" means -- in particular, that a source ending in `\n`
  * has the same line count as one that doesn't, matching how every other
  * line-oriented tool in the ecosystem (git diff, editors, `wc -l`)
  * treats a trailing newline as terminating the last line rather than
  * starting an empty one after it.
  *
- * Recognizes `\n`, `\r\n`, and bare `\r` — dissolve hands this
+ * Recognizes `\n`, `\r\n`, and bare `\r` -- dissolve hands this
  * function already-dissolved region text, which may still carry whatever
  * line ending convention the source file used (CRLF handling is
  * normalized end to end elsewhere; this function just needs to not

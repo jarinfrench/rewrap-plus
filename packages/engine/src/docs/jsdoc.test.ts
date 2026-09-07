@@ -29,7 +29,7 @@ describe('jsdocDialect.detect', () => {
   });
 
   it('does not treat an e-mail-shaped word as a tag marker', () => {
-    // A bare '@' has to start the line — 'Contact me at foo@bar.com' never
+    // A bare '@' has to start the line -- 'Contact me at foo@bar.com' never
     // matches JSDOC_TAG at all, since the match is anchored to line start.
     expect(jsdocDialect.detect('Contact me at foo@bar.com for details.')).toBe(0);
   });
@@ -98,7 +98,7 @@ describe('jsdocDialect.segment', () => {
 
   it('recognizes a nested list inside a @tag description, end to end through segment()', () => {
     // Mechanical once Google worked (both share `groupFieldEntries`),
-    // per the plan's own framing — confirmed directly rather than
+    // per the plan's own framing -- confirmed directly rather than
     // assumed.
     const text = ['@param opts Options include:', '    - verbose mode', '    - strict mode'].join(
       '\n',

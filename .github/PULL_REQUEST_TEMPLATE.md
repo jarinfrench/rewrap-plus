@@ -5,7 +5,7 @@
 ## Checklist
 
 - [ ] If this touches a language adapter: confirms **zero changes** under
-      `packages/engine/src/core` — or explains why an engine change was
+      `packages/engine/src/core` -- or explains why an engine change was
       unavoidable, documented per `docs/adapters.md`'s known-leaks
       convention (not silently folded into the adapter change).
 - [ ] New/changed language descriptor passes `runAdapterConformance`.

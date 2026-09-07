@@ -1,6 +1,6 @@
 // Throwaway spike script (Write-tool-authored). Verifies the exact
 // escaping rule for a trailing `%` comment before implementing commit
-// 17's trailing-comment safety in the LaTeX adapter — specifically,
+// 17's trailing-comment safety in the LaTeX adapter -- specifically,
 // whether `\\%` (an escaped backslash followed by an unescaped %) really
 // does start a real comment, the same parity question Markdown's own
 // hard-break backslash detection needed (../markdown/hard-break.ts).

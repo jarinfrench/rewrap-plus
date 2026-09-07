@@ -23,7 +23,7 @@ export interface ParseResult {
  * Parse `source` with `parser` and summarize any errors.
  *
  * `errorSpans` covers every `ERROR` node and every `MISSING` node in the
- * tree, each reported once as the outermost span that covers it — an
+ * tree, each reported once as the outermost span that covers it -- an
  * `ERROR` node's descendants are not walked separately, since they
  * describe the same malformed region at redundant or misleading
  * positions, and every consumer of `errorSpans` only needs to know
@@ -39,7 +39,7 @@ export function parseWithErrors(parser: Parser, source: string): ParseResult {
     // (`ParserManager.parserFor`) and never installs a cancelling
     // progress callback, so reaching this is a caller bug, not a parse
     // failure to recover from gracefully.
-    throw new Error('parseWithErrors: parser.parse returned null — was a language assigned?');
+    throw new Error('parseWithErrors: parser.parse returned null -- was a language assigned?');
   }
 
   const mapper = new PositionMapper(source);
@@ -54,14 +54,14 @@ export function parseWithErrors(parser: Parser, source: string): ParseResult {
 }
 
 /**
- * Iterative (explicit-stack) tree walk — not the recursive one-node-per-
+ * Iterative (explicit-stack) tree walk -- not the recursive one-node-per-
  * call-frame version this started as. A deeply left-associative
  * expression (e.g. several thousand `+`-chained operands, real Python
  * that `tree-sitter-python` happily parses) produces a syntax tree whose
  * depth scales with operand count, and a recursive walk blew the actual
  * JS call stack on exactly that input (`RangeError: Maximum call stack
  * size exceeded`, caught by dedicated pathological-input hardening
- * before it shipped as a real bug) — well before this package's own
+ * before it shipped as a real bug) -- well before this package's own
  * `WrapConfig`/region-discovery logic ever saw the file. This project's
  * "skip region, warn, never block" posture presumes `parseWithErrors`
  * itself can't crash the whole invocation; a stack overflow here breaks

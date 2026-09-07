@@ -6,7 +6,7 @@ import type { Tree } from '../types/tree-sitter-types.js';
 import { discoverRegions } from './discover-regions.js';
 
 // Relative to the process's cwd, which Vitest sets to this package's root
-// (`packages/engine`) — same convention as every other grammar-loading
+// (`packages/engine`) -- same convention as every other grammar-loading
 // test in this package.
 const grammarPath = 'grammars/tree-sitter-python.wasm';
 
@@ -19,7 +19,7 @@ beforeAll(async () => {
   parser.setLanguage(language);
 });
 
-// A deliberately bare-bones descriptor/adapter — no `classify`,
+// A deliberately bare-bones descriptor/adapter -- no `classify`,
 // `groupRegions`, or `concatenations` query. This is the point: it proves
 // `discoverRegions` works from descriptor data alone, with no
 // language-specific code anywhere. The real Python adapter is exercised
@@ -178,9 +178,9 @@ describe('discoverRegions', () => {
   });
 });
 
-describe('discoverRegions — discoverProse', () => {
+describe('discoverRegions -- discoverProse', () => {
   // A `'prose'` region's own shape isn't exercised through the real
-  // Python grammar here (that's Phase C/D's Markdown/LaTeX adapters) —
+  // Python grammar here (that's Phase C/D's Markdown/LaTeX adapters) --
   // these tests only prove the generic wiring: the hook is called with
   // the right arguments, its
   // results are merged with the query-driven passes and sorted
@@ -241,7 +241,7 @@ describe('discoverRegions — discoverProse', () => {
     const source = 'x = "first"\ny = "second"\n';
     const tree = parseSource(source);
     // A prose region placed *between* the two query-discovered strings by
-    // byte offset — proves the final sort covers both sources together,
+    // byte offset -- proves the final sort covers both sources together,
     // not just each independently.
     const adapter: LanguageAdapter = {
       descriptor: minimalDescriptor(),
@@ -284,7 +284,7 @@ describe('discoverRegions — discoverProse', () => {
   });
 });
 
-describe('discoverRegions — concatenation grouping', () => {
+describe('discoverRegions -- concatenation grouping', () => {
   function descriptorWithConcatenations(): LanguageDescriptor {
     return {
       ...minimalDescriptor(),

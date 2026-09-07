@@ -35,7 +35,7 @@ describe('groupFieldEntries', () => {
     ]);
   });
 
-  it('folds indented continuation lines into the entry’s atoms', () => {
+  it("folds indented continuation lines into the entry's atoms", () => {
     const blocks = groupFieldEntries(['x: first line', '    continues here'], matchSimple);
     expect(blocks).toHaveLength(1);
     const entry = blocks[0];
@@ -62,7 +62,7 @@ describe('groupFieldEntries', () => {
     // legitimately contain a `word:` substring (a nested bullet's own
     // "label: description" shape, plain prose with a colon in it), and
     // reflow is free to break a line right before that word on any given
-    // wrap — when it did, the deeper-indented match was misread as a new
+    // wrap -- when it did, the deeper-indented match was misread as a new
     // sibling entry despite sitting at the *continuation* indent, not the
     // entries' own shared indent, breaking `wrap(wrap(x)) === wrap(x)` for
     // `test/fixtures/python/docstrings/012-pathological-google.*` under
@@ -88,7 +88,7 @@ describe('groupFieldEntries', () => {
     ]);
   });
 
-  it('reflects the entry’s own leading indent in hangingIndent', () => {
+  it("reflects the entry's own leading indent in hangingIndent", () => {
     const blocks = groupFieldEntries(['    x: description'], matchSimple);
     const entry = blocks[0];
     if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
@@ -97,7 +97,7 @@ describe('groupFieldEntries', () => {
   });
 
   describe('look-ahead body collection (blank lines inside continuation)', () => {
-    it('does not end the entry at a blank line followed by more continuation — and now preserves the paragraph break, rather than losing it', () => {
+    it('does not end the entry at a blank line followed by more continuation -- and now preserves the paragraph break, rather than losing it', () => {
       const blocks = groupFieldEntries(
         ['x: first', '    continues', '', '    more after blank'],
         matchSimple,
@@ -129,7 +129,7 @@ describe('groupFieldEntries', () => {
       const entry = blocks[0];
       if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
       // `splitBlocks` never collapses a run of blank lines into one block
-      // (see its own doc comment on why) — two blank source lines here
+      // (see its own doc comment on why) -- two blank source lines here
       // means two `blank` blocks, not one.
       expect(entry.blocks.map((b) => b.type)).toEqual(['paragraph', 'blank', 'blank', 'paragraph']);
       expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['first', 'continues']);
@@ -158,7 +158,7 @@ describe('groupFieldEntries', () => {
 
   describe('nested structure via splitBlocks (no longer flattened)', () => {
     it('recognizes a nested list inside a description with no leading prose', () => {
-      // `x:` itself has nothing after the colon — the description opens
+      // `x:` itself has nothing after the colon -- the description opens
       // directly with a bullet on the very next line. `blocks[0]` being a
       // real `listItem` (not a `paragraph` whose atoms start with a
       // literal `-`) is exactly the shape `../reflow/reflow-block.ts`'s
@@ -178,7 +178,7 @@ describe('groupFieldEntries', () => {
       expect(item0.atoms.map((a) => a.text)).toEqual(['first', 'item']);
     });
 
-    it('recognizes a nested list with leading prose on the entry’s own line', () => {
+    it("recognizes a nested list with leading prose on the entry's own line", () => {
       const blocks = groupFieldEntries(
         ['x: Options include:', '    - verbose mode', '    - strict mode'],
         matchSimple,
@@ -189,7 +189,7 @@ describe('groupFieldEntries', () => {
       expect(paragraphAtomTexts(entry.blocks[0])).toEqual(['Options', 'include:']);
     });
 
-    it('recognizes a fenced sample inside a description, unbroken (no blank line) — the 012/014 fixture shape', () => {
+    it('recognizes a fenced sample inside a description, unbroken (no blank line) -- the 012/014 fixture shape', () => {
       const blocks = groupFieldEntries(
         ['x: See below.', '    ```', '    example()', '    ```'],
         matchSimple,
@@ -202,9 +202,9 @@ describe('groupFieldEntries', () => {
       expect(verbatim.lines).toEqual(['```', 'example()', '```']);
     });
 
-    it('dedents nested structure relative to the entry’s own continuation, not the raw source column', () => {
+    it("dedents nested structure relative to the entry's own continuation, not the raw source column", () => {
       // Same shape as the previous test, just indented one level deeper
-      // (as it would be inside a doubly-nested Google section) — the
+      // (as it would be inside a doubly-nested Google section) -- the
       // `listItem`'s own `hangingIndent` must reflect its depth *within
       // the entry* (2, for '- '), not the raw 8-column source indent, or
       // `reflowFieldEntry`'s combined-indent math breaks.
@@ -219,7 +219,7 @@ describe('groupFieldEntries', () => {
       expect(item0.hangingIndent).toBe(2);
     });
 
-    it('recognizes a doctest block inside a description — untested until step 5, only list/fenced content had coverage', () => {
+    it('recognizes a doctest block inside a description -- untested until step 5, only list/fenced content had coverage', () => {
       const blocks = groupFieldEntries(
         ['x: See below.', '    >>> f(1)', '    2'],
         matchSimple,
@@ -232,7 +232,7 @@ describe('groupFieldEntries', () => {
       expect(verbatim.lines).toEqual(['>>> f(1)', '2']);
     });
 
-    it('recognizes a Markdown table inside a description — untested until step 5', () => {
+    it('recognizes a Markdown table inside a description -- untested until step 5', () => {
       const blocks = groupFieldEntries(
         ['x: See table.', '    | a | b |', '    |---|---|', '    | 1 | 2 |'],
         matchSimple,
@@ -247,12 +247,12 @@ describe('groupFieldEntries', () => {
 
     it('a Markdown-indented sub-bullet inside a fieldEntry becomes a sibling listItem at its own deeper hangingIndent, not nested inside the outer one', () => {
       // Answers the plan's own "Open questions" entry, "how deep does
-      // nesting go?" — more favorably than expected: `listItem` was never
+      // nesting go?" -- more favorably than expected: `listItem` was never
       // given `fieldEntry`'s own nested-`blocks` treatment
       // (`../types/document.ts`'s doc comment on `Block`, and this plan's
       // "Scope: what's affected" section, both explicitly defer that as
       // a separate decision), but a further-indented bullet doesn't
-      // *flatten* into the outer item's atoms either — `splitBlocks`'s
+      // *flatten* into the outer item's atoms either -- `splitBlocks`'s
       // own `matchListMarker`/`isListContinuation`
       // (`../segmentation/list-item.ts`) recognize it as its *own*,
       // separate `listItem`, at its own deeper `hangingIndent` reflecting
@@ -274,7 +274,7 @@ describe('groupFieldEntries', () => {
         throw new Error('expected two listItems');
       }
       expect(outer.hangingIndent).toBe(2); // '- ', at the entry's own baseline
-      expect(inner.hangingIndent).toBe(6); // '- ', 4 columns deeper — the source's own indent delta, preserved by dedentBody
+      expect(inner.hangingIndent).toBe(6); // '- ', 4 columns deeper -- the source's own indent delta, preserved by dedentBody
       expect(inner.atoms.map((a) => a.text)).toEqual(['inner', 'item']);
     });
   });

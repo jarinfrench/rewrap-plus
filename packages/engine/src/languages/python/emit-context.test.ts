@@ -33,7 +33,7 @@ function baseConfig(overrides: Partial<WrapConfig> = {}): WrapConfig {
 /**
  * Several fixtures below deliberately discover more than one region (a
  * dict/list/tuple/set literal with an unrelated sibling string alongside
- * the concatenation run under test) — picking by array position would be
+ * the concatenation run under test) -- picking by array position would be
  * fragile since which one sorts first varies by fixture shape. The
  * concatenation run under test always has more than one part; a fixture
  * with only one region falls back to it directly.

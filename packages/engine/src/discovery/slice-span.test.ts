@@ -9,7 +9,7 @@ function span(
   endColumn: number,
 ): SourceSpan {
   // `startByte`/`endByte` are irrelevant to `sliceSpanText` (it works
-  // purely off row/column), so these are dummy values — never 0 for both,
+  // purely off row/column), so these are dummy values -- never 0 for both,
   // so a test mistakenly reading them would still fail loudly.
   return { startByte: -1, endByte: -1, startRow, startColumn, endRow, endColumn };
 }

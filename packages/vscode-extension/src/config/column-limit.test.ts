@@ -52,7 +52,7 @@ describe('resolveColumnLimit', () => {
   });
 
   it('treats rewrapPlus.columnLimit of 0 as an explicit value, not "unset"', () => {
-    // Only `null` means "fall through" (the setting's own default) —
+    // Only `null` means "fall through" (the setting's own default) --
     // a configured 0 is a real (if degenerate) value and must not be
     // treated the same as absence via a falsy check.
     expect(resolveColumnLimit(inputs({ rewrapPlusColumnLimit: 0 }))).toEqual({

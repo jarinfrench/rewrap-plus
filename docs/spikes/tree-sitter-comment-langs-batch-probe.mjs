@@ -1,13 +1,13 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: verify the five comment-only-batch grammars (TOML, Bash,
 // CSS, SCSS, PowerShell) load with this project's pinned
 // web-tree-sitter@0.26.13 and parse a representative snippet, per this
-// project's "probe before coding, always" rule — don't trust memory or
+// project's "probe before coding, always" rule -- don't trust memory or
 // type declarations. Findings feed the descriptors under
 // packages/engine/src/languages/{toml,shellscript,css,scss,powershell}/.
 // Reads WASM straight from a scratch extraction dir (not yet vendored at
 // the time this script was first run) rather than packages/engine/grammars/
-// — update WASM_DIR below once files are copied into that directory, or
+// -- update WASM_DIR below once files are copied into that directory, or
 // just re-run against the vendored copies to reproduce.
 //
 // Run from the repo root after `npm ci`:

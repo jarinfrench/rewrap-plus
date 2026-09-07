@@ -2,8 +2,8 @@
  * Reads the nearest ancestor `.rewraprc` / `.rewraprc.json`.
  *
  * Plain JSON, keyed exactly like `packages/vscode-extension`'s
- * `rewrapPlus.*` settings (camelCase, no `rewrapPlus.` prefix — e.g.
- * `{ "columnLimit": 88, "stringPolicy": "all" }`) — deliberate
+ * `rewrapPlus.*` settings (camelCase, no `rewrapPlus.` prefix -- e.g.
+ * `{ "columnLimit": 88, "stringPolicy": "all" }`) -- deliberate
  * consistency with the extension's own settings namespace, unlike
  * `./pyproject.ts`'s kebab-case keys, which instead mirror *that* file's
  * own ecosystem convention. Two file formats, two audiences, two
@@ -46,7 +46,7 @@ const DOC_DIALECTS = ['auto', 'google', 'numpy', 'sphinx', 'jsdoc', 'doxygen', '
  * Resolve the `.rewraprc`/`.rewraprc.json` config that applies to
  * `filePath`. Returns an empty config when none exists on the way up to
  * the filesystem root, or when the nearest one found is present but
- * fails to parse as valid JSON — malformed input is warned about by the
+ * fails to parse as valid JSON -- malformed input is warned about by the
  * caller (`./resolve-config.ts`), not thrown here, matching this
  * project's engine-wide "skip, warn, never block" posture applied to a
  * config file instead of a source region.
@@ -77,7 +77,7 @@ export function resolveRewraprcConfig(filePath: string): {
 
 /**
  * Type-checks each known field individually rather than trusting
- * `JSON.parse`'s `unknown` result wholesale — a `.rewraprc` with e.g.
+ * `JSON.parse`'s `unknown` result wholesale -- a `.rewraprc` with e.g.
  * `"columnLimit": "wide"` (wrong type, still valid JSON) has that one
  * field silently omitted rather than corrupting `WrapConfig` with a
  * value the engine never expects, or throwing over one bad field in an

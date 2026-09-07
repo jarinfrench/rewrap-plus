@@ -23,20 +23,20 @@ import directivesOut from '../fixtures/python/comments/006-directive-comments-un
  * The stated acceptance criterion: "Python comment wrapping works
  * end-to-end in the engine, no VSCode yet." Each fixture pairs a
  * standalone `.in.py` source with a checked-in `.out.py` gold file
- * (this project's established fixture convention — see e.g.
+ * (this project's established fixture convention -- see e.g.
  * `../discovery/python-region-fixtures.test.ts`), and the test asserts
- * that running the real `wrapRegions` → `applyTextEdits` pipeline on the
+ * that running the real `wrapRegions` -> `applyTextEdits` pipeline on the
  * input reproduces the gold file exactly.
  *
  * Fixtures are imported statically via `?raw` (declared for `.py`
  * sources in `../raw-import.d.ts`) rather than discovered by walking the
- * fixtures directory, per this package's no-`node:fs` convention — a
+ * fixtures directory, per this package's no-`node:fs` convention -- a
  * missing or misnamed `.out.py` is a compile-time import error here,
  * not a silently-skipped test.
  *
  * Column limit is a fixed 40 for every fixture (chosen for compact,
  * readable gold files) except where a fixture's own point is that its
- * content is *never* wrapped regardless of width (005, 006) — those are
+ * content is *never* wrapped regardless of width (005, 006) -- those are
  * still run at 40 to make the point concrete: the lines are well over
  * that limit and stay untouched anyway.
  */
@@ -93,7 +93,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(pythonAdapter);
 });
 
-describe('Python comment wrapping — end-to-end gold fixtures', () => {
+describe('Python comment wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -103,7 +103,7 @@ describe('Python comment wrapping — end-to-end gold fixtures', () => {
   it('produces no line over the column limit for any fixture that was actually reflowed', async () => {
     // Excludes 005/006: their whole point is content that's *never*
     // reflowed (verbatim commented-out code, verbatim directives), so
-    // their lines legitimately exceed the limit with interior spaces —
+    // their lines legitimately exceed the limit with interior spaces --
     // this check is about the overflow rule for content this phase
     // actually reflows, not about verbatim pass-through.
     const reflowed = fixtures.filter(
@@ -120,7 +120,7 @@ describe('Python comment wrapping — end-to-end gold fixtures', () => {
         }
         if (line.length > COLUMN_LIMIT) {
           // Only legitimate if the line is a single unbreakable token
-          // after its marker (the overflow rule) — assert there's no
+          // after its marker (the overflow rule) -- assert there's no
           // interior space beyond the marker's own separating space.
           const afterMarker = line.replace(/^\s*#\s?/, '');
           expect(afterMarker).not.toMatch(/ /);
@@ -142,7 +142,7 @@ describe('Python comment wrapping — end-to-end gold fixtures', () => {
   });
 
   it('covers the cases line-comment wrapping is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of these named cases (trailing comments after
     // code, comment blocks at varying indents, comments inside function
     // bodies, an already-correctly-wrapped comment, commented-out code)

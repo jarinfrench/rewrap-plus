@@ -27,7 +27,7 @@ import negLoggingIn from '../fixtures/typescript/strings/neg-007-logging-format-
 import negLoggingOut from '../fixtures/typescript/strings/neg-007-logging-format-string.out.ts?raw';
 
 /**
- * TypeScript's own string-wrapping gold fixtures — mirrors
+ * TypeScript's own string-wrapping gold fixtures -- mirrors
  * `./javascript-string-wrap-fixtures.test.ts`, proving the identical
  * shared `strings/` pipeline behaves the same way through the
  * `tree-sitter-typescript` grammar (type annotations included) as it
@@ -84,7 +84,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(typescriptAdapter);
 });
 
-describe('TypeScript string-literal wrapping — end-to-end gold fixtures', () => {
+describe('TypeScript string-literal wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'typescript', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

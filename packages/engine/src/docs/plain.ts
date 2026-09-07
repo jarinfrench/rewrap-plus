@@ -4,7 +4,7 @@ import { type DocDialect, type DocEmitContext, reflowDocBlocks } from './dialect
 
 /**
  * The fallback dialect: paragraph/list/verbatim reflow only, no section
- * structure — `WrapConfig.docDialect: 'plain'`, and where `'auto'`
+ * structure -- `WrapConfig.docDialect: 'plain'`, and where `'auto'`
  * detection lands when nothing more specific is recognized (an ambiguous
  * docstring/comment falls back to plain reflow). `segment` is a direct
  * `splitBlocks` pass-through:
@@ -13,7 +13,7 @@ import { type DocDialect, type DocEmitContext, reflowDocBlocks } from './dialect
  *
  * `detect` returns a small constant baseline rather than `0` so that a
  * docstring recognized by no dialect at all still has *something* to fall
- * back to in `DialectRegistry.detectBest` — every other dialect's `detect`
+ * back to in `DialectRegistry.detectBest` -- every other dialect's `detect`
  * only returns above this baseline when it finds a real structural signal
  * (a Google section header, a NumPy underline, a Sphinx field marker), so
  * `'plain'` never wins over a genuine match, only over the absence of one.

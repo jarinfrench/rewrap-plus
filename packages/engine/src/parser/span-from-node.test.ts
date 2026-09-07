@@ -6,7 +6,7 @@ import { spanFromNode } from './span-from-node.js';
 describe('spanFromNode', () => {
   describe('python grammar', () => {
     // Relative to the process's cwd, which Vitest sets to this package's
-    // root (`packages/engine`). No `node:url`/`import.meta.url` here —
+    // root (`packages/engine`). No `node:url`/`import.meta.url` here --
     // this package's tests avoid depending on `@types/node` (see
     // `../types/position-mapper.test.ts`).
     const grammarPath = 'grammars/tree-sitter-python.wasm';
@@ -40,7 +40,7 @@ describe('spanFromNode', () => {
 
     // Regression test for docs/parsing.md finding 3: web-tree-sitter's own
     // `node.startIndex`/`node.endIndex` are UTF-16 code-unit offsets when
-    // fed a JS string, not UTF-8 byte offsets — despite `SourceSpan`'s
+    // fed a JS string, not UTF-8 byte offsets -- despite `SourceSpan`'s
     // byte-offset contract and despite web-tree-sitter's own (misleading)
     // "UTF8-encoded text" doc comment. Expected byte offsets below were
     // independently computed in Python before this assertion was written
@@ -88,7 +88,7 @@ describe('spanFromNode', () => {
   });
 
   // The non-ASCII/UTF-16 finding above was only ever probed against
-  // Python's grammar — every other adapter's own test suite (including
+  // Python's grammar -- every other adapter's own test suite (including
   // the newer cpp/java adapters, see docs/adapters.md) inherited the
   // *mechanism* (spanFromNode is generic, PositionMapper doesn't know
   // what language it's mapping) without a second grammar's own node
@@ -96,21 +96,21 @@ describe('spanFromNode', () => {
   // matters here specifically because this project's own CRLF-handling
   // history (docs/adapters.md, "CRLF handling") already found one real
   // case where a grammar-specific node shape broke an assumption that
-  // held for Python — trailing-`\r` inclusion differed between Python's
+  // held for Python -- trailing-`\r` inclusion differed between Python's
   // and JavaScript's `comment` node. Non-ASCII offset handling is a
   // property of how web-tree-sitter itself indexes the JS source string
   // (docs/parsing.md finding 3), not of a specific grammar, so this is
-  // expected to keep holding — but "expected to hold" is exactly the
+  // expected to keep holding -- but "expected to hold" is exactly the
   // kind of assumption this project's own convention says to probe
   // directly rather than trust, and neither cpp nor java had been.
   //
   // Both blocks below reuse the identical 😀日本語 payload as the Python
   // case, through both a comment and a string, cross-checked directly
   // against `spanFromNode`'s own output before being written here (not
-  // hand-derived alone) — the project's stated verification practice
+  // hand-derived alone) -- the project's stated verification practice
   // applied to a case where independent computation and "run the code
   // once to see" happen to be easy to do side by side.
-  describe('cpp grammar — non-ASCII regression', () => {
+  describe('cpp grammar -- non-ASCII regression', () => {
     let parser: Parser;
 
     beforeAll(async () => {
@@ -162,7 +162,7 @@ describe('spanFromNode', () => {
     });
   });
 
-  describe('java grammar — non-ASCII regression', () => {
+  describe('java grammar -- non-ASCII regression', () => {
     let parser: Parser;
 
     beforeAll(async () => {

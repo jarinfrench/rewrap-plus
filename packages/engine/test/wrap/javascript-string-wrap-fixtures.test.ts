@@ -31,7 +31,7 @@ import negLoggingIn from '../fixtures/javascript/strings/neg-007-logging-format-
 import negLoggingOut from '../fixtures/javascript/strings/neg-007-logging-format-string.out.js?raw';
 
 /**
- * String-wrapping gold fixtures for the now-full JavaScript adapter —
+ * String-wrapping gold fixtures for the now-full JavaScript adapter --
  * mirrors `./python-string-wrap-fixtures.test.ts`'s structure and
  * rationale, proving the *shared* `strings/dissolve-string.ts`/
  * `strings/emit-string.ts` (promoted out of `languages/python/` as part
@@ -69,11 +69,11 @@ const fixtures: readonly Fixture[] = [
     // emoji and any character outside the BMP) had no representation at
     // all in `findUnbreakableSpans` before this fixture existed, so a wrap
     // could land between `\u` and `{1F600}`. That doesn't just change the
-    // string's value — `"...\u"` is a `SyntaxError` (`\u` not followed by
+    // string's value -- `"...\u"` is a `SyntaxError` (`\u` not followed by
     // 4 hex digits or `{...}`), so the real `eval`-based oracle below
     // would have thrown, not merely disagreed. The padding in this
     // fixture's input is tuned so the greedy wrap boundary lands exactly
-    // inside the escape under the old (buggy) pattern — confirmed
+    // inside the escape under the old (buggy) pattern -- confirmed
     // directly by temporarily reverting the fix and observing this exact
     // input produce `"...emoji \u" + "{1F600}..."`.
     name: '004-codepoint-escape',
@@ -115,7 +115,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(javascriptAdapter);
 });
 
-describe('JavaScript string-literal wrapping — end-to-end gold fixtures', () => {
+describe('JavaScript string-literal wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'javascript', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -155,7 +155,7 @@ describe('JavaScript string-literal wrapping — end-to-end gold fixtures', () =
     }
   });
 
-  it('never requires inserted parens — JS/TS operator concatenation needs no grouping', async () => {
+  it('never requires inserted parens -- JS/TS operator concatenation needs no grouping', async () => {
     for (const fixture of fixtures.filter((f) => f.positive)) {
       const result = await wrapRegions(fixture.input, 'javascript', 'all', config(), parserManager);
       for (const edit of result.edits) {
@@ -168,7 +168,7 @@ describe('JavaScript string-literal wrapping — end-to-end gold fixtures', () =
     // The stated Phase 9 acceptance criterion, generalized past Python:
     // "eval the string expression before and after and assert equality."
     // `extractConcatenatedStringValue` literally evals the extracted string
-    // tokens (real JS, unlike Python's oracle) — see that module's own doc
+    // tokens (real JS, unlike Python's oracle) -- see that module's own doc
     // comment.
     for (const fixture of fixtures.filter((f) => f.positive)) {
       const before = extractConcatenatedStringValue(fixture.input);

@@ -123,7 +123,7 @@ describe('cppAdapter', () => {
   });
 
   // Line-continuation-escape and irregular-whitespace refusals are no
-  // longer cppAdapter's own concern — they're `isStringSafeToWrapBaseline`'s
+  // longer cppAdapter's own concern -- they're `isStringSafeToWrapBaseline`'s
   // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied
   // unconditionally by `wrap.ts` before this hook is ever consulted.
 

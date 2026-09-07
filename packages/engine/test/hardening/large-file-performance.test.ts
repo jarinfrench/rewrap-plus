@@ -13,22 +13,22 @@ import { latexAdapter } from '../../src/languages/latex/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Performance benchmarks and large-file guardrails — the engine-side
+ * Performance benchmarks and large-file guardrails -- the engine-side
  * half. `docs/benchmarks.md` documents the actual measured Python numbers
  * these thresholds were originally derived from, and the two real
  * quadratic-cost bugs the benchmarking work that introduced this suite
  * found and fixed (`sliceSpanText`'s and `detectLineEndingNear`'s own doc
  * comments carry the full detail):
  *
- * - `sliceSpanText` re-split the entire file on every call — called at
- *   least once per region — making "wrap every region in the file"
+ * - `sliceSpanText` re-split the entire file on every call -- called at
+ *   least once per region -- making "wrap every region in the file"
  *   quadratic in file size.
  * - `detectLineEndingNear` (added earlier in this same phase) had the
  *   identical bug from the moment it was introduced.
  *
  * Both fixes live in shared engine code (`sliceSpanText`,
  * `detectLineEndingNear` are both language-agnostic), so a regression in
- * either would in principle show up for any adapter — but this suite only
+ * either would in principle show up for any adapter -- but this suite only
  * ever exercised Python, even after JS/TS/C++/Java landed. Parameterized
  * across every registered adapter here, following the same pattern
  * `../wrap/idempotency-all-fixtures.test.ts` and this directory's other
@@ -64,7 +64,7 @@ interface LanguageSet {
   readonly commentMarker: string;
   /**
    * A synthetic file with an unrealistically *high* density of wrappable
-   * regions (every 5th line, alternating comment/string) — real code
+   * regions (every 5th line, alternating comment/string) -- real code
    * wraps a much smaller fraction of its lines, so this is deliberately a
    * worse case than any real file of the same line count, giving the
    * time bounds below real margin rather than being tuned to just barely
@@ -73,10 +73,10 @@ interface LanguageSet {
   readonly generateFile: (lineCount: number) => string;
   readonly warmUpSource: string;
   /**
-   * Bound for "wrap a single region near the cursor," below — defaults
+   * Bound for "wrap a single region near the cursor," below -- defaults
    * to 200ms (every language before LaTeX). `discoverRegions`
    * (`../../src/wrap.ts`) runs discovery on the *whole* tree regardless
-   * of `targets`, filtering to the requested region only afterward — so
+   * of `targets`, filtering to the requested region only afterward -- so
    * "near-instant, independent of file size" was never literally true of
    * *discovery* for any adapter, only of the (typically far cheaper)
    * dissolve/reflow/emit step that follows it once discovery has already
@@ -84,13 +84,13 @@ interface LanguageSet {
    * adapter before LaTeX because a single tree-sitter query pass is
    * cheap enough, even at 5,000 lines, that discovery's own cost never
    * dominated the 200ms budget. LaTeX's `discoverLatexProse`
-   * (masked line scan, §6.2) is a genuinely more expensive discovery
-   * mechanism — a combined whole-tree `descendantsOfType` walk (once
-   * sixteen separate single-type walks, until a real ~17× cost found and
-   * fixed while investigating this — see `buildTreeIndexes`'s own doc
+   * (masked line scan, Sec. 6.2) is a genuinely more expensive discovery
+   * mechanism -- a combined whole-tree `descendantsOfType` walk (once
+   * sixteen separate single-type walks, until a real ~17x cost found and
+   * fixed while investigating this -- see `buildTreeIndexes`'s own doc
    * comment in `../../src/languages/latex/discover-prose.ts`) plus a
    * per-line masking/structural/comment/item check for every row of the
-   * file, none of it query-driven — so this is the first adapter where
+   * file, none of it query-driven -- so this is the first adapter where
    * discovery's own cost (now smaller, but still real) is what the
    * near-cursor number actually measures, alongside parse time itself
    * (shared by every adapter, not LaTeX-specific). Confirmed *linear* in
@@ -142,10 +142,10 @@ function jsBody(lineCount: number): string {
  * Markdown's own worst case is the *opposite* of every code language
  * above's: a real Markdown document is close to 100% wrappable-region
  * density already (ordinary prose, not "mostly non-wrappable code with
- * the occasional comment"), so — unlike `pythonBody`/`jsBody`/`cLikeBody`,
+ * the occasional comment"), so -- unlike `pythonBody`/`jsBody`/`cLikeBody`,
  * which inflate density well past anything realistic to give the time
- * bounds real margin — this doesn't need to inflate anything to already
- * be the worst case ("every line a region line — worse than any code
+ * bounds real margin -- this doesn't need to inflate anything to already
+ * be the worst case ("every line a region line -- worse than any code
  * file's region density"). Many
  * separate two-line paragraphs (not one giant one) so the "wrap a single
  * region near the cursor" test below still has many other regions in the
@@ -169,7 +169,7 @@ function markdownBody(lineCount: number): string {
 /**
  * LaTeX's own worst case, same reasoning as `markdownBody` just above:
  * ordinary prose is already close to 100% wrappable-region density, so
- * this doesn't need to inflate anything either — plain paragraphs, no
+ * this doesn't need to inflate anything either -- plain paragraphs, no
  * `%` comments, `\section` headers, or masked environments needed to be
  * a real stress case, since `discoverLatexProse`'s masked line scan
  * still does its own per-line structural/comment/item checks on every
@@ -189,7 +189,7 @@ function latexBody(lineCount: number): string {
   return lines.slice(0, lineCount).join('\n') + '\n';
 }
 
-/** C++/Java both need every statement inside one enclosing function/method — neither allows a bare top-level statement. */
+/** C++/Java both need every statement inside one enclosing function/method -- neither allows a bare top-level statement. */
 function cLikeBody(lineCount: number, indent: string): string {
   const lines: string[] = [];
   for (let i = 0; i < lineCount; i++) {
@@ -248,7 +248,7 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
   {
     languageId: 'markdown',
     adapter: markdownAdapter,
-    // Markdown has no comment marker at all — `commentMarker` is only
+    // Markdown has no comment marker at all -- `commentMarker` is only
     // ever used below to locate a real region's start via
     // `source.indexOf(commentMarker)`; an empty string's `indexOf` is
     // always `0`, which is exactly where `markdownBody`'s first
@@ -271,13 +271,13 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     // sixteen-separate-descendantsOfType-calls fix, and from ~220-270ms
     // after that fix but before folding `line_comment` classification
     // into the same combined walk, removing a second redundant
-    // Query.captures pass — see buildTreeIndexes's own doc comment) —
+    // Query.captures pass -- see buildTreeIndexes's own doc comment) --
     // see the `nearCursorBoundMs` field's own doc comment above for why
     // this is the one adapter where growing with file size is expected
     // rather than a regression at all. 2s keeps real margin above the
     // isolated measurement (this suite's own other LaTeX bounds needed
     // similarly wide margin to survive running alongside every other
-    // CPU-bound hardening/performance test at once — real contention,
+    // CPU-bound hardening/performance test at once -- real contention,
     // confirmed by rerunning in isolation and seeing the smaller number
     // again, not a regression) while still well below what a
     // quadratic-cost bug (rather than this linear, understood cost)
@@ -311,7 +311,7 @@ describe.each(LANGUAGE_SETS)(
 
     it('wraps a 50,000-line file without the quadratic blowup this suite guards against', async () => {
       // Measured ~7s after the fix (docs/benchmarks.md, Python) vs. ~60s
-      // before — the bound here is set well above the fixed number and
+      // before -- the bound here is set well above the fixed number and
       // well below the regressed one, so this fails loudly if either
       // bug's class of cost (or a similar one) comes back.
       const source = generateFile(50_000);
@@ -324,7 +324,7 @@ describe.each(LANGUAGE_SETS)(
       // The stated budget: "wrap-at-cursor should feel instant (< 50 ms
       // after warm grammar load)." A generous 200ms default bound (this
       // machine's own measured number was ~30ms for Python) rather than
-      // literally 50 — CI hardware varies, and the property under test is
+      // literally 50 -- CI hardware varies, and the property under test is
       // "independent of file size," not a tight latency SLA. LaTeX
       // overrides this default (`nearCursorBoundMs` on its own
       // `LANGUAGE_SETS` entry, and that field's own doc comment) since

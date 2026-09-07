@@ -7,7 +7,7 @@ import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from '.
  * The real-host proof for TypeScript: the engine-level gold fixtures
  * already cover string/JSDoc wrapping in detail
  * (`packages/engine/test/wrap/typescript-*-fixtures.test.ts`), but none
- * of those go through the real VSCode extension host — activation,
+ * of those go through the real VSCode extension host -- activation,
  * `AdapterRegistry` wiring (`../../src/engine-host.ts`'s `createRegistry`),
  * command dispatch, and settings resolution all stay untested by the
  * engine suite alone. This closes that loop for TypeScript the same way

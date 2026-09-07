@@ -33,7 +33,7 @@ describe('detectLanguageFromPath', () => {
     expect(detectLanguageFromPath(path)).toBe(expected);
   });
 
-  it('does not detect .mdx/.rmd/.qmd as plain markdown — distinct languages, not aliases', () => {
+  it('does not detect .mdx/.rmd/.qmd as plain markdown -- distinct languages, not aliases', () => {
     expect(detectLanguageFromPath('page.mdx')).toBeUndefined();
     expect(detectLanguageFromPath('notebook.rmd')).toBeUndefined();
     expect(detectLanguageFromPath('notebook.qmd')).toBeUndefined();

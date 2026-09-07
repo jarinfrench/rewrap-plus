@@ -68,8 +68,8 @@ describe('javaDescriptor', () => {
 
   it('recognizes a text block\'s own triple-quote delimiter distinctly from an ordinary string', () => {
     // Not a descriptor-level check per se (the exclusion itself is
-    // `../adapter.ts`'s `classify` job — see `./descriptor.ts`'s own doc
-    // comment) — this test just confirms, directly against the grammar,
+    // `../adapter.ts`'s `classify` job -- see `./descriptor.ts`'s own doc
+    // comment) -- this test just confirms, directly against the grammar,
     // that both forms really do share one node type, which is the whole
     // reason that classify-level exclusion is needed at all.
     const parser = new Parser();
@@ -94,7 +94,7 @@ describe('javaDescriptor', () => {
     const query = new Query(language, javaDescriptor.queries.concatenations!);
     const matches = query.matches(tree.rootNode);
     // Outermost match: left is itself a binary_expression (the "a" + "b"
-    // pair), right is the trailing "c" literal — left-associative, the
+    // pair), right is the trailing "c" literal -- left-associative, the
     // same shape `discoverRegions`'s concatenation grouper already
     // expects from every other adapter's `+`-chains.
     const outermost = matches[matches.length - 1]!;

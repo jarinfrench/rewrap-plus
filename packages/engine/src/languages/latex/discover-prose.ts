@@ -8,47 +8,47 @@ import { normalizeRawText } from '../../discovery/normalize-raw-text.js';
 import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 
 /**
- * Node types that are always a discovery mask, regardless of name —
+ * Node types that are always a discovery mask, regardless of name --
  * confirmed against the vendored grammar (`docs/parsing.md` Finding 8's
  * environment-classification table and its `-probe2.mjs` addendum) rather
  * than assumed from the original design draft, which got two of these
  * entries wrong (see below; full writeup in `docs/adapters.md`,
- * "LaTeX — real adapter" section).
+ * "LaTeX -- real adapter" section).
  *
  * `minted_environment` is deliberately **absent** from this list: no such
- * node type exists in this grammar at all — `\begin{minted}` (with or
+ * node type exists in this grammar at all -- `\begin{minted}` (with or
  * without the package's required language argument) parses as an `ERROR`
  * node, not a recognized environment. That's already handled: `wrap.ts`
  * skips any region overlapping an `ERROR` node unconditionally, for every
  * region kind, so `minted` content is protected by that generic mechanism
- * without needing an entry here — the same "no exclusion needed here"
+ * without needing an entry here -- the same "no exclusion needed here"
  * reasoning Markdown's own `discoverMarkdownProse` doc comment gives for
  * `ERROR` overlap.
  */
 const ALWAYS_MASKED_NODE_TYPES: readonly string[] = [
   'verbatim_environment',
-  'listing_environment', // `\begin{lstlisting}` gets this dedicated type; plain `listing` does not — see MASKED_GENERIC_ENVIRONMENT_NAMES
+  'listing_environment', // `\begin{lstlisting}` gets this dedicated type; plain `listing` does not -- see MASKED_GENERIC_ENVIRONMENT_NAMES
   'comment_environment', // the `comment` package's block environment, distinct from a `%` line comment
   'block_comment', // `\iffalse ... \fi`
-  'displayed_equation', // covers both `\[...\]` and `$$...$$` — confirmed the same node type for both
-  'math_environment', // `align`, `equation`, `gather`, `multline`, `displaymath`, `math`, and — not predicted by the plan's own draft — `array`
+  'displayed_equation', // covers both `\[...\]` and `$$...$$` -- confirmed the same node type for both
+  'math_environment', // `align`, `equation`, `gather`, `multline`, `displaymath`, `math`, and -- not predicted by the plan's own draft -- `array`
 ];
 
 /**
  * `generic_environment` names that must still be masked even though the
- * grammar gives them no dedicated node type of their own — matched
+ * grammar gives them no dedicated node type of their own -- matched
  * against `begin.name`'s text with its surrounding `{`/`}` stripped.
  * `array` is deliberately **absent**: confirmed via `-probe2.mjs` to
  * already classify as `math_environment` (in `ALWAYS_MASKED_NODE_TYPES`
- * above), not `generic_environment` as the plan's own draft assumed — an
+ * above), not `generic_environment` as the plan's own draft assumed -- an
  * entry here would be unreachable dead weight. `listing` (plain, no `lst`
  * prefix) *is* included here for the opposite reason: `lstlisting` gets
  * its own dedicated type (already masked above), but plain `listing`
  * falls through to `generic_environment` and needs this list to be
  * caught at all.
  *
- * `itemize` and `abstract` are deliberately **excluded** — the plan's own
- * worked example (§6.2): `\begin{abstract}` alone on a line, ordinary
+ * `itemize` and `abstract` are deliberately **excluded** -- the plan's own
+ * worked example (Sec. 6.2): `\begin{abstract}` alone on a line, ordinary
  * prose below it, is masked only structurally (the `\begin`/`\end` lines
  * themselves are structural lines, handled separately below), not as a
  * verbatim block; the prose between reflows normally. `itemize`'s content
@@ -67,16 +67,16 @@ const MASKED_GENERIC_ENVIRONMENT_NAMES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Every LaTeX sectioning command's own node type — confirmed via
+ * Every LaTeX sectioning command's own node type -- confirmed via
  * `docs/spikes/tree-sitter-latex-probe4.mjs` for the five names Phase A's
  * probe didn't directly exercise (`part`, `chapter`, `subsubsection`,
- * `subparagraph`, and `paragraph` — note `paragraph` here is LaTeX's
+ * `subparagraph`, and `paragraph` -- note `paragraph` here is LaTeX's
  * `\paragraph{...}` sectioning command, an unrelated grammar node type
  * that happens to share a name with the *Markdown* adapter's very
  * different `paragraph` node; the two are never in the same tree). A
  * starred variant (`\section*{...}`) confirmed to keep the same node
- * type — the star lives inside the command token's own text
- * (`'\section*'`), not a distinct node shape — so this list needs no
+ * type -- the star lives inside the command token's own text
+ * (`'\section*'`), not a distinct node shape -- so this list needs no
  * separate starred entries.
  */
 const SECTIONING_NODE_TYPES: ReadonlySet<string> = new Set([
@@ -91,21 +91,21 @@ const SECTIONING_NODE_TYPES: ReadonlySet<string> = new Set([
 
 /**
  * One command with its `[..]`/`{..}` arguments, matched from the *start*
- * of whatever text it's tested against (no `$` anchor — callers use this
- * to consume a prefix, not to test a whole line) —
+ * of whatever text it's tested against (no `$` anchor -- callers use this
+ * to consume a prefix, not to test a whole line) --
  * verified as specified (repeated bracket/brace groups in any order and count,
  * e.g. `\newtheorem{name}[counter]{text}` matches: three groups, any mix
- * of `{...}`/`[...]`). The one confirmed failure mode — a `{...}`
+ * of `{...}`/`[...]`). The one confirmed failure mode -- a `{...}`
  * argument containing *nested* braces, e.g.
  * `\section{Title with \emph{nested} braces}` (the `[^}]*` character
- * class stops at the first `}`, leaving `braces}` unconsumed) — is
+ * class stops at the first `}`, leaving `braces}` unconsumed) -- is
  * exactly what `structuralConsumedLength`'s tree lookup exists to catch
  * instead; see that function's own doc comment for why tree lookup runs
  * *before* this regex is even tried, not just as a whole-line fallback.
  */
 const SINGLE_STRUCTURAL_COMMAND = /^\\[A-Za-z@]+\*?(\[[^\]]*\]|\{[^}]*\})*/;
 
-/** `\[`, `\]`, or `$$` alone on a line — display-math delimiters, structural even though they never match `STRUCTURAL_COMMAND_LINE` (they aren't `\command` shaped at all). Redundant with `displayed_equation` masking in the common case; kept as a textual safety net for the boundary lines themselves. */
+/** `\[`, `\]`, or `$$` alone on a line -- display-math delimiters, structural even though they never match `STRUCTURAL_COMMAND_LINE` (they aren't `\command` shaped at all). Redundant with `displayed_equation` masking in the common case; kept as a textual safety net for the boundary lines themselves. */
 const DISPLAY_MATH_DELIMITER_LINE = /^(\\\[|\\\]|\$\$)$/;
 
 interface RowMask {
@@ -134,7 +134,7 @@ function firstNonWhitespaceColumnFrom(line: string, from: number): number {
   return column;
 }
 
-/** `line`, with any single trailing `\r` removed — every row-length computation below needs this, never the raw split segment. */
+/** `line`, with any single trailing `\r` removed -- every row-length computation below needs this, never the raw split segment. */
 function stripTrailingCR(line: string): string {
   return line.endsWith('\r') ? line.slice(0, -1) : line;
 }
@@ -153,33 +153,33 @@ function isRowMasked(row: number, masks: readonly RowMask[]): boolean {
 }
 
 /**
- * Item-content start columns, by the row each `enum_item` starts on —
- * §6.2's "a line beginning with `\item` starts a new region whose span
+ * Item-content start columns, by the row each `enum_item` starts on --
+ * Sec. 6.2's "a line beginning with `\item` starts a new region whose span
  * begins after `\item` and its optional `[label]`." Confirmed directly
  * (`-probe4.mjs`): `command` is the `\item` node itself, `label` (when
  * present) is a `brack_group_text` node (`[label]`, brackets included)
- * ending right after the closing `]` — whichever of the two is present
+ * ending right after the closing `]` -- whichever of the two is present
  * and later is where item content begins. The single space conventionally
  * written between `\item`/`[label]` and the item's own text is skipped
  * here too (via `firstNonWhitespaceColumnFrom`), matching every other
  * content-start column this file computes (`firstNonWhitespaceColumn` for
- * an ordinary line) — an item's first `parts` entry should start at its
+ * an ordinary line) -- an item's first `parts` entry should start at its
  * real text, not at the whitespace conventionally separating it from the
  * marker.
  *
  * `field('label')` above is `\item`'s *own* optional `[label]` bracket
- * argument — unrelated to a `\label{...}` cross-reference command
+ * argument -- unrelated to a `\label{...}` cross-reference command
  * sometimes chained right after `\item` (e.g. `\item \label{item:foo}
  * Item text.`, confirmed via `-probe5.mjs` to parse as an unnamed
  * `label_definition` child of `enum_item`, sitting between `command`
  * and the item's own `text`). Because `isStructuralLine` is never
- * consulted for an item-start row — an `\item` line always starts a
- * fresh region regardless of what its content looks like — a chained
+ * consulted for an item-start row -- an `\item` line always starts a
+ * fresh region regardless of what its content looks like -- a chained
  * `\label{...}` (or any other structural-command chain) right after the
  * marker needs its own consumption pass here, reusing
  * `structuralConsumedLength` (the same scanner `isStructuralLine` uses)
  * rather than a second, duplicated walk: once past `\item`/`[label]`,
- * consume as much further structural-command chain as exists — the
+ * consume as much further structural-command chain as exists -- the
  * scanner's own whitespace handling means this also swallows any gap
  * before the item's real text starts, so no separate
  * `firstNonWhitespaceColumnFrom` call is needed after it.
@@ -211,10 +211,10 @@ function buildEnumItemStartColumns(
 }
 
 /**
- * Every node type this file's tree-scanning cares about — the input to
+ * Every node type this file's tree-scanning cares about -- the input to
  * `buildTreeIndexes`'s single combined `descendantsOfType` call. Typed
  * `string[]` (mutable), not `readonly string[]`, purely to satisfy
- * `descendantsOfType`'s own parameter type — this array is built once,
+ * `descendantsOfType`'s own parameter type -- this array is built once,
  * here, and never mutated afterward.
  *
  * `line_comment` joined this list (rather than staying its own separate
@@ -223,12 +223,12 @@ function buildEnumItemStartColumns(
  * sixteen-calls-to-one fix above exists, but hitting a different cost:
  * profiling a 50,000-line synthetic file (zero actual `%` comments in it)
  * found `Query.captures` itself costing a consistent ~200-350ms *regardless
- * of match count* — tree-sitter query execution here scales with tree
+ * of match count* -- tree-sitter query execution here scales with tree
  * size, not result size. `discover-regions.ts`'s own shared discovery pass
  * already runs this exact `(line_comment) @comment` query once, necessarily,
  * to build `'lineComment'` regions; this file's own now-removed
  * `buildWholeLineCommentRows` ran the *same* query a second time, purely to
- * classify each comment row as whole-line or trailing — measured at ~400ms
+ * classify each comment row as whole-line or trailing -- measured at ~400ms
  * of `discoverLatexProse`'s own ~700ms total at 50,000 lines, i.e. the
  * single largest remaining cost after the combined-`descendantsOfType` fix.
  * `descendantsOfType` doesn't have this per-call floor (it's a plain tree
@@ -255,13 +255,13 @@ interface TreeIndexes {
   readonly enumItemNodes: readonly SyntaxNode[];
   /**
    * Rows whose entire content is a `%` comment (nothing but whitespace
-   * precedes it) — such a row is already its own `'lineComment'` region
-   * (§6.2's "already `'lineComment'` regions — they split a prose run,
+   * precedes it) -- such a row is already its own `'lineComment'` region
+   * (Sec. 6.2's "already `'lineComment'` regions -- they split a prose run,
    * deliberately") and must never also become part of a `'prose'` region.
    * A row with a **trailing** (non-whole-line) comment is deliberately
    * *not* in this set: `./adapter.ts`'s `classify` excludes a trailing
    * comment's `line_comment` node from the ordinary query-driven pass
-   * entirely (commit 17, §6.4), so that row's own `parts` entry in
+   * entirely (commit 17, Sec. 6.4), so that row's own `parts` entry in
    * `discoverLatexProse` is built through the row's *full* length, comment
    * text included, and `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT`
    * hard-break pattern is what keeps that text from being reflowed.
@@ -276,19 +276,19 @@ interface TreeIndexes {
  * version of this file made (one per `ALWAYS_MASKED_NODE_TYPES` entry,
  * one for `generic_environment`, one each for `generic_command`/
  * `theorem_definition`, one per `SECTIONING_NODE_TYPES` entry, one for
- * `enum_item`). `descendantsOfType` accepts an array natively — passing
+ * `enum_item`). `descendantsOfType` accepts an array natively -- passing
  * every type at once still does exactly one walk of the tree internally,
  * just filtering against a combined set as it goes, rather than sixteen
  * separate walks each re-visiting every node in the tree to ask "are you
  * one of my one or two types?"
  *
  * Found to matter, not just theorized: profiled directly (a 50,000-line
- * synthetic file) at **17×** — the sixteen-separate-calls version took
+ * synthetic file) at **17x** -- the sixteen-separate-calls version took
  * ~1.7s, this combined version ~0.1s. This was the dominant cost in
  * `discoverLatexProse` by a wide margin (parsing the same file took
  * ~0.7s), and specifically what made a near-cursor "wrap the one region
  * under the cursor" request scale with total file size the same as a
- * whole-file wrap would — `discoverRegions` (`../../discovery/discover-regions.ts`)
+ * whole-file wrap would -- `discoverRegions` (`../../discovery/discover-regions.ts`)
  * always runs discovery on the whole tree before filtering to the
  * requested target, for every adapter alike, so this adapter's own
  * discovery cost is the whole story for that path. That distinction
@@ -299,21 +299,21 @@ interface TreeIndexes {
  *
  * Each node is dispatched to exactly one of four buckets by its own
  * `.type`, reproducing the identical per-node logic the original
- * single-purpose functions each had — `rowMasks`
- * (§6.2 item 1: `ALWAYS_MASKED_NODE_TYPES` unconditionally, plus a
+ * single-purpose functions each had -- `rowMasks`
+ * (Sec. 6.2 item 1: `ALWAYS_MASKED_NODE_TYPES` unconditionally, plus a
  * `generic_environment` whose `begin.name` is in
  * `MASKED_GENERIC_ENVIRONMENT_NAMES`), `headerSpansByStartRow`
- * (`generic_command`/`theorem_definition` via their own full extent —
+ * (`generic_command`/`theorem_definition` via their own full extent --
  * confirmed via `-probe4.mjs` to need no special-casing, no trailing
- * body absorption — and every `SECTIONING_NODE_TYPES` entry via its
+ * body absorption -- and every `SECTIONING_NODE_TYPES` entry via its
  * title `curly_group` only, `children[1]`, deliberately never its own
  * `endPosition`, which absorbs the entire section body through the next
  * same-or-higher-level section per Finding 8), `enumItemNodes` (the
- * raw node list only — `buildEnumItemStartColumns` still does its own
+ * raw node list only -- `buildEnumItemStartColumns` still does its own
  * per-item processing afterward, since it needs `headerSpansByStartRow`
  * fully built first for its own `structuralConsumedLength` calls), and
  * `wholeLineCommentRows` (see `TreeIndexes`'s own doc comment for what
- * "whole-line" means and why a trailing comment's row is excluded —
+ * "whole-line" means and why a trailing comment's row is excluded --
  * folded in here, rather than kept as its own separate
  * `captureNodes`-based pass, for the same query-execution-cost reason
  * explained on `ALL_SCANNED_NODE_TYPES` above).
@@ -352,11 +352,11 @@ function buildTreeIndexes(tree: Tree, sourceLines: readonly string[]): TreeIndex
       });
     } else if (SECTIONING_NODE_TYPES.has(node.type)) {
       // children[0] is the command token (`\section`), children[1] is
-      // the title `curly_group` — confirmed directly (`-probe.mjs`'s
+      // the title `curly_group` -- confirmed directly (`-probe.mjs`'s
       // original section probe, re-confirmed for every sectioning type
       // by `-probe4.mjs`) that this is *always* the shape, never fewer
       // than two children. children[2] onward is the absorbed body,
-      // deliberately excluded — see this function's own doc comment.
+      // deliberately excluded -- see this function's own doc comment.
       const titleGroup = node.children[1];
       if (titleGroup) {
         pushHeaderSpan(node.startPosition.row, {
@@ -381,13 +381,13 @@ function buildTreeIndexes(tree: Tree, sourceLines: readonly string[]): TreeIndex
 
 /**
  * The tree-derived end column of the structural command/sectioning
- * header starting at `(row, column)`, or `null` if none starts there —
+ * header starting at `(row, column)`, or `null` if none starts there --
  * `headerSpansByStartRow`'s per-row lookup, filtered to spans that
  * actually begin at the caller's own already-computed position (an entry
  * starting elsewhere on the row, e.g. a command nested inside another
  * line's prose text, is never a match here). Only ever returns a
  * same-row result: a header span whose own `endRow` differs from `row`
- * (a title that itself wraps onto a second physical line — unusual, but
+ * (a title that itself wraps onto a second physical line -- unusual, but
  * not impossible) is deliberately excluded, since this file's line-by-line
  * scan has nowhere to fit a "structural, but spans two rows" verdict.
  */
@@ -407,7 +407,7 @@ function treeStructuralLineEnd(
 
 /**
  * How much of `text` (a row's own content slice, starting wherever the
- * caller's own scan already begins — *not* pre-trimmed, since trailing
+ * caller's own scan already begins -- *not* pre-trimmed, since trailing
  * whitespace is itself valid input to consume) is a run of one or more
  * structural commands, each optionally separated by horizontal
  * whitespace, starting from `text`'s own beginning. Returning
@@ -419,15 +419,15 @@ function treeStructuralLineEnd(
  * line, nothing else on it); `buildEnumItemStartColumns` above instead
  * uses however much of a chain it *does* consume, whatever that is, to
  * advance an `\item`'s own content-start column past any commands
- * (`\label{...}` and its own kind) chained right after the marker —
+ * (`\label{...}` and its own kind) chained right after the marker --
  * a partial (or zero-length) result there is exactly the correct answer
  * for "nothing more to skip," not treated as a failure the way it is in
  * `isStructuralLine`.
  *
  * This is the fix for a real gap found by review after commit 15 first
- * shipped: `\section{Title}\label{sec:foo}` — an extremely common LaTeX
+ * shipped: `\section{Title}\label{sec:foo}` -- an extremely common LaTeX
  * idiom (a sectioning header immediately followed by its cross-reference
- * label, with or without a space between) — is *two* structural commands
+ * label, with or without a space between) -- is *two* structural commands
  * on one line, not one, and the original single-shot "does the whole
  * line match one `\command{args}`" check had no way to recognize a
  * *chain*. Confirmed empirically (not just reasoned about) that this
@@ -435,7 +435,7 @@ function treeStructuralLineEnd(
  * enough label, actually reflowed the command syntax across output
  * lines. This function walks the row consuming one command at a time
  * (via the tree when a header span starts exactly at the current
- * position, via `SINGLE_STRUCTURAL_COMMAND` otherwise — `\label{...}`
+ * position, via `SINGLE_STRUCTURAL_COMMAND` otherwise -- `\label{...}`
  * itself is a dedicated `label_definition` node, not one of the types
  * `buildHeaderSpansByStartRow` collects, confirmed by
  * `docs/spikes/tree-sitter-latex-probe5.mjs`, so the regex path is what
@@ -446,7 +446,7 @@ function treeStructuralLineEnd(
  * fallback after a whole-line regex failure the way commit 15 originally
  * had it: once a chain is possible, a regex match for the *first* unit
  * can consume fewer characters than the tree would have (imagine a
- * nested-brace title followed by a plain second command — the regex
+ * nested-brace title followed by a plain second command -- the regex
  * alone would stop mid-title with no way to resync), so preferring the
  * authoritative tree result at every step, and falling back to the regex
  * only where the tree has nothing to say, is what keeps this correct for
@@ -495,9 +495,9 @@ function structuralConsumedLength(
 
 /**
  * True if the text from `(row, startColumn)` through `(row, endColumn)`
- * is a "structural line" per §6.2: one or more structural commands
+ * is a "structural line" per Sec. 6.2: one or more structural commands
  * (`structuralConsumedLength`), possibly chained, with nothing else on
- * the line — or a display-math delimiter alone.
+ * the line -- or a display-math delimiter alone.
  */
 function isStructuralLine(
   row: number,
@@ -517,7 +517,7 @@ function isStructuralLine(
 }
 
 /**
- * Find every `'prose'` region in a LaTeX `tree` — `LanguageAdapter.discoverProse`'s
+ * Find every `'prose'` region in a LaTeX `tree` -- `LanguageAdapter.discoverProse`'s
  * implementation for this language (`./adapter.ts`). LaTeX's grammar has
  * no paragraph node at all (`docs/parsing.md` Finding 8), so this is a
  * masked line scan rather than a query capture: `source`'s
@@ -530,11 +530,11 @@ function isStructuralLine(
  *
  * Each qualifying row contributes one `parts` entry spanning from its
  * content-start column (the item's content column on an `\item` row, else
- * the first non-whitespace column) through the row's own full length — a
+ * the first non-whitespace column) through the row's own full length -- a
  * trailing (non-whole-line) comment, if one exists on that row, is
  * included rather than excluded: `./adapter.ts`'s `classify` already
  * keeps it from also becoming a separate `'lineComment'` region (commit
- * 17, §6.4), and `./wrap-prose.ts`'s dedicated hard-break pattern is what
+ * 17, Sec. 6.4), and `./wrap-prose.ts`'s dedicated hard-break pattern is what
  * keeps that comment text from ever being reflowed once dissolve reaches
  * it.
  */
@@ -568,29 +568,29 @@ export function discoverLatexProse(
       endRow: last.endRow,
       endColumn: last.endColumn,
     };
-    // `indentColumn` is the visual column *continuation* lines land at —
+    // `indentColumn` is the visual column *continuation* lines land at --
     // for an ordinary paragraph this is the same as `first.startColumn`
     // (both computed as `firstNonWhitespaceColumn` of the same row), but
     // for an `\item` region it deliberately is **not**: `first.startColumn`
     // is the item's own *content* start, past `\item`/`[label]` (and any
     // further chained command, `structuralConsumedLength`), while
-    // continuation lines align under the marker itself (§6.3, confirmed
+    // continuation lines align under the marker itself (Sec. 6.3, confirmed
     // by `./continuation-prefix.ts`'s own `latexContinuationPrefix`,
     // which derives from the same raw leading-whitespace run computed
-    // here). Using `first.startColumn` here instead — as an earlier
-    // version of this function did — fed `emitProse`'s single shared
+    // here). Using `first.startColumn` here instead -- as an earlier
+    // version of this function did -- fed `emitProse`'s single shared
     // `availableWidth` (`columnLimit - indentColumn`) a value far
     // narrower than what continuation lines actually have room for once
     // displayed at the marker's own (shorter) `continuationPrefix`,
     // producing needlessly short, choppy continuation lines for any
-    // labeled or long-markered item — confirmed by direct comparison
+    // labeled or long-markered item -- confirmed by direct comparison
     // against the real pipeline's output before this fix, not assumed.
     // `wrapLatexProse` (`./wrap-prose.ts`) is the other half: it derives
     // `firstLineReserve` from the *difference* between this value and the
     // real content-start column, so line 1 (which genuinely does start
     // printing at the content column, since the marker itself is
     // untouched source text) still gets its own correctly narrower
-    // budget — the same `firstLineReserve` mechanism `strings/emit-string.ts`
+    // budget -- the same `firstLineReserve` mechanism `strings/emit-string.ts`
     // already uses for an analogous "marker text precedes line 1"
     // scenario.
     const markerColumn = firstNonWhitespaceColumn(sourceLines[first.startRow] ?? '');
@@ -625,10 +625,10 @@ export function discoverLatexProse(
     const itemStartColumn = enumItemStartColumns.get(row);
     const startColumn = itemStartColumn ?? firstNonWhitespaceColumn(rawLine);
     // A trailing (non-whole-line) comment's text is deliberately *not*
-    // excluded here — `endColumn` runs through the row's full length,
+    // excluded here -- `endColumn` runs through the row's full length,
     // comment included. `./adapter.ts`'s `classify` already keeps that
     // comment from also becoming its own separate `'lineComment'`
-    // region (commit 17, §6.4), so there is nothing left to avoid
+    // region (commit 17, Sec. 6.4), so there is nothing left to avoid
     // overlapping with; `./wrap-prose.ts`'s `LATEX_TRAILING_COMMENT`
     // hard-break pattern is what keeps the comment text itself from
     // ever being reflowed once this part reaches `dissolveProse`.
@@ -645,7 +645,7 @@ export function discoverLatexProse(
     }
 
     if (itemStartColumn !== undefined) {
-      flush(); // an \item line always starts a fresh region, per §6.2
+      flush(); // an \item line always starts a fresh region, per Sec. 6.2
     }
 
     currentParts.push({

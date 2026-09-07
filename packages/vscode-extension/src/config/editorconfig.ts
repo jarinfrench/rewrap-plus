@@ -3,23 +3,23 @@
  * (commit 3).
  *
  * Parsed directly rather than depending on the EditorConfig extension
- * being installed — otherwise precedence tier 3 (see
+ * being installed -- otherwise precedence tier 3 (see
  * `./column-limit.ts`) silently disappears for anyone who doesn't
  * happen to have that other extension, which is worse than not
  * supporting `.editorconfig` at all. Uses `node:fs` directly (this is
- * `packages/vscode-extension`, not the engine — Node built-ins are fine
+ * `packages/vscode-extension`, not the engine -- Node built-ins are fine
  * here) rather than `vscode.workspace.fs`, since the algorithm below
  * needs plain synchronous directory-walking and `.editorconfig` files
  * are almost always small, local, and outside any remote-filesystem
  * scenario `vscode.workspace.fs` exists for.
  *
  * Implements the parts of the EditorConfig spec this feature actually
- * needs — `root`, section glob matching, and `max_line_length` — not a
+ * needs -- `root`, section glob matching, and `max_line_length` -- not a
  * general-purpose EditorConfig property reader. See the "Known
  * limitations" section at the bottom for what's deliberately out of
  * scope.
  *
- * The directory walk itself is cached per directory (`dirCache` below) —
+ * The directory walk itself is cached per directory (`dirCache` below) --
  * this used to run `existsSync`/`readFileSync` at every directory level
  * from the target file up to the filesystem root on *every* resolution,
  * including from the auto-wrap path which resolves on every triggering
@@ -27,25 +27,25 @@
  * as plain data operations (`invalidateEditorConfigCacheDir`,
  * `clearEditorConfigCache`) so this module can stay `vscode`-free and
  * unit-testable outside a real editor host, same as everything else
- * here — `./editorconfig-cache-invalidation.ts` is the thin `vscode`-facing
+ * here -- `./editorconfig-cache-invalidation.ts` is the thin `vscode`-facing
  * glue that wires them to real events:
  *
  * 1. Saving a `.editorconfig` document invalidates just that one
- *    directory's entry (`handleEditorConfigSave`) — precise, since a save
+ *    directory's entry (`handleEditorConfigSave`) -- precise, since a save
  *    event already tells us exactly what changed.
  * 2. The window regaining focus clears the whole cache
- *    (`handleWindowStateChange`) — coarse but cheap, covering anything
+ *    (`handleWindowStateChange`) -- coarse but cheap, covering anything
  *    that could have changed `.editorconfig` files on disk while the
  *    window was unfocused (`git pull`, a branch switch, an external
  *    editor) with no per-file signal available to narrow it.
  * 3. `EDITORCONFIG_CACHE_TTL_MS` is a backstop expiry on every entry
  *    regardless of the above, bounding staleness for the one gap neither
- *    trigger catches — a `.editorconfig` edited via a command run in
+ *    trigger catches -- a `.editorconfig` edited via a command run in
  *    VSCode's own integrated terminal, which touches disk without ever
  *    saving a document or blurring the window.
  *
  * None of this changes precedence tier 3's place in `./column-limit.ts`'s
- * resolution order — only *when* a fresh value is observed there, never
+ * resolution order -- only *when* a fresh value is observed there, never
  * whether or in what order it's consulted.
  */
 import { existsSync, readFileSync } from 'node:fs';
@@ -53,13 +53,13 @@ import { basename, dirname, join, relative } from 'node:path';
 import { matchesGlob } from './glob.js';
 
 interface EditorConfigSection {
-  /** `null` for properties that appear before any `[glob]` header — treated as applying unconditionally, matching how most EditorConfig parsers handle a bare preamble. */
+  /** `null` for properties that appear before any `[glob]` header -- treated as applying unconditionally, matching how most EditorConfig parsers handle a bare preamble. */
   readonly pattern: string | null;
   readonly properties: ReadonlyMap<string, string>;
 }
 
 interface EditorConfigFile {
-  /** Absolute directory containing this `.editorconfig` file — glob patterns are matched relative to here. */
+  /** Absolute directory containing this `.editorconfig` file -- glob patterns are matched relative to here. */
   readonly dir: string;
   readonly sections: readonly EditorConfigSection[];
 }
@@ -69,13 +69,13 @@ interface EditorConfigFile {
  * its containing directory up to the filesystem root (or up to the
  * nearest ancestor `.editorconfig` declaring `root = true`, whichever
  * comes first), applying every matching section in root-to-leaf,
- * top-to-bottom order — so that a value from a `.editorconfig` closer to
+ * top-to-bottom order -- so that a value from a `.editorconfig` closer to
  * `filePath`, or a later section within one file, always overwrites one
  * from farther away, per the spec's own "closer/later wins" precedence.
  *
  * Returns `undefined` when no matching section sets `max_line_length`,
  * or the closest matching value is explicitly `off` (EditorConfig's own
- * way of saying "no limit" — treated as "this tier doesn't apply",
+ * way of saying "no limit" -- treated as "this tier doesn't apply",
  * falling through to tier 4 in `./column-limit.ts` rather than being
  * mistaken for "no opinion, keep an earlier match").
  */
@@ -99,7 +99,7 @@ export function resolveEditorConfigMaxLineLength(filePath: string): number | und
         if (Number.isFinite(parsed)) {
           result = parsed;
         }
-        // A non-numeric, non-"off" value is malformed input — ignored,
+        // A non-numeric, non-"off" value is malformed input -- ignored,
         // leaving whatever the previous matching section established,
         // rather than clearing tier 3 outright over one bad line.
       }
@@ -112,7 +112,7 @@ export function resolveEditorConfigMaxLineLength(filePath: string): number | und
 export const EDITORCONFIG_CACHE_TTL_MS = 45_000;
 
 interface DirCacheEntry {
-  /** Whether `<dir>/.editorconfig` exists — cached explicitly (not just absence-of-entry) since a directory with no `.editorconfig` is the dominant case while walking toward the filesystem root, and is exactly what used to cost an uncached `existsSync` at every level. */
+  /** Whether `<dir>/.editorconfig` exists -- cached explicitly (not just absence-of-entry) since a directory with no `.editorconfig` is the dominant case while walking toward the filesystem root, and is exactly what used to cost an uncached `existsSync` at every level. */
   readonly exists: boolean;
   readonly sections: readonly EditorConfigSection[];
   readonly declaresRoot: boolean;
@@ -145,7 +145,7 @@ function readDirCacheEntry(dir: string): DirCacheEntry {
  * Clear the cached `.editorconfig` state for exactly one directory. Used
  * when that directory's `.editorconfig` is saved in the editor, so the
  * next resolution touching it re-reads immediately rather than waiting
- * out `EDITORCONFIG_CACHE_TTL_MS`. Deliberately narrow — a save event
+ * out `EDITORCONFIG_CACHE_TTL_MS`. Deliberately narrow -- a save event
  * already identifies precisely which directory changed, so there's no
  * reason to discard anything else that's cached.
  */
@@ -167,7 +167,7 @@ export function clearEditorConfigCache(): void {
 }
 
 /**
- * Pure decision logic for the on-save invalidation trigger — takes a
+ * Pure decision logic for the on-save invalidation trigger -- takes a
  * plain `{scheme, fsPath}` shape rather than `vscode.Uri` so it stays
  * `vscode`-free and unit-testable directly (this file's own doc comment
  * explains why); `./editorconfig-cache-invalidation.ts` is the thin
@@ -180,7 +180,7 @@ export function handleEditorConfigSave(uri: { readonly scheme: string; readonly 
 }
 
 /**
- * Pure decision logic for the on-focus invalidation trigger — see
+ * Pure decision logic for the on-focus invalidation trigger -- see
  * `handleEditorConfigSave`'s doc comment for why this stays `vscode`-free.
  */
 export function handleWindowStateChange(state: { readonly focused: boolean }): void {
@@ -226,12 +226,12 @@ function isRoot(sections: readonly EditorConfigSection[]): boolean {
 
 /**
  * Parse one `.editorconfig` file's text into an ordered list of
- * sections — index 0 is always the (possibly empty) preamble
+ * sections -- index 0 is always the (possibly empty) preamble
  * (`pattern: null`) for any `key = value` lines before the first
  * `[glob]` header, since that's where `root = true` lives.
  *
  * Deliberately minimal: no inline (trailing) comment stripping, no
- * value validation beyond what `max_line_length` itself needs — see
+ * value validation beyond what `max_line_length` itself needs -- see
  * "Known limitations" below.
  */
 function parseEditorConfig(content: string): EditorConfigSection[] {
@@ -257,7 +257,7 @@ function parseEditorConfig(content: string): EditorConfigSection[] {
 
     const eq = line.indexOf('=');
     if (eq === -1) {
-      continue; // not a recognizable `key = value` line — skip rather than throw, matching the engine-wide "skip, don't block" posture
+      continue; // not a recognizable `key = value` line -- skip rather than throw, matching the engine-wide "skip, don't block" posture
     }
     const key = line.slice(0, eq).trim().toLowerCase();
     const value = line.slice(eq + 1).trim();
@@ -276,11 +276,11 @@ function parseEditorConfig(content: string): EditorConfigSection[] {
  * pattern with no path separator matches the filename at *any* depth
  * below `sectionDir`. That's exactly `./glob.ts`'s `matchesGlob`
  * convention, so this is a thin wrapper computing the one thing specific
- * to EditorConfig's own dialect — the path relative to `sectionDir` — and
+ * to EditorConfig's own dialect -- the path relative to `sectionDir` -- and
  * handing it off.
  *
  * Exported (unlike the rest of this module's internals) so glob-pattern
- * edge cases — brace alternation, character classes, `**` — can be unit
+ * edge cases -- brace alternation, character classes, `**` -- can be unit
  * tested directly against pattern/path triples, without needing a
  * fixture directory on disk for each one; `resolveEditorConfigMaxLineLength`'s
  * own tests cover the walk-order/`root`/`off` semantics end to end
@@ -293,12 +293,12 @@ export function matchesEditorConfigGlob(pattern: string, sectionDir: string, fil
 
 // Known limitations:
 //
-// - Numeric brace ranges (`{1..3}`) and nested brace groups — see
+// - Numeric brace ranges (`{1..3}`) and nested brace groups -- see
 //   `./glob.ts`'s own "Known limitations". Vanishingly rare in real
 //   `.editorconfig` files for `max_line_length` sections specifically
 //   (ranges are far more common for numbered fixture/test directories),
 //   so left unhandled rather than adding a second glob dialect for a
 //   case this feature is unlikely to ever see exercised.
-// - No inline (trailing) comment stripping — `key = value ; comment`
+// - No inline (trailing) comment stripping -- `key = value ; comment`
 //   treats `; comment` as part of `value`. Full-line comments (`;`/`#`
 //   as the line's first non-whitespace character) are handled.

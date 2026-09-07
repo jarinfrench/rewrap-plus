@@ -8,12 +8,12 @@ import { dedentBody, stripLeadingBlanks } from './field-entries.js';
 
 /**
  * Sections whose body is a list of `name : type` entries, each followed
- * by an indented description on the line(s) *below* it — never on the
+ * by an indented description on the line(s) *below* it -- never on the
  * same physical line, unlike Google/Sphinx. `Returns`/`Yields`/`Warns`
  * entries often omit the name entirely (`bool` alone, no `:`), which is
  * exactly why this dialect recognizes an entry by *position* (indent),
  * not by matching a `name : type` pattern the way Google/Sphinx's shared
- * `groupFieldEntries` does — see `segmentFieldSection` below.
+ * `groupFieldEntries` does -- see `segmentFieldSection` below.
  */
 const FIELD_SECTIONS = new Set([
   'Parameters',
@@ -34,7 +34,7 @@ const KNOWN_SECTIONS = new Set([...FIELD_SECTIONS, ...PROSE_SECTIONS]);
 /**
  * NumPy's distinctive two-line header: a known section name flush left,
  * immediately followed by a line of three or more dashes. This pairing
- * is what makes NumPy detection reliable even from a single match — see
+ * is what makes NumPy detection reliable even from a single match -- see
  * `numpyDialect.detect`.
  */
 function matchHeaderAt(lines: readonly string[], index: number): string | null {
@@ -87,20 +87,20 @@ function splitIntoSections(lines: readonly string[]): {
  * Parse one field-style section's body by position: the first non-blank
  * line establishes `baseIndent` (every entry's own label sits flush at
  * that column); a line at or above `baseIndent` starts a new entry
- * (`sectionHeader`, since a `name : type` line is never itself reflowed —
+ * (`sectionHeader`, since a `name : type` line is never itself reflowed --
  * it's short structural text, not prose); everything more-indented below
  * it is that entry's description, represented as a `fieldEntry` with an
- * *empty* label — `../reflow/decorate-block.ts`'s `markerPrefix('',
+ * *empty* label -- `../reflow/decorate-block.ts`'s `markerPrefix('',
  * hangingIndent)` degrades gracefully to a pure `hangingIndent`-wide
  * blank prefix, which is exactly the indentation NumPy's description
  * lines need with no visible marker in front of them, unlike Google's
  * entries where description starts glued to the label on the same line.
  *
  * A description is segmented for real structure the same way
- * `./field-entries.ts`'s `groupFieldEntries` does — look-ahead body
+ * `./field-entries.ts`'s `groupFieldEntries` does -- look-ahead body
  * collection (`collectDescriptionBody`, below, tolerating a blank line
  * as long as more description follows), `dedentBody`, then
- * `segmentLines`/`splitBlocks` — but as its own, separate implementation
+ * `segmentLines`/`splitBlocks` -- but as its own, separate implementation
  * (see `groupFieldEntries`'s own doc comment for why): NumPy recognizes
  * an entry's *end* purely by indent depth, with no `matchEntryStart`-style
  * regex or "matched but deeper stays in" nuance to account for, since a
@@ -126,7 +126,7 @@ function segmentFieldSection(body: readonly string[], options: SplitBlocksOption
       continue;
     }
     if (leadingWhitespaceLength(line) > baseIndent) {
-      // Deeper-indented line with no preceding label — malformed/hand-
+      // Deeper-indented line with no preceding label -- malformed/hand-
       // edited input; fold it in as an ordinary paragraph rather than
       // dropping it, matching `../field-entries.ts`'s own fallback.
       blocks.push({ type: 'paragraph', atoms: atomizeWords(line) });
@@ -139,7 +139,7 @@ function segmentFieldSection(body: readonly string[], options: SplitBlocksOption
     const { body: descriptionLines, nextIndex } = collectDescriptionBody(body, i, baseIndent);
     i = nextIndex;
     if (descriptionLines.length > 0) {
-      // `stripLeadingBlanks` (`./field-entries.ts` — its own doc comment
+      // `stripLeadingBlanks` (`./field-entries.ts` -- its own doc comment
       // has the full "why," confirmed via stress testing, not
       // hypothetical): NumPy's label is *always* empty, so this applies
       // unconditionally here, not gated on anything the way
@@ -158,12 +158,12 @@ function segmentFieldSection(body: readonly string[], options: SplitBlocksOption
 
 /**
  * Collect one entry's description lines starting at `start`, look-ahead
- * style — mirroring `./field-entries.ts`'s `collectEntryBody` (see that
+ * style -- mirroring `./field-entries.ts`'s `collectEntryBody` (see that
  * function's own doc comment for the "blank lines inside are fine,
  * trailing blanks aren't" rationale, shared verbatim here): a blank line
  * is tentatively included, but only actually kept if some later line is
  * still deeper than `baseIndent`. NumPy's own stop condition is simpler
- * than `field-entries.ts`'s `isEntryContinuation` — no
+ * than `field-entries.ts`'s `isEntryContinuation` -- no
  * `matchEntryStart`/sibling-entry check, since a `name : type` header
  * line is recognized purely by sitting at `baseIndent` or shallower, not
  * by matching any particular shape.
@@ -200,7 +200,7 @@ export const numpyDialect: DocDialect = {
 
   /**
    * Confidence is driven almost entirely by whether the distinctive
-   * header-plus-underline pairing appears at all — a single match is
+   * header-plus-underline pairing appears at all -- a single match is
    * already strong evidence (the two-line shape is hard to produce by
    * accident, unlike a lone Google-style `Name:` line), so the curve
    * saturates fast.

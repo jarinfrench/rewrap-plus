@@ -2,12 +2,12 @@
 /**
  * Confirms every vendored grammar `.wasm` file under
  * `packages/engine/grammars/` still matches the sha256 recorded for it in
- * that directory's own `PROVENANCE.md` — and that the two lists (files on
+ * that directory's own `PROVENANCE.md` -- and that the two lists (files on
  * disk, entries in the doc) agree exactly, in both directions.
  *
  * `PROVENANCE.md` records each grammar's source, version, and hash so a
  * tampered or silently-swapped binary can be told apart from the real
- * thing (SECURITY.md's "supply-chain integrity" category) — but a
+ * thing (SECURITY.md's "supply-chain integrity" category) -- but a
  * recorded hash nobody re-checks is a claim, not a guarantee. Before this
  * script, nothing actually recomputed a vendored file's sha256 and
  * compared it against what the doc says; a `.wasm` replaced (accidentally
@@ -16,7 +16,7 @@
  *
  * Wired in as a root `pretest` hook (see `package.json`) so it's part of
  * the same `npm test` every CI run and every commit's local gate already
- * executes — no separate opt-in step to forget.
+ * executes -- no separate opt-in step to forget.
  *
  * Deliberately dependency-free, matching
  * `packages/vscode-extension/scripts/verify-vsix-contents.mjs`: parsing
@@ -65,10 +65,10 @@ function main() {
   const vendored = new Set(fs.readdirSync(grammarsDir).filter((entry) => entry.endsWith('.wasm')));
 
   if (vendored.size === 0) {
-    throw new Error(`verify-grammar-provenance: no vendored .wasm files found under ${grammarsDir} — nothing to check.`);
+    throw new Error(`verify-grammar-provenance: no vendored .wasm files found under ${grammarsDir} -- nothing to check.`);
   }
   if (documented.size === 0) {
-    throw new Error(`verify-grammar-provenance: no "Vendored file sha256" entries parsed out of ${provenancePath} — is its table format unchanged?`);
+    throw new Error(`verify-grammar-provenance: no "Vendored file sha256" entries parsed out of ${provenancePath} -- is its table format unchanged?`);
   }
 
   const failures = [];
@@ -83,13 +83,13 @@ function main() {
 
   for (const [filename, expectedHash] of documented) {
     if (!vendored.has(filename)) {
-      failures.push(`PROVENANCE.md documents ${filename}, but no such file exists under packages/engine/grammars/ — stale entry?`);
+      failures.push(`PROVENANCE.md documents ${filename}, but no such file exists under packages/engine/grammars/ -- stale entry?`);
       continue;
     }
     const actualHash = sha256File(path.join(grammarsDir, filename));
     if (actualHash !== expectedHash) {
       failures.push(
-        `${filename}: sha256 mismatch — PROVENANCE.md says ${expectedHash}, actual file hashes to ${actualHash}. Either the binary changed without updating PROVENANCE.md, or vice versa.`,
+        `${filename}: sha256 mismatch -- PROVENANCE.md says ${expectedHash}, actual file hashes to ${actualHash}. Either the binary changed without updating PROVENANCE.md, or vice versa.`,
       );
     }
   }

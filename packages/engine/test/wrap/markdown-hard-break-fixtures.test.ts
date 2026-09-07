@@ -18,16 +18,16 @@ import negEscapedIn from '../fixtures/markdown/hard-breaks/neg-001-escaped-backs
 import negEscapedOut from '../fixtures/markdown/hard-breaks/neg-001-escaped-backslash-not-a-break.out.md?raw';
 
 /**
- * Hard-break gold fixtures — Phase C commit 11. Every source line here
+ * Hard-break gold fixtures -- Phase C commit 11. Every source line here
  * is deliberately short enough
  * to fit well within `COLUMN_LIMIT` on its own, so a break surviving into
- * the output can only be the hard-break marker forcing it — reflow would
+ * the output can only be the hard-break marker forcing it -- reflow would
  * otherwise happily join two such short lines onto one, which is exactly
  * what the negative fixture demonstrates actually happening.
  *
  * `004-three-backslashes-odd-parity` and `neg-001-escaped-backslash-not-a-break`
  * are the direct payoff of `./markdown/hard-break.ts`'s parity fix: the
- * plan's own §5.4 text (`/(?<!\\)\\$/`, a one-character lookbehind) gets
+ * plan's own Sec. 5.4 text (`/(?<!\\)\\$/`, a one-character lookbehind) gets
  * two trailing backslashes right (not a break) but silently gets three
  * wrong (also "not a break" under that regex, when CommonMark's real
  * escape-pairing rule says three backslashes *is* one). Phase A's probe
@@ -83,7 +83,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(markdownAdapter);
 });
 
-describe('Markdown hard-break wrapping — end-to-end gold fixtures', () => {
+describe('Markdown hard-break wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'markdown', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -134,7 +134,7 @@ describe('Markdown hard-break wrapping — end-to-end gold fixtures', () => {
   it('the two-space hard break is the only fixture whose output carries trailing whitespace', () => {
     // The one legitimate trailing whitespace in this whole project
     // (`docs/adapters.md`/`../../src/conformance/run-adapter-conformance.ts`'s
-    // own documented carve-out) — confirmed here to be exactly this one
+    // own documented carve-out) -- confirmed here to be exactly this one
     // fixture, not a side effect leaking into any other.
     for (const fixture of fixtures) {
       const hasTrailingWhitespace = fixture.expected

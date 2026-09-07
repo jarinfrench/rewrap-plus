@@ -2,7 +2,7 @@
  * Wrap configuration: the plain-data contract between a caller (the VSCode
  * extension, the CLI) and the engine.
  *
- * Deliberately plain data — no VSCode types anywhere in this file, and
+ * Deliberately plain data -- no VSCode types anywhere in this file, and
  * nothing here requires a live editor host. This is the reuse seam that
  * keeps the engine usable outside VSCode without a rewrite: anything that
  * can construct a `WrapConfig` object can drive the engine.
@@ -19,10 +19,10 @@ export interface WrapConfig {
 
   /**
    * How aggressively to wrap string literals:
-   * - `'off'` — never wrap strings; comments/docstrings only.
-   * - `'prose'` — wrap only strings that score as prose-like under the
+   * - `'off'` -- never wrap strings; comments/docstrings only.
+   * - `'prose'` -- wrap only strings that score as prose-like under the
    *   shared prose heuristic. The conservative default.
-   * - `'all'` — wrap every eligible string, ignoring the prose heuristic.
+   * - `'all'` -- wrap every eligible string, ignoring the prose heuristic.
    */
   readonly stringPolicy: 'prose' | 'all' | 'off';
 
@@ -49,12 +49,12 @@ export interface WrapConfig {
 
   /**
    * Use `reflowBlock`'s `'balanced'` (minimum-raggedness) line-breaking
-   * mode instead of the `'greedy'` default — see `ReflowOptions.mode`
+   * mode instead of the `'greedy'` default -- see `ReflowOptions.mode`
    * (`../reflow/reflow-block.ts`) for what the two modes actually do.
    * `false` (greedy) by default: greedy is the more predictable, more
    * widely-expected default, and costs less to compute. This field was
    * anticipated well before it was actually added to the interface,
-   * once VSCode integration needed it for real — see `../wrap.ts` for
+   * once VSCode integration needed it for real -- see `../wrap.ts` for
    * where it's threaded through to `emitLineComments`/`emitBlockComments`.
    */
   readonly balancedWrapping: boolean;

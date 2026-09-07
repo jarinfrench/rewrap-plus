@@ -2,7 +2,7 @@
  * Thin `vscode`-facing wrapper around `./column-limit.ts`'s pure
  * resolver: extracts the raw configuration values VSCode holds and hands
  * them to `resolveColumnLimit`. Not unit tested directly (it needs a
- * real editor host to mean anything) — exercised by the
+ * real editor host to mean anything) -- exercised by the
  * @vscode/test-electron integration suite (commit 9) instead; all the
  * precedence *logic* lives in, and is tested via, `./column-limit.ts`.
  */
@@ -12,7 +12,7 @@ import { resolveColumnLimit, type ResolvedColumnLimit, type RulerSetting } from 
 /**
  * Split `editor.rulers`'s effective value into its language-scoped and
  * non-language-scoped layers via `WorkspaceConfiguration#inspect`,
- * rather than `get()` — `get()` would merge both layers into one
+ * rather than `get()` -- `get()` would merge both layers into one
  * effective value, losing exactly the distinction tiers 2 and 4 need. A
  * language ID must be part of the configuration scope for VSCode to
  * populate `inspect()`'s `*LanguageValue` fields at all, which is why
@@ -46,7 +46,7 @@ function inspectRulers(document: vscode.TextDocument): {
  * `editorConfigMaxLineLength` is threaded in by the caller rather than
  * looked up here, since resolving it needs a filesystem walk
  * (`../editorconfig.ts`, commit 3) and a `respectEditorConfig` setting
- * check (commit 4) — neither of which this module should need to know
+ * check (commit 4) -- neither of which this module should need to know
  * about to stay focused on the ruler/rewrapPlus-setting side of the
  * precedence chain.
  */

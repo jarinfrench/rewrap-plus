@@ -6,8 +6,8 @@ import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } f
 import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 /**
- * Sections whose body is a list of named entries — `param (type):
- * description` — parsed via `groupFieldEntries`. `Returns`/`Yields` are
+ * Sections whose body is a list of named entries -- `param (type):
+ * description` -- parsed via `groupFieldEntries`. `Returns`/`Yields` are
  * included even though Google style also allows a bare, nameless
  * description there (`segment` below falls back to plain prose for a
  * section where nothing actually matched an entry).
@@ -23,7 +23,7 @@ const FIELD_SECTIONS = new Set([
   'Yields',
 ]);
 
-/** Sections whose body is freeform prose — reflowed as ordinary paragraphs/lists/verbatim, no entry parsing. */
+/** Sections whose body is freeform prose -- reflowed as ordinary paragraphs/lists/verbatim, no entry parsing. */
 const PROSE_SECTIONS = new Set([
   'Note',
   'Notes',
@@ -40,10 +40,10 @@ const KNOWN_SECTIONS = new Set([...FIELD_SECTIONS, ...PROSE_SECTIONS]);
 
 /**
  * A section header line: a known section name, alone on its own line,
- * flush left (no indent) — the universal Google/napoleon convention.
+ * flush left (no indent) -- the universal Google/napoleon convention.
  * Anything else ending in `:` (a field entry's own `name:`, an inline
  * `Note: ...` with content after the colon) is deliberately *not* a
- * header — only the fixed, known vocabulary and "alone on the line"
+ * header -- only the fixed, known vocabulary and "alone on the line"
  * shape qualify, so a line that merely resembles one in passing prose
  * doesn't get misread as starting a section.
  */
@@ -75,7 +75,7 @@ const FIELD_ENTRY_LINE = /^[ \t]*(\*{0,2}[A-Za-z_][\w.]*(?:\s*\([^()]*\))?)\s*:\
 /**
  * This regex is applied per *physical* line of already-dissolved text,
  * with no notion of "this line used to be the middle of a reflowed
- * paragraph" — so a field entry's flattened description containing a
+ * paragraph" -- so a field entry's flattened description containing a
  * `word:` substring (a nested bullet's own "label: description" shape,
  * or just a sentence with a colon in it) could, before the fix
  * described in `./field-entries.ts`'s `isEntryContinuation`, be misread
@@ -133,7 +133,7 @@ export const googleDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized section headers
-   * found — a single `Returns:` is a real (if weak) signal on its own,
+   * found -- a single `Returns:` is a real (if weak) signal on its own,
    * and several distinct headers make misidentification very unlikely.
    * Zero headers found means zero confidence outright: unlike NumPy's
    * two-line header+underline (a strong, hard-to-fake signal even from
@@ -162,7 +162,7 @@ export const googleDialect: DocDialect = {
 
       const fieldBlocks = groupFieldEntries(section.body, matchGoogleEntry, options);
       // `Returns`/`Yields` (and, rarely, hand-written `Args`) may carry
-      // no recognizable `name:`/`type:` entry at all — legitimate bare
+      // no recognizable `name:`/`type:` entry at all -- legitimate bare
       // prose under Google style. `groupFieldEntries` already falls back
       // to one `paragraph` block *per line* for input it can't parse as
       // an entry, which would wrongly keep an ordinary multi-line

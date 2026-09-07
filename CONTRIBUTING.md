@@ -4,8 +4,8 @@
 
 Freeform but structured:
 
-- Short imperative subject line, ≤ 72 characters.
-- Optional `scope:` prefix where it aids scanning — e.g. `engine:`, `python:`,
+- Short imperative subject line, <= 72 characters.
+- Optional `scope:` prefix where it aids scanning -- e.g. `engine:`, `python:`,
   `ext:`, `cli:`, `docs:`, `build:`, `ci:`, `canary:`, `legal:`.
 - A body is used for non-obvious rationale (why, not what).
 - No strict Conventional Commits format is enforced.
@@ -21,12 +21,12 @@ ext: implement wrap-at-cursor command
 ## Workspace rules
 
 - `packages/engine` must never import `vscode`. This is enforced by an
-  ESLint `no-restricted-imports` rule — if it fires, the change belongs in
+  ESLint `no-restricted-imports` rule -- if it fires, the change belongs in
   `packages/vscode-extension` instead.
 - New languages are added as descriptors under `packages/engine`, not as
   engine code changes. See `docs/adapters.md` and `docs/adding-a-language.md`.
 - `packages/vscode-extension` and `packages/cli` are independent glue
-  layers over `packages/engine`, not a shared dependency of each other —
+  layers over `packages/engine`, not a shared dependency of each other --
   neither should import from the other. A module that's genuinely
   editor/runtime-agnostic (config parsing, formatting helpers, ...)
   belongs in `packages/engine` if it's engine-level, or gets its own copy

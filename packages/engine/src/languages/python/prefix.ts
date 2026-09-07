@@ -28,10 +28,10 @@ const PREFIX_AND_QUOTE = /^([A-Za-z]{0,3})('''|"""|'|")/;
 /**
  * Extract the lowercase prefix from the start of a Python string literal's
  * exact source text (including its quotes), e.g. `extractPrefix('Rb"x"')`
- * → `'rb'`, `extractPrefix('"""x"""')` → `''`.
+ * -> `'rb'`, `extractPrefix('"""x"""')` -> `''`.
  *
  * Returns `null` if `literalText` doesn't start with a recognizable
- * prefix-plus-quote sequence at all — a defensive case that shouldn't
+ * prefix-plus-quote sequence at all -- a defensive case that shouldn't
  * arise for text sliced from a genuine `string`-query capture, but callers
  * (`isSafeToWrap`) treat it as "assume unsafe" rather than throwing, since
  * this is reachable with attacker-shaped input in principle and a wrong
@@ -44,7 +44,7 @@ export function extractPrefix(literalText: string): string | null {
 
 /**
  * Canonicalize a lowercase prefix by sorting and de-duplicating its
- * letters — `'rb'`, `'br'` (already lowercased by `extractPrefix`) both
+ * letters -- `'rb'`, `'br'` (already lowercased by `extractPrefix`) both
  * become `'br'`. Python doesn't allow repeated letters in a real prefix
  * (`rr"..."` is a syntax error), so de-duplication is defensive rather
  * than load-bearing, but costs nothing to include.

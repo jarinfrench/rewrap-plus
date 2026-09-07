@@ -66,7 +66,7 @@ describe('isDocstringPosition', () => {
   });
 
   it('rejects a string that is the first statement of a non-docstring-host block', () => {
-    const source = 'if True:\n    """Not a docstring — if-blocks are not hosts."""\n';
+    const source = 'if True:\n    """Not a docstring -- if-blocks are not hosts."""\n';
     const [node] = stringNodes(source);
     expect(isDocstringPosition(node!)).toBe(false);
   });
@@ -127,9 +127,9 @@ describe('isAttributeDocstringPosition', () => {
 
   it('rejects a string following an augmented assignment', () => {
     // The augmented assignment is itself the "previous statement", and it
-    // is not a plain/annotated assignment — this is a decoy string, not a
+    // is not a plain/annotated assignment -- this is a decoy string, not a
     // docstring for whatever `z` was originally assigned from.
-    const source = 'z = 1\nz += 1\n"""Decoy — not an attribute docstring."""\n';
+    const source = 'z = 1\nz += 1\n"""Decoy -- not an attribute docstring."""\n';
     const nodes = stringNodes(source);
     const decoy = nodes.find((n) => n.text.includes('Decoy'))!;
     expect(isAttributeDocstringPosition(decoy)).toBe(false);

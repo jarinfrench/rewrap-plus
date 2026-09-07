@@ -33,7 +33,7 @@ describe('javaAdapter', () => {
     expect(region!.kind).toBe('blockComment');
   });
 
-  it('does not treat a /// comment specially — Java has no repeated-marker doc form', () => {
+  it('does not treat a /// comment specially -- Java has no repeated-marker doc form', () => {
     const source = 'class Foo {\n  /// not a real doc-comment marker in Java\n  int x = 1;\n}\n';
     const tree = parser.parse(source)!;
     const [region] = discoverRegions(javaAdapter, tree, source, 'java');
@@ -102,7 +102,7 @@ describe('javaAdapter', () => {
     expect(regions[0]!.kind).toBe('stringLiteral');
   });
 
-  // javaAdapter no longer declares its own isSafeToWrap at all — Java has
+  // javaAdapter no longer declares its own isSafeToWrap at all -- Java has
   // no string-shape hazard beyond `isStringSafeToWrapBaseline`'s own
   // line-continuation/irregular-whitespace refusals
   // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied

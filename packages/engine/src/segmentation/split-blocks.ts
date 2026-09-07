@@ -12,7 +12,7 @@ import {
 
 /**
  * Options controlling `splitBlocks`. Threaded straight through from
- * `WrapConfig` by whatever calls this (dissolve) —
+ * `WrapConfig` by whatever calls this (dissolve) --
  * kept as its own narrow interface, per this project's established
  * pattern (see `../discovery/discover-regions.ts`'s `DiscoverRegionsOptions`),
  * rather than taking the whole `WrapConfig` and coupling this
@@ -22,8 +22,8 @@ export interface SplitBlocksOptions {
   /**
    * Treat indented, non-list-marker lines as `verbatim` rather than
    * reflowing them. The reST `::`-triggered literal-block convention
-   * (see `./verbatim.ts`) is recognized regardless of this option — it's
-   * an explicit syntactic marker, not a heuristic — this option is only
+   * (see `./verbatim.ts`) is recognized regardless of this option -- it's
+   * an explicit syntactic marker, not a heuristic -- this option is only
    * for the more aggressive "any indented line is verbatim" behavior.
    */
   readonly preserveIndentedBlocks?: boolean;
@@ -33,7 +33,7 @@ export interface SplitBlocksOptions {
  * Turn dissolved region text into a flat sequence of `Block`s.
  *
  * This is the shared, language-agnostic half of turning raw
- * region text into a `LogicalDocument` of blocks — the counterpart that
+ * region text into a `LogicalDocument` of blocks -- the counterpart that
  * actually assembles a `LogicalDocument` (pairing this with `DocMeta`)
  * belongs to whichever dissolve step calls it (docstrings,
  * comments), since only the caller knows the region's
@@ -41,30 +41,30 @@ export interface SplitBlocksOptions {
  *
  * Line-by-line, in priority order:
  *
- * 1. **Blank** — a whitespace-only line becomes its own `blank` block
+ * 1. **Blank** -- a whitespace-only line becomes its own `blank` block
  *    (see the note below on why blank blocks aren't collapsed).
- * 2. **`::`-triggered literal block** — if the paragraph immediately
+ * 2. **`::`-triggered literal block** -- if the paragraph immediately
  *    before the last blank line ended with `::`, and this line is
  *    indented, the whole contiguous indented/blank run becomes one
  *    `verbatim` block (`./verbatim.ts`'s `matchIndentedRun`), per the
  *    reST literal-block convention. Always active, independent of
  *    `preserveIndentedBlocks`.
  * 3. **Fenced code** (```` ``` ```` / `~~~`), **doctest** (`>>>`/`...`),
- *    and **Markdown table** (`|`-delimited with a delimiter row) —
+ *    and **Markdown table** (`|`-delimited with a delimiter row) --
  *    each its own `verbatim` block, per `./verbatim.ts`. Checked ahead
  *    of list-item and paragraph handling: a line that happens to also
  *    look like a list marker or ordinary prose still gets the verbatim
  *    treatment if it opens one of these ("bias toward verbatim when
- *    uncertain" — a missed reflow opportunity is invisible, a mangled
+ *    uncertain" -- a missed reflow opportunity is invisible, a mangled
  *    table is a bug report).
- * 4. **List item** (`./list-item.ts`) — a line matching the
+ * 4. **List item** (`./list-item.ts`) -- a line matching the
  *    bullet/ordered-marker grammar starts a `listItem` block; its
  *    continuation lines (indented further than the marker) merge into
  *    that item's atom stream the same soft way a paragraph's lines do.
- * 5. **Indented block** under `preserveIndentedBlocks` — any remaining
+ * 5. **Indented block** under `preserveIndentedBlocks` -- any remaining
  *    indented line becomes a `verbatim` block for the whole contiguous
  *    indented/blank run, same mechanics as case 2.
- * 6. **Paragraph** (fallback) — merged into the current paragraph's atom
+ * 6. **Paragraph** (fallback) -- merged into the current paragraph's atom
  *    stream; consecutive non-blank paragraph lines share one `paragraph`
  *    block, since within a paragraph every line break is soft.
  *
@@ -117,7 +117,7 @@ export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Blo
           continue;
         }
       }
-      // No indented content followed the trailing "::" after all — fall
+      // No indented content followed the trailing "::" after all -- fall
       // through and let this line be classified normally.
     }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { markdownContinuationPrefix } from './continuation-prefix.js';
 
 /**
- * §5.3's own table, verbatim — every distinct container shape the block
+ * Sec. 5.3's own table, verbatim -- every distinct container shape the block
  * grammar's marker chains can produce, each asserted directly rather
  * than only spot-checked.
  */

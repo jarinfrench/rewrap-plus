@@ -2,13 +2,13 @@ import { powershellAdapter } from '../../src/languages/powershell/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * The hard gate the comment-only-batch languages exist to check —
+ * The hard gate the comment-only-batch languages exist to check --
  * PowerShell through the identical `runAdapterConformance` suite every
  * earlier adapter already passed. Every source below exercises all three
  * of PowerShell's comment-node text shapes (`../../src/languages/powershell/
  * adapter.ts`'s own doc comment): a standalone `#` line comment, a plain
  * `<# ... #>` block comment, and a `<# ... #>` comment-based-help block
- * (`.SYNOPSIS`) — the last one specifically exercising the new
+ * (`.SYNOPSIS`) -- the last one specifically exercising the new
  * `'commentBasedHelp'` `DocDialectId` end to end, not just the
  * descriptor's own query compiling.
  *

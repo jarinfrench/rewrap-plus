@@ -14,14 +14,14 @@ export interface DiscoveredFile {
 
 export interface DiscoveryResult {
   readonly files: readonly DiscoveredFile[];
-  /** Explicit file arguments whose extension this tool doesn't recognize, and no `--language` override applied. Directory-walk discoveries with an unrecognized extension are silently skipped instead — see `walkDirectory`'s own comment. */
+  /** Explicit file arguments whose extension this tool doesn't recognize, and no `--language` override applied. Directory-walk discoveries with an unrecognized extension are silently skipped instead -- see `walkDirectory`'s own comment. */
   readonly unrecognized: readonly string[];
   /** Positional arguments that don't exist on disk at all. */
   readonly missing: readonly string[];
 }
 
 /**
- * Directory names skipped during a recursive walk, regardless of depth —
+ * Directory names skipped during a recursive walk, regardless of depth --
  * the same "don't touch generated/vendored/VCS content by default" set
  * every comparable batch tool (Prettier, ESLint) applies out of the box.
  * Not `.gitignore`-aware beyond this fixed list; see this module's own
@@ -36,7 +36,7 @@ function isIgnoredDir(name: string): boolean {
 /**
  * `languageOverride` (`--language`, from `./args.ts`) applies only to
  * explicit file arguments, never to files found by walking a directory
- * argument — forcing every file under a directory tree to one language
+ * argument -- forcing every file under a directory tree to one language
  * regardless of its own extension is exactly the kind of blast-radius
  * surprise a batch tool should require one file at a time, not a whole
  * subtree, to opt into.
@@ -84,12 +84,12 @@ function walkDirectory(dir: string, out: DiscoveredFile[]): void {
       continue;
     }
     if (!entry.isFile()) {
-      continue; // symlinks, sockets, etc. — not a file this tool can wrap
+      continue; // symlinks, sockets, etc. -- not a file this tool can wrap
     }
     const path = join(dir, entry.name);
     // Unlike an explicit file argument (which reports back as
     // "unrecognized" so the caller can warn), a directory walk silently
-    // skips files it doesn't know how to wrap — a `node_modules`-free
+    // skips files it doesn't know how to wrap -- a `node_modules`-free
     // source tree still has `README.md`, `package.json`, and similar in
     // it, and warning about every one of them would be pure noise for
     // the overwhelmingly common case of pointing this tool at a whole
@@ -107,4 +107,4 @@ function walkDirectory(dir: string, out: DiscoveredFile[]): void {
 //   separate scope (a `.gitignore` parser is a project of its own) that
 //   this tool doesn't need to take on.
 // - Symlinked directories are not followed (`readdirSync`'s own default
-//   behavior) — avoids an unbounded/cyclic walk from a symlink loop.
+//   behavior) -- avoids an unbounded/cyclic walk from a symlink loop.

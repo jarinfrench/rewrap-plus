@@ -3,7 +3,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
 
 /**
  * Per-region layout `emitProse` needs beyond what `LogicalDocument.meta`
- * already carries — the prose counterpart of `emitLineComments`'
+ * already carries -- the prose counterpart of `emitLineComments`'
  * `marker`/`spaceAfterMarker` parameters, but computed by the adapter,
  * not descriptor data, since a prose region's continuation prefix is
  * derived per-region
@@ -12,7 +12,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  */
 export interface ProseLayout {
   /**
-   * Text prepended to every physical output line after the first — a
+   * Text prepended to every physical output line after the first -- a
    * block quote's `>`/`>> `, a list item's hanging-indent spaces, a
    * LaTeX `\item` continuation's own indent, .... Never spelled out on
    * line 1 itself; see this function's own doc comment for why.
@@ -28,7 +28,7 @@ export interface ProseLayout {
  * ## Column budget
  *
  * A single `availableWidth = columnLimit - document.meta.indentColumn`
- * is used for *every* line, first and continuation alike — unlike
+ * is used for *every* line, first and continuation alike -- unlike
  * `emitLineComments`, which subtracts a constant marker width once and
  * relies on every line sharing that same marker, this leans on
  * `WrappableRegion.indentColumn`'s own contract ("the visual column of
@@ -40,7 +40,7 @@ export interface ProseLayout {
  * widths coincide exactly except when the prefix contains a tab:
  * `indentColumn` is tab-*expanded* (`../discovery/visual-indent-column.ts`),
  * while `displayWidth` (used nowhere in this function, notably) treats a
- * tab as a single column — so a tab-containing prefix's *true* visual
+ * tab as a single column -- so a tab-containing prefix's *true* visual
  * width can differ slightly from `indentColumn`. This is the same
  * approximation `../comments/group-adjacent-regions.ts` already accepts
  * for its own tab-indented `rawText` case (see that module's own doc
@@ -52,8 +52,8 @@ export interface ProseLayout {
  * ## Line 1 is emitted bare
  *
  * The `TextEdit` this feeds (`../wrap.ts`) replaces `region.span`, which
- * starts *after* the first physical line's own container prefix — that
- * prefix is untouched, pre-existing source text, not part of the edit —
+ * starts *after* the first physical line's own container prefix -- that
+ * prefix is untouched, pre-existing source text, not part of the edit --
  * so line 1 of the output carries no prefix of its own. Every line after
  * that is brand-new text being inserted, so it spells out
  * `layout.continuationPrefix` to land in the same visual column. The
@@ -62,7 +62,7 @@ export interface ProseLayout {
  *
  * `dissolveProse` always produces exactly one `paragraph` block (see its
  * own doc comment), so this reduces to one `reflowBlock` call in
- * practice — implemented as a loop over `document.blocks` anyway, purely
+ * practice -- implemented as a loop over `document.blocks` anyway, purely
  * for structural symmetry with `emitLineComments`, not because more than
  * one block is ever expected here.
  */
@@ -74,7 +74,7 @@ export function emitProse(
 ): string {
   const indentColumn = document.meta.indentColumn;
   // Never let a deeply-indented region compute a negative or zero
-  // budget — `reflowBlock`'s own overflow rule already handles "this atom
+  // budget -- `reflowBlock`'s own overflow rule already handles "this atom
   // doesn't fit" gracefully, but it still needs a positive width to
   // reason about (the same guard `emitLineComments` applies).
   const availableWidth = Math.max(1, columnLimit - indentColumn);
@@ -83,7 +83,7 @@ export function emitProse(
   let isFirstLineOverall = true;
 
   for (const block of document.blocks) {
-    // `hangingIndent: 0` — a `'prose'` region's dissolved block is always
+    // `hangingIndent: 0` -- a `'prose'` region's dissolved block is always
     // a bare `paragraph` (no `listItem`/`fieldEntry` marker of its own to
     // align continuation text under), so `reflowBlock` adds no literal
     // indent of its own; `layout.continuationPrefix` below is prepended

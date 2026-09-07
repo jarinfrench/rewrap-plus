@@ -51,7 +51,7 @@ describe('findUnbreakableSpans', () => {
     // Recognizing only `\x12` out of `\x1234` let a wrap split land
     // between the escape and its remaining digits, silently turning one
     // character (0x1234) into a different character plus two literal
-    // digit characters — reproduced directly against `emitString` while
+    // digit characters -- reproduced directly against `emitString` while
     // auditing this module.
     expect(spanTexts('wide \\x1234 char')).toEqual(['\\x1234']);
   });
@@ -64,7 +64,7 @@ describe('findUnbreakableSpans', () => {
 
   it('finds a JS/TS ES2015 \\u{...} code-point escape whole', () => {
     // Regression: this form had no representation at all before, so a
-    // wrap could split between `\u` and `{1F600}` — not merely a wrong
+    // wrap could split between `\u` and `{1F600}` -- not merely a wrong
     // value but invalid JavaScript/TypeScript syntax (`\u` not followed
     // by 4 hex digits or `{...}` is a SyntaxError), reproduced directly
     // against `emitString` while auditing this module.
@@ -82,7 +82,7 @@ describe('findUnbreakableSpans', () => {
   it('does not misread a bare code-fence delimiter as an empty inline code span', () => {
     // Regression: `` `[^`\n]*` `` (zero-or-more) matched the first two
     // backticks of a bare ` ``` ` as an empty span, stranding the third
-    // backtick as its own separately-breakable atom — confirmed directly
+    // backtick as its own separately-breakable atom -- confirmed directly
     // while building a docstring fixture with a fenced code sample inside
     // a field-entry description. See `../segmentation/unbreakable-spans.ts`'s
     // own comment on the `INLINE_CODE`/`REST_ROLE` fix.
@@ -103,7 +103,7 @@ describe('findUnbreakableSpans', () => {
   });
 
   it('finds a span from an extra caller-supplied pattern, alongside the built-in set', () => {
-    // The `\verb`/`\lstinline` shape — a delimiter-bounded raw span the
+    // The `\verb`/`\lstinline` shape -- a delimiter-bounded raw span the
     // built-in patterns know nothing about.
     const verb = /\\verb\*?(.)[^\n]*?\1/;
     expect(spanTextsWith('see \\verb|a b c| now', [verb])).toEqual(['\\verb|a b c|']);
@@ -111,7 +111,7 @@ describe('findUnbreakableSpans', () => {
 
   it('prefers an extra pattern over a built-in one that would also match at the same start', () => {
     // A `\verb`-delimited span that also happens to look URL-shaped
-    // inside it — the extra pattern must win, keeping the whole `\verb`
+    // inside it -- the extra pattern must win, keeping the whole `\verb`
     // span intact rather than the built-in `URL` pattern only grabbing
     // part of it.
     const verb = /\\verb\|[^\n|]*\|/;
@@ -127,7 +127,7 @@ describe('findUnbreakableSpans', () => {
   });
 
   it('does not carry extra patterns over into a call without them', () => {
-    // A fresh combined RegExp is built per call — an earlier call's
+    // A fresh combined RegExp is built per call -- an earlier call's
     // extra patterns must never leak into a later call that didn't ask
     // for them. "AAA" matches neither the built-in set nor anything but
     // the extra pattern below, so any match on the second, plain call
@@ -145,7 +145,7 @@ describe('findUnbreakableSpans', () => {
     // Confirmed directly while auditing this module: the `URL` pattern's
     // unbounded `[a-zA-Z0-9+.-]*` scheme, followed by a required `://`
     // that never appears, cost `O(k)` per starting position within a
-    // `k`-character run — a 150,000-character run of plain letters took
+    // `k`-character run -- a 150,000-character run of plain letters took
     // ~20 seconds on this pattern alone. This runs on every comment/
     // docstring/string line `atomizeWords` segments, a hot path.
     const input = 'a'.repeat(200_000);

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Unzips a packaged `.vsix` (without extracting it to disk — a `.vsix` is
+ * Unzips a packaged `.vsix` (without extracting it to disk -- a `.vsix` is
  * an ordinary zip, and this only needs each entry's name and declared
  * size, both readable straight from the central directory) and confirms
  * every vendored grammar and core runtime file this extension needs to
  * activate actually made it into the package, at the right size.
  *
  * Closes a gap `docs/adapters.md`'s packaging history left open: commit
- * `9918460` verified a real `.vsix`'s contents by hand — unzipped it and
- * ran `activate()` against exactly those files — but that was a one-time
+ * `9918460` verified a real `.vsix`'s contents by hand -- unzipped it and
+ * ran `activate()` against exactly those files -- but that was a one-time
  * check from before the typescript/cpp/java grammars existed, and nothing
  * since has re-verified that packaging still carries every grammar a
  * newer adapter vendors. The required-file list below is deliberately
@@ -20,7 +20,7 @@
  * Deliberately dependency-free: only a file's *name* and *declared
  * uncompressed size* are needed, both sitting in the zip's central
  * directory, so a ~60-line reader covers this without pulling in a zip
- * library. Zip64 (needed past ~4 GiB or 65535 entries) isn't implemented —
+ * library. Zip64 (needed past ~4 GiB or 65535 entries) isn't implemented --
  * this package's `.vsix` is nowhere near either threshold, the same
  * "implement only the spec surface this feature needs" call
  * `packages/cli/src/config/toml-subset.ts` already makes for its own
@@ -40,7 +40,7 @@ const MAX_COMMENT_SIZE = 65535;
 const CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
 
 /**
- * Byte offset of the End Of Central Directory record — found by scanning
+ * Byte offset of the End Of Central Directory record -- found by scanning
  * backward from the end of the file, since a variable-length trailing
  * comment (rarely used, but legal) means the record isn't at a fixed
  * offset.
@@ -52,7 +52,7 @@ function findEndOfCentralDirectory(buf) {
       return offset;
     }
   }
-  throw new Error('verify-vsix-contents: no End Of Central Directory record found — not a valid zip?');
+  throw new Error('verify-vsix-contents: no End Of Central Directory record found -- not a valid zip?');
 }
 
 /** Maps each zip entry's stored name to its declared uncompressed size. */
@@ -66,7 +66,7 @@ function readZipEntries(buf) {
     const signature = buf.readUInt32LE(offset);
     if (signature !== CENTRAL_DIRECTORY_SIGNATURE) {
       throw new Error(
-        `verify-vsix-contents: expected a central directory record at byte ${offset}, found signature 0x${signature.toString(16)} — malformed or truncated .vsix?`,
+        `verify-vsix-contents: expected a central directory record at byte ${offset}, found signature 0x${signature.toString(16)} -- malformed or truncated .vsix?`,
       );
     }
     const uncompressedSize = buf.readUInt32LE(offset + 24);
@@ -85,11 +85,11 @@ function readZipEntries(buf) {
 function findVsix() {
   const candidates = fs.readdirSync(packageRoot).filter((entry) => entry.endsWith('.vsix'));
   if (candidates.length === 0) {
-    throw new Error(`verify-vsix-contents: no .vsix found in ${packageRoot} — run "npm run package" first.`);
+    throw new Error(`verify-vsix-contents: no .vsix found in ${packageRoot} -- run "npm run package" first.`);
   }
   if (candidates.length > 1) {
     throw new Error(
-      `verify-vsix-contents: multiple .vsix files found in ${packageRoot} (${candidates.join(', ')}) — pass the one to check as an argument.`,
+      `verify-vsix-contents: multiple .vsix files found in ${packageRoot} (${candidates.join(', ')}) -- pass the one to check as an argument.`,
     );
   }
   return path.join(packageRoot, candidates[0]);
@@ -102,7 +102,7 @@ function main() {
   const grammarsDir = path.join(repoRoot, 'packages', 'engine', 'grammars');
   const grammarFiles = fs.readdirSync(grammarsDir).filter((entry) => entry.endsWith('.wasm'));
   if (grammarFiles.length === 0) {
-    throw new Error(`verify-vsix-contents: no vendored grammar .wasm files found under ${grammarsDir} — nothing to check against.`);
+    throw new Error(`verify-vsix-contents: no vendored grammar .wasm files found under ${grammarsDir} -- nothing to check against.`);
   }
 
   const failures = [];
@@ -123,14 +123,14 @@ function main() {
     const entry = entries.get(entryName);
     if (!entry) {
       failures.push(
-        `missing vendored grammar in the packaged .vsix: ${entryName} (present under packages/engine/grammars/ but not found in the package — a new or renamed grammar was likely vendored without a fresh build)`,
+        `missing vendored grammar in the packaged .vsix: ${entryName} (present under packages/engine/grammars/ but not found in the package -- a new or renamed grammar was likely vendored without a fresh build)`,
       );
       continue;
     }
     const sourceSize = fs.statSync(path.join(grammarsDir, grammarFile)).size;
     if (entry.uncompressedSize !== sourceSize) {
       failures.push(
-        `size mismatch for ${entryName}: packaged uncompressed size is ${entry.uncompressedSize} bytes, vendored source is ${sourceSize} bytes — the packaged copy may be stale or corrupted`,
+        `size mismatch for ${entryName}: packaged uncompressed size is ${entry.uncompressedSize} bytes, vendored source is ${sourceSize} bytes -- the packaged copy may be stale or corrupted`,
       );
     }
   }
@@ -145,7 +145,7 @@ function main() {
   }
 
   console.log(
-    `verify-vsix-contents: ${vsixPath} — all ${grammarFiles.length} vendored grammar(s) and core runtime files verified present at the correct size.`,
+    `verify-vsix-contents: ${vsixPath} -- all ${grammarFiles.length} vendored grammar(s) and core runtime files verified present at the correct size.`,
   );
 }
 

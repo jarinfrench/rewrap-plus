@@ -29,17 +29,17 @@ import comprehensionStringsExpected from '../fixtures/python/regions/009-compreh
  *
  * Each fixture pairs a standalone `.py` source file with a checked-in
  * `.expected.json` gold file, per the project's own testing convention
- * ("edge-case coverage lives in checked-in files, not assertions") —
+ * ("edge-case coverage lives in checked-in files, not assertions") --
  * rather than one large table of inline assertions, each fixture is a
  * real Python file a human can open and read on its own.
  *
  * Fixtures are imported statically (both the `.py` source, as raw text
- * via Vite's `?raw` suffix — see `../raw-import.d.ts` for why not
- * `node:fs` — and the `.expected.json`, which TypeScript's
+ * via Vite's `?raw` suffix -- see `../raw-import.d.ts` for why not
+ * `node:fs` -- and the `.expected.json`, which TypeScript's
  * `resolveJsonModule` already handles natively) rather than discovered by
  * walking the fixtures directory at runtime. A directory walk would need
- * `node:fs` for the same reason raw source loading does, and — as a
- * secondary benefit — a missing or misnamed `.expected.json` becomes a
+ * `node:fs` for the same reason raw source loading does, and -- as a
+ * secondary benefit -- a missing or misnamed `.expected.json` becomes a
  * compile-time import error here instead of a test that silently never
  * ran.
  *
@@ -138,7 +138,7 @@ describe('Python region discovery fixtures', () => {
   });
 
   it('covers the specific cases region discovery is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of the specific cases enumerated below
     // (nested functions, class/module docstrings, dict-literal strings,
     // f-strings, raw regex strings, multi-line implicit concatenation,

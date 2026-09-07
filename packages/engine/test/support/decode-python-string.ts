@@ -3,9 +3,9 @@
  * escape decoding to support an eval-equivalence check
  * (`../wrap/python-string-wrap-fixtures.test.ts`): for every positive
  * fixture, eval the string expression before and after and assert
- * equality — the strongest possible guard against silent corruption.
+ * equality -- the strongest possible guard against silent corruption.
  *
- * This is deliberately never shipped in engine runtime code — production
+ * This is deliberately never shipped in engine runtime code -- production
  * `dissolveString`/`emitString` (`../../src/languages/python/`) never
  * decode an escape sequence at all, precisely because doing so risks the
  * exact corruption this test exists to catch (see `dissolve-string.ts`'s
@@ -17,11 +17,11 @@
  * Also deliberately not a full Python string parser: no attempt is made
  * at Emscripten-launching an actual Python interpreter (this project has
  * no Python runtime dependency anywhere, and this is the wrong place to
- * introduce one) — a small, direct escape decoder is sufficient for every
+ * introduce one) -- a small, direct escape decoder is sufficient for every
  * escape form this phase's fixtures actually use. `\N{NAME}` (named
- * Unicode escapes) is the one form intentionally left undecoded — real
+ * Unicode escapes) is the one form intentionally left undecoded -- real
  * Unicode name resolution needs a large data table this test has no
- * reason to carry — and passes through literally; no fixture in this
+ * reason to carry -- and passes through literally; no fixture in this
  * phase uses one.
  */
 
@@ -93,7 +93,7 @@ export function decodePythonStringBody(body: string): string {
 }
 
 /**
- * Find every single/double-quoted (never triple-quoted — out of scope for
+ * Find every single/double-quoted (never triple-quoted -- out of scope for
  * this phase, see `isSafeToWrap`) string literal token in `source`,
  * respecting backslash-escapes so an escaped quote never ends a token
  * early, decode each one's body, and concatenate the results in order.
@@ -104,7 +104,7 @@ export function decodePythonStringBody(body: string): string {
  * construct and no other string literal, so summing every literal token
  * found anywhere in the text reconstructs that construct's value
  * regardless of how many parts/lines it's split into or what
- * concatenation operator joins them — `"a" "b"` and `"a" + "b"` and a
+ * concatenation operator joins them -- `"a" "b"` and `"a" + "b"` and a
  * single `"ab"` all reduce to the same sum here, which is exactly the
  * property under test.
  */
@@ -121,7 +121,7 @@ export function extractConcatenatedStringValue(source: string): string {
     const quote = match[2]!;
     if (match[1]!.toLowerCase().includes('r')) {
       // Raw string: never eligible for wrapping (isSafeToWrap), and its
-      // own backslashes aren't real escapes — skip over it as opaque
+      // own backslashes aren't real escapes -- skip over it as opaque
       // rather than mis-scanning its body for escape sequences.
       let j = i + prefixLen + 1;
       while (j < source.length && source[j] !== quote) {

@@ -4,7 +4,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
 /**
  * The hard gate the comment-only-batch languages exist to check, the
  * same shape every earlier adapter's own conformance suite already
- * passed — TOML through this identical suite alongside Python,
+ * passed -- TOML through this identical suite alongside Python,
  * JavaScript, TypeScript/TSX, C++, Java, Markdown, LaTeX. Both a
  * standalone `#` comment and one trailing a `key = "value"` pair are
  * exercised, each long enough to actually need wrapping at the
@@ -18,7 +18,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  *
  * If this file's suite passes, it confirms no engine change was needed
  * to add TOML beyond what the vendored grammar and this adapter's own
- * pure-data descriptor already provide — `tomlAdapter` declares no
+ * pure-data descriptor already provide -- `tomlAdapter` declares no
  * `classify`/`groupRegions` override at all.
  */
 const CRLF_SOURCE =

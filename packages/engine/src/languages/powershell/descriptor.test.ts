@@ -32,7 +32,7 @@ describe('powershellDescriptor', () => {
     expect(powershellDescriptor.comments.plainBlock).toBeUndefined();
   });
 
-  it('captures a # line comment, a plain <# #> block, and a comment-based-help block under one @comment capture — all one node type', () => {
+  it('captures a # line comment, a plain <# #> block, and a comment-based-help block under one @comment capture -- all one node type', () => {
     const parser = new Parser();
     parser.setLanguage(language);
     const source = '# line\n<# plain #>\n<#\n.SYNOPSIS\nx\n#>\nWrite-Host "hi"\n';

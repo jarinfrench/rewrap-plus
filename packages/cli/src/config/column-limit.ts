@@ -3,7 +3,7 @@ import { DEFAULT_COLUMN_LIMIT, type ResolvedColumnLimit as GenericResolvedColumn
 /**
  * Column limit resolution for the CLI: a pure function over already-
  * extracted values, the same shape as
- * `packages/vscode-extension/src/config/column-limit.ts` — but a
+ * `packages/vscode-extension/src/config/column-limit.ts` -- but a
  * shorter chain, since there's no live editor supplying `editor.rulers`
  * outside VSCode.
  *
@@ -12,7 +12,7 @@ import { DEFAULT_COLUMN_LIMIT, type ResolvedColumnLimit as GenericResolvedColumn
  * 2. `.rewraprc` `columnLimit`.
  * 3. `pyproject.toml`'s `[tool.rewrap-plus]` `column-limit`.
  * 4. `.editorconfig` `max_line_length` (only when `respectEditorConfig`
- *    — itself resolved through the same four sources, minus this tier —
+ *    -- itself resolved through the same four sources, minus this tier --
  *    is `true`).
  * 5. Built-in default (`DEFAULT_COLUMN_LIMIT`, 80).
  */
@@ -29,7 +29,7 @@ export interface ColumnLimitInputs {
   readonly flagColumnLimit: number | undefined;
   readonly rewraprcColumnLimit: number | undefined;
   readonly pyprojectColumnLimit: number | undefined;
-  /** Already gated by `respectEditorConfig` by the caller — `undefined` here means either no matching section or that this tier is disabled entirely. */
+  /** Already gated by `respectEditorConfig` by the caller -- `undefined` here means either no matching section or that this tier is disabled entirely. */
   readonly editorConfigMaxLineLength: number | undefined;
 }
 

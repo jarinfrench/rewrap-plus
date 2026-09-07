@@ -17,11 +17,11 @@ import { wrapRegions } from '../../src/wrap.js';
  * Idempotency property tests: `wrap(wrap(x)) === wrap(x)`
  * across every gold fixture in the repo, wired into CI as a blocking check
  * (an ordinary `it` in the default `npm test` run, same as every other
- * suite — there's no separate "blocking" mechanism in this project beyond
+ * suite -- there's no separate "blocking" mechanism in this project beyond
  * "part of the test run the CI-equivalent gate already requires").
  *
  * Every language's `.in.*` fixtures are picked up via `import.meta.glob`
- * rather than a hand-maintained list of named imports — deliberately, so
+ * rather than a hand-maintained list of named imports -- deliberately, so
  * this suite can't quietly fall back out of sync with the fixture set the
  * way it once did: this file originally only ever imported Python's own
  * fixtures (`languages/python/adapter.ts` was the only adapter that
@@ -37,28 +37,28 @@ import { wrapRegions } from '../../src/wrap.js';
  * assert no further edits): those check idempotency *from the gold
  * output*, under *that phase's own* narrow config (`wrapStrings: false`
  * for the comment suite, `stringPolicy: 'prose'` for most string suites,
- * etc. — whatever matches that phase's own fixtures). This suite instead
- * computes `wrap(x)` itself from every fixture's raw `.in.*` — never
- * trusting the checked-in `.out.*` to already be correct — under one
+ * etc. -- whatever matches that phase's own fixtures). This suite instead
+ * computes `wrap(x)` itself from every fixture's raw `.in.*` -- never
+ * trusting the checked-in `.out.*` to already be correct -- under one
  * shared, everything-enabled config applied uniformly across every
  * language and region kind together, not one phase's slice at a time.
  * That's a genuinely different, broader exercise of the same property: it
  * holds regardless of which config produced the first wrap, since
  * idempotency only requires that a *second* call under the *same* config
- * as the first produces no further change — it says nothing about whether
+ * as the first produces no further change -- it says nothing about whether
  * that config matches what any individual fixture was originally written
  * to test.
  *
  * Negative fixtures (`neg-*`) are included deliberately, not skipped:
  * under `stringPolicy: 'all'` (not each fixture's own narrower policy),
- * several of them stop being negative — the prose heuristic and
+ * several of them stop being negative -- the prose heuristic and
  * language-specific exemptions (e.g. Python's dict-key exemption) are
  * policy-gated, so a SQL query or dict key genuinely gets wrapped here
  * where it wouldn't under that language's own string-wrap fixture suite.
  * That's fine and expected: this suite doesn't assert *what* gets
  * wrapped, only that wrapping twice is the same as wrapping once,
  * whatever the first pass produced. Hard structural refusals
- * (`isSafeToWrap` — raw strings, mixed prefixes, a multi-part
+ * (`isSafeToWrap` -- raw strings, mixed prefixes, a multi-part
  * triple-quoted run, line continuations, a Java text block, irregular
  * whitespace) are policy-independent and stay negative here too.
  */
@@ -112,15 +112,15 @@ const latexFixtures = import.meta.glob('../fixtures/latex/**/*.in.tex', {
 }) as Record<string, string>;
 
 /**
- * One entry per adapter with its own end-to-end gold-fixture directory —
+ * One entry per adapter with its own end-to-end gold-fixture directory --
  * mirrors the set of adapters `docs/adapters.md` records as passing
  * `runAdapterConformance` with real (non-canary) fixtures. TSX has no
  * fixture directory of its own by design (`docs/adapters.md`'s "TSX gets
  * a full duplicate gold-fixture set only at the unit-test level" note) so
- * it isn't listed here either — nothing to glob.
+ * it isn't listed here either -- nothing to glob.
  *
  * Markdown's own fixtures are all zero-edit as of this addition
- * (Phase C commit 9 — discovery only, `markdownAdapter.wrapProse`
+ * (Phase C commit 9 -- discovery only, `markdownAdapter.wrapProse`
  * doesn't exist until commit 10), so
  * this suite exercises them trivially for now; they become a real
  * idempotency check, not just a discovery-exclusion one, the moment real

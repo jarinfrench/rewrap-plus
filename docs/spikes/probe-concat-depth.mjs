@@ -1,17 +1,17 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: confirm, before writing any test assertions about it,
 // whether the "long chain of concatenated string literals blows the JS
 // call stack" pathology (`../../packages/engine/test/hardening/
 // pathological-input.test.ts`'s own doc comment has the full history)
 // reproduces the same way across every registered adapter's grammar, or
 // only for the `'operator'`-style (`+`-joined) languages. Per this
-// project's "probe before coding, always" rule — don't assume a finding
+// project's "probe before coding, always" rule -- don't assume a finding
 // probed for one grammar (or, historically, only ever probed for Python)
 // generalizes to another without checking.
 //
 // Finding: a 2,000-part chain builds a `binary_operator`/
 // `binary_expression` tree ~2,000 nodes deep for Java and JavaScript
-// (both `'operator'`-style, like Python's `+` form) — the same shape that
+// (both `'operator'`-style, like Python's `+` form) -- the same shape that
 // caused the original stack-overflow bug this test guards against. C++'s
 // `'implicit'`-only concatenation (bare adjacency, no operator) is
 // structurally immune: the identical 2,000-part chain produces a tree

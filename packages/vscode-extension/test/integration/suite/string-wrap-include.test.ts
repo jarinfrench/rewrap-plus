@@ -6,23 +6,23 @@ import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from '.
 /**
  * Real-host proof that `rewrapPlus.stringWrapInclude` actually reaches
  * `wrapRegions` (via `resolveWrapConfigForDocument` folding it into
- * `WrapConfig.wrapStrings`) — the glob-matching logic itself is unit
+ * `WrapConfig.wrapStrings`) -- the glob-matching logic itself is unit
  * tested exhaustively in `../../../src/config/glob.test.ts`; this suite
  * exists to prove the real-`vscode.workspace.asRelativePath`-to-real-edit
  * wiring, not to re-litigate glob semantics (`./helpers.ts`'s own doc
  * comment, on `extractReturnedStringValue`, makes the same "this layer
- * proves wiring, not arithmetic" point about reflow placement — it
+ * proves wiring, not arithmetic" point about reflow placement -- it
  * applies just as much to glob-matching arithmetic here).
  *
  * This suite's extension host has no workspace folder open
  * (`../runTest.ts` passes none), so `asRelativePath` returns each
- * fixture's absolute, OS-separator path unchanged — which is itself
+ * fixture's absolute, OS-separator path unchanged -- which is itself
  * exactly the "no workspace folder" case `string-wrap-include.ts`'s own
  * doc comment describes: the default `**` still matches (an unanchored
  * `.*`), and a no-separator pattern like the fixture's own basename still
  * matches at "any depth" against that absolute path, but a
  * directory-anchored pattern (containing `/`) cannot match anything real
- * here — which is exactly why the "excluded" case below uses a pattern
+ * here -- which is exactly why the "excluded" case below uses a pattern
  * that could never match *any* real path, rather than one that merely
  * doesn't happen to match this fixture.
  */
@@ -56,7 +56,7 @@ describe('rewrapPlus.stringWrapInclude', () => {
   it('wraps a long string literal when a no-separator pattern matches the file at any depth', async () => {
     // No workspace folder is open in this suite (see the suite's own
     // doc comment), so the document's "relative path" is its absolute
-    // path — a pattern with no '/' still matches that at any depth,
+    // path -- a pattern with no '/' still matches that at any depth,
     // proving the "any depth, including an absolute path with no
     // workspace root" fallback actually works end to end.
     const text = await wrapWithStringsEnabled(['long-string.py']);

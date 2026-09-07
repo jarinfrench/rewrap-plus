@@ -46,7 +46,7 @@ jobs:
   package:
     name: Package .vsix and attach to GitHub Release
     # Only on a version tag push (v*), and only once every `ci` matrix
-    # leg has passed on that exact tagged commit — packaging a build
+    # leg has passed on that exact tagged commit -- packaging a build
     # that hasn't cleared the same gate every other commit has to is
     # exactly the "no broken intermediates" rule CLAUDE.md states for
     # local commits, extended to what actually reaches a release.
@@ -62,7 +62,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          # A single, current-LTS build — `ci` above already proved this
+          # A single, current-LTS build -- `ci` above already proved this
           # commit builds and tests clean across the full Node matrix;
           # this job exists to produce the one artifact that ships, not
           # to re-prove matrix compatibility.
@@ -100,7 +100,7 @@ jobs:
     name: Publish to Marketplace and Open VSX
     # Gated on the `marketplace-publish` GitHub Environment, which carries a
     # required-reviewer protection rule (configured via the API, not this
-    # file — see repo Settings > Environments). A `v*` tag push queues this
+    # file -- see repo Settings > Environments). A `v*` tag push queues this
     # job but it sits paused until a reviewer approves the deployment; the
     # tag trigger alone can never reach vsce/ovsx publish unmoderated.
     needs: package

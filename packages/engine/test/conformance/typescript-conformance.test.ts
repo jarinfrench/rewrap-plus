@@ -3,7 +3,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
 
 /**
  * The TypeScript adapter through the identical conformance suite Python
- * and JavaScript already pass — see `./javascript-conformance.test.ts`
+ * and JavaScript already pass -- see `./javascript-conformance.test.ts`
  * for the same rationale. Sources below exercise `//`, JSDoc-shaped
  * `/**`, and a type-annotated function, each long enough to need
  * wrapping at the configured limit.

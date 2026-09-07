@@ -13,7 +13,7 @@ import { wrapRegions } from '../wrap.js';
  * Fixtures a single `runAdapterConformance` call needs from the adapter
  * it's checking.
  *
- * Deliberately narrow — every field here is *source text*, not
+ * Deliberately narrow -- every field here is *source text*, not
  * hand-built engine types, matching this package's established
  * fixture-driven convention (this package's own gold-fixture tests never
  * hand-build `WrappableRegion`s either). Adding a language is meant to
@@ -23,7 +23,7 @@ import { wrapRegions } from '../wrap.js';
 export interface ConformanceFixtures {
   /**
    * Base directory `LanguageDescriptor.grammarWasm` paths resolve
-   * against — see `ParserManagerOptions.wasmDir`'s own doc comment. In
+   * against -- see `ParserManagerOptions.wasmDir`'s own doc comment. In
    * this package's own tests this is `'.'`, matching every other
    * grammar-loading test (`ParserManager` resolves against Vitest's
    * cwd, the package root).
@@ -35,11 +35,11 @@ export interface ConformanceFixtures {
 
   /**
    * One or more realistic source snippets, each containing at least one
-   * *region* — a line-comment block, a string literal, a `'prose'`
-   * paragraph, whichever kind(s) this adapter actually produces — that
+   * *region* -- a line-comment block, a string literal, a `'prose'`
+   * paragraph, whichever kind(s) this adapter actually produces -- that
    * overflows `columnLimit` and so actually needs wrapping. Every
    * wrap-based invariant (idempotency, re-parse cleanliness, line-length,
-   * line-ending preservation) runs once per entry — a conformance
+   * line-ending preservation) runs once per entry -- a conformance
    * failure names which source it was found in. Generalized from an
    * earlier "at least one line-comment block" wording once a `'prose'`
    * adapter's own sources (Markdown/LaTeX paragraphs, with no
@@ -69,7 +69,7 @@ const CONFIG: Omit<WrapConfig, 'columnLimit'> = {
  * asserting the language-independent invariants that keep any adapter
  * honest before other code hardens around whatever one adapter (Python)
  * happens to do. Call this once per adapter, inside an ordinary Vitest
- * test file — it registers its own `describe`/`it` blocks, the same
+ * test file -- it registers its own `describe`/`it` blocks, the same
  * pattern this package already uses for fixture-driven suites (e.g.
  * `test/wrap/python-comment-wrap-fixtures.test.ts`), just parameterized
  * over an adapter instead of hardcoded to Python's.
@@ -109,7 +109,7 @@ export function runAdapterConformance(
       expect(language).not.toBeNull();
 
       // `queries.comments`/`.strings`/`.prose` are each optional as of the
-      // `'prose'` region kind — a prose-only adapter (Markdown) declares
+      // `'prose'` region kind -- a prose-only adapter (Markdown) declares
       // `queries.prose` and neither of the other two; a masked-line-scan
       // prose adapter
       // (LaTeX) declares none of the three query fields at all and relies
@@ -136,7 +136,7 @@ export function runAdapterConformance(
         /**
          * "Wrapping is idempotent across all of the adapter's fixtures"
          * and, in the same pass, "already-wrapped input is
-         * byte-identical" — re-wrapping the *result* of a first wrap
+         * byte-identical" -- re-wrapping the *result* of a first wrap
          * must produce no further edits, which is exactly what both of
          * those invariants require: a first wrap may legitimately
          * change the file, but its own output must already be a fixed
@@ -163,8 +163,8 @@ export function runAdapterConformance(
         /**
          * "No line exceeds the limit except a lone unbreakable atom"
          *
-         * Scoped to `result.edits[*].newText` — exactly the text
-         * `wrapRegions` produced — rather than every line of the
+         * Scoped to `result.edits[*].newText` -- exactly the text
+         * `wrapRegions` produced -- rather than every line of the
          * reassembled file. Scanning the whole file would also catch
          * untouched original code lines that happen to be long for
          * reasons that have nothing to do with wrapping (a legitimately
@@ -185,10 +185,10 @@ export function runAdapterConformance(
                 adapter.discoverProse !== undefined,
               );
               if (stripped === null) {
-                continue; // a bare delimiter-only line (e.g. block open/close alone) — never content, never the concern here
+                continue; // a bare delimiter-only line (e.g. block open/close alone) -- never content, never the concern here
               }
               // Legitimate only if the line is a single unbreakable
-              // token after its decoration — assert there's no interior
+              // token after its decoration -- assert there's no interior
               // space beyond the decoration's own separating space.
               expect(stripped).not.toMatch(/ /);
             }
@@ -205,7 +205,7 @@ export function runAdapterConformance(
 
           expect(detectLineEnding(wrapped)).toBe(detectLineEnding(source));
           if (detectLineEnding(source) === '\r\n') {
-            // Every line break in the output is part of a `\r\n` pair —
+            // Every line break in the output is part of a `\r\n` pair --
             // no bare `\n` snuck in from an emit path that forgot to
             // match source convention (`docs/adapters.md`, "CRLF
             // handling", is the concrete bug this guards against).
@@ -217,14 +217,14 @@ export function runAdapterConformance(
 
         /**
          * Deliberately kept strict, with **no** carve-out for a `'prose'`
-         * region's own two-space hard break — a Markdown paragraph line
+         * region's own two-space hard break -- a Markdown paragraph line
          * ending in exactly two spaces is real, intentional trailing
          * whitespace that must survive a wrap
          * (`../prose/dissolve-prose.ts` glues it onto the preceding
          * atom's own text for exactly this reason). Rather than loosen
          * this invariant to tolerate it, this kit's own conformance
          * *sources* are expected to avoid two-space hard breaks
-         * entirely — the one legitimate trailing whitespace in the whole
+         * entirely -- the one legitimate trailing whitespace in the whole
          * project is tested for real in the Markdown adapter's own gold
          * fixtures (the `paragraphs` fixture directory's "each hard-break
          * form" cases), where
@@ -268,8 +268,8 @@ export function runAdapterConformance(
  * and so never the concern of the over-limit check this feeds.
  *
  * Tries the line-comment marker first, then the block continuation
- * prefix, then the block open/close delimiters — whichever the
- * descriptor actually declares — then, for a prose-capable adapter, a
+ * prefix, then the block open/close delimiters -- whichever the
+ * descriptor actually declares -- then, for a prose-capable adapter, a
  * `'prose'` region's own continuation prefix (see `isProseCapable`'s own
  * doc comment below). A line matching none of them (shouldn't happen for
  * anything `wrapRegions` itself produces, but this is defensive rather
@@ -293,7 +293,7 @@ function stripKnownCommentDecoration(
   const block = descriptor.comments.block;
   if (block) {
     if (trimmedStart === block.open || trimmedStart === block.close) {
-      return null; // bare delimiter line — no content to check
+      return null; // bare delimiter line -- no content to check
     }
     if (block.continuationPrefix && trimmedStart.startsWith(block.continuationPrefix)) {
       const rest = trimmedStart.slice(block.continuationPrefix.length);
@@ -314,15 +314,15 @@ function stripKnownCommentDecoration(
     // maximal leading run of `>` and horizontal whitespace, which covers
     // every real continuation-prefix shape that derivation produces
     // (`>`, `>> `, list hanging indent, a LaTeX `\item`'s own indent,
-    // ...) without reconstructing it here. `isProseCapable` — "does this
+    // ...) without reconstructing it here. `isProseCapable` -- "does this
     // adapter implement `discoverProse`," passed by the caller, which
-    // has the adapter — rather than a descriptor-only signal like
+    // has the adapter -- rather than a descriptor-only signal like
     // `queries.prose`, since LaTeX's prose discovery declares no
     // `queries.prose` at all (`docs/parsing.md` Finding 8: no paragraph
     // node exists to query) and would otherwise fall through this check
     // for the one adapter it's also needed for. Revisit for the exact
     // "run discoverRegions and match by region" approach, if this
-    // heuristic ever proves visibly wrong against a real fixture — it
+    // heuristic ever proves visibly wrong against a real fixture -- it
     // hasn't yet, even now that Markdown's and LaTeX's own conformance
     // suites (`test/conformance/{markdown,latex}-conformance.test.ts`)
     // exercise it against real content, not just the synthetic

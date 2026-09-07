@@ -68,13 +68,13 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "markdownDescription": "Global kill switch for Rewrap+. Turn this off to disable every wrap command and the range-formatting provider without hunting down each individual `#rewrapPlus.wrapComments#`/`#rewrapPlus.wrapStrings#`-style setting — the one to reach for when debugging a save pipeline with several formatters in it."
+          "markdownDescription": "Global kill switch for Rewrap+. Turn this off to disable every wrap command and the range-formatting provider without hunting down each individual `#rewrapPlus.wrapComments#`/`#rewrapPlus.wrapStrings#`-style setting -- the one to reach for when debugging a save pipeline with several formatters in it."
         },
         "rewrapPlus.columnLimit": {
           "type": ["number", "null"],
           "default": null,
           "scope": "resource",
-          "markdownDescription": "Column to wrap at. `null` (the default) falls through to `#editor.rulers#` (language-scoped, then global), then `.editorconfig`'s `max_line_length`, then a built-in default of 80 — see the README's precedence table for the full chain. Supports a language-scoped override, e.g. `\"[python]\": { \"rewrapPlus.columnLimit\": 79 }`."
+          "markdownDescription": "Column to wrap at. `null` (the default) falls through to `#editor.rulers#` (language-scoped, then global), then `.editorconfig`'s `max_line_length`, then a built-in default of 80 -- see the README's precedence table for the full chain. Supports a language-scoped override, e.g. `\"[python]\": { \"rewrapPlus.columnLimit\": 79 }`."
         },
         "rewrapPlus.rulerIndex": {
           "type": "number",
@@ -128,7 +128,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "markdownDescription": "Treat an already-indented block inside a comment or docstring (beyond a paragraph's first line) as verbatim rather than reflowing it — an aligned example or ASCII diagram is exactly what a wrong reflow guess mangles."
+          "markdownDescription": "Treat an already-indented block inside a comment or docstring (beyond a paragraph's first line) as verbatim rather than reflowing it -- an aligned example or ASCII diagram is exactly what a wrong reflow guess mangles."
         },
         "rewrapPlus.respectEditorConfig": {
           "type": "boolean",
@@ -147,19 +147,19 @@
           "items": { "type": "string" },
           "default": ["**"],
           "scope": "resource",
-          "markdownDescription": "Glob patterns, matched against each file's path relative to its workspace folder (`**`, the default, matches every file), scoping *string-literal* wrapping to specific paths — lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. A file matching none of these patterns has string wrapping disabled regardless of `#rewrapPlus.wrapStrings#`. Does not affect comment or docstring wrapping (`#rewrapPlus.wrapComments#`). Use `#rewrapPlus.showResolvedConfig#` to check whether the current file is in scope."
+          "markdownDescription": "Glob patterns, matched against each file's path relative to its workspace folder (`**`, the default, matches every file), scoping *string-literal* wrapping to specific paths -- lets string wrapping be trialled on one package or `docs/` before trusting it repo-wide. A file matching none of these patterns has string wrapping disabled regardless of `#rewrapPlus.wrapStrings#`. Does not affect comment or docstring wrapping (`#rewrapPlus.wrapComments#`). Use `#rewrapPlus.showResolvedConfig#` to check whether the current file is in scope."
         },
         "rewrapPlus.formatOnSave": {
           "type": "boolean",
           "default": false,
           "scope": "resource",
-          "markdownDescription": "Wrap the whole document automatically before every save, independent of `#editor.formatOnSave#`/`#editor.defaultFormatter#`. Off by default: a whole-document reflow touches far more of the file than a typical code formatter, so it stays opt-in even after installing. Never delays a save — a parse failure or a wrap that doesn't finish quickly is skipped with a warning in the \"Rewrap+\" output channel, and the save proceeds either way. If another formatter (Black, Prettier, ...) also runs on save, ordering between them is controlled by VS Code's own `#editor.defaultFormatter#`/`#editor.codeActionsOnSave#`, not by this setting — see the README's format-on-save section."
+          "markdownDescription": "Wrap the whole document automatically before every save, independent of `#editor.formatOnSave#`/`#editor.defaultFormatter#`. Off by default: a whole-document reflow touches far more of the file than a typical code formatter, so it stays opt-in even after installing. Never delays a save -- a parse failure or a wrap that doesn't finish quickly is skipped with a warning in the \"Rewrap+\" output channel, and the save proceeds either way. If another formatter (Black, Prettier, ...) also runs on save, ordering between them is controlled by VS Code's own `#editor.defaultFormatter#`/`#editor.codeActionsOnSave#`, not by this setting -- see the README's format-on-save section."
         },
         "rewrapPlus.autoWrap.enabled": {
           "type": "boolean",
           "default": false,
           "scope": "resource",
-          "markdownDescription": "Wrap the comment or docstring the cursor is in automatically, the moment a space or Enter keystroke crosses `#rewrapPlus.columnLimit#` — matches Rewrap's own `rewrap.autoWrap.enabled` (default off here too). Comment/docstring only: never fires on a string literal, regardless of `#rewrapPlus.wrapStrings#`. Toggle it for just the current file with `rewrapPlus.toggleAutoWrap` without changing this setting."
+          "markdownDescription": "Wrap the comment or docstring the cursor is in automatically, the moment a space or Enter keystroke crosses `#rewrapPlus.columnLimit#` -- matches Rewrap's own `rewrap.autoWrap.enabled` (default off here too). Comment/docstring only: never fires on a string literal, regardless of `#rewrapPlus.wrapStrings#`. Toggle it for just the current file with `rewrapPlus.toggleAutoWrap` without changing this setting."
         },
         "rewrapPlus.autoWrap.notification": {
           "type": "string",

@@ -12,12 +12,12 @@ interface StringPartInfo {
 
 /**
  * Quote/prefix facts a string's dissolve step observes, needed again by
- * `./emit-string.ts` to re-quote the reflowed result — the `stringLiteral`
+ * `./emit-string.ts` to re-quote the reflowed result -- the `stringLiteral`
  * counterpart to `./dissolve-docstring.ts`'s `DocstringQuoteMeta`.
  */
 export interface DissolvedString {
   /**
-   * Every part's body, concatenated with no separator — exactly Python's
+   * Every part's body, concatenated with no separator -- exactly Python's
    * own implicit-concatenation semantics (`"a" "b"` evaluates to the same
    * value as a single `"ab"` literal, never `"a b"`). Still carrying every
    * escape sequence exactly as written; see this module's own "no real
@@ -31,7 +31,7 @@ export interface DissolvedString {
 }
 
 /**
- * Single-character-quote prefix+delimiter matcher — deliberately narrower
+ * Single-character-quote prefix+delimiter matcher -- deliberately narrower
  * than `../prefix.ts`'s `PREFIX_AND_QUOTE` (which also matches `'''`/`"""`):
  * a triple-quoted `'stringLiteral'` region never reaches this function,
  * since `isSafeToWrap` (`./adapter.ts`) marks one unsafe before dissolve is
@@ -39,7 +39,7 @@ export interface DissolvedString {
  * *ordinary* strings are a deliberate scope limit here: triple-quoted
  * non-docstring code strings are the deferred case). A part that somehow doesn't match this narrower
  * pattern is a genuine contract violation from whatever built the region,
- * so this throws rather than guessing — the same posture
+ * so this throws rather than guessing -- the same posture
  * `dissolveDocstring` takes for its own prefix/quote mismatch.
  */
 const PREFIX_AND_QUOTE = /^([A-Za-z]{0,3})('|")/;
@@ -63,37 +63,37 @@ function parsePart(raw: string): StringPartInfo {
 }
 
 /**
- * Dissolve a `'stringLiteral'` `WrappableRegion` — an ordinary string or a
- * concatenation run of them — into its merged logical text plus the
+ * Dissolve a `'stringLiteral'` `WrappableRegion` -- an ordinary string or a
+ * concatenation run of them -- into its merged logical text plus the
  * quote/prefix metadata `./emit-string.ts` needs to re-quote it.
  *
  * ## Promoted out of `languages/python/`
  *
  * Originally written for Python but never actually Python-specific in its
- * *implementation* — every operation here works off a part's own raw text
+ * *implementation* -- every operation here works off a part's own raw text
  * via `PREFIX_AND_QUOTE`, a regex general enough to match a zero-length,
  * letters-only prefix before a single- or double-quote delimiter, which is
- * exactly JavaScript/TypeScript's shape too (no prefix at all — the empty
- * match — and no triple-quote form to special-case around). The
+ * exactly JavaScript/TypeScript's shape too (no prefix at all -- the empty
+ * match -- and no triple-quote form to special-case around). The
  * TypeScript adapter needed the identical logic verbatim, which is the same
  * "promote once a second real consumer needs it" call already
  * made for `comments/dissolve-line-comments.ts`/`emit-line-comments.ts` (see
- * `docs/adapters.md`'s JavaScript canary section) — not a new abstraction invented speculatively, but
+ * `docs/adapters.md`'s JavaScript canary section) -- not a new abstraction invented speculatively, but
  * the same one this project has already used twice.
  *
  * ## Deliberately no real unescaping
  *
- * Dissolve's job is "strip syntax, unescape, recover logical text" — but
+ * Dissolve's job is "strip syntax, unescape, recover logical text" -- but
  * decoding an escape sequence into its real character here would
  * actively work against segmentation's own design, not cooperate with
  * it. `atomizeWords`
  * (`../../segmentation/atomize-words.ts`) already treats every recognized
  * escape sequence (`\n`, `\t`, `\x41`, ...) as one opaque, unsplittable
- * atom — exactly so reflow can move it as a unit without knowing what it
+ * atom -- exactly so reflow can move it as a unit without knowing what it
  * means. Decoding `\t` to a real tab character before segmentation would
  * make `atomizeWords`'s own whitespace scanner treat it as a word
  * *separator* instead, silently discarding the escape entirely on
- * re-emission — a real value change, not merely a formatting one, and
+ * re-emission -- a real value change, not merely a formatting one, and
  * exactly the kind of silent string corruption this module exists to
  * avoid. Leaving every escape exactly as written and letting the
  * existing unbreakable-span machinery carry it through untouched is both
@@ -103,11 +103,11 @@ function parsePart(raw: string): StringPartInfo {
  * What "recover logical text" reduces to, then, is exactly what strips
  * *syntax* rather than *content*: dropping each part's prefix and quote
  * delimiters and concatenating the raw bodies with no separator (Python's
- * own implicit-concatenation semantics — `"a" "b"` is `"ab"`, never
+ * own implicit-concatenation semantics -- `"a" "b"` is `"ab"`, never
  * `"a b"`). `./escape-quote-collisions.ts` handles the one real
- * correctness hazard this still leaves — a mixed-quote-style run whose
+ * correctness hazard this still leaves -- a mixed-quote-style run whose
  * parts' own escaping was only ever safe under each part's *original*
- * delimiter — as a separate step, once a single representative delimiter
+ * delimiter -- as a separate step, once a single representative delimiter
  * has been chosen.
  *
  * ## Representative prefix/quote choice
@@ -117,7 +117,7 @@ function parsePart(raw: string): StringPartInfo {
  * refuses a mixed-prefix run outright), so reusing the first part's
  * exact-case prefix for the whole merged result is lossless. Quote
  * delimiter is not equally guaranteed (`"it's" 'safe'` mixes styles and
- * is perfectly legal Python) — the first part's own delimiter is reused
+ * is perfectly legal Python) -- the first part's own delimiter is reused
  * for every emitted part regardless: the design records a single original
  * quote style, not one per part, since once parts are merged and freely reflowed
  * across new line boundaries, there is no single further "original style"

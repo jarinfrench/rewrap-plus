@@ -4,11 +4,11 @@ import { fixturePath } from './fixtures.js';
 import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from './helpers.js';
 
 /**
- * The real-host proof for Markdown — the same loop `./java.test.ts`/
+ * The real-host proof for Markdown -- the same loop `./java.test.ts`/
  * `./cpp.test.ts` close for their own languages: the engine-level gold
  * fixtures already cover paragraph/prefix/hard-break/directive wrapping
  * in detail (`packages/engine/test/wrap/markdown-*-fixtures.test.ts`),
- * but none of those go through the real VSCode extension host —
+ * but none of those go through the real VSCode extension host --
  * activation, `AdapterRegistry` wiring (`../../src/engine-host.ts`'s
  * `createRegistry`), command dispatch, and settings resolution all stay
  * untested by the engine suite alone.
@@ -16,9 +16,9 @@ import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from '.
  * Markdown is also the first language where "does nothing here" needs
  * its own real-host cases beyond the generic ones `wrap-at-cursor.test.ts`
  * already covers (outside any region, `rewrapPlus.enable: false`,
- * unsupported language) — a heading and a fenced code block are both
+ * unsupported language) -- a heading and a fenced code block are both
  * real Markdown constructs a cursor lands in constantly, and neither is
- * ever a `'prose'` region (§5.6), so `rewrapPlus.wrapAtCursor` there
+ * ever a `'prose'` region (Sec. 5.6), so `rewrapPlus.wrapAtCursor` there
  * should behave identically to "outside any region" even though, unlike
  * that generic case, there's a good deal of real Markdown structure
  * immediately surrounding the cursor.
@@ -41,7 +41,7 @@ describe('rewrapPlus.wrapAtCursor on a Markdown file', () => {
     await settle();
 
     const text = editor.document.getText();
-    // Not a substring check against the original phrase — at this column
+    // Not a substring check against the original phrase -- at this column
     // limit, reflow necessarily breaks the line somewhere *inside* it, so
     // asserting the whole phrase survives intact would be asserting
     // wrapping didn't happen. Compare word-for-word instead, ignoring

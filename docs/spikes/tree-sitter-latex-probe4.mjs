@@ -1,4 +1,4 @@
-// Throwaway spike script (Write-tool-authored — see probe2.mjs's own
+// Throwaway spike script (Write-tool-authored -- see probe2.mjs's own
 // header comment for why). Fills the last gaps before writing commit 15's
 // discoverProse masked line scan: exact node type names for every
 // standard LaTeX sectioning command (only 'section'/'subsection' were

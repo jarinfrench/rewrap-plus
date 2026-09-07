@@ -32,7 +32,7 @@ describe('atomizeWords', () => {
 
   it('uses real display width, not character count, for CJK text', () => {
     // East Asian Wide characters count as 2 columns each (./display-width.ts)
-    // — 3 characters, 6 columns, not 3.
+    // -- 3 characters, 6 columns, not 3.
     expect(atomizeWords('日本語')).toEqual([{ text: '日本語', width: 6, breakBefore: false }]);
   });
 
@@ -62,7 +62,7 @@ describe('atomizeWords', () => {
   it('never splits inside an escape sequence, even mid-word', () => {
     // "a\tb" (backslash-t, not a real tab) has no internal whitespace of
     // its own to preserve, but the escape sequence still becomes its own
-    // atom — glued flush to its neighbors — so later phases can reason
+    // atom -- glued flush to its neighbors -- so later phases can reason
     // about it as a distinct unit rather than opaque substring text.
     const atoms = atomizeWords('a\\tb c');
     expect(atoms.map((a) => [a.text, a.glue])).toEqual([
@@ -133,7 +133,7 @@ describe('atomizeWords', () => {
 
   it('does not tag glue: double for three-or-more spaces after sentence-ending punctuation', () => {
     // Still collapses to the ordinary single join, same as any other
-    // over-two-space run elsewhere in a line — "double" means exactly
+    // over-two-space run elsewhere in a line -- "double" means exactly
     // "the source had a deliberate two-space sentence gap here", not
     // "the source had extra whitespace here".
     const atoms = atomizeWords('End of one.    Start of next.');
@@ -143,7 +143,7 @@ describe('atomizeWords', () => {
   });
 
   it('does not split an extra caller-supplied unbreakable pattern at its internal whitespace', () => {
-    // The `\verb`/`\lstinline` shape — real content the built-in
+    // The `\verb`/`\lstinline` shape -- real content the built-in
     // pattern set knows nothing about.
     const verb = /\\verb\*?(.)[^\n]*?\1/;
     const atoms = atomizeWords('see \\verb|a b c| now', { extraUnbreakable: [verb] });

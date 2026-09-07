@@ -20,7 +20,7 @@ import { registerEditorConfigCacheInvalidation } from './config/editorconfig-cac
 import { getOutputChannel } from './output-channel.js';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  // Must happen before anything below resolves a `ParserManager` — see
+  // Must happen before anything below resolves a `ParserManager` -- see
   // `initEngineHost`'s own doc comment for why grammar WASM resolution
   // depends on the extension's real installed location, not on
   // `@rewrap-plus/engine` being resolvable as a package (it isn't, once
@@ -33,7 +33,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // `"editorLangId in rewrapPlusSupportedLanguages"` (package.json's
   // command/keybinding `when` clauses) is VSCode's native
-  // array-membership `when`-clause syntax — set once, here, to the real
+  // array-membership `when`-clause syntax -- set once, here, to the real
   // registered-language list rather than a hardcoded
   // `"editorLangId == python"`, so a future language addition (Phase
   // 12b) needs no change to this file or to any `when` clause: the

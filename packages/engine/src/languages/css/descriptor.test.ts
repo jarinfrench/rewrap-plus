@@ -24,7 +24,7 @@ describe('cssDescriptor', () => {
     expect(cssDescriptor.queries.strings).toBeUndefined();
   });
 
-  it('declares no line-comment form — CSS has no // syntax', () => {
+  it('declares no line-comment form -- CSS has no // syntax', () => {
     expect(cssDescriptor.comments.line).toBeUndefined();
   });
 

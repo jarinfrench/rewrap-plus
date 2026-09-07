@@ -6,12 +6,12 @@ import type { DocstringQuoteMeta } from './dissolve-docstring.js';
 /**
  * Re-apply a docstring's prefix, quote delimiters, and indentation to a
  * segmented-and-reflowed block sequence, producing the region's
- * replacement source text — the docstring counterpart to
+ * replacement source text -- the docstring counterpart to
  * `../../comments/emit-block-comments.ts`, and Python's own half of
  * `DocstringQuoteMeta`'s "restore on emit" contract
  * (`./dissolve-docstring.ts`).
  *
- * `blocks` reflow via `reflowDocBlocks` (`../../docs/dialect.ts`) —
+ * `blocks` reflow via `reflowDocBlocks` (`../../docs/dialect.ts`) --
  * exactly what every `DocDialect.emit` uses, since the dialect that
  * produced `blocks` has already baked all of its own display form into
  * `fieldEntry.label`/`sectionHeader.text`; nothing here needs to know
@@ -20,25 +20,25 @@ import type { DocstringQuoteMeta } from './dissolve-docstring.js';
  * ## Opening and closing placement
  *
  * The very first physical output line is always `prefix + quoteDelimiter
- * + <line 0's content, if any>` — whether line 0 has content at all is
+ * + <line 0's content, if any>` -- whether line 0 has content at all is
  * exactly `meta.commonIndent`'s counterpart on the summary-line
  * convention: a blank line 0 (dissolve's own PEP 257 handling, see
  * `dissolveDocstring`) means the quote sits alone, and line 0's own
  * (empty) content becomes its own following blank physical line, rather
- * than anything special-cased here — the same reflowed-content array
+ * than anything special-cased here -- the same reflowed-content array
  * either way.
  *
  * The closing delimiter either sits on its own new line, indented to
  * `commonIndent` (`closingQuoteOwnLine`), or attaches directly to
- * whatever ends up as the last physical line — which, after reflow, may
+ * whatever ends up as the last physical line -- which, after reflow, may
  * not be the same *line count* as the original had, but is still the
  * same last-line *attachment*, matching "preserved as observed" rather
  * than the original's exact shape.
  *
  * ## Quote-collision safety
  *
- * Reattaching content directly against a quote delimiter — on either
- * end — can change what the delimiter *means* if the adjacent character
+ * Reattaching content directly against a quote delimiter -- on either
+ * end -- can change what the delimiter *means* if the adjacent character
  * would otherwise merge with it: content immediately touching the quote
  * character itself risks 4-in-a-row ambiguity, and content ending in an
  * unescaped backslash would escape away part of the closing delimiter
@@ -46,8 +46,8 @@ import type { DocstringQuoteMeta } from './dissolve-docstring.js';
  * characters, not a terminated string). `dissolveDocstring`'s own
  * PEP 257 trimming strips exactly the trailing whitespace that might
  * have been protecting against this in the original source, so this
- * function re-guards independently — see `needsOpeningSeparator`/
- * `needsClosingSeparator` — rather than assuming whatever adjacency the
+ * function re-guards independently -- see `needsOpeningSeparator`/
+ * `needsClosingSeparator` -- rather than assuming whatever adjacency the
  * original had is still safe once whitespace normalization has run.
  */
 export function emitDocstring(
@@ -61,11 +61,11 @@ export function emitDocstring(
   const indent = ' '.repeat(commonIndent);
   const availableWidth = Math.max(1, columnLimit - commonIndent);
 
-  // Every physical line pays `commonIndent` — except the very first,
+  // Every physical line pays `commonIndent` -- except the very first,
   // which instead pays `indentColumn + prefix.length +
   // quoteDelimiter.length`: it attaches directly to the opening quote at
   // the delimiter's own file column (`indentColumn`), never
-  // `commonIndent`'s own spelled-out spaces — see `physicalLines`'
+  // `commonIndent`'s own spelled-out spaces -- see `physicalLines`'
   // construction below, and `emitLineComments`'s analogous "first line
   // never spells out its own indentation" note for why `indentColumn`
   // still counts against the *visual* budget even though it isn't
@@ -73,7 +73,7 @@ export function emitDocstring(
   // narrower budget, and every later block at the ordinary one, keeps
   // every physical line within `columnLimit`. A minor, deliberate
   // trade-off: this narrower budget applies to *every* line the first
-  // block reflows to, not just its own first one — a long first block
+  // block reflows to, not just its own first one -- a long first block
   // (the summary itself needing several lines) wraps its later lines
   // slightly narrower than `columnLimit` strictly allows, since
   // `reflowBlock` has no way to vary the budget mid-block. Always
@@ -97,14 +97,14 @@ export function emitDocstring(
     : '';
 
   const physicalLines: string[] = [prefix + quoteDelimiter + firstContent];
-  // Always drop `contentLines[0]` here, regardless of `openingHasSummary` —
+  // Always drop `contentLines[0]` here, regardless of `openingHasSummary` --
   // it was already consumed above, into either `firstContent` (when it had
   // real text) or the *absence* of any content on the opening line (when it
   // was blank, per the "quote alone on its own line" convention). Bug found
   // while building this adapter's triple-quoted-string fixtures: this
   // used to read
   // `openingHasSummary ? contentLines.slice(1) : contentLines`, which kept
-  // `contentLines[0]` in `rest` whenever it was blank — that blank line then
+  // `contentLines[0]` in `rest` whenever it was blank -- that blank line then
   // got pushed a *second* time by the loop below, growing by one more blank
   // line on every subsequent wrap (a genuine idempotency violation). No
   // existing gold fixture before this one used the leading-blank

@@ -28,8 +28,8 @@ import zeroWidthLimitExpected from '../fixtures/reflow/007-zero-width-limit.json
  * zero-width limit guard.
  *
  * Each fixture pairs a plain-prose `.txt` source (run through
- * `splitBlocks` to get a real, single `paragraph` block —
- * exercising the actual segment → reflow pipeline rather than
+ * `splitBlocks` to get a real, single `paragraph` block --
+ * exercising the actual segment -> reflow pipeline rather than
  * hand-built `Atom` arrays) with a `.json` file carrying the reflow
  * parameters and the expected output lines. Follows this project's
  * established fixture-testing convention (see
@@ -106,7 +106,7 @@ describe('reflowBlock fixtures', () => {
   });
 
   it('covers the overflow/width edge cases reflow is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of these named cases if a fixture were ever
     // renamed or removed without a replacement.
     expect(fixtures.map((f) => f.name)).toEqual([
@@ -142,7 +142,7 @@ describe('reflowBlock fixtures', () => {
         const contentLength = line.length - indent;
         if (contentLength > budget) {
           // Only legitimate if this line is a single atom (no interior
-          // space outside the indent — i.e. no unglued join point).
+          // space outside the indent -- i.e. no unglued join point).
           expect(line.slice(indent)).not.toMatch(/ /);
         }
       }

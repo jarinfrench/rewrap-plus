@@ -7,8 +7,8 @@ import type { SyntaxNode, Tree } from '../types/tree-sitter-types.js';
  *
  * Extracted out of `./discover-regions.ts` (which still uses it for
  * `queries.comments`/`.strings`/`.concatenations`) so a `discoverProse`
- * hook — Markdown's, in particular, whose discovery is a straightforward
- * `queries.prose` capture — can run its own query without
+ * hook -- Markdown's, in particular, whose discovery is a straightforward
+ * `queries.prose` capture -- can run its own query without
  * re-implementing this, or importing from `discover-regions.ts` and
  * risking a cycle back through
  * `../types/adapter.ts` (which `discoverProse`'s own signature lives on).
@@ -35,7 +35,7 @@ export function captureNodesByName(tree: Tree, querySource: string): Map<string,
  * Run `querySource` against `tree` and return the nodes captured under
  * `captureName`, in the order tree-sitter reports them.
  *
- * A single-capture-name convenience over `captureNodesByName` — most
+ * A single-capture-name convenience over `captureNodesByName` -- most
  * queries (`queries.comments`/`.strings`/`.prose`) use exactly one
  * capture name each (`@comment`, `@string`, `@prose` by convention) and
  * don't need the full multi-name map.

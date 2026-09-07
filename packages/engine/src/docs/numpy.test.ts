@@ -79,7 +79,7 @@ describe('numpyDialect.segment', () => {
 
   it('recognizes a nested list and a fenced sample inside a description, end to end through segment()', () => {
     // `segmentFieldSection`'s own parallel fix to `groupFieldEntries`'s
-    // (`../field-entries.ts`) — a separate implementation (NumPy
+    // (`../field-entries.ts`) -- a separate implementation (NumPy
     // recognizes entries by indent position, not a `matchEntryStart`
     // regex), confirmed here through the real dialect entry point.
     const text = [
@@ -117,7 +117,7 @@ describe('numpyDialect.segment', () => {
   it('recognizes a nested list when the description opens directly with a bullet (no leading prose)', () => {
     // NumPy's entries never have an inline "rest" the way Google/Sphinx
     // do (the header and description are never on the same physical
-    // line) — `blocks[0]` being a `listItem` here isn't gated on an
+    // line) -- `blocks[0]` being a `listItem` here isn't gated on an
     // empty-`entry.rest` special case the way `../field-entries.ts`'s
     // is, it's simply what the description's first collected line was.
     const text = ['Parameters', '----------', 'x : int', '    - first', '    - second'].join('\n');
@@ -144,13 +144,13 @@ describe('numpyDialect.segment', () => {
 
   it('strips a blank line right after the header, before any real description content (regression)', () => {
     // NumPy's label is always empty, so a leading blank block here is
-    // *always* in scope for `stripLeadingBlanks` — unlike Google/Sphinx,
+    // *always* in scope for `stripLeadingBlanks` -- unlike Google/Sphinx,
     // there's no `entry.rest` gate to check first. Confirmed via
     // `test/wrap/nested-field-entry-stress.test.ts`: left in, this was
     // already-idempotent for NumPy specifically (its empty label means
     // `decorateFirstLine` degrades to pure whitespace either way), but
     // produced a `hangingIndent`-wide trailing-whitespace-only line
-    // where the source had none — see `../field-entries.ts`'s
+    // where the source had none -- see `../field-entries.ts`'s
     // `stripLeadingBlanks` for the fuller mechanism, shared with
     // `groupFieldEntries`.
     const text = [

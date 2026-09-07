@@ -2,11 +2,11 @@ import { cssAdapter } from '../../src/languages/css/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * The hard gate the comment-only-batch languages exist to check —
+ * The hard gate the comment-only-batch languages exist to check --
  * CSS through the identical `runAdapterConformance` suite every earlier
  * adapter already passed. A standalone `/* * /` comment and one trailing
  * a declaration inside a rule block are both exercised, each long enough
- * to actually need wrapping — the two shapes probed directly against the
+ * to actually need wrapping -- the two shapes probed directly against the
  * grammar (`docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`,
  * `docs/language-candidates.md`'s CSS row).
  *
@@ -16,7 +16,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * If this file's suite passes, it confirms no engine change was needed to
  * add CSS beyond what the vendored grammar and this adapter's own
  * `classify` override (needed because CSS has no line-comment form at
- * all — see `../../src/languages/css/descriptor.ts`'s own doc comment)
+ * all -- see `../../src/languages/css/descriptor.ts`'s own doc comment)
  * already provide.
  */
 const CRLF_SOURCE =

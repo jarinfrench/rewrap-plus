@@ -92,7 +92,7 @@ describe('sphinxDialect.segment', () => {
 
   it('recognizes a nested list inside a field description, end to end through segment()', () => {
     // Mechanical once Google worked (both share `groupFieldEntries`),
-    // per the plan's own framing — confirmed directly rather than
+    // per the plan's own framing -- confirmed directly rather than
     // assumed.
     const text = [
       ':param dry_run: Options include:',

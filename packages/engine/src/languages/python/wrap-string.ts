@@ -14,7 +14,7 @@ import { wrapCodeString } from './wrap-code-string.js';
  * Python's `LanguageAdapter.wrapString` implementation: dissolve
  * (`./dissolve-string.ts`), resolve emit-time context (`./emit-context.ts`),
  * normalize quote collisions (`./escape-quote-collisions.ts`), and emit
- * (`./emit-string.ts`) — the `'stringLiteral'` counterpart to
+ * (`./emit-string.ts`) -- the `'stringLiteral'` counterpart to
  * `./wrap-docstring.ts`'s `wrapDocstring`, and one whole-pipeline hook for
  * the same reason that one is: a string's own concatenation/grouping
  * syntax is inherently Python-specific, so this can't be dispatched
@@ -24,12 +24,12 @@ import { wrapCodeString } from './wrap-code-string.js';
  * ## Triple-quoted regions fork to a different whole pipeline
  *
  * A single-part triple-quoted `'stringLiteral'` (`isSafeToWrap` having
- * already confirmed it's both that shape and prose-eligible — see
+ * already confirmed it's both that shape and prose-eligible -- see
  * `./adapter.ts`) is structurally incompatible with the concatenation-based
  * pipeline below: `dissolveString`/`emitString` are built around every part
  * being one physical line, which a triple-quoted body routinely isn't.
- * `wrapCodeString` (`./wrap-code-string.ts`) — the same docstring-style
- * dissolve/segment/emit `wrapDocstring` uses — handles that shape instead.
+ * `wrapCodeString` (`./wrap-code-string.ts`) -- the same docstring-style
+ * dissolve/segment/emit `wrapDocstring` uses -- handles that shape instead.
  * Checked first, before either dissolve function runs, since
  * `dissolveString`'s own `PREFIX_AND_QUOTE` regex would throw on a
  * triple-quote delimiter it was never meant to match.
@@ -38,18 +38,18 @@ import { wrapCodeString } from './wrap-code-string.js';
  *
  * Continuation lines could in principle be indented to the opening
  * delimiter or to a fixed +4, selectable per setting, but `WrapConfig`
- * has no dedicated setting for this choice — adding one now would be new
+ * has no dedicated setting for this choice -- adding one now would be new
  * settings-schema surface `packages/vscode-extension` doesn't yet
  * expose, for a decision that's a style preference, not a correctness
  * requirement. This always uses the second option (`+4`, matching Black's
  * own hanging-indent convention): the *statement's own* line indentation
  * (the source line the region starts on, tab-expanded the same way
- * `discoverRegions` computes `indentColumn` itself) plus four columns —
+ * `discoverRegions` computes `indentColumn` itself) plus four columns --
  * deliberately not `region.indentColumn` itself, which is the *string's*
  * own column mid-line (`x = "..."`'s string starts well past the
  * statement's own indent) and would misplace every continuation line for
  * anything but a docstring-like region starting a line of its own. A known,
- * explicitly documented simplification, not an oversight — see this
+ * explicitly documented simplification, not an oversight -- see this
  * module's own commit message for the "or +4" wording this intentionally
  * settles on.
  */

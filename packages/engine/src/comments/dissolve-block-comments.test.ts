@@ -27,7 +27,7 @@ const PLAIN_DESCRIPTOR: LanguageDescriptor = {
 };
 
 /**
- * Builds a `WrappableRegion` whose span covers the *entire* `source` —
+ * Builds a `WrappableRegion` whose span covers the *entire* `source` --
  * every test in this file uses a `source` that's nothing but the block
  * comment itself, so `sliceSpanText` always returns `source` back
  * unchanged, and there's no risk of hand-computed row/column offsets
@@ -102,7 +102,7 @@ describe('dissolveBlockComments', () => {
     it('does not register the open/close-only lines as a blank-line paragraph break', () => {
       const source = ['/**', ' * one paragraph', ' *', ' * two paragraph', ' */'].join('\n');
       const doc = dissolveBlockComments(regionForWholeSource(source), source, JSDOC_DESCRIPTOR);
-      // Exactly two paragraphs, separated by the blank `*` line — not
+      // Exactly two paragraphs, separated by the blank `*` line -- not
       // three, which would mean the open/close lines were mistakenly
       // treated as blank content of their own.
       expect(doc.blocks.filter((b) => b.type === 'paragraph')).toHaveLength(2);

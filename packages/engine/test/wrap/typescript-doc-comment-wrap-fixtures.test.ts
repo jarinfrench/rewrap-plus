@@ -31,7 +31,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(typescriptAdapter);
 });
 
-describe('TypeScript docComment (JSDoc) wrapping — end-to-end gold fixtures', () => {
+describe('TypeScript docComment (JSDoc) wrapping -- end-to-end gold fixtures', () => {
   it('wraps a JSDoc-tagged function doc comment against the gold output', async () => {
     const result = await wrapRegions(jsdocIn, 'typescript', 'all', config(), parserManager);
     const actual = applyTextEdits(jsdocIn, result.edits);

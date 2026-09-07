@@ -2,7 +2,7 @@ import type { TextEdit } from './types/span.js';
 
 /**
  * Compute the UTF-16 code-unit offset (into `source`, a plain JS string)
- * that corresponds to each line's start — index `i` is where line `i`
+ * that corresponds to each line's start -- index `i` is where line `i`
  * begins.
  *
  * Splits on `\n` alone, matching every other line-oriented convention
@@ -31,14 +31,14 @@ function lineStartOffsets(source: string): number[] {
  * This is the counterpart every `WrapResult.edits` (from `wrapRegions`)
  * needs on the far side: something has to actually turn "replace this
  * span with this text" into a new document, whether that's a real
- * editor host's `WorkspaceEdit` (the VSCode extension) or — here — a
+ * editor host's `WorkspaceEdit` (the VSCode extension) or -- here -- a
  * plain string, for engine-level round-trip testing and any other
  * non-VSCode consumer (the CLI) that wants the same "apply this batch
  * of edits" behavior without an editor in the loop.
  *
  * A `TextEdit.span`'s row/column fields are UTF-16 positions (per
- * `../types/span.ts`'s own doc comment) — the same units a JS string is
- * natively indexed in — so each span is converted to a flat UTF-16
+ * `../types/span.ts`'s own doc comment) -- the same units a JS string is
+ * natively indexed in -- so each span is converted to a flat UTF-16
  * offset pair via `lineStartOffsets` and then it's ordinary string
  * splicing; no `PositionMapper`/byte-offset conversion is needed (that
  * machinery exists for tree-sitter's byte-indexed world, which this
@@ -52,14 +52,14 @@ function lineStartOffsets(source: string): number[] {
  * edits, which is what `wrapRegions` always produces (one edit per wrapped
  * region, and regions are, by construction, either disjoint spans or
  * nested via `parts` rather than overlapping siblings); behavior for
- * genuinely overlapping input edits is unspecified — same as before this
+ * genuinely overlapping input edits is unspecified -- same as before this
  * was a forward pass rather than a backward one.
  *
  * A single join, rather than accumulating `result = result.slice(...) +
  * edit.newText + result.slice(...)` once per edit against the whole
  * current `result` string (this function's first version): the earlier
  * shape re-copied the entire in-progress document on every edit, making
- * this function's own cost scale with `edits.length × source.length`
+ * this function's own cost scale with `edits.length x source.length`
  * rather than the `O(source.length)` a single-pass splice-and-join gives
  * regardless of how many edits there are.
  */

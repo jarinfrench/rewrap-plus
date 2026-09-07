@@ -1,12 +1,12 @@
 /**
- * `rewrapPlus.showResolvedConfig` — a telemetry-free diagnostic command:
+ * `rewrapPlus.showResolvedConfig` -- a telemetry-free diagnostic command:
  * dumps the effective column limit and which precedence tier it came
  * from, the active string/doc-dialect policy, whether the current
  * document's language is registered at all, and the extension's own
  * version, to the output channel. Exists specifically so a bug report
  * can include this instead of the reporter having to guess at (or the
  * maintainer having to ask for) what Rewrap+ actually resolved for their
- * file — it makes bug reports actionable without telemetry.
+ * file -- it makes bug reports actionable without telemetry.
  *
  * Deliberately not gated behind `rewrapPlusSupportedLanguages` the way
  * the wrap commands' keybindings are (`../extension.ts`): "why doesn't
@@ -33,7 +33,7 @@ async function showResolvedConfig(context: vscode.ExtensionContext): Promise<voi
 
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    channel.appendLine(`Rewrap+ ${version}: rewrapPlus.showResolvedConfig — no active editor.`);
+    channel.appendLine(`Rewrap+ ${version}: rewrapPlus.showResolvedConfig -- no active editor.`);
     channel.show(true);
     return;
   }

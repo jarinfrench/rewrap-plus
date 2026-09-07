@@ -10,7 +10,7 @@
  * tree-sitter indexes source text in UTF-8 *bytes*. VSCode's `Position`
  * (and therefore every `TextEdit` VSCode expects back) counts UTF-16
  * *code units*. These two schemes agree for plain ASCII and diverge for
- * anything else — and "anything else" is common: em dashes and smart
+ * anything else -- and "anything else" is common: em dashes and smart
  * quotes show up constantly in real docstrings and comments.
  *
  * `SourceSpan` carries both byte offsets *and* row/column so a span never
@@ -18,7 +18,7 @@
  * `startByte`/`endByte` are tree-sitter's UTF-8 byte offsets, unchanged.
  * `startRow`/`startColumn`/`endRow`/`endColumn` are VSCode-shaped: `row`
  * is a 0-based line number and `column` is a 0-based UTF-16 code-unit
- * offset into that line — matching `vscode.Position`'s `line`/`character`.
+ * offset into that line -- matching `vscode.Position`'s `line`/`character`.
  *
  * The single place that converts between the two schemes is
  * `PositionMapper` (`./position-mapper.ts`, added slightly later).
@@ -32,7 +32,7 @@
  * declarations. See `docs/parsing.md` (finding 3) for the spike that
  * found this and `../parser/span-from-node.ts` for the resulting
  * node-to-`SourceSpan` conversion. `startByte`/`endByte` on a `SourceSpan`
- * still mean genuine UTF-8 byte offsets — that contract doesn't change —
+ * still mean genuine UTF-8 byte offsets -- that contract doesn't change --
  * it's simply not safe to assume a tree-sitter `Node`'s own `startIndex`/
  * `endIndex` already are.
  */

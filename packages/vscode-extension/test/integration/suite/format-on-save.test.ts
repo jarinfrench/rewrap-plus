@@ -1,12 +1,12 @@
 /**
  * `rewrapPlus.formatOnSave` is exercised against a real save (`document
  * .save()`), not just an applied `WorkspaceEdit` like the other command
- * suites — the whole point is that it fires from `onWillSaveTextDocument`.
+ * suites -- the whole point is that it fires from `onWillSaveTextDocument`.
  * That means the fixture has to be a real file `save()` can write to, so
  * unlike every other suite here (which opens a checked-in fixture
  * directly from `test/integration/fixtures/`), this one copies
  * `long-comment.py` into a fresh OS temp directory per test and cleans
- * up after — a real save must never land on a file tracked by this repo.
+ * up after -- a real save must never land on a file tracked by this repo.
  */
 import * as assert from 'node:assert';
 import * as fs from 'node:fs';
@@ -39,7 +39,7 @@ describe('rewrapPlus.formatOnSave', () => {
 
     const document = await vscode.workspace.openTextDocument(tempFile);
     const editor = await vscode.window.showTextDocument(document);
-    // Real edit so the document is actually dirty — document.save() is a
+    // Real edit so the document is actually dirty -- document.save() is a
     // no-op (and never fires onWillSaveTextDocument) on a clean document.
     // Appending a trailing newline at the very end leaves every existing
     // line's content and index untouched.

@@ -10,7 +10,7 @@ describe('latexContinuationPrefix', () => {
     expect(latexContinuationPrefix('    Indented paragraph text.')).toBe('    ');
   });
 
-  it('stops at \\item, not at the item text — the plan\'s own worked example', () => {
+  it('stops at \\item, not at the item text -- the plan\'s own worked example', () => {
     expect(latexContinuationPrefix('  \\item Long text that needs wrapping.')).toBe('  ');
   });
 

@@ -5,7 +5,7 @@ import type { LanguageAdapter, LanguageDescriptor } from '../types/adapter.js';
 import { ParserManager } from './parser-manager.js';
 
 // `.` resolves against the process's cwd, which Vitest sets to this
-// package's root (`packages/engine`) — so `wasmDir` plus a descriptor's
+// package's root (`packages/engine`) -- so `wasmDir` plus a descriptor's
 // `grammars/...` path resolves to the vendored asset, matching how
 // `LanguageDescriptor.grammarWasm` fixtures are written elsewhere in this
 // package (see `adapter-registry.test.ts`). No `node:url`/
@@ -109,7 +109,7 @@ describe('ParserManager', () => {
     const loadSpy = vi.spyOn(Language, 'load');
     const registry = new AdapterRegistry();
     registry.register(makeAdapter({ id: 'python' }));
-    // Reuses the vendored Python grammar under a second synthetic id —
+    // Reuses the vendored Python grammar under a second synthetic id --
     // this keeps the test focused on cache-key behavior rather than on
     // loading a distinct grammar file, and is enough to prove distinct
     // descriptor ids are cached, and therefore loaded, independently of

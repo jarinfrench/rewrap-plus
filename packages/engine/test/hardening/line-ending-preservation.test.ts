@@ -48,9 +48,9 @@ interface LanguageSet {
   readonly lineCommentMarker: string;
   readonly fixtures: Readonly<Record<string, string>>;
   /**
-   * Builds a syntactically valid source containing two long line comments —
+   * Builds a syntactically valid source containing two long line comments --
    * `crlfComment` inside a CRLF-terminated section, `lfComment` inside an
-   * LF-terminated section — each followed by a trivial declaration so the
+   * LF-terminated section -- each followed by a trivial declaration so the
    * comment isn't the section's last line. Kept per-language: Java needs an
    * enclosing class for either comment to sit anywhere valid, and while a
    * *statement* like `x = 1;` needs an enclosing function in C++, a free
@@ -129,7 +129,7 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     lineCommentMarker: '//',
     fixtures: javaFixtures,
     // Java allows neither a top-level statement nor a top-level method
-    // declaration — every comment here needs an enclosing class.
+    // declaration -- every comment here needs an enclosing class.
     buildMixedLineEndingSource: (crlf, lf) =>
       `class C {\r\n${crlf}\r\n  void f1() {}\r\n\r\n${lf}\n  void f2() {}\n}\n`,
   },
@@ -145,7 +145,7 @@ describe.each(LANGUAGE_SETS)(
   'line-ending preservation ($languageId)',
   ({ languageId, lineCommentMarker, fixtures, buildMixedLineEndingSource }) => {
     it("each region's own edit matches the line-ending convention actually surrounding it in a genuinely mixed-CRLF/LF file", async () => {
-      // First half of the file is CRLF-terminated, second half LF — a
+      // First half of the file is CRLF-terminated, second half LF -- a
       // shape `detectLineEnding`'s own whole-file heuristic can't handle
       // correctly (it would pick whichever comes first and apply it
       // everywhere). Two long comments, one in each half, both needing to

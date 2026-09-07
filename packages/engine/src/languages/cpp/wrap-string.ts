@@ -8,7 +8,7 @@ import { wrapStringDefault } from '../../strings/wrap-string-default.js';
  * always `false` and `style` always `'implicit'`.
  *
  * Bare adjacency (`"foo" "bar"`) is C++'s *only* real concatenation syntax,
- * and it's valid wherever a single string literal already is — no
+ * and it's valid wherever a single string literal already is -- no
  * enclosing grouping construct to detect or insert the way Python's
  * implicit juxtaposition needs (`../python/wrap-string.ts`, which resolves
  * both axes per-region from real syntax-tree context instead of using this

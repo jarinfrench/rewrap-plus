@@ -34,15 +34,15 @@ describe('emitDocstring', () => {
   it('reproduces the quote-alone-on-its-own-line convention when the first block is blank', () => {
     // A leading `blank` block is exactly what a dissolved text starting
     // with an empty line looks like (dissolve's own reproduction of "the
-    // opening quote sat alone" — see `./dissolve-docstring.test.ts`'s
+    // opening quote sat alone" -- see `./dissolve-docstring.test.ts`'s
     // "quote-alone" case). The opening `"""` gets no content of its own
     // (the leading blank block reflows to `''`, exactly like every other
-    // blank line), and the *very next* physical line is the real content —
+    // blank line), and the *very next* physical line is the real content --
     // one line break between them, matching the one real newline that sat
     // between the opening delimiter and the summary in the original
     // source, not two. With `closingQuoteOwnLine: false` (the default
     // here), the closing delimiter attaches to whatever the *last*
-    // physical line ends up being — the content line, not the leading
+    // physical line ends up being -- the content line, not the leading
     // blank one.
     const blocks: Block[] = [{ type: 'blank' }, paragraph('Starts on its own line.')];
     const result = emitDocstring(blocks, meta({ indentColumn: 4, commonIndent: 4 }), 80);
@@ -53,7 +53,7 @@ describe('emitDocstring', () => {
     // Bug found while building this adapter's triple-quoted-string
     // fixtures: `rest` used to be
     // computed as `openingHasSummary ? contentLines.slice(1) :
-    // contentLines` — when the first block was blank (`openingHasSummary:
+    // contentLines` -- when the first block was blank (`openingHasSummary:
     // false`), `contentLines[0]` (already consumed into the, empty,
     // opening line) stayed in `rest` and got pushed a *second* time as a
     // spurious extra blank line, growing by one more blank line on every
@@ -97,7 +97,7 @@ describe('emitDocstring', () => {
     it('inserts a separating space when content would end with the quote character', () => {
       const blocks: Block[] = [paragraph('a value of "x"')];
       const result = emitDocstring(blocks, meta(), 80);
-      // Without protection this would produce `x""""` — four quote
+      // Without protection this would produce `x""""` -- four quote
       // characters in a row.
       expect(result).toBe('"""a value of "x" """');
     });
@@ -127,7 +127,7 @@ describe('emitDocstring', () => {
     });
   });
 
-  it('restores a listItem block’s bullet marker inside a docstring body', () => {
+  it("restores a listItem block's bullet marker inside a docstring body", () => {
     const blocks: Block[] = [
       paragraph('Summary.'),
       { type: 'blank' },

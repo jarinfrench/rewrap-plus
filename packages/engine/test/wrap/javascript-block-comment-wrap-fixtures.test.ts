@@ -11,7 +11,7 @@ import plainOut from '../fixtures/javascript/block-comments/001-plain-narrative.
 
 /**
  * Gold fixtures for a plain single-star `/* ... * /` `'blockComment'`
- * region (no JSDoc marker) — `descriptor.comments.plainBlock`'s
+ * region (no JSDoc marker) -- `descriptor.comments.plainBlock`'s
  * distinct open delimiter. Mirrors this package's established
  * fixture-driven convention (`./javascript-doc-comment-wrap-fixtures.test.ts`).
  */
@@ -45,7 +45,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(javascriptAdapter);
 });
 
-describe('JavaScript blockComment (plain /* */) wrapping — end-to-end gold fixtures', () => {
+describe('JavaScript blockComment (plain /* */) wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'javascript', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

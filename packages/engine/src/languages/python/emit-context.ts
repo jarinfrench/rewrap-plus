@@ -10,7 +10,7 @@ import { pythonDescriptor } from './descriptor.js';
  * splitting it across multiple physical lines needs its own inserted
  * parentheses, and which concatenation syntax to emit with. A plain,
  * self-contained interface rather than an extension of any shared
- * `LanguageAdapter`-member type — `emitContext` is an internal helper
+ * `LanguageAdapter`-member type -- `emitContext` is an internal helper
  * `./wrap-string.ts` and `../adapter.ts`'s `isProseEligible` call
  * directly, not a `LanguageAdapter` hook (removed from that interface once
  * it turned out nothing in the engine ever dispatched through it as one).
@@ -20,20 +20,20 @@ export interface StringEmitContext {
   readonly concatenationStyle: ConcatenationStyle;
   /**
    * Whether this region is a dictionary literal's key, e.g. the `"k"` in
-   * `{"k": "v"}` — one of the named "context signals" for string-wrap
-   * eligibility ("string is a dict key → skip"), alongside the shared
+   * `{"k": "v"}` -- one of the named "context signals" for string-wrap
+   * eligibility ("string is a dict key -> skip"), alongside the shared
    * text-only `looksLikeProse` heuristic (`../../prose-heuristic.ts`).
    * A dict key is virtually never prose regardless of its own shape, and
    * unlike the *sole-argument-to-a-known-call* context signal also named
    * (`re.compile`/`open`/`Path`/`subprocess.*`/a logging format slot),
    * this one is answerable exactly from the tree already available here,
-   * via the `pair` node's own `key` field — no heuristic text-matching
+   * via the `pair` node's own `key` field -- no heuristic text-matching
    * needed. The sole-argument signal is *not* implemented here: it would
    * need matching against an open-ended set of call names textually or
    * resolving imports to know `re.compile` really means the `re` module,
    * which is real additional work that isn't strictly required given the
    * shared prose heuristic already rejects the motivating example for it
-   * (`logging.info("%s failed", x)` — its placeholder-density signal
+   * (`logging.info("%s failed", x)` -- its placeholder-density signal
    * alone scores that text below the eligibility threshold). Documented
    * here, rather than silently dropped, as a deliberate scope limit.
    */
@@ -42,19 +42,19 @@ export interface StringEmitContext {
 
 /**
  * Node types whose own grammar rule is *always* delimited by a real
- * `(`/`[`/`{` pair already present in the source — probed directly against
+ * `(`/`[`/`{` pair already present in the source -- probed directly against
  * the vendored grammar (see this module's own commit message for the full
  * probe transcript, following `docs/parsing.md`'s "don't trust memory
  * here" discipline): call arguments, parameter defaults, every literal
  * collection and comprehension form, an explicit parenthesized expression,
  * and a subscript's own brackets. A concatenation run already sitting
  * inside one of these can be split across new lines with no parens of its
- * own — Python's implicit line-joining rule only requires *some* enclosing
+ * own -- Python's implicit line-joining rule only requires *some* enclosing
  * bracket, not one belonging to the string itself.
  *
  * Deliberately excludes constructs that are only *sometimes* bracketed
  * (`named_expression`/walrus, which may or may not sit inside an explicit
- * `parenthesized_expression` depending on where it's used) — those are
+ * `parenthesized_expression` depending on where it's used) -- those are
  * handled correctly anyway by continuing the ancestor walk past them: if
  * a real enclosing bracket exists further up, it's still found; if not,
  * `needsParens` correctly comes back `true`.
@@ -81,7 +81,7 @@ const GROUPING_ANCESTOR_TYPES: ReadonlySet<string> = new Set([
  * Walking past a statement/block/`module` boundary rather than stopping
  * there is deliberate, not an oversight: a compound statement (`def`,
  * `class`, `if`, `for`, ...) can never itself appear as an expression
- * inside a bracketed construct — `foo(def f(): ...)` isn't valid Python —
+ * inside a bracketed construct -- `foo(def f(): ...)` isn't valid Python --
  * so once the walk reaches `block`/`function_definition`/`class_definition`/
  * `module` (none of which are grouping types), there is no way for
  * anything *further* up to retroactively supply brackets that apply to
@@ -89,7 +89,7 @@ const GROUPING_ANCESTOR_TYPES: ReadonlySet<string> = new Set([
  * harmless: it can only ever encounter more non-grouping ancestors before
  * reaching the root, never a false-positive match. Stopping early would
  * save a handful of pointer hops on a syntax tree that's never more than
- * a few hundred nodes deep for one file — not worth the extra
+ * a few hundred nodes deep for one file -- not worth the extra
  * boundary-detection logic and its own chance of getting a node-type list
  * wrong.
  */
@@ -110,9 +110,9 @@ function hasGroupingAncestor(node: SyntaxNode | null): boolean {
  * `cfg.concatStyle` (opaque, adapter-interpreted per `WrapConfig`'s own
  * doc comment) forces a style outright when it names one Python
  * recognizes. Otherwise, a region that was *already* a multi-part
- * concatenation run preserves whichever style its own source used — the
+ * concatenation run preserves whichever style its own source used -- the
  * plan's own wording: "for runs that were originally +-joined, preserve
- * +" — determined from the node's real grammar type
+ * +" -- determined from the node's real grammar type
  * (`concatenated_string` vs. `binary_operator`), not re-derived from
  * `region.parts` alone, since nothing on `WrappableRegion` itself records
  * which query captured it. A region with only one part has no original
@@ -142,14 +142,14 @@ function resolveConcatenationStyle(
 }
 
 /**
- * Python's emit-time context resolution for `'stringLiteral'` regions —
+ * Python's emit-time context resolution for `'stringLiteral'` regions --
  * an internal helper called directly by `./wrap-string.ts`'s `wrapString`
  * and `./adapter.ts`'s `isProseEligible`, not a `LanguageAdapter` member
  * (see `./adapter.ts`'s own doc comment for why it isn't one).
  *
  * `nodeAtSpan` returning `null` (defensive: shouldn't happen for a region
  * that really came from `discoverRegions` against this same `tree`) falls
- * back to the conservative answer on both axes — `needsParens: true` is
+ * back to the conservative answer on both axes -- `needsParens: true` is
  * always syntactically safe (an extra, technically-redundant paren pair
  * never breaks valid Python), and the descriptor's own default
  * concatenation style is as reasonable a guess as any when the real

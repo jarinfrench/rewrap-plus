@@ -34,7 +34,7 @@ function doc(blocks: LogicalDocument['blocks'], indentColumn = 0): LogicalDocume
   return { blocks, meta: { indentColumn } };
 }
 
-describe('emitLineComments — marker and spacing', () => {
+describe('emitLineComments -- marker and spacing', () => {
   it('adds a space after the marker when spaceAfterMarker is true', () => {
     const document = doc([
       { type: 'paragraph', atoms: [{ text: 'hello', width: 5, breakBefore: false }] },
@@ -59,7 +59,7 @@ describe('emitLineComments — marker and spacing', () => {
     expect(emitLineComments(document, 80, '#', true)).toBe('# noqa: E501');
   });
 
-  it('restores a listItem block’s bullet marker rather than dropping it', () => {
+  it("restores a listItem block's bullet marker rather than dropping it", () => {
     const document = doc([
       {
         type: 'listItem',
@@ -72,7 +72,7 @@ describe('emitLineComments — marker and spacing', () => {
   });
 });
 
-describe('emitLineComments — indentation', () => {
+describe('emitLineComments -- indentation', () => {
   it('does not spell out indentation on the first line', () => {
     const document = doc(
       [{ type: 'paragraph', atoms: [{ text: 'hi', width: 2, breakBefore: false }] }],
@@ -93,7 +93,7 @@ describe('emitLineComments — indentation', () => {
   });
 });
 
-describe('emitLineComments — reflow round-trip via dissolve', () => {
+describe('emitLineComments -- reflow round-trip via dissolve', () => {
   it('reproduces a single short comment line unchanged', () => {
     expect(wrapComment('# a short comment\n', 40)).toBe('# a short comment');
   });

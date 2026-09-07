@@ -63,7 +63,7 @@ describe('pythonAdapter', () => {
     expect(regions[0]!.parts).toHaveLength(3);
   });
 
-  it('never groups a docstring — a docstring is always a single bare string literal', () => {
+  it('never groups a docstring -- a docstring is always a single bare string literal', () => {
     // Not realistic Python (a docstring position can't syntactically hold
     // a binary expression), but confirms the invariant holds structurally:
     // grouping only ever looks at `queries.strings` captures gathered
@@ -170,13 +170,13 @@ describe('pythonAdapter.isSafeToWrap', () => {
   });
 
   // Line-continuation-escape and irregular-whitespace refusals are no
-  // longer pythonAdapter's own concern for 'stringLiteral' regions —
+  // longer pythonAdapter's own concern for 'stringLiteral' regions --
   // they're `isStringSafeToWrapBaseline`'s
   // (`../../strings/is-string-safe-to-wrap-baseline.test.ts`), applied
   // unconditionally by `wrap.ts` before this hook is ever consulted.
 });
 
-describe('pythonAdapter groupRegions — line comment merging', () => {
+describe('pythonAdapter groupRegions -- line comment merging', () => {
   it('merges consecutive same-indent line comments into one multi-part region', () => {
     const source = '# first line\n# second line\n# third line\n';
     const tree = parser.parse(source)!;
@@ -235,7 +235,7 @@ describe('pythonAdapter groupRegions — line comment merging', () => {
 
   it('merges three consecutive blank-comment-separated lines but stops at a blank source line', () => {
     // A run of bare "#" separator lines is still "consecutive `#`
-    // comments at the same indent" from groupRegions's perspective —
+    // comments at the same indent" from groupRegions's perspective --
     // dissolve (not grouping) is what turns their empty content into a
     // paragraph-separating `blank` block. A genuinely blank *source*
     // line, by contrast, has no comment node at all and breaks the row

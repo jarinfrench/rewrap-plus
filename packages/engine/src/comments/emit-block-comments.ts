@@ -13,7 +13,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  *
  * If reflow produces at most one output line *and* the resulting
  * `open text close` fits within `columnLimit` at the region's own
- * indent, it's emitted as a single physical line (`/** text * /`) —
+ * indent, it's emitted as a single physical line (`/** text * /`) --
  * matching how a short block comment is conventionally written, and
  * avoiding turning every short comment into a needlessly tall
  * three-line block. Anything longer expands to the multi-line form.
@@ -26,11 +26,11 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  *  * /
  * ```
  *
- * (JSDoc/Doxygen/Javadoc shape — `descriptor.comments.block.open` is
+ * (JSDoc/Doxygen/Javadoc shape -- `descriptor.comments.block.open` is
  * `'/**'`, `continuationPrefix` is `'*'`.) The open delimiter always
  * sits alone on the first line; the close delimiter always sits alone
  * on the last, aligned with the continuation column rather than the
- * region's own indent — matching the conventional look where the `*`s
+ * region's own indent -- matching the conventional look where the `*`s
  * line up vertically, closing delimiter included. A language with no
  * `continuationPrefix` (plain `/* * /` multi-line, no per-line marker)
  * gets the same shape minus the marker: continuation lines are just
@@ -38,7 +38,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  *
  * ## Column budget
  *
- * `alignContinuation`: `'open'` (or unset — the common convention)
+ * `alignContinuation`: `'open'` (or unset -- the common convention)
  * aligns continuation lines and the close delimiter one column past the
  * region's own indent, matching a `/**` comment's `*`s lining up one
  * column right of the leading `/`; `'indent'` aligns flush with the
@@ -48,7 +48,7 @@ import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
  * `markerOverhead`.
  *
  * `blockOverride`, when passed, is used instead of `descriptor.comments.block`
- * — the `'blockComment'` counterpart to `dissolveBlockCommentText`'s own
+ * -- the `'blockComment'` counterpart to `dissolveBlockCommentText`'s own
  * identical parameter (see that function's doc comment), so a plain
  * `/* ... * /` region can re-delimit with `descriptor.comments.plainBlock`
  * instead of the doc-marked form. Omitted (the default), this falls back
@@ -70,7 +70,7 @@ export function emitBlockComments(
   const continuationColumn = block.alignContinuation === 'indent' ? indentColumn : indentColumn + 1;
   const prefixOverhead = block.continuationPrefix ? block.continuationPrefix.length + 1 : 0;
   // Never let a deeply-indented, long-markered region compute a
-  // negative or zero budget — `reflowBlock`'s own overflow rule already
+  // negative or zero budget -- `reflowBlock`'s own overflow rule already
   // handles "this atom doesn't fit" gracefully, but it still needs a
   // positive width to reason about.
   const availableWidth = Math.max(1, columnLimit - continuationColumn - prefixOverhead);
@@ -81,7 +81,7 @@ export function emitBlockComments(
       docBlock.type === 'listItem' || docBlock.type === 'fieldEntry' ? docBlock.hangingIndent : 0;
     // `firstLineReserve` matches `hangingIndent`: `decorateFirstLine`
     // prepends exactly `hangingIndent` columns of marker text to line 1,
-    // so `reflowBlock` needs to reserve that same width — see
+    // so `reflowBlock` needs to reserve that same width -- see
     // `ReflowOptions.firstLineReserve`'s own doc comment.
     contentLines.push(
       ...decorateFirstLine(

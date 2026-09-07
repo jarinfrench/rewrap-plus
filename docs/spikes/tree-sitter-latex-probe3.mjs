@@ -1,6 +1,6 @@
-// Throwaway spike script (Write-tool-authored — see probe2.mjs's own header
+// Throwaway spike script (Write-tool-authored -- see probe2.mjs's own header
 // comment for why that matters here). Verifies the one remaining unknown
-// flagged by markdown-latex-plan.md §6.1 before writing the LaTeX
+// flagged by markdown-latex-plan.md Sec. 6.1 before writing the LaTeX
 // descriptor for commit 14: does a `line_comment` node's span include a
 // trailing `\r` on a CRLF-terminated line, the same question already
 // answered (and found to matter) for Python's `comment` node per

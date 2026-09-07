@@ -1,5 +1,5 @@
 name: "\U0001F6A8 String corruption (runtime value changed)"
-description: A string literal's actual runtime value changed after wrapping — not just its formatting.
+description: A string literal's actual runtime value changed after wrapping -- not just its formatting.
 labels: ["type:bug", "severity:string-corruption"]
 body:
   - type: markdown
@@ -9,7 +9,7 @@ body:
         is supposed to be eval-equivalent for string literals (that's what
         the eval-equivalence test suite exists to catch pre-release). If
         you're seeing this, something slipped through. Please fill in every
-        field below exactly — the precise before/after text matters more
+        field below exactly -- the precise before/after text matters more
         than usual here.
 
   - type: input

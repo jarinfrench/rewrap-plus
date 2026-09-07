@@ -11,7 +11,7 @@ function words(...texts: string[]): Atom[] {
   return texts.map((t) => atom(t));
 }
 
-describe('reflowBlock — pass-through block kinds', () => {
+describe('reflowBlock -- pass-through block kinds', () => {
   it('reflows a blank block to a single empty line', () => {
     expect(reflowBlock({ type: 'blank' }, 80, 0)).toEqual(['']);
   });
@@ -30,7 +30,7 @@ describe('reflowBlock — pass-through block kinds', () => {
   });
 });
 
-describe('reflowBlock — greedy fill for paragraph', () => {
+describe('reflowBlock -- greedy fill for paragraph', () => {
   it('fits everything on one line when it all fits', () => {
     const block: Block = { type: 'paragraph', atoms: words('one', 'two', 'three') };
     expect(reflowBlock(block, 80, 0)).toEqual(['one two three']);
@@ -98,7 +98,7 @@ describe('reflowBlock — greedy fill for paragraph', () => {
   });
 
   it('never strands a glue: none atom alone at the start of a continuation line', () => {
-    // "aaaaaaaaaaaa" (12) + "b" glued (0) = 13, which doesn't fit in 10 —
+    // "aaaaaaaaaaaa" (12) + "b" glued (0) = 13, which doesn't fit in 10 --
     // both must move to the next line together, not just "b" alone.
     const block: Block = {
       type: 'paragraph',
@@ -167,7 +167,7 @@ describe('reflowBlock — greedy fill for paragraph', () => {
   });
 });
 
-describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
+describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
   it("reflows a listItem's atoms without prepending its marker", () => {
     const block: Block = {
       type: 'listItem',
@@ -204,7 +204,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     // when `blocks[0]` itself carries a marker (a description that opens
     // directly with a bullet, no leading prose), reflowing it at only the
     // *entry's* own `firstLineReserve`/`hangingIndent` under-reserves by
-    // exactly `blocks[0].hangingIndent` — the nested marker
+    // exactly `blocks[0].hangingIndent` -- the nested marker
     // (`decorateFirstLine`, called on `blocks[0]` from inside
     // `reflowFieldEntry`) lands *after* budgeting was already done,
     // silently pushing the final line past `availableWidth`, and
@@ -212,7 +212,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     // continuation indent instead of under the bullet's own content.
     const block: Block = {
       type: 'fieldEntry',
-      label: ':param x:', // length 9 → hangingIndent 10
+      label: ':param x:', // length 9 -> hangingIndent 10
       hangingIndent: 10,
       blocks: [{ type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('aaaaa', 'bbb') }],
     };
@@ -222,7 +222,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     });
     // Correctly budgeted: only 8 columns (20 - the *combined* 12-column
     // reservation) are available for atom content on line 0, so 'bbb'
-    // wraps to its own line — indented 12 (10 entry + 2 marker), aligned
+    // wraps to its own line -- indented 12 (10 entry + 2 marker), aligned
     // under where the bullet's own content starts, not just under the
     // entry's plain continuation column (10).
     expect(reflowed).toEqual(['- aaaaa', `${' '.repeat(12)}bbb`]);
@@ -236,7 +236,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
 
   it("indents a fieldEntry's later nested blocks by hangingIndent and restores their own markers, leaving a blank block genuinely empty (regression)", () => {
     // A `blank` block among `rest` must stay a truly empty line, not
-    // `hangingIndent` columns of trailing whitespace — matching
+    // `hangingIndent` columns of trailing whitespace -- matching
     // `reflowBlockSequence`'s own top-level convention. Confirmed broken
     // during step 5's idempotency pass
     // (`test/wrap/nested-field-entry-idempotency.test.ts`): the source
@@ -267,7 +267,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     // `verbatim` block carries no marker (`decorateFirstLine` no-ops for
     // it), so `blocks[0]` being `verbatim` needs no *marker-width*
     // special-casing in `reflowFieldEntry` (`firstOwnIndent` is 0, same
-    // as `paragraph`) — the label glues onto `verbatim.lines[0]` exactly
+    // as `paragraph`) -- the label glues onto `verbatim.lines[0]` exactly
     // the way it already glues onto the first word of plain continuation
     // prose when `entry.rest` is empty, the established, pre-existing
     // convention this change doesn't redesign. See
@@ -275,11 +275,11 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     //
     // But confirmed broken during development for `lines[1:]`: a
     // multi-line `verbatim` block (a real fenced sample is *always* at
-    // least 3 lines — open fence, content, close fence) shares only its
+    // least 3 lines -- open fence, content, close fence) shares only its
     // first line with the label; the rest is ordinary continuation and
     // needs `hangingIndent` re-added the same way a wrapped `paragraph`'s
     // own continuation lines already get it from `greedyFill`/
-    // `balancedFill` — `reflowBlock`'s `case 'verbatim'` now does this
+    // `balancedFill` -- `reflowBlock`'s `case 'verbatim'` now does this
     // (a no-op for every other caller, which always pass `hangingIndent:
     // 0` for a top-level `verbatim` block). Before that fix, `'code'` and
     // the closing fence printed flush left, ignoring the entry's
@@ -330,7 +330,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     // its own (`matchFencedCode`, `../segmentation/verbatim.ts`, collects
     // everything between the fences unconditionally, blanks included).
     // `reflowBlock`'s `case 'verbatim'` prepends `hangingIndent` to every
-    // line after the first — but a *blank* line has nothing to indent
+    // line after the first -- but a *blank* line has nothing to indent
     // "under," so it must stay `''`, not become `hangingIndent` columns
     // of invisible trailing whitespace the source never had.
     const block: Block = {
@@ -379,7 +379,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
     // `hangingIndent`, 2, folded into the shared first line via
     // `firstOwnIndent`); `inner`, a `rest` block, is reflowed at its own
     // deeper `hangingIndent` (6) and then the *entry's* `hangingIndent`
-    // (4) is added on top, uniformly — so `inner`'s marker should land
+    // (4) is added on top, uniformly -- so `inner`'s marker should land
     // exactly `inner.hangingIndent - outer.hangingIndent` (4) columns to
     // the right of `outer`'s.
     const block: Block = {
@@ -402,7 +402,7 @@ describe('reflowBlock — greedy fill for listItem and fieldEntry', () => {
   });
 });
 
-describe('reflowBlock — width edge cases', () => {
+describe('reflowBlock -- width edge cases', () => {
   it('an atom exactly at the limit fits on the current line', () => {
     const block: Block = { type: 'paragraph', atoms: words('aaaaaaaaaa') }; // width 10
     expect(reflowBlock(block, 10, 0)).toEqual(['aaaaaaaaaa']);
@@ -455,7 +455,7 @@ describe('reflowBlock — width edge cases', () => {
   });
 });
 
-describe('reflowBlock — balanced (minimum-raggedness) mode', () => {
+describe('reflowBlock -- balanced (minimum-raggedness) mode', () => {
   it('produces the same output as greedy when everything fits on one line', () => {
     const block: Block = { type: 'paragraph', atoms: words('one', 'two', 'three') };
     expect(reflowBlock(block, 80, 0, { mode: 'balanced' })).toEqual(['one two three']);
@@ -491,7 +491,7 @@ describe('reflowBlock — balanced (minimum-raggedness) mode', () => {
     // worse global partition: greedy fills "aaaaaa b" (8/10) early,
     // forcing "ccccc" (5/10) onto its own ragged line. Balanced instead
     // leaves "aaaaaa" alone and pairs "b" with "ccccc" (7/10), which
-    // reduces total non-last-line squared slack from 38 to 34 — a
+    // reduces total non-last-line squared slack from 38 to 34 -- a
     // genuinely different, better partition, not just a tie.
     const block: Block = {
       type: 'paragraph',

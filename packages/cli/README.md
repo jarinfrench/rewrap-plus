@@ -1,7 +1,7 @@
 # @rewrap-plus/cli
 
 Command-line and pre-commit interface for [Rewrap+](../../README.md),
-built on `@rewrap-plus/engine` unchanged — see
+built on `@rewrap-plus/engine` unchanged -- see
 [`docs/adapters.md`](../../docs/adapters.md)'s CLI section for what
 that separation looked like in practice.
 
@@ -18,7 +18,7 @@ walked recursively; files are wrapped based on their extension (see
 during a directory walk.
 
 By default, matching files are rewrapped **in place**. Pass `--check` for
-a dry run — nothing is written, and the process exits non-zero if any
+a dry run -- nothing is written, and the process exits non-zero if any
 file would change, which is what a CI job or pre-commit hook wants:
 
 ```bash
@@ -56,12 +56,12 @@ so a plain `.h` file is assumed to be C++).
 
 **Markdown and LaTeX change this tool's blast radius, worth knowing
 before running it over an existing tree.** Every prior language here is
-*comments and strings inside code* — a directory walk mostly leaves
+*comments and strings inside code* -- a directory walk mostly leaves
 ordinary code lines untouched. Markdown and LaTeX invert that: the prose
 *is* the document, so a bare `rewrap-plus .` now rewraps every
 `README.md`, every `docs/*.md`, and every `.tex` source it finds, and
 `--check` starts failing on any of them whose paragraphs aren't already
-wrapped at the resolved column limit. There's no opt-out flag for this —
+wrapped at the resolved column limit. There's no opt-out flag for this --
 the existing `--language`, explicit path arguments, and directive
 comments (`<!-- rewrap: off/ignore -->` for Markdown, `% rewrap:
 off/ignore` for LaTeX) are the tools for narrowing scope if a bare
@@ -84,7 +84,7 @@ order (highest to lowest):
    }
    ```
 
-3. The nearest `pyproject.toml`'s `[tool.rewrap-plus]` table — kebab-case
+3. The nearest `pyproject.toml`'s `[tool.rewrap-plus]` table -- kebab-case
    keys, matching Black/Ruff's own `[tool.*]` convention:
 
    ```toml
@@ -93,9 +93,9 @@ order (highest to lowest):
    string-policy = "all"
    ```
 
-4. `.editorconfig`'s `max_line_length` — **column limit only**, and only
+4. `.editorconfig`'s `max_line_length` -- **column limit only**, and only
    when `respectEditorConfig`/`respect-editor-config` (itself resolved
-   through tiers 1–3 above) is `true` (the default).
+   through tiers 1-3 above) is `true` (the default).
 5. Built-in defaults, matching the VSCode extension's own:
    `columnLimit: 80`, `tabSize: 4`, `wrapComments: true`,
    `wrapStrings: true`, `stringPolicy: 'prose'`, `docDialect: 'auto'`,
@@ -103,7 +103,7 @@ order (highest to lowest):
    `respectEditorConfig: true`.
 
 Only the *nearest* `.rewraprc`/`pyproject.toml` is consulted (unlike
-`.editorconfig`, which layers every ancestor file it finds) — the same
+`.editorconfig`, which layers every ancestor file it finds) -- the same
 "nearest is the project config" convention Black and Ruff themselves use
 for `pyproject.toml`.
 
@@ -118,7 +118,7 @@ for `pyproject.toml`.
 ## Known limitations
 
 - Not `.gitignore`-aware beyond the fixed default-ignored directory list
-  above — a project-specific ignore rule isn't consulted.
+  above -- a project-specific ignore rule isn't consulted.
 - Symlinked directories are not followed during a recursive walk.
 - Only the nearest `.rewraprc`/`pyproject.toml` on the way up from each
   file is used; there's no layered-override chain the way

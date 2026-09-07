@@ -11,12 +11,12 @@ import { wrapRegions } from '../../src/wrap.js';
 /**
  * Zero-edit gold fixtures for every "never a region" node type, plus
  * the two discovery-level exclusions (a footnote definition, a `$$`
- * display-math paragraph) — Phase C commit 9. Each fixture is verified
+ * display-math paragraph) -- Phase C commit 9. Each fixture is verified
  * two ways:
  *
  * - **Discovery-level**: `discoverRegions` (real `markdownAdapter`, real
  *   grammar) produces zero `'prose'` regions for a fixture whose entire
- *   content is the excluded construct — proving the exclusion happens at
+ *   content is the excluded construct -- proving the exclusion happens at
  *   *discovery*, the same "never even a candidate" standard
  *   `docs/adapters.md`'s Java text-block negative fixture already
  *   established, not merely a decline further down the pipeline.
@@ -26,7 +26,7 @@ import { wrapRegions } from '../../src/wrap.js';
  *   until commit 10, so every Markdown source produces zero edits
  *   regardless of content right now. Kept anyway (not deferred to a later
  *   commit) so these exact fixture files stay valid, unchanged, once
- *   `wrapProse` lands — a real second signal from that point on, a
+ *   `wrapProse` lands -- a real second signal from that point on, a
  *   trivial one until then.
  *
  * A future grammar upgrade that reclassifies any of these node types (or
@@ -111,7 +111,7 @@ beforeAll(async () => {
   parser.setLanguage(language);
 });
 
-describe('Markdown — §5.6/§5.2 exclusions never produce a region', () => {
+describe('Markdown -- Sec. 5.6/Sec. 5.2 exclusions never produce a region', () => {
   const entries = Object.entries(allFixtures).sort(([a], [b]) => a.localeCompare(b));
 
   it('the fixture glob actually found fixtures (guards against a silently-empty glob)', () => {

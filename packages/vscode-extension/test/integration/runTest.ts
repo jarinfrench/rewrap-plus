@@ -1,12 +1,12 @@
 /**
  * Outer script: runs in plain Node (not inside VSCode), downloads/reuses
  * a real VSCode test build via `@vscode/test-electron`, and launches it
- * with `extensionTestsPath` pointing at `./suite/index.js` — the inner
+ * with `extensionTestsPath` pointing at `./suite/index.js` -- the inner
  * script that runs *inside* the extension host and drives Mocha.
  *
  * Compiled separately from the rest of this package (`tsconfig.test.json`,
  * `npm run test:integration`) rather than through the main `tsconfig.json`
- * `src` build — this suite needs a real downloaded VSCode instance and
+ * `src` build -- this suite needs a real downloaded VSCode instance and
  * takes tens of seconds even when everything passes, so it's
  * deliberately not part of the fast `npm test` (`vitest run`) most of
  * this package's own unit tests already satisfy, nor of the root

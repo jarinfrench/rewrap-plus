@@ -10,15 +10,15 @@ import { looksLikeCommentedOutCode } from './looks-like-code.js';
  * shared `LogicalDocument` model that `reflowBlock` and this module's
  * `emitLineComments` counterpart operate on, plus one piece of
  * line-comment-specific state that doesn't belong on the shared
- * `DocMeta` — see `spaceAfterMarker`'s own doc comment.
+ * `DocMeta` -- see `spaceAfterMarker`'s own doc comment.
  *
- * Fully generic, driven entirely by a `LanguageDescriptor` — nothing
+ * Fully generic, driven entirely by a `LanguageDescriptor` -- nothing
  * here is Python-specific, despite Python being the first (and, for a
  * while, only) adapter that exercises it. Originally implemented under
  * `languages/python/` and promoted here once the canary JavaScript
  * adapter confirmed nothing about this module's own logic actually
- * depended on Python (the one thing that did — commented-out-code
- * detection's leading-keyword list — was split out to
+ * depended on Python (the one thing that did -- commented-out-code
+ * detection's leading-keyword list -- was split out to
  * `LanguageDescriptor.comments.codeLikeKeywords`; see
  * `./looks-like-code.ts`).
  */
@@ -28,7 +28,7 @@ export interface DissolvedLineComments {
   /**
    * Whether this region's reflowable comment lines, as observed in
    * source, put a space after `#` (`# comment`) or not (`#comment`).
-   * Preserves the original spacing convention as observed — rather
+   * Preserves the original spacing convention as observed -- rather
    * than always normalizing to `descriptor.comments.line.spaceAfter`'s
    * default, emit reproduces whatever convention the block itself used.
    *
@@ -36,7 +36,7 @@ export interface DissolvedLineComments {
    * keep their exact original text regardless, so they don't inform
    * this, and a blank `#` line has no marker-to-content spacing to
    * observe). Falls back to the descriptor's own default spacing when no
-   * reflowable line has any content to observe it from — e.g. a region
+   * reflowable line has any content to observe it from -- e.g. a region
    * that's nothing but blank `#` separator lines.
    */
   readonly spaceAfterMarker: boolean;
@@ -58,7 +58,7 @@ type ClassifiedLine = ReflowableLine | VerbatimLine;
 /**
  * Split one comment line's raw source text (e.g. `'# hello'`, `'#hello'`,
  * or a bare `'#'`) into its marker and content, recording whether a
- * space separated them — the per-line half of what `spaceAfterMarker`
+ * space separated them -- the per-line half of what `spaceAfterMarker`
  * (region-level) is derived from.
  */
 function stripMarker(raw: string, marker: string): { content: string; hadSpace: boolean } {
@@ -69,14 +69,14 @@ function stripMarker(raw: string, marker: string): { content: string; hadSpace: 
 
 /**
  * Classify every physical line of `region` (one entry in `region.parts`
- * per source line, per the grouping commit's contract — see
+ * per source line, per the grouping commit's contract -- see
  * `../languages/python/adapter.ts`'s `groupRegions`) as either a
  * directive line to carry through verbatim, or reflowable content with
  * its marker stripped.
  *
  * Directive detection tests `descriptor.comments.neverReflow` against
  * each line's *raw* text (Python's own patterns are shebangs, coding
- * declarations, `# type:`, `# noqa`, `# pylint:`, `# fmt:` — see
+ * declarations, `# type:`, `# noqa`, `# pylint:`, `# fmt:` -- see
  * `pythonDescriptor` for the concrete list): "moving one of these to a
  * different line can change program behavior," so they're
  * never candidates for reflow regardless of how the rest of the block is
@@ -107,18 +107,18 @@ function classifyLines(
  *
  * - buffers up consecutive reflowable lines and, on flush, either routes
  *   the whole run to a single `verbatim` block (`looksLikeCommentedOutCode`
- *   says it reads as commented-out code — "bias toward verbatim when
+ *   says it reads as commented-out code -- "bias toward verbatim when
  *   uncertain," the same principle applied to indented/fenced/table
  *   content) or runs it through `splitBlocks` to get real
  *   paragraph/list/blank structure. A blank `#` line's content is `''`,
  *   which `splitBlocks` naturally turns into a `blank` block and a
- *   paragraph break — no special-casing needed for the common
+ *   paragraph break -- no special-casing needed for the common
  *   "blank comment line separates two paragraphs" pattern;
  * - buffers up consecutive directive lines and, on flush, emits them as
  *   one multi-line `verbatim` block carrying their exact raw text.
  *
  * `region.indentColumn` becomes the document's `DocMeta.indentColumn`
- * directly — grouping guarantees every part of a `'lineComment'`
+ * directly -- grouping guarantees every part of a `'lineComment'`
  * region shares one indent column (see `./adapter.ts`), so there's only
  * one value to carry.
  */
@@ -141,7 +141,7 @@ export function dissolveLineComments(
     const contents = reflowableBuffer.map((line) => line.content);
     if (looksLikeCommentedOutCode(contents, descriptor.comments.codeLikeKeywords)) {
       // Preserve the block exactly as it read in source, marker/spacing
-      // and all — reflowing commented-out code risks producing text
+      // and all -- reflowing commented-out code risks producing text
       // that no longer round-trips to valid source if uncommented.
       blocks.push({
         type: 'verbatim',
@@ -181,7 +181,7 @@ export function dissolveLineComments(
 
 /**
  * Reconstruct a reflowable line's original raw source text (marker plus
- * whatever spacing/content it had) — used only when a whole reflowable
+ * whatever spacing/content it had) -- used only when a whole reflowable
  * run turns out to be commented-out code and needs to be emitted
  * byte-for-byte rather than through the marker-plus-content
  * reconstruction `emitLineComments` normally does for reflowed content.

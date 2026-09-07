@@ -11,7 +11,7 @@ import type { WrapConfig } from '../../src/types/config.js';
  *
  * The bug this guards against: the per-region loop in `../../src/wrap.ts`
  * checks `cancellation.isCancellationRequested` once per iteration, but a
- * synchronous `for` loop never yields to the event loop on its own — so a
+ * synchronous `for` loop never yields to the event loop on its own -- so a
  * cancellation flag flipped by a real asynchronous event (in the VSCode
  * extension, a `vscode.CancellationToken` set by a UI click delivered over
  * IPC to the extension host) could never actually be observed until the
@@ -25,10 +25,10 @@ import type { WrapConfig } from '../../src/types/config.js';
  * 50,000-line file (not guessed): an uninterrupted run takes ~7-8s; a run
  * given a signal that's already `true` before the call starts (proving only
  * that the very first check works, not the bug this suite targets) returns
- * in ~0.7s, which is entirely parse + region discovery — the loop body
+ * in ~0.7s, which is entirely parse + region discovery -- the loop body
  * itself never runs. A real *asynchronous* cancellation fired 500ms in
  * (well past that ~0.7s floor, so the loop is provably mid-flight) measured
- * ~0.77s end to end — i.e., picked up within roughly one `YIELD_INTERVAL_MS`
+ * ~0.77s end to end -- i.e., picked up within roughly one `YIELD_INTERVAL_MS`
  * window of the signal firing, not after the full ~7-8s. The bound below
  * (3s) sits with wide margin above that measurement (tolerating slower CI
  * hardware) while staying well under half the uninterrupted run time, so it
@@ -45,7 +45,7 @@ const cfg: WrapConfig = {
   balancedWrapping: false,
 };
 
-/** Same shape as `../hardening/large-file-performance.test.ts`'s own Python generator — an unrealistically dense file so the loop has enough work to still be mid-flight well past parse+discovery. */
+/** Same shape as `../hardening/large-file-performance.test.ts`'s own Python generator -- an unrealistically dense file so the loop has enough work to still be mid-flight well past parse+discovery. */
 function generateFile(lineCount: number): string {
   const lines: string[] = [];
   for (let i = 0; i < lineCount; i++) {

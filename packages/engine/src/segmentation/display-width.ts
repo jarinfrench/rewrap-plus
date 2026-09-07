@@ -3,8 +3,8 @@
  *
  * East Asian Wide and Fullwidth characters count as 2
  * columns; combining marks count as 0. This matters for two of this
- * project's routine cases — CJK text in comments/docstrings, and emoji
- * (themselves largely East Asian Wide-adjacent ranges) in docstrings —
+ * project's routine cases -- CJK text in comments/docstrings, and emoji
+ * (themselves largely East Asian Wide-adjacent ranges) in docstrings --
  * where `text.length` silently over- or under-counts, letting reflow
  * either wrap too early or run a line past the actual column limit.
  *
@@ -15,10 +15,10 @@
  * below are drawn from Unicode's `EastAsianWidth.txt` (`W`/`F`
  * categories) and the `Mn`/`Me` general-category combining-mark blocks,
  * condensed to the ranges this project is realistically going to see in
- * source comments and docstrings — not a byte-for-byte transcription of
+ * source comments and docstrings -- not a byte-for-byte transcription of
  * either table.
  *
- * Iterates by Unicode code point, not UTF-16 code unit — `for...of` over
+ * Iterates by Unicode code point, not UTF-16 code unit -- `for...of` over
  * a string already does this, correctly stepping over surrogate pairs
  * (astral-plane emoji included) as one character rather than two.
  */
@@ -43,7 +43,7 @@ function codePointWidth(codePoint: number): number {
 function inRanges(codePoint: number, ranges: ReadonlyArray<readonly [number, number]>): boolean {
   // Linear scan: these tables are short (a few dozen entries) and this
   // runs per-character on comment/docstring-sized text, not source
-  // files — a binary search would be premature optimization here.
+  // files -- a binary search would be premature optimization here.
   for (const [start, end] of ranges) {
     if (codePoint >= start && codePoint <= end) {
       return true;

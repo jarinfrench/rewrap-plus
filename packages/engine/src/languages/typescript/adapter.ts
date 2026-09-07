@@ -5,7 +5,7 @@ import { typescriptDescriptor, typescriptReactDescriptor } from './descriptor.js
 import { classifyEcmaScriptNode, wrapEcmaScriptString } from '../ecmascript/adapter-support.js';
 
 /**
- * Build a `LanguageAdapter` for one ECMAScript-family descriptor —
+ * Build a `LanguageAdapter` for one ECMAScript-family descriptor --
  * shared by both `typescriptAdapter` and `typescriptReactAdapter` below,
  * which differ only in which descriptor (and therefore which grammar)
  * `classify` closes over; every other hook is the identical shared
@@ -13,7 +13,7 @@ import { classifyEcmaScriptNode, wrapEcmaScriptString } from '../ecmascript/adap
  * also uses, verbatim. No `isSafeToWrap`: TypeScript/TSX strings have no
  * prefix concept and no other string-shape hazard beyond `../../wrap.ts`'s
  * own unconditional baseline (line-continuation escapes, irregular
- * whitespace — see `../../strings/is-string-safe-to-wrap-baseline.ts`),
+ * whitespace -- see `../../strings/is-string-safe-to-wrap-baseline.ts`),
  * the same reasoning `../javascript/adapter.ts`'s own doc comment gives
  * for omitting it there.
  */
@@ -28,11 +28,11 @@ function buildAdapter(descriptor: LanguageDescriptor): LanguageAdapter {
 }
 
 /**
- * TypeScript's `LanguageAdapter` — see `./descriptor.ts` for why TSX gets
+ * TypeScript's `LanguageAdapter` -- see `./descriptor.ts` for why TSX gets
  * its own sibling adapter (`typescriptReactAdapter`) rather than an
  * alias of this one.
  */
 export const typescriptAdapter: LanguageAdapter = buildAdapter(typescriptDescriptor);
 
-/** TSX's `LanguageAdapter` — same shared logic, `tree-sitter-tsx.wasm` grammar. */
+/** TSX's `LanguageAdapter` -- same shared logic, `tree-sitter-tsx.wasm` grammar. */
 export const typescriptReactAdapter: LanguageAdapter = buildAdapter(typescriptReactDescriptor);

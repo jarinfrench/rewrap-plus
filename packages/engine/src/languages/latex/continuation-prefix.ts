@@ -8,15 +8,15 @@
  * own first `parts` entry starts *after* `\item`/`[label]`
  * (`./discover-prose.ts`'s `buildEnumItemStartColumns`), but a
  * continuation line should align under the `\item` marker itself, not
- * under where the item's own text happens to start — "new lines match the
+ * under where the item's own text happens to start -- "new lines match the
  * line above," Rewrap's own convention for this case.
  *
  * Much simpler than Markdown's `markdownContinuationPrefix`
  * (`../markdown/continuation-prefix.ts`): LaTeX has no block-quote-style
  * prefix character that needs preserving on continuation lines while
- * everything else is blanked out — a `\item`'s hanging indent is *pure*
+ * everything else is blanked out -- a `\item`'s hanging indent is *pure*
  * whitespace, so this only ever needs the first line's own literal
- * leading whitespace, verbatim (tabs included, matching §6.3's "keep the
+ * leading whitespace, verbatim (tabs included, matching Sec. 6.3's "keep the
  * first line's literal leading whitespace as the prefix").
  */
 export function latexContinuationPrefix(firstLineText: string): string {

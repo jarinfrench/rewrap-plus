@@ -11,14 +11,14 @@ describe('escapeQuoteCollisions', () => {
   });
 
   it('never touches a quote character inside an already-escaped sequence', () => {
-    // `\'` is already a safe, atomic escape regardless of delimiter —
+    // `\'` is already a safe, atomic escape regardless of delimiter --
     // must not become `\\'`.
     expect(escapeQuoteCollisions(`it\\'s fine`, "'")).toBe(`it\\'s fine`);
     expect(escapeQuoteCollisions(`she said \\"hi\\"`, '"')).toBe(`she said \\"hi\\"`);
   });
 
   it('never touches a quote character inside a brace placeholder/interpolation', () => {
-    // Only the interpolation's own `'` characters are exempt — the same
+    // Only the interpolation's own `'` characters are exempt -- the same
     // characters written as bare text outside `{}` are real string
     // content and must still be escaped.
     expect(escapeQuoteCollisions(`value is {d['key']}`, "'")).toBe(`value is {d['key']}`);

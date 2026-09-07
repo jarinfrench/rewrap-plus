@@ -5,7 +5,7 @@ import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
 import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } from './dialect.js';
 
 /**
- * PowerShell comment-based help's flush-left `.Tag` keywords — the fixed
+ * PowerShell comment-based help's flush-left `.Tag` keywords -- the fixed
  * vocabulary Microsoft's `about_Comment_Based_Help` defines (`.SYNOPSIS`,
  * `.DESCRIPTION`, `.PARAMETER`, `.EXAMPLE`, `.INPUTS`, `.OUTPUTS`,
  * `.NOTES`, `.LINK`, `.COMPONENT`, `.ROLE`, `.FUNCTIONALITY`,
@@ -15,7 +15,7 @@ import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } f
  * has real overlap with ordinary prose (a sentence resuming after a
  * period, `.NET` mentioned inline) in a way an `@`/`\`-prefixed marker
  * essentially never does, so restricting to PowerShell's own real
- * keyword vocabulary is what keeps this from misreading prose as a tag —
+ * keyword vocabulary is what keeps this from misreading prose as a tag --
  * the same "known vocabulary, not just an unrecognized-shape sentinel"
  * guard `./google.ts`'s `KNOWN_SECTIONS` already uses for the identical
  * reason.
@@ -42,7 +42,7 @@ const HELP_TAG = /^\.([A-Za-z]+)\b/;
 
 /**
  * A `.Tag` line: flush left, starting with a recognized dot-tag (`.SYNOPSIS`,
- * `.PARAMETER`, ...). Returns the full original line text unchanged — a
+ * `.PARAMETER`, ...). Returns the full original line text unchanged -- a
  * `.PARAMETER Name` line's own parameter name stays part of the header
  * text verbatim rather than being parsed out, the identical "don't
  * hardcode a per-tag argument grammar" call `./jsdoc.ts`'s own doc
@@ -66,12 +66,12 @@ interface HelpSection {
 
 /**
  * Split dissolved comment-based-help text into an optional prose preamble
- * plus a flat run of tag sections — unlike Javadoc/JSDoc/Doxygen's
+ * plus a flat run of tag sections -- unlike Javadoc/JSDoc/Doxygen's
  * `groupFieldEntries` shape (a label followed by description on the same
  * line, or on *further-indented* continuation lines), PowerShell's own
  * convention writes a `.Tag` alone on its line and its description as
  * ordinary flush-left prose immediately after, at the *same* indent as
- * the tag itself — structurally identical to `./google.ts`'s
+ * the tag itself -- structurally identical to `./google.ts`'s
  * `Args:`/`Returns:` section-header shape, not to a field-entry list, so
  * this reuses that shape (a header line, then body lines until the next
  * recognized header) rather than `groupFieldEntries`, which would
@@ -108,7 +108,7 @@ function splitIntoSections(lines: readonly string[]): {
  * run of `.SYNOPSIS`/`.DESCRIPTION`/`.PARAMETER`/... sections, each a
  * header line followed by ordinary reflowed prose. Governs a
  * `'docComment'` region (a `<# ... #>` block, per
- * `../comments/wrap-doc-comment.ts`) for PowerShell — see
+ * `../comments/wrap-doc-comment.ts`) for PowerShell -- see
  * `../languages/powershell/adapter.ts`'s own doc comment for how a
  * comment-based-help block is told apart from a plain `<# ... #>`
  * comment in the first place (both share the identical grammar node
@@ -121,7 +121,7 @@ export const commentBasedHelpDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized tag lines found,
-   * saturating quickly — the identical curve and rationale as
+   * saturating quickly -- the identical curve and rationale as
    * `jsdocDialect.detect`/`doxygenDialect.detect`/`javadocDialect.detect`:
    * a single `.PARAMETER` is already strong, distinctive evidence, and
    * `KNOWN_TAGS`'s fixed vocabulary (see its own doc comment) is what

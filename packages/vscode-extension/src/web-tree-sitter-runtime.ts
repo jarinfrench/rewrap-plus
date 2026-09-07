@@ -1,14 +1,14 @@
 /**
  * Loads the real `web-tree-sitter` package at runtime via a path esbuild
  * cannot statically resolve, rather than a bare `import`/`require`
- * specifier — `esbuild.config`'s `alias` option (`scripts/build.mjs`)
+ * specifier -- `esbuild.config`'s `alias` option (`scripts/build.mjs`)
  * redirects every `from 'web-tree-sitter'` specifier in the bundle
  * (including inside `@rewrap-plus/engine`'s own compiled source, several
  * bundling steps removed from this file) here, so this is the one place
  * the real package actually loads.
  *
  * Two problems, not one, forced this rather than the simpler "mark
- * `web-tree-sitter` external" — see `scripts/build.mjs`'s top comment for
+ * `web-tree-sitter` external" -- see `scripts/build.mjs`'s top comment for
  * the first (bundling its ESM build breaks its own WASM loading via
  * `import.meta.url`, fixed by resolving its `.cjs` build instead). The
  * second only showed up while wiring up packaging (commit 2):
@@ -19,10 +19,10 @@
  * hoisted root `node_modules` isn't reachable from a packaged `.vsix`)
  * created a second, worse one: `vsce`'s own packaging file-walk
  * hardcodes `ignore: 'node_modules/**'` on this package's own directory,
- * unconditionally — no `.vscodeignore` negation can override it, so that
+ * unconditionally -- no `.vscodeignore` negation can override it, so that
  * copy could never actually ship. The only alternative `vsce` offers,
  * its own dependency-resolution walk (the default when *not* passing
- * `--no-dependencies`), shells out to `npm list --production` — which in
+ * `--no-dependencies`), shells out to `npm list --production` -- which in
  * an npm-workspaces monorepo reports the *workspace root* as a
  * "dependency directory" too, so `vsce` tries to glob-and-package the
  * entire repository (confirmed directly: `vsce ls` from this package
@@ -41,7 +41,7 @@ import * as path from 'node:path';
 // A *computed* argument, deliberately: esbuild only resolves `require()`
 // calls with a literal string argument at bundle time, so this one
 // passes through untouched, executing as a genuine Node `require()` at
-// runtime against whatever `__dirname` actually is — `dist/`, once
+// runtime against whatever `__dirname` actually is -- `dist/`, once
 // bundled, the same directory `copyWebTreeSitter()` copies
 // `web-tree-sitter.cjs` into a `web-tree-sitter-runtime/` subdirectory
 // of. That `.cjs` build locates its own WASM via `__dirname` too (a real

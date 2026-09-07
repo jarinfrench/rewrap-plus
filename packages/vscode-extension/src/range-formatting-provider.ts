@@ -4,14 +4,14 @@
  * same). This gives "Format Selection" integration for free, and VSCode
  * supplies the full document range automatically for "Format Document"
  * when a language has a range formatter but no whole-document
- * formatter registered — so this one provider covers both selection and
+ * formatter registered -- so this one provider covers both selection and
  * whole-document formatting without duplicated logic. The explicit
  * commands (`rewrapPlus.wrapAtCursor`, `.wrapSelection`, `.wrapDocument`)
  * stay registered too, for keybinding purposes VSCode's formatting
  * commands don't cover on their own.
  *
  * Unlike the commands, a formatting provider must *return* its edits
- * rather than apply them — the editor applies them itself as part of
+ * rather than apply them -- the editor applies them itself as part of
  * its own formatting flow (including that flow's own undo grouping), so
  * this uses `computeWrapResult` (compute only) rather than
  * `computeAndApplyWrap`.

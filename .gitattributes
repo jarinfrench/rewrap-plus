@@ -1,9 +1,9 @@
 # This repository standardizes on LF line endings throughout (decision of
-# record, see CLAUDE.md — supersedes the earlier CRLF decision). Without
+# record, see CLAUDE.md -- supersedes the earlier CRLF decision). Without
 # this file, git's own line-ending normalization is a silent trap: a
 # checkout on a platform/config where `core.autocrlf` behaves differently
 # can rewrite every text file's line endings on clone, and a contributor's
-# local `core.autocrlf=true` can silently convert LF to CRLF on checkout —
+# local `core.autocrlf=true` can silently convert LF to CRLF on checkout --
 # in both cases producing a tree that no longer matches what every fixture
 # in this repo assumes, without any diff showing why. `text=auto eol=lf`
 # on every extension normalizes line endings to LF on checkin and checkout
@@ -13,18 +13,18 @@
 # This isn't cosmetic. `packages/engine/test/fixtures/**` includes gold
 # fixtures whose expected output depends on the exact line-ending sequence
 # between wrapped lines (see `docs/adapters.md`, "CRLF handling" for the
-# concrete bug this exact gap caused) — none of them depend on being
+# concrete bug this exact gap caused) -- none of them depend on being
 # CRLF-on-disk themselves (that's exercised via in-memory-constructed
 # sources in the test suite instead, not via committed fixture bytes), so
 # normalizing every fixture to LF doesn't change what any test verifies.
 # A `.gitattributes`-less checkout, or one that reverts to CRLF, is the
 # single most likely way to silently reintroduce *mixed* line endings
-# within a file — exactly the failure mode this file exists to prevent,
+# within a file -- exactly the failure mode this file exists to prevent,
 # regardless of which single convention (LF or CRLF) is chosen.
 
 * text=auto eol=lf
 
-# Binary grammar artifacts — never subject to line-ending normalization.
+# Binary grammar artifacts -- never subject to line-ending normalization.
 *.wasm -text
 *.vsix -text
 *.png -text

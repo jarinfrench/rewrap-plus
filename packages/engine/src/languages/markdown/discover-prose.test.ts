@@ -27,7 +27,7 @@ function partsText(source: string, region: ReturnType<typeof discoverMarkdownPro
   return region.parts.map((part) => (lines[part.startRow] ?? '').slice(part.startColumn, part.endColumn));
 }
 
-describe('discoverMarkdownProse — basic geometry', () => {
+describe('discoverMarkdownProse -- basic geometry', () => {
   it('discovers a single-line paragraph as one region with the whole line as its one part', () => {
     const source = 'hello world\n';
     const regions = discoverMarkdownProse(parse(source), source, 'markdown', {});
@@ -142,7 +142,7 @@ describe('discoverMarkdownProse — basic geometry', () => {
   });
 });
 
-describe('discoverMarkdownProse — §5.2 exclusions', () => {
+describe('discoverMarkdownProse -- Sec. 5.2 exclusions', () => {
   it('excludes a setext heading\'s own text', () => {
     const source = 'Heading Text\n============\n\nBody paragraph.\n';
     const regions = discoverMarkdownProse(parse(source), source, 'markdown', {});
@@ -187,7 +187,7 @@ describe('discoverMarkdownProse — §5.2 exclusions', () => {
   });
 });
 
-describe('discoverMarkdownProse — §5.6 verbatim node types produce no region', () => {
+describe('discoverMarkdownProse -- Sec. 5.6 verbatim node types produce no region', () => {
   it.each([
     ['atx heading', '# A Heading\n'],
     ['fenced code block', '```\ncode here\n```\n'],

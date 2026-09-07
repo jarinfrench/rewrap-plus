@@ -2,22 +2,22 @@
 
 Rewrap+ itself is MIT-licensed (see [LICENSE](./LICENSE)). This file
 covers the third-party code the packaged VSCode extension actually
-bundles or vendors — not every devDependency in `package-lock.json`
+bundles or vendors -- not every devDependency in `package-lock.json`
 (build/test tooling like `vitest`, `eslint`, `esbuild`, `@vscode/vsce`,
 etc. never ships in the `.vsix`, so it isn't covered here).
 
 Every component below is **MIT-licensed**, the same license as this
-project — no license-compatibility conflict, and no reason to reconsider
+project -- no license-compatibility conflict, and no reason to reconsider
 the MIT-vs-Apache-2.0 choice made for this project. `web-tree-sitter` and
 most of the grammars below share one author (Max Brunsfeld, the
-tree-sitter project's creator) — but not all of them: `tree-sitter-java`'s
+tree-sitter project's creator) -- but not all of them: `tree-sitter-java`'s
 own `LICENSE` names Ayman Nadeem as copyright holder, not Max Brunsfeld,
 despite living in the same `tree-sitter` GitHub organization as the
 Brunsfeld-authored grammars above it; the Markdown and LaTeX grammars
 below are each maintained separately again (Matthias Deiml; Patrick
 Förster). The shared authorship among some entries was always incidental
-to the license analysis, not load-bearing for it — every entry here is
-independently confirmed MIT regardless of who holds the copyright — and
+to the license analysis, not load-bearing for it -- every entry here is
+independently confirmed MIT regardless of who holds the copyright -- and
 that stays true as the grammar set diversifies.
 
 ## `web-tree-sitter`
@@ -206,7 +206,7 @@ SOFTWARE.
   packaged extension's `grammars/` directory at build time. Backs the
   `java` language adapter (`packages/engine/src/languages/java/`). Full
   provenance is in `packages/engine/grammars/PROVENANCE.md`.
-- **License:** MIT — note the copyright holder here is **Ayman Nadeem**,
+- **License:** MIT -- note the copyright holder here is **Ayman Nadeem**,
   not Max Brunsfeld (see this file's intro above); confirmed directly
   from the `LICENSE` file inside the `tree-sitter-java@0.23.5` npm
   tarball, not assumed from the package's declared `license` field alone.
@@ -243,7 +243,7 @@ SOFTWARE.
   the packaged extension's `grammars/` directory at build time. Backs the
   `markdown` language adapter. Unlike every other grammar in this file,
   this one was vendored from a GitHub release asset rather than an npm
-  tarball — full provenance, including the attestation-verification
+  tarball -- full provenance, including the attestation-verification
   steps, is in `packages/engine/grammars/PROVENANCE.md`.
 - **License:** MIT.
 - **Source:** <https://github.com/tree-sitter-grammars/tree-sitter-markdown>.
@@ -279,7 +279,7 @@ SOFTWARE.
   packaged extension's `grammars/` directory at build time. Backs the
   `latex` language adapter. Built locally from the
   `@pfoerster/tree-sitter-latex` npm package's generated `src/parser.c`
-  with a pinned `tree-sitter-cli` — this grammar's upstream repo publishes
+  with a pinned `tree-sitter-cli` -- this grammar's upstream repo publishes
   no prebuilt `.wasm` at all, so unlike every other grammar in this file
   it is self-built provenance rather than an unmodified upstream asset.
   Full provenance, including the exact build recipe and inputs, is in
@@ -319,6 +319,6 @@ Whenever `packages/engine/grammars/PROVENANCE.md` gains a new grammar
 entry (a new language's `.wasm`, per
 [`docs/adding-a-language.md`](./docs/adding-a-language.md)) or
 `web-tree-sitter`'s pinned version changes license terms, add or update
-the corresponding section above in the same commit — this file should
+the corresponding section above in the same commit -- this file should
 never describe a different set of bundled components than what
 `scripts/build.mjs` and `PROVENANCE.md` actually ship.

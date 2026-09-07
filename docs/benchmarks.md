@@ -5,20 +5,20 @@ behind that, and what to expect if you run it on a big document.
 
 ## What's measured
 
-- **Wrap Document** — every wrappable comment, docstring, and string in the
+- **Wrap Document** -- every wrappable comment, docstring, and string in the
   file is reflowed in one pass.
-- **Wrap at Cursor** (and format-on-save) — a single region is reflowed at
+- **Wrap at Cursor** (and format-on-save) -- a single region is reflowed at
   your cursor position, or wherever you just saved.
 
 Both were timed against a synthetic file with an unrealistic density of
-wrappable content — roughly one long comment and one long string every 10
+wrappable content -- roughly one long comment and one long string every 10
 lines. Real code wraps a much smaller fraction of its lines than that, so
 these numbers are a worst case: a typical file of the same size should do
 at least as well, usually noticeably better.
 
 ## Results
 
-The two tables immediately below are **Python's** numbers — the
+The two tables immediately below are **Python's** numbers -- the
 language this benchmarking work originally profiled, and profiled most
 deeply (see the two real quadratic-cost bugs found and fixed while doing
 so, described in `packages/engine/test/hardening/large-file-performance.test.ts`'s
@@ -38,19 +38,19 @@ Python included.
 ### Wrap at Cursor / format-on-save (Python)
 
 **~30 ms** once the file's language grammar is warm, regardless of the
-surrounding file's size — comfortably under the ~50 ms it takes for a
+surrounding file's size -- comfortably under the ~50 ms it takes for a
 save or a keystroke-triggered wrap to feel instant rather than laggy.
-LaTeX is the one exception to "regardless of file size" — see its own
+LaTeX is the one exception to "regardless of file size" -- see its own
 section below.
 
 Measured on ordinary development hardware, not dedicated benchmark
-hardware — treat these as representative, not a guarantee for every
+hardware -- treat these as representative, not a guarantee for every
 machine.
 
 ### JavaScript, TypeScript, C++, and Java
 
-Unlike Python's numbers above — each individually profiled, with real
-quadratic-cost bugs found and fixed along the way — the numbers below are
+Unlike Python's numbers above -- each individually profiled, with real
+quadratic-cost bugs found and fixed along the way -- the numbers below are
 what the engine's own performance-regression suite
 (`packages/engine/test/hardening/large-file-performance.test.ts`) measures
 directly, timing the identical worst-case synthetic file shape described
@@ -59,10 +59,10 @@ under "What's measured" above (one long comment and one long string every
 shares. They're a real one-time measurement (`npx vitest run
 test/hardening/large-file-performance.test.ts --reporter=verbose` from
 `packages/engine`, reading each test's own reported wall time), not a
-placeholder — but that suite exists as a regression guard first and a
+placeholder -- but that suite exists as a regression guard first and a
 benchmark second, so its actual asserted bounds are deliberately far
 looser than these numbers (generous headroom for machine variance and
-future feature work, not a tight SLA — see that file's own doc comment).
+future feature work, not a tight SLA -- see that file's own doc comment).
 
 **Wrap Document**
 
@@ -75,7 +75,7 @@ future feature work, not a tight SLA — see that file's own doc comment).
 **Wrap at Cursor / format-on-save**, warm grammar, measured on the same
 5,000-line file used for every language in that test file: **~90 ms**
 (JavaScript), **~125 ms** (TypeScript), **~125 ms** (C++), **~75 ms**
-(Java) — all, like Python's ~30 ms above, independent of the surrounding
+(Java) -- all, like Python's ~30 ms above, independent of the surrounding
 file's size. Higher than Python's own ~30 ms, but still comfortably under
 the ~50-200 ms range that suite's own `nearCursorBoundMs` treats as
 "near-instant" for every language before LaTeX; the gap against Python is
@@ -87,7 +87,7 @@ of a real per-language difference.
 
 Markdown flips the density story above: in a real Markdown document,
 nearly every line *is* wrappable prose, so there's no "unrealistic worst
-case" to construct — an ordinary document already looks like one.
+case" to construct -- an ordinary document already looks like one.
 
 | File size | Time |
 |---|---|
@@ -96,7 +96,7 @@ case" to construct — an ordinary document already looks like one.
 | 50,000 lines | 1.9 s |
 
 Wrap at Cursor stays the same **regardless of file size** as every other
-language — ~140 ms warm, in a 5,000-line file.
+language -- ~140 ms warm, in a 5,000-line file.
 
 Two edge cases worth naming specifically, since they're shapes no code
 file produces: a paragraph nested 200 block quotes deep still wraps in
@@ -108,8 +108,8 @@ about 120 ms.
 ### LaTeX
 
 Like Markdown, an ordinary LaTeX document is already close to
-worst-case wrappable-content density — mostly prose, not "mostly code
-with the occasional comment" — so these numbers use the same kind of
+worst-case wrappable-content density -- mostly prose, not "mostly code
+with the occasional comment" -- so these numbers use the same kind of
 realistic, not artificially inflated, source.
 
 | File size | Time |
@@ -130,19 +130,19 @@ language, LaTeX's Wrap at Cursor time **does grow with file size**.
 Two real, once-significant costs inside that scan were found and
 fixed while investigating this. First: the scan originally made
 sixteen separate whole-tree `descendantsOfType` calls (one per node
-type it cares about — masked-environment kinds, sectioning commands,
+type it cares about -- masked-environment kinds, sectioning commands,
 `\item`s, ...); `web-tree-sitter`'s own `descendantsOfType` accepts an
 array of types and does the equivalent of one combined walk for all of
 them at once, so replacing sixteen single-type calls with one
-sixteen-type call measured **~17× faster** on its own (a 50,000-line
-file: ~1.7s → ~0.1s for that portion alone) — this was the dominant
+sixteen-type call measured **~17x faster** on its own (a 50,000-line
+file: ~1.7s -> ~0.1s for that portion alone) -- this was the dominant
 cost in the whole scan, well ahead of parsing the same file (~0.7s).
 Second, found while chasing this same "still scales with file size"
 concern further: a separate, redundant `Query.captures` pass the scan
 made to classify each `%` comment as whole-line or trailing
 (`(line_comment) @comment`, the identical query `discoverRegions`'s
 own shared comment-discovery pass already runs once) cost a further
-~200-350ms of its own on a 50,000-line file — confirmed, by direct
+~200-350ms of its own on a 50,000-line file -- confirmed, by direct
 profiling, to cost that much **regardless of match count** (even with
 zero actual comments in the file), meaning `web-tree-sitter` query
 *execution* here scales with tree size, not result size, unlike the
@@ -152,7 +152,7 @@ plain tree walk, not a compiled-query execution, so it has no
 comparable per-call floor) removed that second pass entirely.
 
 Wrap at Cursor dropped as a result of both fixes combined: ~80 ms at
-1,000 lines, ~230 ms at 5,000, ~800 ms at 20,000, ~1.7 s at 50,000 —
+1,000 lines, ~230 ms at 5,000, ~800 ms at 20,000, ~1.7 s at 50,000 --
 still confirmed linear, not quadratic, and still a real, user-visible
 cost for a very large single `.tex` file, now dominated by parse time
 itself (a cost every language pays, not LaTeX-specific) plus
@@ -163,22 +163,22 @@ documents (a single chapter, an article, even a long thesis chapter)
 are well under a thousand lines, where this stays comfortably fast; a
 single file in the tens of thousands of lines is the case where it's
 still noticeable, and a further fix would mean touching how
-`wrapRegions` scopes discovery to a target in the first place — a
+`wrapRegions` scopes discovery to a target in the first place -- a
 larger, cross-cutting change affecting every adapter, not something
-specific to this one. (Incremental parsing — reusing a previous parse
+specific to this one. (Incremental parsing -- reusing a previous parse
 tree via `web-tree-sitter`'s own `Tree.edit`/edit-aware `Parser.parse`
-— was investigated as an alternative and set aside: profiled directly
-with correctly-computed edit positions, it measured only ~1.7-2×
+-- was investigated as an alternative and set aside: profiled directly
+with correctly-computed edit positions, it measured only ~1.7-2x
 faster than a full reparse here, and, tellingly, an edit near the
-start of a 50,000-line file was no faster than one near the end — this
+start of a 50,000-line file was no faster than one near the end -- this
 grammar/binding isn't achieving the "cost independent of file size"
 behavior incremental parsing is supposed to provide, so it wasn't a
 productive lever for the size of change it would require.)
 
 Two edge cases worth naming specifically, both also improved by these
 fixes: 2,000 small masked environments (`\begin{verbatim}`/`\end{verbatim}`)
-interspersed with 2,000 wrapped paragraphs — deliberately the worst
-realistic shape for `isRowMasked`'s per-row mask scan — wraps in about
+interspersed with 2,000 wrapped paragraphs -- deliberately the worst
+realistic shape for `isRowMasked`'s per-row mask scan -- wraps in about
 1.1 s (was ~1.5 s before either fix); 5,000 separate `\item` entries in
 one list (5,000 individually-wrapped regions, a meaningfully different
 cost shape from one giant region) take about 1.6 s (was ~2.1 s),
@@ -189,8 +189,8 @@ measurement across several sizes.
 
 Wrapping an entire document over 2,000 lines shows a progress
 notification you can cancel, rather than the editor appearing to hang.
-Ordinary files — including the large majority of real source files, well
-past 2,000 lines at realistic (much lower) wrappable-content density —
+Ordinary files -- including the large majority of real source files, well
+past 2,000 lines at realistic (much lower) wrappable-content density --
 finish with no visible delay at all.
 
 Format-on-save never delays a save either: if a wrap can't finish quickly,

@@ -13,7 +13,7 @@ import { wrapRegions } from '../../src/wrap.js';
  * Adversarial stress coverage for `docs/planning/nested-field-entry-structure-plan.md`'s
  * whole `fieldEntry.blocks` change (steps 1-7) and its regression fixes,
  * written after that plan's own commits landed rather than during any one
- * step — a deliberate second pass hunting for combinations no single
+ * step -- a deliberate second pass hunting for combinations no single
  * step's own fixtures happened to construct. Every case here is an
  * end-to-end `wrapRegions` round trip, not a unit-level `Block` check:
  * extreme column limits, empty/blank-only descriptions, an unbreakable
@@ -26,7 +26,7 @@ import { wrapRegions } from '../../src/wrap.js';
  *
  * This file directly found and fixed two real bugs no committed fixture
  * had caught (both now covered by dedicated regression tests elsewhere
- * too — `reflow-block.test.ts`'s own verbatim/blank-line cases and
+ * too -- `reflow-block.test.ts`'s own verbatim/blank-line cases and
  * `decorate-block.test.ts`'s "genuinely empty content" case): a blank
  * *line* inside a `verbatim` block's own content picking up
  * `hangingIndent` trailing whitespace, and a `fieldEntry` whose
@@ -35,7 +35,7 @@ import { wrapRegions } from '../../src/wrap.js';
  * fix for the second bug (`../../src/reflow/decorate-block.ts`'s
  * `decorateFirstLine`, trimming a dangling separator space when there's
  * no content to separate it from) also happened to fix a third,
- * genuinely *pre-existing* bug found along the way — a fully empty
+ * genuinely *pre-existing* bug found along the way -- a fully empty
  * `fieldEntry` (`blocks: []`, the `only-blanks` case below) had always
  * produced a trailing space after its own label or marker, predating
  * this plan entirely (`greedyFill`/`balancedFill`'s own `atoms.length
@@ -108,7 +108,7 @@ async function stress(
   }
 }
 
-describe('stress: nested field-entry structure — adversarial inputs beyond the committed suite', () => {
+describe('stress: nested field-entry structure -- adversarial inputs beyond the committed suite', () => {
   it('extreme narrow column limits do not crash or corrupt (Google, mixed nested content)', async () => {
     const source = `def f(target):
     """Summary.
@@ -144,12 +144,12 @@ describe('stress: nested field-entry structure — adversarial inputs beyond the
     pass
 `;
     // A genuinely-empty fieldEntry (blocks: []) used to produce a
-    // trailing space after the label — a real, pre-existing bug
+    // trailing space after the label -- a real, pre-existing bug
     // (predating this plan entirely: `greedyFill`'s own `atoms.length
     // === 0` case glued straight into `markerPrefix`'s unconditional
     // separating space) fixed as a side effect of
     // `decorate-block.ts`'s own trailing-whitespace fix for the
-    // `blocks[0]`-is-blank regression, below — confirmed here with no
+    // `blocks[0]`-is-blank regression, below -- confirmed here with no
     // exception needed.
     await stress('only-blanks', source, 'python', [30, 50]);
   }, 30000);
@@ -169,7 +169,7 @@ describe('stress: nested field-entry structure — adversarial inputs beyond the
     await stress('long-url-in-list', source, 'python', [20, 40, 50]);
   }, 30000);
 
-  it('unicode/wide characters in nested list content (ASCII label — non-ASCII identifiers in the label itself are a separate, pre-existing FIELD_ENTRY_LINE regex limitation, not this diff)', async () => {
+  it('unicode/wide characters in nested list content (ASCII label -- non-ASCII identifiers in the label itself are a separate, pre-existing FIELD_ENTRY_LINE regex limitation, not this diff)', async () => {
     const source = `def f(target):
     """Summary.
 
@@ -232,7 +232,7 @@ describe('stress: nested field-entry structure — adversarial inputs beyond the
     await stress('deep-nesting', source, 'python', [40, 50, 80]);
   }, 30000);
 
-  it('description opens directly with verbatim (blocks[0] is a fence, no leading prose) — Google', async () => {
+  it('description opens directly with verbatim (blocks[0] is a fence, no leading prose) -- Google', async () => {
     const source = `def f(target):
     """Summary.
 
@@ -248,7 +248,7 @@ describe('stress: nested field-entry structure — adversarial inputs beyond the
     await stress('blocks0-verbatim-google', source, 'python', [30, 50, 80]);
   }, 30000);
 
-  it('description opens directly with a bullet (blocks[0] is a listItem, no leading prose) — Google, multi-line item', async () => {
+  it('description opens directly with a bullet (blocks[0] is a listItem, no leading prose) -- Google, multi-line item', async () => {
     const source = `def f(target):
     """Summary.
 

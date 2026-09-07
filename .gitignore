@@ -11,7 +11,7 @@ out-test/
 *.tsbuildinfo
 
 # Grammar WASM copied into the extension package by
-# packages/vscode-extension/scripts/build.mjs — the checked-in original
+# packages/vscode-extension/scripts/build.mjs -- the checked-in original
 # lives in packages/engine/grammars/ (see that dir's PROVENANCE.md).
 packages/vscode-extension/grammars/
 
@@ -42,6 +42,6 @@ Thumbs.db
 .env
 .env.local
 
-# Local planning/handoff docs — private roadmap and design notes, not
+# Local planning/handoff docs -- private roadmap and design notes, not
 # published. See docs/planning/ for what lives here.
 docs/planning/

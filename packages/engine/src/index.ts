@@ -3,10 +3,10 @@
  *
  * Re-exports the engine's public type surface, built up in layers.
  *
- * The foundation is the shared vocabulary used throughout the engine —
+ * The foundation is the shared vocabulary used throughout the engine --
  * spans and edits, the wrappable region model, wrap configuration, the
  * language adapter interface and registry, and the logical
- * document/block model — plus `PositionMapper`, the one place that
+ * document/block model -- plus `PositionMapper`, the one place that
  * converts between tree-sitter's UTF-8 byte offsets and VSCode's UTF-16
  * positions. On top of that sits the parser layer: `ParserManager`
  * (lazy, cached `web-tree-sitter` grammar loading) and
@@ -17,7 +17,7 @@
  * that exercises it end to end.
  *
  * `splitBlocks` is the shared, language-agnostic segmenter that turns
- * dissolved region text into a `Block[]` — paragraphs and blank lines,
+ * dissolved region text into a `Block[]` -- paragraphs and blank lines,
  * list items with hanging indents, and verbatim regions (fenced code,
  * doctests, Markdown tables, reST `::`-triggered literal blocks, and
  * indented blocks under `preserveIndentedBlocks`).
@@ -26,12 +26,12 @@
  * Wide/Fullwidth and combining-character-aware column counting,
  * replacing an earlier `text.length` stand-in) and the
  * unbreakable-unit-aware atom segmentation it feeds (`atomizeWords`,
- * internal — escape sequences, format placeholders, f-string
+ * internal -- escape sequences, format placeholders, f-string
  * interpolations, inline code spans, and reST roles are never split,
  * even at their own internal whitespace); and `reflowBlock`, the
  * line-breaking algorithm itself, in both a `'greedy'` first-fit mode
  * (the default) and an optional `'balanced'` minimum-raggedness mode.
- * `reflowBlock` reflows atoms only — dissolve and emit, which turn a
+ * `reflowBlock` reflows atoms only -- dissolve and emit, which turn a
  * `WrappableRegion`'s raw text into blocks and back into re-escaped,
  * re-delimited source text, are separate concerns, handled respectively
  * for comments and for docstrings/strings.

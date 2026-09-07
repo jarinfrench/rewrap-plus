@@ -1,4 +1,4 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: verify how tree-sitter-cpp tokenizes consecutive `///`
 // lines and a plain `/* */` block, before writing dissolve/emit code for
 // either (this project's "probe before coding, always" rule).

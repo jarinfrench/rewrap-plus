@@ -33,7 +33,7 @@ describe('tomlAdapter', () => {
     expect(regions).toHaveLength(2);
   });
 
-  it('discovers nothing else besides comments — no string-literal region kind exists here', () => {
+  it('discovers nothing else besides comments -- no string-literal region kind exists here', () => {
     const source = 'key = "a plain TOML string value, never a wrappable region"\n';
     const tree = parser.parse(source)!;
     const regions = discoverRegions(tomlAdapter, tree, source, 'toml');

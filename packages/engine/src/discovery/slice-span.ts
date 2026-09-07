@@ -4,15 +4,15 @@ import type { SourceSpan } from '../types/span.js';
  * Extract the literal source text covered by `span` from `source`.
  *
  * `SourceSpan`'s row/column fields are UTF-16 code-unit positions (see
- * `../types/span.ts`) — the same units a plain JS string is natively
- * indexed in — so this needs no byte-offset conversion and no
+ * `../types/span.ts`) -- the same units a plain JS string is natively
+ * indexed in -- so this needs no byte-offset conversion and no
  * `PositionMapper`; it only needs to know where each line starts.
  *
  * This is a generic, language-independent utility (it knows nothing about
  * tree-sitter or Python): anything holding a `SourceSpan` and the original
- * `source` text — most notably a hook like `LanguageAdapter.isSafeToWrap`,
+ * `source` text -- most notably a hook like `LanguageAdapter.isSafeToWrap`,
  * which only receives a `WrappableRegion` and `source`, not a live syntax
- * node — can use it to recover the exact text of one part of a region.
+ * node -- can use it to recover the exact text of one part of a region.
  *
  * Shares the CRLF caveat already noted on `PositionMapper`
  * (`../types/position-mapper.ts`): splitting on `\n` alone leaves a
@@ -23,8 +23,8 @@ import type { SourceSpan } from '../types/span.js';
  */
 // Single-entry, reference-equality cache of `source.split('\n')` for the
 // most recently seen `source` string. `wrapRegions` (`../wrap.ts`) calls
-// `sliceSpanText` once per region — directly, and indirectly through
-// several dissolve functions and `isSafeToWrap` — always with the exact
+// `sliceSpanText` once per region -- directly, and indirectly through
+// several dissolve functions and `isSafeToWrap` -- always with the exact
 // same `source` string reference for the whole of one invocation. Without
 // this, every one of those calls re-split the entire file from scratch,
 // making "wrap every region in the file" quadratic in file size: a
@@ -37,7 +37,7 @@ import type { SourceSpan } from '../types/span.js';
 // all any real call site benefits from, and a long-lived process (the
 // VSCode extension host, wrapping many different large files over a
 // session) never accumulates memory for files it's done with. Reference
-// equality (`===`), not content equality, is the right comparison here —
+// equality (`===`), not content equality, is the right comparison here --
 // it's `O(1)` rather than `O(source length)`, and every real caller
 // passes the identical string object through, never a same-content copy.
 let cachedSource: string | undefined;
@@ -56,14 +56,14 @@ function splitLinesCached(source: string): string[] {
 /**
  * Prime this module's single-entry cache with a `source.split('\n')` the
  * caller already computed, so the first `sliceSpanText` call for `source`
- * reuses it instead of redundantly re-splitting — `wrapRegions` (`../wrap.ts`)
+ * reuses it instead of redundantly re-splitting -- `wrapRegions` (`../wrap.ts`)
  * already splits `source` once, up front, for its own line-ending
  * detection, and calls this immediately after so that split is the *only*
  * one paid per `wrapRegions` invocation rather than one more on top of it.
  *
  * Safe to call with the exact array a caller is about to reuse elsewhere
  * too (nothing in this module ever mutates `cachedLines`), and safe to
- * call multiple times or not at all — same reference-equality contract
+ * call multiple times or not at all -- same reference-equality contract
  * `splitLinesCached` above already has, just populated eagerly instead of
  * lazily on first `sliceSpanText` call.
  */

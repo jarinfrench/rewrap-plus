@@ -45,7 +45,7 @@ describe('emitString', () => {
     expect(result).toBe('("alpha " +\n    "beta " +\n    "gamma " +\n    "delta")');
   });
 
-  it('preserves the space at every split point — concatenating every part reconstructs the original text exactly', () => {
+  it('preserves the space at every split point -- concatenating every part reconstructs the original text exactly', () => {
     // The plan's own named central risk: "Preserve the trailing space at
     // split points... the single most likely source of silent behavior
     // change; test it hard."
@@ -81,7 +81,7 @@ describe('emitString', () => {
   it('is idempotent across the needsParens transition a real first-wrap/re-wrap causes', () => {
     // Regression: a bare assignment's first wrap has needsParens=true and
     // indentColumn pointing at the bare string's own column. Once wrapped,
-    // the SAME logical text sits inside its own freshly-inserted parens —
+    // the SAME logical text sits inside its own freshly-inserted parens --
     // a re-wrap sees needsParens=false and an indentColumn one column
     // further right (the string now starts just past the inserted `(`).
     // Both the reflowed line breaks and the physical text must come out
@@ -93,7 +93,7 @@ describe('emitString', () => {
     const text = 'This message is intentionally long so that it exceeds the limit and must be wrapped.';
     const first = emitString(text, '', '"', 10, 4, true, 'implicit', 60);
     // Re-wrapping: the string's own column shifts right by one (the `(`
-    // now precedes it on the same line, unchanged from the first pass —
+    // now precedes it on the same line, unchanged from the first pass --
     // the surrounding parens are never part of what emitString itself
     // returns, only the region between them), and it's already grouped.
     const second = emitString(text, '', '"', 11, 4, false, 'implicit', 60);
@@ -104,7 +104,7 @@ describe('emitString', () => {
     // Regression: `atomizeWords` drops any whitespace trailing the final
     // atom (nothing follows it to be "between"), which `reinsertSplitSpaces`
     // used to only check for at interior split points, silently dropping a
-    // string's own trailing space even when it never gets split at all —
+    // string's own trailing space even when it never gets split at all --
     // e.g. `"Hello, " + name` re-emitting as `"Hello," + name`, a real
     // value change, not merely cosmetic.
     const result = emitString('Hello, ', '', '"', 4, 8, false, 'operator', 80);
@@ -119,15 +119,15 @@ describe('emitString', () => {
   });
 
   it('re-wraps quotes around empty content rather than dropping them', () => {
-    // Regression: a naive `atomizeWords('')` → zero atoms → zero reflowed
+    // Regression: a naive `atomizeWords('')` -> zero atoms -> zero reflowed
     // lines path would make `lines.length <= 1` return
     // `prefix + quoteDelimiter + (lines[0] ?? '') + quoteDelimiter` with
-    // `lines` itself `[]` rather than `['']` — the `lines[0] ?? ''` still
+    // `lines` itself `[]` rather than `['']` -- the `lines[0] ?? ''` still
     // saves it, but `reflowBlock`'s own `atoms.length === 0` guard
     // (`../reflow/reflow-block.ts`) is the first line of defense, and is
     // what's actually being exercised here. An empty string literal like
     // `""` must never lose its delimiters and become a bare `""`-less
-    // sequence — that's invalid syntax in every language this engine
+    // sequence -- that's invalid syntax in every language this engine
     // supports (e.g. Python's `x = ""` must never re-emit as `x =`).
     expect(emitString('', '', '"', 4, 8, false, 'implicit', 80)).toBe('""');
     expect(emitString('', 'f', '"', 4, 8, false, 'implicit', 80)).toBe('f""');

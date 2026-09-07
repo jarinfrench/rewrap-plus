@@ -28,9 +28,9 @@ describe('commentBasedHelpDialect.detect', () => {
     expect(commentBasedHelpDialect.detect('    .PARAMETER Name\nnested inside something else')).toBe(0);
   });
 
-  it('does not treat an unrecognized .word as a tag — only the fixed known vocabulary counts', () => {
+  it('does not treat an unrecognized .word as a tag -- only the fixed known vocabulary counts', () => {
     // Real prose can start a line with a period-prefixed word (".NET",
-    // a sentence continuation) — KNOWN_TAGS's fixed vocabulary is what
+    // a sentence continuation) -- KNOWN_TAGS's fixed vocabulary is what
     // keeps this dialect from misreading that as help-tag structure.
     expect(commentBasedHelpDialect.detect('.NET is a runtime, not a PowerShell help tag.')).toBe(0);
   });
@@ -53,7 +53,7 @@ describe('commentBasedHelpDialect.segment', () => {
 
   it("keeps .PARAMETER's own inline name as part of the header line, not parsed out", () => {
     // The identical "don't hardcode a per-tag argument grammar" call
-    // ../docs/jsdoc.ts already makes for `@param {Type} name` — see
+    // ../docs/jsdoc.ts already makes for `@param {Type} name` -- see
     // ./comment-based-help.ts's own doc comment.
     const text = ['.PARAMETER Name', 'The name of the thing.'].join('\n');
     const blocks = commentBasedHelpDialect.segment(text, {});

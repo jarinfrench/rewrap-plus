@@ -1,7 +1,7 @@
 import type { LanguageDescriptor } from '../../types/adapter.js';
 
 /**
- * TypeScript's `LanguageDescriptor`, plus TSX's — the second and third
+ * TypeScript's `LanguageDescriptor`, plus TSX's -- the second and third
  * ECMAScript-family adapters, alongside the extended `../javascript/`
  * one.
  *
@@ -9,28 +9,28 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  *
  * `LanguageDescriptor.aliases` (see `../javascript/descriptor.ts`'s own
  * `javascriptreact` alias) names additional VSCode languageIds that share
- * *one* descriptor's `grammarWasm` — correct for `javascriptreact`, which
+ * *one* descriptor's `grammarWasm` -- correct for `javascriptreact`, which
  * really does parse through the exact same `tree-sitter-javascript.wasm`
  * as `javascript`. TSX cannot work that way: `tree-sitter-typescript` the
  * npm package ships *two* separate grammar binaries,
- * `tree-sitter-typescript.wasm` and `tree-sitter-tsx.wasm` — genuinely
+ * `tree-sitter-typescript.wasm` and `tree-sitter-tsx.wasm` -- genuinely
  * different grammars (a `<T>` type assertion and a JSX element are
  * ambiguous under one grammar; upstream resolves the ambiguity by
  * building two), not a superset flag on one. So `typescriptreact` gets
  * its own full `LanguageDescriptor`/`id`/registration, pointing at its
- * own vendored `.wasm` (`packages/engine/grammars/PROVENANCE.md`) — TSX
+ * own vendored `.wasm` (`packages/engine/grammars/PROVENANCE.md`) -- TSX
  * being a *separate* grammar from TS, not a variant of it.
  *
- * Everything *else* is identical between the two — verified directly by
+ * Everything *else* is identical between the two -- verified directly by
  * probing both vendored grammars in the same session
  * (`docs/spikes/tree-sitter-typescript-probe.mjs`; write-up in
- * `docs/adapters.md`'s JavaScript/TypeScript/TSX — full adapters section
+ * `docs/adapters.md`'s JavaScript/TypeScript/TSX -- full adapters section
  * and `docs/parsing.md`'s Finding 5): one `comment` node type for all
  * three comment forms, a `string`
  * node with no prefix complexity, `binary_expression` with
  * `left`/`operator`/`right` fields for `+`-concatenation. `buildDescriptor`
  * below is the one shared shape both `id`s use, differing only in `id`
- * and `grammarWasm` — data-level sharing, not a second copy to keep in
+ * and `grammarWasm` -- data-level sharing, not a second copy to keep in
  * sync by hand.
  */
 function buildDescriptor(id: 'typescript' | 'typescriptreact', grammarWasm: string): LanguageDescriptor {
@@ -42,7 +42,7 @@ function buildDescriptor(id: 'typescript' | 'typescriptreact', grammarWasm: stri
       comments: '(comment) @comment',
       strings: '(string) @string',
       // No implicit (bare-adjacency) concatenation in TypeScript/TSX,
-      // same as JavaScript — only `+`.
+      // same as JavaScript -- only `+`.
       concatenations: '(binary_expression operator: "+") @concat.operator',
     },
 
@@ -87,7 +87,7 @@ function buildDescriptor(id: 'typescript' | 'typescriptreact', grammarWasm: stri
       },
       // Template literals (`${}` interpolation) are a separate
       // `template_string` node, deliberately never captured by
-      // `queries.strings` — see `../javascript/descriptor.ts`'s own doc
+      // `queries.strings` -- see `../javascript/descriptor.ts`'s own doc
       // comment for the full rationale (the same deferral applies here
       // unchanged).
       placeholders: [],

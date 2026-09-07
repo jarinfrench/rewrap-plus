@@ -9,7 +9,7 @@ function words(block: Block): string[] {
   return block.atoms.map((a) => a.text);
 }
 
-describe('splitBlocks — blank lines and paragraphs', () => {
+describe('splitBlocks -- blank lines and paragraphs', () => {
   it('treats a single line as one paragraph', () => {
     const blocks = splitBlocks('Hello, world.');
     expect(blocks).toHaveLength(1);
@@ -65,7 +65,7 @@ describe('splitBlocks — blank lines and paragraphs', () => {
   });
 });
 
-describe('splitBlocks — list items', () => {
+describe('splitBlocks -- list items', () => {
   it('recognizes a single bulleted item', () => {
     const blocks = splitBlocks('- First item.');
     expect(blocks).toHaveLength(1);
@@ -110,8 +110,8 @@ describe('splitBlocks — list items', () => {
   });
 
   it('does not treat ordinary indented prose as a list', () => {
-    // No marker at all, and preserveIndentedBlocks is off by default —
-    // this stays a paragraph. See "splitBlocks — verbatim regions"
+    // No marker at all, and preserveIndentedBlocks is off by default --
+    // this stays a paragraph. See "splitBlocks -- verbatim regions"
     // below for the preserveIndentedBlocks-on behavior.
     const blocks = splitBlocks('Some text.\n    More indented text, no marker.');
     expect(blocks).toHaveLength(1);
@@ -119,7 +119,7 @@ describe('splitBlocks — list items', () => {
   });
 });
 
-describe('splitBlocks — verbatim regions', () => {
+describe('splitBlocks -- verbatim regions', () => {
   it('treats a fenced code block as verbatim', () => {
     const blocks = splitBlocks('Before.\n\n```\ncode line\n```\n\nAfter.');
     expect(blocks.map((b) => b.type)).toEqual([

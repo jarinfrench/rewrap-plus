@@ -12,11 +12,11 @@ import ignoreIn from '../fixtures/markdown/directives/002-ignore.in.md?raw';
 import ignoreOut from '../fixtures/markdown/directives/002-ignore.out.md?raw';
 
 /**
- * Directive gold fixtures — Phase C commit 11. No adapter-level code
+ * Directive gold fixtures -- Phase C commit 11. No adapter-level code
  * backs this (`../../src/languages/markdown/adapter.ts`'s own doc
  * comment): `markdownDescriptor.directives.marker` (`'<!--'`,
  * `../../src/languages/markdown/descriptor.ts`) is all `wrap.ts` needed,
- * generically, to make `<!-- rewrap: off/on/ignore -->` work — these
+ * generically, to make `<!-- rewrap: off/on/ignore -->` work -- these
  * fixtures are the end-to-end proof of that, alongside `../../src/directives.test.ts`'s
  * own unit-level coverage of the marker itself.
  */
@@ -53,7 +53,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(markdownAdapter);
 });
 
-describe('Markdown directives — end-to-end gold fixtures', () => {
+describe('Markdown directives -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'markdown', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

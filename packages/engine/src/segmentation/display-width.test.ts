@@ -25,7 +25,7 @@ describe('displayWidth', () => {
   });
 
   it('counts a combining mark as zero width', () => {
-    // "e" + combining acute accent (U+0301) — visually one character,
+    // "e" + combining acute accent (U+0301) -- visually one character,
     // two code points.
     const eWithCombiningAcute = 'e\u0301';
     expect(displayWidth(eWithCombiningAcute)).toBe(1);
@@ -38,7 +38,7 @@ describe('displayWidth', () => {
   });
 
   it('counts an astral-plane emoji (surrogate pair) as two columns, not four', () => {
-    // U+1F600 GRINNING FACE — a UTF-16 surrogate pair. Iterating by code
+    // U+1F600 GRINNING FACE -- a UTF-16 surrogate pair. Iterating by code
     // point (not code unit) is what keeps this from double-counting.
     const grinningFace = '\u{1F600}';
     expect(grinningFace).toHaveLength(2); // sanity check: it IS a surrogate pair
@@ -51,7 +51,7 @@ describe('displayWidth', () => {
 
   it('counts smart quotes and em-dashes as one column, not two', () => {
     // These are exactly the non-ASCII characters flagged as
-    // "extremely common" in docstrings — and they are emphatically
+    // "extremely common" in docstrings -- and they are emphatically
     // narrow, unlike CJK punctuation.
     expect(displayWidth('\u2018quoted\u2019')).toBe(8);
     expect(displayWidth('em\u2014dash')).toBe(7);

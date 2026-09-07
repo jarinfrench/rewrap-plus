@@ -1,9 +1,9 @@
 /**
  * Answers to "does a directive comment affect the region starting at this
- * row?" — precomputed once per `wrapRegions` call (`./wrap.ts`) by
+ * row?" -- precomputed once per `wrapRegions` call (`./wrap.ts`) by
  * scanning the whole source for `# rewrap: ...`/`# fmt: ...` comments,
  * independent of region discovery. Deliberately engine-level and
- * region-kind-agnostic — this is opt-in and opt-out directive comment
+ * region-kind-agnostic -- this is opt-in and opt-out directive comment
  * support, not a Python- or string-specific concern, even though a
  * string's own `stringPolicy: 'prose'` gate (`./wrap.ts`) is the only
  * place `isForcedAt` currently has anything to override.
@@ -18,22 +18,22 @@ export interface DirectiveScan {
 }
 
 /**
- * Build the pattern matching a directive comment anywhere on a line —
- * `rewrap` or `fmt`, `off`/`on`/`ignore`/`force` — for a given line-comment
+ * Build the pattern matching a directive comment anywhere on a line --
+ * `rewrap` or `fmt`, `off`/`on`/`ignore`/`force` -- for a given line-comment
  * `marker`. `fmt` only ever means `off`/`on` in real usage (Black has no
  * `fmt: ignore`/`fmt: force`); this pattern matches all four actions for
  * either family and `scanDirectives` below simply never produces an
  * ignore/force entry for `fmt`, rather than needing a second, narrower
  * pattern.
  *
- * `marker` is regex-escaped before being spliced in — the
+ * `marker` is regex-escaped before being spliced in -- the
  * JavaScript/TypeScript/TSX adapters found this hardcoded to a literal
  * `#` (Python's own marker) despite this module's own doc comment
  * already framing directive support as "engine-level and
  * region-kind-agnostic," which would have silently meant `// rewrap: off`
  * never worked for the first real non-Python adapter. Documented in
  * `docs/adapters.md` alongside the JavaScript canary's own
- * leaked-assumption writeups — the same shape of bug (a Python-only
+ * leaked-assumption writeups -- the same shape of bug (a Python-only
  * literal baked into ostensibly generic code), just found later since
  * nothing before then exercised a second real `comments.line.marker`
  * value through this path.
@@ -49,21 +49,21 @@ function buildDirectivePattern(marker: string): RegExp {
  *
  * ## Off/on ranges
  *
- * `# rewrap: off` and `# fmt: off` both set the *same* disabled state —
+ * `# rewrap: off` and `# fmt: off` both set the *same* disabled state --
  * "fmt:off/on honored as well, since Black users already have them" reads
  * as treating the two families equivalently, not as two independently
  * tracked toggles a user could get out of sync by mixing (`rewrap: off`
  * .. `fmt: on` closes the very range `rewrap: off` opened). An
  * unterminated `off` (no matching `on` before EOF) disables every
- * following row for the rest of the file — the safer failure mode than
+ * following row for the rest of the file -- the safer failure mode than
  * silently re-enabling at EOF.
  *
  * ## Attaching `ignore`/`force` to a target row
  *
  * A **trailing** directive (real content precedes the `#` on its own
- * line) targets *that same row* — `x = "foo"  # rewrap: force` forces the
+ * line) targets *that same row* -- `x = "foo"  # rewrap: force` forces the
  * region that also starts on that row. A **standalone** directive (a
- * comment alone on its line) targets the *next* row — the common
+ * comment alone on its line) targets the *next* row -- the common
  * `# rewrap: ignore` / `x = "foo"` pairing. This only looks at the
  * immediately adjacent row in either direction; a blank line or another
  * comment between a standalone directive and its intended target isn't
@@ -73,7 +73,7 @@ function buildDirectivePattern(marker: string): RegExp {
  * an attempt to resolve "which region did the user mean" as a general
  * matching problem.
  *
- * `commentMarker` (default `'#'`, Python's own — every existing caller
+ * `commentMarker` (default `'#'`, Python's own -- every existing caller
  * predates this parameter) is the line-comment marker a directive is
  * expected to follow, e.g. `'//'` for JavaScript/TypeScript.
  */

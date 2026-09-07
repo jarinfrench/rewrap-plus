@@ -3,29 +3,29 @@ import type { LanguageAdapter, LanguageDescriptor } from './types/adapter.js';
 /**
  * Validates the structural invariants of a descriptor that can be checked
  * without a loaded grammar: non-empty ids and delimiters, an internally
- * consistent concatenation configuration, and — as of the `'prose'`
+ * consistent concatenation configuration, and -- as of the `'prose'`
  * region kind, which made `queries.comments`/`queries.strings`/`strings`
- * all optional — that the descriptor can actually discover *something*.
+ * all optional -- that the descriptor can actually discover *something*.
  *
- * This is deliberately partial. Deeper validation — that the declared
- * tree-sitter queries actually compile against the grammar — needs a
+ * This is deliberately partial. Deeper validation -- that the declared
+ * tree-sitter queries actually compile against the grammar -- needs a
  * loaded `Language` and so is layered on once the parser exists, and
  * comprehensively by the adapter conformance kit ("descriptor validates;
  * all tree-sitter queries compile against the grammar"). What's checked
  * here is everything that's knowable before any of that exists.
  *
- * Throws — including the offending descriptor's `id` in the message —
+ * Throws -- including the offending descriptor's `id` in the message --
  * rather than letting a malformed descriptor surface later as a confusing
  * runtime error mid-wrap.
  *
- * `hasDiscoverProse` — whether the adapter this descriptor belongs to
- * implements `LanguageAdapter.discoverProse` — is a second parameter
+ * `hasDiscoverProse` -- whether the adapter this descriptor belongs to
+ * implements `LanguageAdapter.discoverProse` -- is a second parameter
  * rather than something read off `descriptor` itself because it's a
  * property of the *adapter*, not the descriptor; `AdapterRegistry.register`
  * below is the only real caller and has both in hand. Every other
  * existing call site (this package's own tests, the conformance kit)
  * validates a descriptor alone and simply omits it, which defaults to
- * `false` — the same "declares at least one of the query fields" bar
+ * `false` -- the same "declares at least one of the query fields" bar
  * every descriptor already had to clear before `'prose'` existed.
  */
 export function validateDescriptor(
@@ -62,7 +62,7 @@ export function validateDescriptor(
     !hasDiscoverProse
   ) {
     fail(
-      'must declare at least one of queries.comments, queries.strings, queries.prose, or implement discoverProse — otherwise it can discover nothing',
+      'must declare at least one of queries.comments, queries.strings, queries.prose, or implement discoverProse -- otherwise it can discover nothing',
     );
   }
 
@@ -101,7 +101,7 @@ export function validateDescriptor(
 }
 
 /**
- * Registry mapping VSCode languageIds — and their aliases — to language
+ * Registry mapping VSCode languageIds -- and their aliases -- to language
  * adapters.
  *
  * Grammar WASM is loaded lazily by `ParserManager` on first *parse*, not
@@ -111,7 +111,7 @@ export function validateDescriptor(
  *
  * The extension enumerates `supportedLanguages()` to build its activation
  * events and to gray out commands in unsupported files, so adding a
- * language touches no extension code — only this registry.
+ * language touches no extension code -- only this registry.
  */
 export class AdapterRegistry {
   private readonly byKey = new Map<string, LanguageAdapter>();
@@ -142,21 +142,21 @@ export class AdapterRegistry {
   }
 
   /**
-   * Every registered VSCode languageId — primary ids *and* aliases —
+   * Every registered VSCode languageId -- primary ids *and* aliases --
    * sorted for stable output.
    *
    * The JavaScript/TypeScript/TSX adapters found this returning only
    * primary ids, excluding aliases entirely, despite
    * `packages/vscode-extension/src/engine-host.ts`'s own
    * `getSupportedLanguages` doc comment already promising "every VSCode
-   * languageId (and alias) a registered adapter supports" — a promise
+   * languageId (and alias) a registered adapter supports" -- a promise
    * `apply-wrap.ts`'s `computeWrapResult` and `format-on-save.ts` both
    * depend on for real: either would have silently no-opped every wrap
    * command on a `.jsx`/`.tsx` file (a real, resolvable `languageId` via
    * `resolve()` below) purely because `javascriptreact`/`typescriptreact`
    * never appeared in this list. Unexercised until then because no
-   * adapter before it — Python has no aliases; the JavaScript canary
-   * declared none either — actually registered one. The identical
+   * adapter before it -- Python has no aliases; the JavaScript canary
+   * declared none either -- actually registered one. The identical
    * shape of bug this project has already found twice before at a
    * language-adapter seam (`docs/adapters.md`): code that looked generic
    * but was only ever exercised by inputs that happened not to trigger

@@ -78,7 +78,7 @@ describe('googleDialect.segment', () => {
   it('preserves a genuine blank line inside a section body (not at the very end of the text)', () => {
     // A blank line at the *very end* of the whole `text` string is a
     // known, documented limitation (`../languages/python/dissolve-docstring.ts`'s
-    // own "Known limitation" note) — `toLines` can't distinguish "ends
+    // own "Known limitation" note) -- `toLines` can't distinguish "ends
     // with a blank line" from "just ends here" once the line array has
     // already collapsed to a string. Mid-document blank lines, as here,
     // have no such ambiguity.
@@ -107,7 +107,7 @@ describe('googleDialect.segment', () => {
     // exists for: `packages/engine/src/docs/field-entries.ts`'s
     // `groupFieldEntries` now routes an entry's collected description
     // through `../segmentation/split-blocks.ts` instead of flattening it
-    // to one atom stream — confirmed here through the real dialect entry
+    // to one atom stream -- confirmed here through the real dialect entry
     // point, `googleDialect.segment`, not just `groupFieldEntries`
     // directly (`./field-entries.test.ts` already covers that in
     // isolation).

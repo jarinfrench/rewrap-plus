@@ -4,25 +4,25 @@ import { leadingWhitespaceLength } from '../../segmentation/verbatim.js';
 
 /**
  * Quote/prefix/indent facts a docstring's dissolve step observes, needed
- * again by `./emit-docstring.ts` to reproduce the same shape — the
+ * again by `./emit-docstring.ts` to reproduce the same shape -- the
  * docstring counterpart to `../../comments/dissolve-line-comments.ts`'s
  * `spaceAfterMarker` and `../../comments/dissolve-block-comments.ts`'s
  * reliance on `descriptor.comments.block`.
  */
 export interface DocstringQuoteMeta {
-  /** The literal prefix as written, case preserved — `''`, `'u'`, `'U'`. */
+  /** The literal prefix as written, case preserved -- `''`, `'u'`, `'U'`. */
   readonly prefix: string;
   /** `'"""'` or `"'''"` (or, rarely, a bare `'"'`/`"'"`), as observed. */
   readonly quoteDelimiter: string;
   /**
-   * `region.indentColumn` — the visual column the opening delimiter
+   * `region.indentColumn` -- the visual column the opening delimiter
    * itself sits at in the file, carried through unchanged. Distinct from
    * `commonIndent` below: the two usually coincide in well-formed code,
    * but `commonIndent` is derived from the *body*'s own observed
    * indentation and can legitimately differ (inconsistently indented
    * source). `./emit-docstring.ts` needs this one specifically to budget
    * the *first* physical line, which shares the file column the
-   * delimiter itself already sits at — never `commonIndent`, which only
+   * delimiter itself already sits at -- never `commonIndent`, which only
    * governs newly-inserted continuation lines.
    */
   readonly indentColumn: number;
@@ -31,13 +31,13 @@ export interface DocstringQuoteMeta {
    * first, stripped for reflow and restored on emit. Falls back to
    * `region.indentColumn` when the docstring has no line after the
    * first to compute it from (the overwhelmingly common single-physical-
-   * line case) — see `dissolveDocstring`'s own doc comment.
+   * line case) -- see `dissolveDocstring`'s own doc comment.
    */
   readonly commonIndent: number;
   /**
    * Whether the closing delimiter sits alone on its own line (`true`) or
    * shares its last physical line with trailing content (`false`), as
-   * observed — preserved rather than re-decided by fit, unlike
+   * observed -- preserved rather than re-decided by fit, unlike
    * `../../comments/emit-block-comments.ts`'s single-line/multi-line
    * choice: PEP 257's convention is a deliberate authorial choice, not
    * something wrapping should second-guess.
@@ -48,7 +48,7 @@ export interface DocstringQuoteMeta {
 export interface DissolvedDocstring extends DocstringQuoteMeta {
   /**
    * PEP-257-trimmed logical text, ready for a `DocDialect.segment` call
-   * (`../../docs/dialect.ts`) — deliberately *not* already turned into
+   * (`../../docs/dialect.ts`) -- deliberately *not* already turned into
    * `Block`s here, unlike `dissolveLineComments`/`dissolveBlockComments`:
    * which dialect does the segmenting is a per-docstring decision made
    * by whatever calls this (`../../wrap.ts`), not something dissolve
@@ -58,7 +58,7 @@ export interface DissolvedDocstring extends DocstringQuoteMeta {
 }
 
 /**
- * Matches a string literal's prefix and opening quote, case preserved —
+ * Matches a string literal's prefix and opening quote, case preserved --
  * the same shape `../prefix.ts`'s `extractPrefix` matches, duplicated
  * rather than reused because that function lowercases the prefix for
  * `isSafeToWrap`'s comparison purposes, whereas dissolve/emit need the
@@ -82,7 +82,7 @@ const PREFIX_AND_QUOTE = /^([A-Za-z]{0,3})('''|"""|'|")/;
  * physical line, or starts on the line after (quote alone on its own
  * line), falls out for free from this rather than needing separate
  * tracking: if it starts on its own line, PEP 257's own "line 0" is
- * empty, which `text` reproduces directly as a leading blank line —
+ * empty, which `text` reproduces directly as a leading blank line --
  * `./emit-docstring.ts` reads that back the same way, no extra state.
  *
  * `closingQuoteOwnLine` is detected separately, from the *raw* physical
@@ -90,16 +90,16 @@ const PREFIX_AND_QUOTE = /^([A-Za-z]{0,3})('''|"""|'|")/;
  * itself is stripped off, is blank (nothing but the closing line's own
  * indentation) if and only if the delimiter sat alone on its own line.
  * That synthetic indentation-only line is excluded from `text` entirely
- * — it isn't content, and PEP 257's own algorithm has nothing to say
- * about it — while a *second*, genuinely authored blank line right
+ * -- it isn't content, and PEP 257's own algorithm has nothing to say
+ * about it -- while a *second*, genuinely authored blank line right
  * before it (content, blank line, blank-delimiter-line) is preserved.
  *
  * **Known limitation:** a docstring ending in *two* blank lines
  * immediately before a closing-own-line delimiter degrades to one on
  * re-emit. `text`'s own trailing character can't distinguish "the
  * dissolved content's last logical line is genuinely blank" from
- * "this string simply ends here" — the same ambiguity
- * `../../segmentation/to-lines.ts` documents for exactly this reason —
+ * "this string simply ends here" -- the same ambiguity
+ * `../../segmentation/to-lines.ts` documents for exactly this reason --
  * and unlike `../../docs/dialect.ts`'s `segmentLines` (used inside every
  * `DocDialect.segment`), there's no unambiguous line array available
  * here to sidestep it with: `text` is this function's return value, not

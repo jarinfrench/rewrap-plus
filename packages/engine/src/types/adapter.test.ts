@@ -4,7 +4,7 @@ import type { LanguageAdapter, LanguageDescriptor } from './adapter.js';
 import type { SyntaxNode } from './tree-sitter-types.js';
 
 // `classify`'s `node` parameter is a real `web-tree-sitter` `Node` (see
-// `./tree-sitter-types.ts`, which re-exports the genuine type — earlier
+// `./tree-sitter-types.ts`, which re-exports the genuine type -- earlier
 // in this package's history it stood in for a hand-rolled placeholder
 // shape). `Node` is a class with many required members (`id`, `tree`,
 // `typeId`, getters, ...), so a hand-written object literal can no
@@ -14,10 +14,10 @@ import type { SyntaxNode } from './tree-sitter-types.js';
 // little more setup and tests the hook against what it will actually
 // receive in practice.
 // Relative to the process's cwd, which Vitest sets to this package's root
-// (`packages/engine`) — same convention as every other grammar-loading
+// (`packages/engine`) -- same convention as every other grammar-loading
 // test in this package (see `parser/parser-manager.test.ts`). Avoids
 // `node:url`/`import.meta.url`, which this package's tests don't type
-// against (no `@types/node` dependency — see `position-mapper.test.ts`).
+// against (no `@types/node` dependency -- see `position-mapper.test.ts`).
 const grammarPath = 'grammars/tree-sitter-python.wasm';
 let stringNode: SyntaxNode;
 
@@ -59,7 +59,7 @@ function minimalDescriptor(overrides: Partial<LanguageDescriptor> = {}): Languag
 }
 
 describe('LanguageDescriptor', () => {
-  it('is pure data — a minimal descriptor needs no methods', () => {
+  it('is pure data -- a minimal descriptor needs no methods', () => {
     const descriptor = minimalDescriptor();
 
     expect(descriptor.id).toBe('plaintext-probe');
@@ -84,7 +84,7 @@ describe('LanguageDescriptor', () => {
   });
 });
 
-describe('LanguageDescriptor — prose-shaped (no comments/strings queries or strings block)', () => {
+describe('LanguageDescriptor -- prose-shaped (no comments/strings queries or strings block)', () => {
   it('is valid data with queries.comments, queries.strings, and strings all omitted', () => {
     // The shape a prose-only language (Markdown) actually declares. No
     // `!`/`as never` needed anywhere here: this is what makes these
@@ -104,7 +104,7 @@ describe('LanguageDescriptor — prose-shaped (no comments/strings queries or st
 });
 
 describe('LanguageAdapter', () => {
-  it('is valid with only a descriptor — every hook is optional', () => {
+  it('is valid with only a descriptor -- every hook is optional', () => {
     const adapter: LanguageAdapter = { descriptor: minimalDescriptor() };
 
     expect(adapter.classify).toBeUndefined();

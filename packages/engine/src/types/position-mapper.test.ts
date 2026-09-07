@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PositionMapper } from './position-mapper.js';
 
 /**
- * A UTF-8 byte-length helper duplicated here — rather than imported from
- * `./position-mapper.js`, which keeps its own copy private — so these
+ * A UTF-8 byte-length helper duplicated here -- rather than imported from
+ * `./position-mapper.js`, which keeps its own copy private -- so these
  * tests can compute *expected* byte offsets from Unicode source text
  * directly. Deliberately avoids Node's `Buffer`: this package has no
  * `@types/node` dependency, and the engine is meant to stay runtime-
@@ -24,7 +24,7 @@ function utf8ByteLengthOf(text: string): number {
   return total;
 }
 
-describe('PositionMapper — ASCII basics', () => {
+describe('PositionMapper -- ASCII basics', () => {
   it('maps byte offsets to positions on a single line', () => {
     const mapper = new PositionMapper('hello world');
 
@@ -86,9 +86,9 @@ describe('PositionMapper — ASCII basics', () => {
   });
 });
 
-describe('PositionMapper — smart quotes (3-byte UTF-8, single UTF-16 unit)', () => {
+describe('PositionMapper -- smart quotes (3-byte UTF-8, single UTF-16 unit)', () => {
   // U+2018 ‘, U+2019 ’, U+201C “, U+201D ” are all in the general
-  // punctuation block: 3 bytes in UTF-8, 1 code unit in UTF-16 — exactly
+  // punctuation block: 3 bytes in UTF-8, 1 code unit in UTF-16 -- exactly
   // the kind of non-ASCII content the span.ts UTF-16/UTF-8 caveat calls
   // out as "extremely common" in real docstrings and comments.
   const text = '“Hello,” she said.';
@@ -117,7 +117,7 @@ describe('PositionMapper — smart quotes (3-byte UTF-8, single UTF-16 unit)', (
   });
 });
 
-describe('PositionMapper — CJK (3-byte UTF-8, single UTF-16 unit)', () => {
+describe('PositionMapper -- CJK (3-byte UTF-8, single UTF-16 unit)', () => {
   const text = '中文comment测试';
 
   it('accounts for CJK characters as 3 bytes but 1 UTF-16 unit each', () => {
@@ -139,9 +139,9 @@ describe('PositionMapper — CJK (3-byte UTF-8, single UTF-16 unit)', () => {
   });
 });
 
-describe('PositionMapper — emoji (4-byte UTF-8, surrogate-pair UTF-16)', () => {
+describe('PositionMapper -- emoji (4-byte UTF-8, surrogate-pair UTF-16)', () => {
   // U+1F600 😀 is an astral-plane code point: 4 bytes in UTF-8, but a
-  // *surrogate pair* (2 code units) in UTF-16 — the case most likely to
+  // *surrogate pair* (2 code units) in UTF-16 -- the case most likely to
   // break a naive byte<->character mapping.
   const text = 'note 😀 done';
 
@@ -175,9 +175,9 @@ describe('PositionMapper — emoji (4-byte UTF-8, surrogate-pair UTF-16)', () =>
   });
 });
 
-describe('PositionMapper — combining characters', () => {
+describe('PositionMapper -- combining characters', () => {
   // A combining acute accent (U+0301) following a plain 'e' is two
-  // separate code points — two for-of iteration steps — even though they
+  // separate code points -- two for-of iteration steps -- even though they
   // render as one visual grapheme ("é"). Byte/UTF-16 accounting operates
   // per code point, not per grapheme; grapheme-aware display width (East
   // Asian Wide/combining-mark width) is atom segmentation's concern, not

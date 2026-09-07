@@ -1,6 +1,6 @@
 /**
  * The extension's single `OutputChannel`, lazily created and cached like
- * `engine-host.ts`'s registry/`ParserManager` — cheap to call repeatedly,
+ * `engine-host.ts`'s registry/`ParserManager` -- cheap to call repeatedly,
  * created at most once per extension host process.
  */
 import * as vscode from 'vscode';

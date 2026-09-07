@@ -10,10 +10,10 @@ import {
 } from './helpers.js';
 
 /**
- * The real-host proof for Java — the same loop `./cpp.test.ts` closes for
+ * The real-host proof for Java -- the same loop `./cpp.test.ts` closes for
  * C++: the engine-level gold fixtures already cover string/Javadoc
  * wrapping in detail (`packages/engine/test/wrap/java-*-fixtures.test.ts`),
- * but none of those go through the real VSCode extension host —
+ * but none of those go through the real VSCode extension host --
  * activation, `AdapterRegistry` wiring (`../../src/engine-host.ts`'s
  * `createRegistry`), command dispatch, and settings resolution all stay
  * untested by the engine suite alone.

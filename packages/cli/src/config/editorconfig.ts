@@ -1,5 +1,5 @@
 /**
- * Self-contained `.editorconfig` `max_line_length` resolution — the
+ * Self-contained `.editorconfig` `max_line_length` resolution -- the
  * CLI's counterpart to
  * `packages/vscode-extension/src/config/editorconfig.ts`.
  *
@@ -8,18 +8,18 @@
  * `.editorconfig` semantics don't change depending on which glue layer
  * is asking. It's a separate copy rather than a shared import because
  * `packages/vscode-extension` and `packages/cli` are meant to stay
- * independent peers of `packages/engine` — a VSCode extension has no
+ * independent peers of `packages/engine` -- a VSCode extension has no
  * business being a runtime dependency of a general-purpose CLI (and vice
  * versa), and this module's entire value is being self-contained with
  * zero dependencies of its own, so duplicating ~250 already-well-tested
  * lines costs far less than inventing a third shared package for one
  * module. If a *third* consumer ever needs this, that's the point to
  * promote it somewhere both can import from (`docs/adapters.md`'s own
- * "promote once a second real consumer needs it" pattern — this is
+ * "promote once a second real consumer needs it" pattern -- this is
  * deliberately not treated as that second consumer, since the two
  * existing copies are peers, not both feeding into the engine).
  *
- * Uses `node:fs` directly — this is `packages/cli`, not the engine
+ * Uses `node:fs` directly -- this is `packages/cli`, not the engine
  * (which must stay free of Node built-ins for its own future-browser
  * goal); a CLI tool has no such constraint.
  */
@@ -28,13 +28,13 @@ import { dirname, join, relative } from 'node:path';
 import { walkUpToRoot } from './walk-up-to-root.js';
 
 interface EditorConfigSection {
-  /** `null` for properties that appear before any `[glob]` header — treated as applying unconditionally, matching how most EditorConfig parsers handle a bare preamble. */
+  /** `null` for properties that appear before any `[glob]` header -- treated as applying unconditionally, matching how most EditorConfig parsers handle a bare preamble. */
   readonly pattern: string | null;
   readonly properties: ReadonlyMap<string, string>;
 }
 
 interface EditorConfigFile {
-  /** Absolute directory containing this `.editorconfig` file — glob patterns are matched relative to here. */
+  /** Absolute directory containing this `.editorconfig` file -- glob patterns are matched relative to here. */
   readonly dir: string;
   readonly sections: readonly EditorConfigSection[];
 }
@@ -44,13 +44,13 @@ interface EditorConfigFile {
  * its containing directory up to the filesystem root (or up to the
  * nearest ancestor `.editorconfig` declaring `root = true`, whichever
  * comes first), applying every matching section in root-to-leaf,
- * top-to-bottom order — so that a value from a `.editorconfig` closer to
+ * top-to-bottom order -- so that a value from a `.editorconfig` closer to
  * `filePath`, or a later section within one file, always overwrites one
  * from farther away, per the spec's own "closer/later wins" precedence.
  *
  * Returns `undefined` when no matching section sets `max_line_length`,
  * or the closest matching value is explicitly `off` (EditorConfig's own
- * way of saying "no limit" — treated as "this tier doesn't apply",
+ * way of saying "no limit" -- treated as "this tier doesn't apply",
  * falling through to the CLI's next-lower tier in `./column-limit.ts`
  * rather than being mistaken for "no opinion, keep an earlier match").
  */
@@ -74,7 +74,7 @@ export function resolveEditorConfigMaxLineLength(filePath: string): number | und
         if (Number.isFinite(parsed)) {
           result = parsed;
         }
-        // A non-numeric, non-"off" value is malformed input — ignored,
+        // A non-numeric, non-"off" value is malformed input -- ignored,
         // leaving whatever the previous matching section established,
         // rather than clearing this tier outright over one bad line.
       }
@@ -116,12 +116,12 @@ function isRoot(sections: readonly EditorConfigSection[]): boolean {
 
 /**
  * Parse one `.editorconfig` file's text into an ordered list of
- * sections — index 0 is always the (possibly empty) preamble
+ * sections -- index 0 is always the (possibly empty) preamble
  * (`pattern: null`) for any `key = value` lines before the first
  * `[glob]` header, since that's where `root = true` lives.
  *
  * Deliberately minimal: no inline (trailing) comment stripping, no
- * value validation beyond what `max_line_length` itself needs — see
+ * value validation beyond what `max_line_length` itself needs -- see
  * "Known limitations" below.
  */
 function parseEditorConfig(content: string): EditorConfigSection[] {
@@ -147,7 +147,7 @@ function parseEditorConfig(content: string): EditorConfigSection[] {
 
     const eq = line.indexOf('=');
     if (eq === -1) {
-      continue; // not a recognizable `key = value` line — skip rather than throw, matching the engine-wide "skip, don't block" posture
+      continue; // not a recognizable `key = value` line -- skip rather than throw, matching the engine-wide "skip, don't block" posture
     }
     const key = line.slice(0, eq).trim().toLowerCase();
     const value = line.slice(eq + 1).trim();
@@ -169,7 +169,7 @@ function parseEditorConfig(content: string): EditorConfigSection[] {
  * matching either way.
  *
  * Exported (unlike the rest of this module's internals) so glob-pattern
- * edge cases — brace alternation, character classes, `**` — can be unit
+ * edge cases -- brace alternation, character classes, `**` -- can be unit
  * tested directly against pattern/path triples, without needing a
  * fixture directory on disk for each one; `resolveEditorConfigMaxLineLength`'s
  * own tests cover the walk-order/`root`/`off` semantics end to end
@@ -180,12 +180,12 @@ export function matchesEditorConfigGlob(pattern: string, sectionDir: string, fil
   const relativePath = relative(sectionDir, filePath).split('\\').join('/');
 
   // A pattern with no path separator matches the filename at *any* depth
-  // below sectionDir — including depth 0 (a file directly inside
+  // below sectionDir -- including depth 0 (a file directly inside
   // sectionDir, whose relative path itself then contains no '/' at
   // all). That last case is why this prepends an *optional*
   // `(?:.*/)?`, not the mandatory literal '/' a naive `**/` string
   // prefix (translated through the same '**' -> '.*' rule as anywhere
-  // else in the pattern) would produce — a mandatory separator would
+  // else in the pattern) would produce -- a mandatory separator would
   // make e.g. `*.py` fail to match `a.py` sitting right next to the
   // .editorconfig that declared it, which is the single most common
   // case there is.
@@ -198,25 +198,25 @@ export function matchesEditorConfigGlob(pattern: string, sectionDir: string, fil
 
 /**
  * Translate one EditorConfig glob into a `RegExp` source fragment
- * (unanchored — callers wrap it in `^...$` themselves, since
+ * (unanchored -- callers wrap it in `^...$` themselves, since
  * `matchesEditorConfigGlob` above needs to prepend an extra
  * optional-any-depth fragment ahead of the anchors). Supports `*`,
- * `**`, `?`, `[seq]`/`[!seq]`, and single-level `{a,b,c}` alternation —
+ * `**`, `?`, `[seq]`/`[!seq]`, and single-level `{a,b,c}` alternation --
  * see "Known limitations" for what's not covered.
  *
  * ## Every maximal run of `*` collapses to exactly one quantifier
  *
- * A pattern is workspace-supplied — a `.editorconfig` found by walking up
+ * A pattern is workspace-supplied -- a `.editorconfig` found by walking up
  * from a file this CLI is pointed at is exactly as untrusted as any other
  * file content this project parses (`SECURITY.md`'s "workspace-trust
  * bypass" category). This function used to only special-case a *pair* of
- * stars (`**` → `.*`, anything else one `*` at a time → `[^/]*`), so three
+ * stars (`**` -> `.*`, anything else one `*` at a time -> `[^/]*`), so three
  * or more consecutive stars compiled to several adjacent `[^/]*`/`.*`
- * regex quantifiers back to back — the textbook catastrophic-backtracking
+ * regex quantifiers back to back -- the textbook catastrophic-backtracking
  * shape. `packages/vscode-extension/src/config/editorconfig.ts`'s
  * identical copy of this function had this exact bug fixed and timed
  * (confirmed over two minutes to fail one match against a non-matching
- * path with ~25 consecutive stars) — this copy was missed in that pass
+ * path with ~25 consecutive stars) -- this copy was missed in that pass
  * since the two files are deliberately independent, not a shared import
  * (see this module's own doc comment). Directly re-confirmed here before
  * fixing: 20 consecutive stars took ~9.8s, exponential in star count.

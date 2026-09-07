@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SourceSpan, TextEdit } from './span.js';
 
-// `./span.ts` is pure vocabulary — no behavior to exercise yet. These
+// `./span.ts` is pure vocabulary -- no behavior to exercise yet. These
 // tests exist to prove the shapes are actually usable and to pin the
 // field names down: a typo here would otherwise only surface as a
 // confusing type error much further downstream.

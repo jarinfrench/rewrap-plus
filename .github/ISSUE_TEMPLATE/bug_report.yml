@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         If a *string literal's runtime value changed* after wrapping, please
-        use the **String corruption** template instead — that failure mode
+        use the **String corruption** template instead -- that failure mode
         gets triaged separately and with higher priority.
 
   - type: input
@@ -39,7 +39,7 @@ body:
       label: Column limit setting and resolved source
       description: >
         Run **Rewrap+: Show Resolved Configuration** and paste its output
-        here — it reports the effective column limit, which precedence
+        here -- it reports the effective column limit, which precedence
         tier it came from, and the active string/doc-dialect policy.
       placeholder: |
         columnLimit: 88 (source: .editorconfig max_line_length)
@@ -69,13 +69,13 @@ body:
       label: Was the wrap skipped?
       description: >
         If nothing happened at all, check the "Rewrap+" output channel for
-        a skip reason before filing — it's the fastest way to tell an
+        a skip reason before filing -- it's the fastest way to tell an
         actual bug from an intentional skip (e.g. a `# rewrap: off` region,
         an unsupported language, or a prose heuristic decision).
       options:
-        - "No — it wrapped, just incorrectly"
-        - "Yes — output channel gave a reason (paste it below)"
-        - "Yes — output channel gave no reason, or channel is empty"
+        - "No -- it wrapped, just incorrectly"
+        - "Yes -- output channel gave a reason (paste it below)"
+        - "Yes -- output channel gave no reason, or channel is empty"
     validations:
       required: true
 

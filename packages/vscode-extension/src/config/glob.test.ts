@@ -46,7 +46,7 @@ describe('matchesGlob', () => {
   it('treats a run of 3+ stars the same as **, not as adjacent quantifiers', () => {
     // Regression for the catastrophic-backtracking hang fixed in the
     // .editorconfig matcher this module was extracted from (see
-    // globToRegExpSource's own doc comment) — confirming the fix carried
+    // globToRegExpSource's own doc comment) -- confirming the fix carried
     // over intact, not just that the function still exists.
     expect(matchesGlob('***.py', 'a/b/c.py')).toBe(true);
 

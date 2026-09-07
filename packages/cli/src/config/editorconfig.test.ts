@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { matchesEditorConfigGlob, resolveEditorConfigMaxLineLength } from './editorconfig.js';
 
-// `import.meta.url` (not `__dirname`) — this package has `"type":
+// `import.meta.url` (not `__dirname`) -- this package has `"type":
 // "module"` (see `../engine-host.ts`'s own doc comment on why that's
 // possible here but not for the VSCode extension), so there's no
 // CommonJS-target restriction forcing a `__dirname` workaround the way
@@ -102,7 +102,7 @@ describe('matchesEditorConfigGlob', () => {
     // `packages/vscode-extension/src/config/editorconfig.ts`'s own
     // identical regression test: before `globToRegExpSource` collapsed a
     // whole run of `*` into one quantifier, `***`/`****`/... compiled to
-    // several adjacent `[^/]*`/`.*` fragments back to back — confirmed
+    // several adjacent `[^/]*`/`.*` fragments back to back -- confirmed
     // directly here (not just suspected) by timing this file's *own*
     // pre-fix implementation: 20 consecutive stars took ~9.8s, growing
     // exponentially in star count. A run of 3+ stars is semantically just

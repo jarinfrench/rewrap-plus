@@ -49,7 +49,7 @@ describe('discoverFiles', () => {
     mkdirSync(join(root, 'src', 'nested'), { recursive: true });
     writeFileSync(join(root, 'src', 'a.py'), '');
     writeFileSync(join(root, 'src', 'nested', 'b.ts'), '');
-    // .txt has no adapter at all — genuinely unrecognized, unlike .md
+    // .txt has no adapter at all -- genuinely unrecognized, unlike .md
     // (recognized since Markdown support landed).
     writeFileSync(join(root, 'notes.txt'), '');
 

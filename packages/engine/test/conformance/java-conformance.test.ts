@@ -6,15 +6,15 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
  * the same shape every earlier adapter's own conformance suite already
  * passed: this is the fifth adapter (after Python, JavaScript,
  * TypeScript/TSX, C++) through the identical suite. Every source below
- * exercises every comment form this adapter supports — `//`, a plain
- * `/* * /`, and a Javadoc `/** * /` — each long enough to actually need
+ * exercises every comment form this adapter supports -- `//`, a plain
+ * `/* * /`, and a Javadoc `/** * /` -- each long enough to actually need
  * wrapping at the configured limit, plus a `+`-concatenation string, so
  * every wrap-based invariant (idempotency, re-parse cleanliness, line
  * length, line-ending preservation) is exercised through every
  * dissolve/emit path this adapter has, not just one.
  *
  * As with every earlier suite, CRLF and LF variants of the same source
- * are both included so the line-ending invariant is checked both ways —
+ * are both included so the line-ending invariant is checked both ways --
  * particularly relevant here given `./descriptor.ts`'s own finding that
  * Java's `line_comment` node reproduces the same CRLF trailing-`\r`
  * quirk Python's grammar has.

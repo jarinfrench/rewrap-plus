@@ -42,7 +42,7 @@ describe('powershellAdapter', () => {
 
   it('does not misread an ordinary sentence starting with a period as comment-based help', () => {
     // ".NET" and similar are real prose this project doesn't want to
-    // misclassify — `commentBasedHelpDialect`'s own `KNOWN_TAGS` fixed
+    // misclassify -- `commentBasedHelpDialect`'s own `KNOWN_TAGS` fixed
     // vocabulary is what keeps a bare `.word` from scoring at all.
     const source = '<# This project targets .NET and nothing else. #>\nWrite-Host "hi"\n';
     const tree = parser.parse(source)!;

@@ -1,7 +1,7 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: verify tree-sitter-cpp node names/shapes before writing
 // Phase 12c's descriptor, per this project's "probe before coding,
-// always" rule — don't trust memory or type declarations. Findings are
+// always" rule -- don't trust memory or type declarations. Findings are
 // written up in docs/adapters.md; this file is kept only so the
 // experiment is reproducible.
 //

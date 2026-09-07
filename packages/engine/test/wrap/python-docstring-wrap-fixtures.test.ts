@@ -47,11 +47,11 @@ import blankLineSeparatedNumpyOut from '../fixtures/python/docstrings/018-blank-
  * The stated acceptance criterion: "All docstring fixtures pass; no
  * dialect's structural markers are lost." Mirrors
  * `./python-comment-wrap-fixtures.test.ts`'s own structure and rationale
- * for this project's established fixture-driven convention — static
+ * for this project's established fixture-driven convention -- static
  * `?raw` imports rather than a directory walk, so a missing or misnamed
  * `.out.py` is a compile-time import error, not a silently-skipped test.
  *
- * Column limit is a fixed 50 for every fixture — wide enough that
+ * Column limit is a fixed 50 for every fixture -- wide enough that
  * Google/NumPy/Sphinx section structure stays legible in the gold files
  * while still forcing every fixture's content to actually wrap (every
  * source docstring was written specifically to overflow this limit),
@@ -71,17 +71,17 @@ import blankLineSeparatedNumpyOut from '../fixtures/python/docstrings/018-blank-
  * `docs/planning/nested-field-entry-structure-plan.md`'s step 3/4, both
  * the nested list and the fenced sample in 012-014 reflow as real,
  * preserved structure (a `listItem`/`verbatim` `Block`, per
- * `../../src/types/document.ts`'s `fieldEntry.blocks`) — they used to
+ * `../../src/types/document.ts`'s `fieldEntry.blocks`) -- they used to
  * flatten to plain reflowed prose (`../../src/docs/field-entries.ts`'s
  * "Known limitation" note documented that degradation; it's since been
  * rewritten to describe the current, much narrower residual gap). 012-014
  * deliberately still have no blank line *inside* the nested content,
- * though (unbroken continuation only) — that's what 017-018 add, below.
+ * though (unbroken continuation only) -- that's what 017-018 add, below.
  *
  * 017-018 (`blank-line-separated-{google,numpy}`) cover the case 012-014
  * were deliberately written to avoid until now: a genuine blank line
  * *inside* a field entry's description (separating prose from a nested
- * list, and the list from a fenced sample) — historically the highest-risk
+ * list, and the list from a fenced sample) -- historically the highest-risk
  * shape, since a blank line used to end an entry's continuation outright
  * (the flat-collection loop's own "known limitation," fixed by the
  * look-ahead collection in step 2) and, before *that*, was the exact
@@ -182,17 +182,17 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(pythonAdapter);
 });
 
-describe('Python docstring wrapping — end-to-end gold fixtures', () => {
+describe('Python docstring wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
     expect(actual).toBe(fixture.expected);
   });
 
-  it('produces no reflowed line over the column limit, except a lone unbreakable atom or verbatim content (006’s doctest, 012/014’s fenced sample)', async () => {
+  it("produces no reflowed line over the column limit, except a lone unbreakable atom or verbatim content (006's doctest, 012/014's fenced sample)", async () => {
     // Mirrors `./python-comment-wrap-fixtures.test.ts`'s own "only this
     // phase's concern" scoping: a `def`/`return` code line untouched by
-    // docstring wrapping is free to be any length — this check is about
+    // docstring wrapping is free to be any length -- this check is about
     // the overflow rule for *reflowed docstring content*, not incidental
     // code around it. A `"""` toggles whether subsequent lines are inside
     // the docstring; the delimiter's own line counts as docstring content
@@ -212,10 +212,10 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
         // A fenced code sample (now reachable *inside* a field entry's
         // own description too, once `groupFieldEntries` started routing
         // descriptions through `../../src/segmentation/split-blocks.ts`
-        // — see `012-pathological-google.out.py`/`014-pathological-sphinx.out.py`)
+        // -- see `012-pathological-google.out.py`/`014-pathological-sphinx.out.py`)
         // is `verbatim`: never reflowed, categorically exempt from the
         // overflow rule for its *entire* content, not just a single
-        // token — mirrors `../../src/segmentation/verbatim.ts`'s own
+        // token -- mirrors `../../src/segmentation/verbatim.ts`'s own
         // `FENCE_OPEN` delimiter recognition. `isFenceDelimiter` covers
         // the toggling line itself regardless of which side of the
         // toggle it's read on.
@@ -230,13 +230,13 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
           continue;
         }
         // Legitimate only as the overflow rule: a lone unbreakable
-        // token — the doctest fixture's `>>>`/`...` line, a field
+        // token -- the doctest fixture's `>>>`/`...` line, a field
         // entry's continuation line under a hanging indent too deep to
         // leave room for even one word, or a field entry's *first*
         // line, where a structural label (`'name:'`, `':param x:'`)
         // legitimately precedes that same lone overflowing token
         // (`012-pathological-google.out.py`'s
-        // `really_long_deployment_target_identifier: A`, for example —
+        // `really_long_deployment_target_identifier: A`, for example --
         // the label is `decorateFirstLine`'s own prefix, not reflowed
         // content, so its internal spacing doesn't count against "one
         // token"). Stripping up to the first `':' + whitespace` removes
@@ -271,7 +271,7 @@ describe('Python docstring wrapping — end-to-end gold fixtures', () => {
   });
 
   it('covers the cases docstring wrapping is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of these named cases (minimal/plain, each of the
     // three dialects at its typical/minimal/pathological tiers, an
     // already-correctly-wrapped case per dialect, doctest preservation,

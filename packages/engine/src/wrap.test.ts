@@ -61,7 +61,7 @@ describe('wrapRegions', () => {
 
   it('threads balancedWrapping through to the reflow algorithm', async () => {
     // Same word set as reflow-block.test.ts's "finds a strictly
-    // lower-cost partition than greedy when one exists" — a case known
+    // lower-cost partition than greedy when one exists" -- a case known
     // to produce genuinely different line breaks between the two modes
     // (not just a tie), reused here so this test is checking that
     // WrapConfig.balancedWrapping actually reaches reflowBlock through
@@ -85,7 +85,7 @@ describe('wrapRegions', () => {
   });
 
   it('produces no edit for a comment already correctly wrapped at the configured width', async () => {
-    // Wrap once to get a known-good wrapping, then wrap again — the
+    // Wrap once to get a known-good wrapping, then wrap again -- the
     // second pass should be a pure no-op (idempotency, exercised early
     // here for line comments, ahead of the round-trip property test
     // that covers every region kind).
@@ -167,7 +167,7 @@ describe('wrapRegions', () => {
 
   it('skips a region immediately preceded by a rewrap:ignore directive', async () => {
     // A target on its own statement (a string literal), not another
-    // comment line — an ignore directive followed by *another* `#`
+    // comment line -- an ignore directive followed by *another* `#`
     // comment at the same indent would instead merge with it into one
     // region (consecutive-comment grouping), which is a different,
     // already-covered interaction, not what this test means to isolate.
@@ -269,7 +269,7 @@ describe('wrapRegions', () => {
 
     // A signal already cancelled before the call starts is the simplest
     // deterministic way to prove *no* region past the check gets
-    // processed — this doesn't depend on timing or region count.
+    // processed -- this doesn't depend on timing or region count.
     const result = await wrapRegions(
       source,
       'python',

@@ -8,7 +8,7 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 /**
  * Javadoc's flush-left tag marker: `@param`, `@return` (no trailing `s`,
  * unlike JSDoc's `@returns`), `@throws`/`@exception`, `@see`, `@since`,
- * `@author`, `@deprecated`, ... — `@`-only, unlike Doxygen's `\tag`/`@tag`
+ * `@author`, `@deprecated`, ... -- `@`-only, unlike Doxygen's `\tag`/`@tag`
  * pair (`./doxygen.ts`). This dialect deliberately doesn't hardcode
  * Javadoc's own tag vocabulary the same way `./jsdoc.ts`/`./doxygen.ts`
  * don't hardcode theirs: `JAVADOC_TAG` matches *any* `@word` at the start
@@ -18,18 +18,18 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
  *
  * ## Inline tags need no special handling here
  *
- * Javadoc also has *inline* tags — `{@code x}`, `{@link Foo#bar}`,
- * `{@literal <T>}` — which appear mid-line, brace-delimited, not as a
+ * Javadoc also has *inline* tags -- `{@code x}`, `{@link Foo#bar}`,
+ * `{@literal <T>}` -- which appear mid-line, brace-delimited, not as a
  * flush-left marker `matchJavadocEntry` would ever match (nor should it:
  * `{@code x}` inside an ordinary sentence is prose content, not a
  * field-list entry). These need no dedicated handling in this dialect at
  * all: `findUnbreakableSpans`
  * (`../segmentation/unbreakable-spans.ts`) already treats *any*
- * brace-balanced `{...}` span as an atomic, never-split unit — a
+ * brace-balanced `{...}` span as an atomic, never-split unit -- a
  * consequence of the same `BRACE_PLACEHOLDER` pattern that exists for
  * Python format placeholders and f-string interpolations, applied
  * generically to every comment/docstring reflow, not just string
- * literals — already exercised by `./jsdoc.test.ts`'s own "keeps a
+ * literals -- already exercised by `./jsdoc.test.ts`'s own "keeps a
  * `{Type}` annotation intact as one atom" case, the identical mechanism a
  * `{@link ...}`/`{@code ...}` inline tag rides for free. No engine change
  * needed to support this.
@@ -50,10 +50,10 @@ function matchJavadocEntry(line: string): EntryStartMatch | null {
 
 /**
  * Javadoc-style doc comments: a summary/description, then a flat run of
- * `@param`/`@return`/`@throws`/... tags — the identical field-list shape
+ * `@param`/`@return`/`@throws`/... tags -- the identical field-list shape
  * `./jsdoc.ts` and `./doxygen.ts` already handle, which this module
  * deliberately mirrors rather than reinventing (kept as its own dialect
- * id regardless — see `../types/doc-dialect.ts`'s own doc comment for
+ * id regardless -- see `../types/doc-dialect.ts`'s own doc comment for
  * why). Governs a `'docComment'` region (a `/** ... * /` block comment,
  * per `../comments/wrap-doc-comment.ts`) for Java, the way `jsdocDialect`
  * does for ECMAScript-family adapters and `doxygenDialect` does for
@@ -64,7 +64,7 @@ export const javadocDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized tag lines found,
-   * saturating quickly — the identical curve and rationale as
+   * saturating quickly -- the identical curve and rationale as
    * `jsdocDialect.detect`/`doxygenDialect.detect`: a single `@return` is
    * already strong, distinctive evidence.
    */

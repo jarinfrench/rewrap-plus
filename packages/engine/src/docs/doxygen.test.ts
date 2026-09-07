@@ -96,7 +96,7 @@ describe('doxygenDialect.segment', () => {
 
   it('recognizes a nested list inside a \\param description, end to end through segment()', () => {
     // Mechanical once Google worked (both share `groupFieldEntries`),
-    // per the plan's own framing — confirmed directly rather than
+    // per the plan's own framing -- confirmed directly rather than
     // assumed.
     const text = ['\\param opts Options include:', '    - verbose mode', '    - strict mode'].join(
       '\n',

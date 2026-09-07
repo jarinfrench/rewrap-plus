@@ -54,7 +54,7 @@ describe('typescriptAdapter', () => {
     expect(regions.map((r) => r.kind)).toEqual(['lineComment', 'stringLiteral']);
   });
 
-  // typescriptAdapter no longer declares its own isSafeToWrap at all —
+  // typescriptAdapter no longer declares its own isSafeToWrap at all --
   // TypeScript has no string-shape hazard beyond
   // `isStringSafeToWrapBaseline`'s own line-continuation/irregular-
   // whitespace refusals (`../../strings/is-string-safe-to-wrap-baseline.test.ts`),

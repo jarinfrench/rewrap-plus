@@ -1,5 +1,5 @@
 /**
- * Pure formatting for the CLI's console output — split out from
+ * Pure formatting for the CLI's console output -- split out from
  * `./run.ts` so the actual message text is unit-testable without
  * capturing `console.log`.
  */
@@ -22,7 +22,7 @@ export function formatRewraprcWarning(outcome: FileOutcome): string | undefined 
   if (!outcome.rewraprcParseError) {
     return undefined;
   }
-  return `warning ${outcome.path}: nearest .rewraprc failed to parse (${outcome.rewraprcParseError}) — falling back to lower-precedence config`;
+  return `warning ${outcome.path}: nearest .rewraprc failed to parse (${outcome.rewraprcParseError}) -- falling back to lower-precedence config`;
 }
 
 export interface Summary {

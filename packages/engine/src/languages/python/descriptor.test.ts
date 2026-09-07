@@ -23,7 +23,7 @@ describe('pythonDescriptor', () => {
     expect(() => new Query(language, pythonDescriptor.queries.concatenations!)).not.toThrow();
   });
 
-  it('has no block-comment form — Python has none', () => {
+  it('has no block-comment form -- Python has none', () => {
     expect(pythonDescriptor.comments.block).toBeUndefined();
   });
 
@@ -77,7 +77,7 @@ describe('pythonDescriptor', () => {
     expect(byPrefix.get('')?.bytes).toBeUndefined();
   });
 
-  it('declares no separate raw-form delimiters — Python has none', () => {
+  it('declares no separate raw-form delimiters -- Python has none', () => {
     expect(pythonDescriptor.strings!.rawForms).toEqual([]);
   });
 

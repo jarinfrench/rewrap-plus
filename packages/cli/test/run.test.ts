@@ -1,6 +1,6 @@
 /**
  * End-to-end tests for `run()` against the real engine and real
- * (temp-directory) files — the fixture-driven, directory-walking shape
+ * (temp-directory) files -- the fixture-driven, directory-walking shape
  * `CLAUDE.md` calls for on anything end-to-end, adapted to a CLI: no
  * subprocess spawn (slow, and `dist/cli.js` may not be built when this
  * suite runs), just `run()` called directly with a fake `argv` and
@@ -29,7 +29,7 @@ function captureIo(): RunIo & { readonly stdoutLines: string[]; readonly stderrL
 const OVERLONG_COMMENT =
   '# ' + 'this comment is deliberately long enough to overflow the eighty column default '.repeat(2);
 
-describe('run — write mode (default)', () => {
+describe('run -- write mode (default)', () => {
   it('rewraps an over-limit comment in place and exits 0', async () => {
     const root = makeTempDir();
     const file = join(root, 'a.py');
@@ -78,7 +78,7 @@ describe('run — write mode (default)', () => {
   });
 });
 
-describe('run — check mode (--check)', () => {
+describe('run -- check mode (--check)', () => {
   it('does not write, reports what would change, and exits 1', async () => {
     const root = makeTempDir();
     const file = join(root, 'a.py');
@@ -103,11 +103,11 @@ describe('run — check mode (--check)', () => {
   });
 });
 
-describe('run — directory discovery', () => {
+describe('run -- directory discovery', () => {
   it('wraps every recognized file under a directory argument', async () => {
     const root = makeTempDir();
     writeFileSync(join(root, 'a.py'), `${OVERLONG_COMMENT}\n`);
-    // .txt has no adapter at all — genuinely unrecognized, unlike .md
+    // .txt has no adapter at all -- genuinely unrecognized, unlike .md
     // (recognized since Markdown support landed) which would merely
     // happen not to need wrapping for this particular one-line content.
     writeFileSync(join(root, 'notes.txt'), 'not touched, unrecognized extension\n');
@@ -134,7 +134,7 @@ describe('run — directory discovery', () => {
   });
 });
 
-describe('run — error handling', () => {
+describe('run -- error handling', () => {
   it('exits 2 for a missing path', async () => {
     const root = makeTempDir();
     const io = captureIo();
@@ -169,7 +169,7 @@ describe('run — error handling', () => {
   });
 });
 
-describe('run — --help and --version', () => {
+describe('run -- --help and --version', () => {
   it('--help prints usage and exits 0 without requiring a path', async () => {
     const io = captureIo();
     const exitCode = await run(['--help'], io);
@@ -186,10 +186,10 @@ describe('run — --help and --version', () => {
   });
 });
 
-describe('run — BOM handling', () => {
+describe('run -- BOM handling', () => {
   // Adversarial-audit finding #3: `readFileSync(path, 'utf8')` doesn't
   // strip a leading UTF-8 BOM the way `vscode.TextDocument.getText()`
-  // already does on the extension side — confirmed by direct probe
+  // already does on the extension side -- confirmed by direct probe
   // (before `apply.ts`'s fix) to be a real, silent corruption, not just
   // a theoretical risk: the BOM shifted every discovered region's
   // column by one, so a wrapped comment's continuation lines came back
@@ -216,7 +216,7 @@ describe('run — BOM handling', () => {
 
     expect(bomRewritten.startsWith(BOM)).toBe(true);
     // The BOM-prefixed file's wrapped content, once the BOM is stripped
-    // back off, must be byte-for-byte identical to the BOM-free file's —
+    // back off, must be byte-for-byte identical to the BOM-free file's --
     // proof the BOM no longer shifts region columns and corrupts
     // continuation-line indentation.
     expect(bomRewritten.slice(BOM.length)).toBe(plainRewritten);
@@ -254,7 +254,7 @@ describe('run — BOM handling', () => {
   });
 });
 
-describe('run — config file precedence end to end', () => {
+describe('run -- config file precedence end to end', () => {
   it('a pyproject.toml column-limit changes what gets wrapped', async () => {
     const root = makeTempDir();
     writeFileSync(join(root, 'pyproject.toml'), '[tool.rewrap-plus]\ncolumn-limit = 10\n');
@@ -275,6 +275,6 @@ describe('run — config file precedence end to end', () => {
 
     const exitCode = await run(['--column-limit', '80', file], captureIo());
     expect(exitCode).toBe(0);
-    expect(readFileSync(file, 'utf8')).toBe(original); // 80 is wide enough — untouched
+    expect(readFileSync(file, 'utf8')).toBe(original); // 80 is wide enough -- untouched
   });
 });

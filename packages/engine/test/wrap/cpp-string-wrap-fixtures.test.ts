@@ -33,11 +33,11 @@ import negLoggingIn from '../fixtures/cpp/strings/neg-008-logging-format-string.
 import negLoggingOut from '../fixtures/cpp/strings/neg-008-logging-format-string.out.cpp?raw';
 
 /**
- * String-wrapping gold fixtures for the C++ adapter — mirrors
+ * String-wrapping gold fixtures for the C++ adapter -- mirrors
  * `./javascript-string-wrap-fixtures.test.ts`'s structure and
  * rationale, proving the *shared* `strings/dissolve-string.ts`/
  * `strings/emit-string.ts` behaves correctly for C++'s `'implicit'`-only,
- * no-grouping-required, no-operator-style concatenation — a third real
+ * no-grouping-required, no-operator-style concatenation -- a third real
  * shape (Python has `'implicit'`-with-grouping and `'operator'`; JS/TS
  * have `'operator'`-only; C++ has `'implicit'`-only) this shared code
  * hadn't been exercised by before this phase.
@@ -69,12 +69,12 @@ const fixtures: readonly Fixture[] = [
     // Regression for a confirmed string-corruption bug: C++'s `\x` hex
     // escape consumes however many hex digits follow (unlike Python's
     // fixed 2), and `findUnbreakableSpans`'s escape pattern only
-    // recognized the first 2 before this fixture existed — a wrap
+    // recognized the first 2 before this fixture existed -- a wrap
     // landing right after those 2 digits split `\x1234` (one character,
     // value 0x1234) into `\x12` (0x12) concatenated with literal `34`,
     // silently changing the string's value. The padding in this
     // fixture's input is deliberately tuned so the greedy wrap boundary
-    // lands exactly inside the escape under the old (buggy) pattern —
+    // lands exactly inside the escape under the old (buggy) pattern --
     // confirmed directly by temporarily reverting the fix and observing
     // this exact input produce `L"...\x12" L"34..."`. See
     // `../../src/segmentation/unbreakable-spans.ts`'s own doc comment on
@@ -119,7 +119,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(cppAdapter);
 });
 
-describe('C++ string-literal wrapping — end-to-end gold fixtures', () => {
+describe('C++ string-literal wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'cpp', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -159,7 +159,7 @@ describe('C++ string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('never inserts a concatenation operator — bare adjacency is C++\'s only real join syntax', async () => {
+  it('never inserts a concatenation operator -- bare adjacency is C++\'s only real join syntax', async () => {
     for (const fixture of fixtures.filter((f) => f.positive)) {
       const result = await wrapRegions(fixture.input, 'cpp', 'all', config(), parserManager);
       for (const edit of result.edits) {
@@ -168,7 +168,7 @@ describe('C++ string-literal wrapping — end-to-end gold fixtures', () => {
     }
   });
 
-  it('never requires inserted parens — bare adjacency needs no grouping', async () => {
+  it('never requires inserted parens -- bare adjacency needs no grouping', async () => {
     for (const fixture of fixtures.filter((f) => f.positive)) {
       const result = await wrapRegions(fixture.input, 'cpp', 'all', config(), parserManager);
       for (const edit of result.edits) {
@@ -180,7 +180,7 @@ describe('C++ string-literal wrapping — end-to-end gold fixtures', () => {
   it("eval-equivalence: every positive fixture's wrapped value equals its original value", () => {
     // C++'s counterpart to `./python-string-wrap-fixtures.test.ts`'s own
     // eval-equivalence check. No C++ compiler is available in this
-    // project's toolchain (nor should one need to be) —
+    // project's toolchain (nor should one need to be) --
     // `extractConcatenatedStringValue` reimplements just enough of C++'s
     // own escape decoding as a test-only oracle; see
     // `../support/decode-cpp-string.ts` for the full rationale.

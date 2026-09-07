@@ -1,7 +1,7 @@
 /**
  * `rewrapPlus.wrapDocument`'s large-file path (`LARGE_DOCUMENT_LINE_THRESHOLD`,
  * `./wrap-document.ts`) is the one command that runs long enough for the
- * document to plausibly change while a wrap is still computing — engine
+ * document to plausibly change while a wrap is still computing -- engine
  * cancellation now actually yields to the event loop mid-computation
  * (`packages/engine/test/hardening/cancellation.test.ts`), which is exactly
  * what makes that possible. This proves the corollary handled in
@@ -17,12 +17,12 @@ import { closeAllEditors, resetRewrapPlusSettings, settle } from './helpers.js';
 /**
  * Same unrealistically dense shape as
  * `packages/engine/test/hardening/large-file-performance.test.ts`'s own
- * generator — every 10th line a long comment, every 10th (offset 5) a long
+ * generator -- every 10th line a long comment, every 10th (offset 5) a long
  * string, so a whole-document wrap has real work to do and isn't done
  * before the concurrent edit below has a chance to land. Measured directly
  * against the engine (`packages/engine/test/hardening/cancellation.test.ts`'s
  * own doc comment): parse + region discovery alone take under a second on a
- * file this size, and the full wrap takes several seconds — the 1.5s delay
+ * file this size, and the full wrap takes several seconds -- the 1.5s delay
  * below sits well inside that window.
  */
 function generateDenseFile(lineCount: number): string {
@@ -64,7 +64,7 @@ describe('rewrapPlus.wrapDocument concurrent-edit safety', () => {
 
     // Fire-and-await-later: kick off the large-file wrap (which passes a
     // real cancellation token through `withProgress`, so the engine yields
-    // periodically — see `wrap-document.ts`), then edit the same document
+    // periodically -- see `wrap-document.ts`), then edit the same document
     // ourselves while it's still computing.
     const wrapCommand = vscode.commands.executeCommand('rewrapPlus.wrapDocument');
 

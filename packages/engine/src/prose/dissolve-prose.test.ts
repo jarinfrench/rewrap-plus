@@ -5,12 +5,12 @@ import { dissolveProse, type ProseSpec } from './dissolve-prose.js';
 
 /**
  * Hand-build a `'prose'` region and its backing source from a list of
- * physical lines — `WrappableRegion.parts`' contract is one entry per
+ * physical lines -- `WrappableRegion.parts`' contract is one entry per
  * physical line, with the region's own container prefix already
  * excluded, so each part here is simply that whole line: this module's
  * own tests exercise `dissolveProse` directly rather than through a real
  * Markdown/LaTeX grammar, and none of this module's own logic needs
- * one — it only needs `region.parts`/`region.indentColumn`
+ * one -- it only needs `region.parts`/`region.indentColumn`
  * and `source`, the same "hand-built regions" convention
  * `comments/*.test.ts` already uses for engine-level unit tests.
  */
@@ -74,7 +74,7 @@ describe('dissolveProse', () => {
 
     expect(block.atoms.map((a) => a.text)).toEqual(['first', 'line', 'second', 'line']);
     // No atom carries breakBefore or unusual glue purely from crossing a
-    // source line boundary — reflow is free to join these as if the
+    // source line boundary -- reflow is free to join these as if the
     // source had been one long line.
     expect(block.atoms.every((a) => a.breakBefore === false)).toBe(true);
     expect(block.atoms.every((a) => a.glue === undefined)).toBe(true);
@@ -184,7 +184,7 @@ describe('dissolveProse', () => {
 
   it('uses the first hardBreak pattern, in declaration order, that matches', () => {
     // Two patterns that both match somewhere at the end of the line, but
-    // consume different amounts of it — `narrow` (just the trailing two
+    // consume different amounts of it -- `narrow` (just the trailing two
     // spaces) leaves "bbb" to be atomized normally before the marker is
     // reattached; `wide` (from "bbb" through the trailing spaces) would
     // instead swallow "bbb" into the marker text itself with no atom

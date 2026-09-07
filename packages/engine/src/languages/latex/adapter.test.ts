@@ -19,7 +19,7 @@ describe('latexAdapter', () => {
     expect(region!.kind).toBe('lineComment');
   });
 
-  it('discovers zero regions for a file with no comments and no prose — only a structural line', () => {
+  it('discovers zero regions for a file with no comments and no prose -- only a structural line', () => {
     const source = '\\section{Title}\n';
     const tree = parser.parse(source)!;
     const regions = discoverRegions(latexAdapter, tree, source, 'latex');
@@ -30,7 +30,7 @@ describe('latexAdapter', () => {
     // `\section{Title}` is a structural line (excluded from prose, see
     // `./discover-prose.test.ts`); the body text is real prose, discovered
     // once `discoverProse` exists (commit 15) even though `wrapProse`
-    // doesn't yet (commit 16) — this test only asserts *discovery*,
+    // doesn't yet (commit 16) -- this test only asserts *discovery*,
     // matching Markdown's own commit 9/10 sequencing.
     const source = '% a comment\n\\section{Title}\nSome body text here.\n';
     const tree = parser.parse(source)!;
@@ -43,7 +43,7 @@ describe('latexAdapter', () => {
     const tree = parser.parse(source)!;
     const regions = discoverRegions(latexAdapter, tree, source, 'latex');
     // No line_comment node at all (confirmed directly,
-    // docs/parsing.md Finding 8) — so no 'lineComment' region. The line's
+    // docs/parsing.md Finding 8) -- so no 'lineComment' region. The line's
     // ordinary text is still real prose, discovered by `discoverProse`
     // (commit 15) same as any other paragraph.
     expect(regions.every((region) => region.kind !== 'lineComment')).toBe(true);

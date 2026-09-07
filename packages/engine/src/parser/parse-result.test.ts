@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { parseWithErrors } from './parse-result.js';
 
 // Relative to the process's cwd, which Vitest sets to this package's root
-// (`packages/engine`). No `node:url`/`import.meta.url` here — this
+// (`packages/engine`). No `node:url`/`import.meta.url` here -- this
 // package's tests avoid depending on `@types/node` (see
 // `../types/position-mapper.test.ts`).
 const grammarPath = 'grammars/tree-sitter-python.wasm';
@@ -56,7 +56,7 @@ describe('parseWithErrors', () => {
 
     expect(result.hasErrors).toBe(true);
     // The well-formed function is still discoverable as an ordinary named
-    // node elsewhere in the tree — the error is localized, not a parse
+    // node elsewhere in the tree -- the error is localized, not a parse
     // failure for the whole file. (Region discovery is responsible for
     // skipping only *overlapping* regions; this just proves the tree
     // still carries the information that logic needs.)
@@ -84,7 +84,7 @@ describe('parseWithErrors', () => {
     const result = parseWithErrors(parser, source);
 
     // An early spike (see docs/spikes/tree-sitter-wasm-loading.mjs)
-    // observed *two* ERROR nodes for this input — an outer one at [0, 31)
+    // observed *two* ERROR nodes for this input -- an outer one at [0, 31)
     // and one nested inside it at [20, 26). Asserting exactly one span
     // here (rather than just >0) is the actual regression guard: it
     // confirms `collectErrorSpans` stops at the first ERROR/MISSING node

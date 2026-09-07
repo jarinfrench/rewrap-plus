@@ -95,7 +95,7 @@ describe('wrapDocComment', () => {
       JSDOC_DESCRIPTOR,
       config({ docDialect: 'plain' }),
     );
-    // Under 'plain', "@param name The name." is just prose — no fieldEntry
+    // Under 'plain', "@param name The name." is just prose -- no fieldEntry
     // hanging-indent treatment, so it stays as one paragraph line.
     expect(result).toContain('* @param name The name.');
   });

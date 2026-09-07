@@ -5,7 +5,7 @@ import type { LanguageDescriptor } from '../../types/adapter.js';
  *
  * Node names and shapes below were verified against the vendored grammar
  * (`tree-sitter-python@0.25.0`, `packages/engine/grammars/`) with a
- * throwaway probe script, not trusted from memory — the same discipline
+ * throwaway probe script, not trusted from memory -- the same discipline
  * used and documented in `docs/parsing.md`; see that file's own warning
  * ("don't trust memory here") and the commit introducing
  * `queries.concatenations` for the specific findings this descriptor
@@ -22,20 +22,20 @@ export const pythonDescriptor: LanguageDescriptor = {
     comments: '(comment) @comment',
     strings: '(string) @string',
 
-    // Two concatenation shapes, distinguished by capture name — the
+    // Two concatenation shapes, distinguished by capture name -- the
     // generic contract `discoverRegions` (`../../discovery/discover-regions.ts`)
     // expects of *any* descriptor providing `queries.concatenations`:
     //
     // - `@concat.implicit`: a container node whose direct named children
-    //   are themselves matched by `queries.strings` — juxtaposition with
+    //   are themselves matched by `queries.strings` -- juxtaposition with
     //   no operator, e.g. Python's `"a" "b" "c"` (one `concatenated_string`
     //   node wrapping three `string` children).
     // - `@concat.operator`: a binary-operator node exposing `left` and
-    //   `right` fields, to be walked recursively — e.g. Python's
+    //   `right` fields, to be walked recursively -- e.g. Python's
     //   `"a" + "b" + "c"` (nested `binary_operator` nodes, left-
     //   associative). The driver bails on (does not merge) a chain where
     //   recursing bottoms out at something that's neither a captured
-    //   string leaf nor another `@concat.operator` node — `"a" + name`
+    //   string leaf nor another `@concat.operator` node -- `"a" + name`
     //   must never be treated as one wrappable unit.
     //
     // Restricting the operator pattern to `operator: "+"` is what excludes
@@ -48,7 +48,7 @@ export const pythonDescriptor: LanguageDescriptor = {
   comments: {
     line: { marker: '#', spaceAfter: true },
 
-    // Python has no block-comment syntax — every `#` comment is a line
+    // Python has no block-comment syntax -- every `#` comment is a line
     // comment, so `comments.block` is intentionally left unset. The
     // canary JavaScript adapter (`/** */` and friends) was deliberately
     // the first descriptor to set it, specifically so that path isn't
@@ -57,11 +57,11 @@ export const pythonDescriptor: LanguageDescriptor = {
     doc: { markers: ['"""', "'''"], dialects: ['google', 'numpy', 'sphinx', 'plain'] },
 
     // Directive comments that must never be reflowed regardless of
-    // policy — moving one to a different line changes program behavior
+    // policy -- moving one to a different line changes program behavior
     // (shebang, encoding declaration, inline type comments) or a
     // tool's own opt-out (`noqa`, `pylint:`, `fmt:`). Acting on these is
     // wrapping-time behavior elsewhere, but the patterns belong on the
-    // descriptor — static data about Python's own comment conventions —
+    // descriptor -- static data about Python's own comment conventions --
     // so they're populated here rather than invented ad hoc later.
     neverReflow: [
       /^#!/, // shebang
@@ -85,7 +85,7 @@ export const pythonDescriptor: LanguageDescriptor = {
     // Originally hardcoded inside the (Python-only) dissolve
     // implementation; moved here once the JavaScript canary adapter
     // confirmed the *pattern* was the only Python-specific part of that
-    // logic — see `../../comments/looks-like-code.ts`'s own doc comment
+    // logic -- see `../../comments/looks-like-code.ts`'s own doc comment
     // and `docs/adapters.md`.
     codeLikeKeywords:
       /^(def |class |import |from |return\b|if |elif |else\s*:|for |while |with |try\s*:|except|finally\s*:|raise |yield |lambda |async |await |assert |global |nonlocal |del |pass\s*$|break\s*$|continue\s*$|@\w|#!)/,
@@ -99,7 +99,7 @@ export const pythonDescriptor: LanguageDescriptor = {
       { delimiter: "'", multiline: false, escapes: true },
     ],
 
-    // Canonical, lowercase, case-normalized forms — case normalization
+    // Canonical, lowercase, case-normalized forms -- case normalization
     // ("R" vs "r", "Rb" vs "rb") is explicitly the adapter's concern per
     // `PrefixSpec.prefix`'s own doc comment, not the descriptor's. `rf`
     // and `rb` stand in for both orderings (`rf`/`fr`, `rb`/`br`); the
@@ -117,7 +117,7 @@ export const pythonDescriptor: LanguageDescriptor = {
     ],
 
     // Python has no separate raw-form delimiter pair (unlike C++'s
-    // `R"(...)"`) — rawness is entirely prefix-driven, via the
+    // `R"(...)"`) -- rawness is entirely prefix-driven, via the
     // `r`/`rf`/`rb` entries above.
     rawForms: [],
 
@@ -143,8 +143,8 @@ export const pythonDescriptor: LanguageDescriptor = {
     },
 
     placeholders: [
-      /\{\{|\}\}/, // literal escaped braces in str.format()/f-strings — atomic either way
-      /\{[^{}]*\}/, // `{}`, `{0}`, `{name!r:>10}` — tree-sitter gives f-string interpolations
+      /\{\{|\}\}/, // literal escaped braces in str.format()/f-strings -- atomic either way
+      /\{[^{}]*\}/, // `{}`, `{0}`, `{name!r:>10}` -- tree-sitter gives f-string interpolations
       // their own `interpolation` node (see the descriptor doc comment
       // above), but this regex form is still the mechanism for plain
       // `str.format()`-style placeholders in an ordinary or docstring

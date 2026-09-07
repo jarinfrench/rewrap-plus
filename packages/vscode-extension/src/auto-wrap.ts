@@ -1,10 +1,10 @@
 /**
  * `rewrapPlus.autoWrap.enabled`: wrap the comment/docstring the cursor is
  * in the moment a space or Enter keystroke crosses the column limit,
- * mid-typing — Rewrap's own `rewrap.autoWrap.enabled` feature, which
+ * mid-typing -- Rewrap's own `rewrap.autoWrap.enabled` feature, which
  * Rewrap+ previously had no equivalent of. Unlike every other wrap path
  * (`./commands/*`, `./format-on-save.ts`), the trigger here is the
- * document's own edit stream, not an external event — see
+ * document's own edit stream, not an external event -- see
  * `docs/planning/implementation-plan.md`'s Phase 12g for the full design
  * rationale and the three problems that shape this module (reacting to
  * one's own edit, fighting the user's undo stack, and IME composition
@@ -12,7 +12,7 @@
  * Development Host before this was written.
  *
  * String literals are deliberately out of scope here even when
- * `rewrapPlus.wrapStrings` is on — auto-wrap only ever targets comment
+ * `rewrapPlus.wrapStrings` is on -- auto-wrap only ever targets comment
  * and docstring regions. Reflowing a string literal *while the user is
  * still typing inside it* carries materially higher corruption risk
  * (unbalanced quotes, an escape sequence split mid-composition) than
@@ -36,12 +36,12 @@ const TOGGLE_MESSAGE_TIMEOUT_MS = 5000;
 
 export function registerAutoWrap(context: vscode.ExtensionContext): void {
   // Session-scoped per-document override set by `rewrapPlus.toggleAutoWrap`
-  // — a plain `Map` (not `WeakMap`) because the key is `document.uri.toString()`,
-  // not the `TextDocument` object itself: the design goal (§4 of the Phase
+  // -- a plain `Map` (not `WeakMap`) because the key is `document.uri.toString()`,
+  // not the `TextDocument` object itself: the design goal (Sec. 4 of the Phase
   // 12g writeup) is "off/on for this *file*, not this *editor instance*",
   // and a closed-then-reopened document is a new `TextDocument` object
   // with the same URI, which should keep its override. `onDidCloseTextDocument`
-  // below still prunes it — this is deliberately a session override, not
+  // below still prunes it -- this is deliberately a session override, not
   // a persisted setting, matching Rewrap's own `toggleAutoWrap` (VSCode
   // doesn't restore it across a window reload, and neither should this).
   const overrides = new Map<string, boolean>();
@@ -83,7 +83,7 @@ export function registerAutoWrap(context: vscode.ExtensionContext): void {
 
 function isAutoWrapEffectivelyEnabled(document: vscode.TextDocument, overrides: ReadonlyMap<string, boolean>): boolean {
   const settings = readExtensionSettings(document);
-  // The global kill switch always wins — nothing, including a per-document
+  // The global kill switch always wins -- nothing, including a per-document
   // override, should re-enable auto-wrap while `rewrapPlus.enable` is off,
   // matching every other command's precedence (`./commands/apply-wrap.ts`'s
   // own `computeWrapResult`).
@@ -133,7 +133,7 @@ async function updateStatusBarItem(
 
   // Matches Rewrap's own 'icon' semantics exactly (confirmed from its
   // published package.json): shown while auto-wrap is on for this
-  // document, hidden otherwise — including while 'text' notification
+  // document, hidden otherwise -- including while 'text' notification
   // mode is selected, since that mode communicates state via a transient
   // status-bar message instead (see `toggleAutoWrap` above), not a
   // persistent icon.
@@ -166,7 +166,7 @@ async function updateStatusBarItem(
 /**
  * Returns the position the trigger character (a space or Enter) was
  * typed at when `contentChanges` looks like exactly that and nothing
- * else — `undefined` otherwise. Multi-range changes (paste, multi-cursor
+ * else -- `undefined` otherwise. Multi-range changes (paste, multi-cursor
  * edits, snippet expansion) and any replace-shaped change (a non-empty
  * `range`) are rejected outright.
  *
@@ -175,13 +175,13 @@ async function updateStatusBarItem(
  * `replacePrevCharCnt`/`compositionEnd`) in a live Extension Development
  * Host before this was written: a composing candidate's `.text` is the
  * candidate string itself, never literally a single space or newline, so
- * it can never satisfy the equality check below — regardless of whether
+ * it can never satisfy the equality check below -- regardless of whether
  * the underlying change is single- or multi-range. (An earlier version
  * of this design reasoned the *single-range* check would be what
- * excluded composition; the real exclusion is this text-equality check —
+ * excluded composition; the real exclusion is this text-equality check --
  * composition events observed in that spike were single-range too.)
  *
- * The position returned is `range.start` — where the character landed —
+ * The position returned is `range.start` -- where the character landed --
  * not the post-insert cursor position: for Enter, the post-insert
  * position is column 0 of the new line, which would never read as "past
  * the column limit". "You just typed a trigger character at or past the
@@ -217,14 +217,14 @@ async function handleDocumentChange(
     if (document.version === expectedSelfEditVersion) {
       return;
     }
-    // A real edit landed instead of (or interleaved with) our own —
+    // A real edit landed instead of (or interleaved with) our own --
     // fall through and evaluate it normally rather than silently
     // dropping it, since the guard's only job is to skip the one change
     // event *we* caused.
   }
 
   // `TextEditor.edit()` (needed below for the undo-coalescing behavior
-  // verified in the Phase 12g spike — `vscode.workspace.applyEdit`
+  // verified in the Phase 12g spike -- `vscode.workspace.applyEdit`
   // doesn't coalesce with the triggering keystroke) requires the editor
   // instance, not just the document, so auto-wrap only ever acts on the
   // active editor's own document.
@@ -244,7 +244,7 @@ async function handleDocumentChange(
 
   // Resolving the real column limit (`.editorconfig` included) only
   // happens once a space/Enter keystroke has already passed the cheap
-  // shape check above — not on every keystroke — since it's the one step
+  // shape check above -- not on every keystroke -- since it's the one step
   // here that can touch the filesystem.
   const resolvedConfig = resolveWrapConfigForDocument(document);
   if (triggerPosition.character < resolvedConfig.columnLimit.value) {
@@ -262,7 +262,7 @@ async function handleDocumentChange(
     const target = rangeTargetSpan(mapper, document, new vscode.Range(triggerPosition, triggerPosition));
 
     // `wrapStrings: false` is what actually makes this comment/docstring-only
-    // (see this module's own doc comment) — independent of whatever
+    // (see this module's own doc comment) -- independent of whatever
     // `rewrapPlus.wrapStrings` the user has configured for the explicit
     // wrap commands.
     const outcome = await computeWrapResult(document, [target], undefined, {
@@ -271,7 +271,7 @@ async function handleDocumentChange(
       mapper,
       // Reuse the `resolvedConfig` already resolved above (for the
       // column-limit early-exit check) instead of letting
-      // `computeWrapResult` resolve it again from scratch — that second
+      // `computeWrapResult` resolve it again from scratch -- that second
       // resolution is what used to re-walk `.editorconfig` a second time
       // per triggering keystroke.
       resolvedConfig,
@@ -283,7 +283,7 @@ async function handleDocumentChange(
     // `outcome.documentVersionChanged` already covers "the document
     // changed while `wrapRegions` was computing" (checked above). The one
     // thing that check doesn't cover is the active editor itself changing
-    // during that same `await` — re-check before calling `editor.edit()`,
+    // during that same `await` -- re-check before calling `editor.edit()`,
     // since editing a no-longer-active editor is pointless at best.
     if (vscode.window.activeTextEditor !== editor) {
       return;
@@ -303,13 +303,13 @@ async function handleDocumentChange(
     );
 
     if (!applied) {
-      // Our edit never landed — clear the guard so it doesn't
+      // Our edit never landed -- clear the guard so it doesn't
       // accidentally swallow a real future edit that happens to bump
       // the document to the version we were expecting.
       pendingSelfEdits.delete(document);
     }
   } catch (error) {
     const message = describeError(error);
-    getOutputChannel().appendLine(`${document.uri.fsPath}: auto-wrap skipped a keystroke — ${message}`);
+    getOutputChannel().appendLine(`${document.uri.fsPath}: auto-wrap skipped a keystroke -- ${message}`);
   }
 }

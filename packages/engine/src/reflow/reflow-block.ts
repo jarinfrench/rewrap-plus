@@ -7,13 +7,13 @@ import { decorateFirstLine } from './decorate-block.js';
  */
 export interface ReflowOptions {
   /**
-   * `'greedy'` (default) — first-fit: fill each line as much as
+   * `'greedy'` (default) -- first-fit: fill each line as much as
    * possible before wrapping. Matches Rewrap's behavior and user
    * expectation.
    *
-   * `'balanced'` — minimum-raggedness: choose break points that
+   * `'balanced'` -- minimum-raggedness: choose break points that
    * minimize the total squared slack across all lines but the last,
-   * the same family of algorithm TeX/Knuth–Plass uses for
+   * the same family of algorithm TeX/Knuth-Plass uses for
    * paragraph justification. Often visibly nicer for short docstrings,
    * where greedy's tendency to cram every line but the last can leave
    * one dramatically shorter final line; balanced spreads the
@@ -25,12 +25,12 @@ export interface ReflowOptions {
 
   /**
    * Extra columns the *first* line alone gives up, on top of
-   * `availableWidth` — for a caller that's about to prepend marker text
+   * `availableWidth` -- for a caller that's about to prepend marker text
    * to that line after the fact (`../reflow/decorate-block.ts`'s
    * `decorateFirstLine`, for a `listItem`'s bullet or a `fieldEntry`'s
    * label) and needs `reflowBlock` to leave room for it. Defaults to
    * `0`, matching every block type that never gets such a prefix
-   * (`paragraph`, `blank`, `verbatim`, `sectionHeader`) — for those,
+   * (`paragraph`, `blank`, `verbatim`, `sectionHeader`) -- for those,
    * this option simply isn't set by any caller.
    *
    * Deliberately a *separate* knob from `hangingIndent`, not folded into
@@ -38,7 +38,7 @@ export interface ReflowOptions {
    * after the first" primitive with its own callers and tests that have
    * nothing to do with marker restoration (see `./reflow-block.test.ts`'s
    * own hanging-indent cases, which pass it for a bare `paragraph` block
-   * with no marker involved at all) — conflating the two would make
+   * with no marker involved at all) -- conflating the two would make
    * `hangingIndent` on its own reserve first-line space unconditionally,
    * silently breaking every one of those unrelated, legitimate uses. The
    * marker-restoring callers (`../comments/emit-line-comments.ts`,
@@ -46,14 +46,14 @@ export interface ReflowOptions {
    * `reflowDocBlocks`) pass `hangingIndent`'s own value here too, since
    * for `listItem`/`fieldEntry` specifically the two happen to coincide
    * (the marker occupies exactly the same width as the continuation
-   * indent) — but that's a property of *those* callers, not something
+   * indent) -- but that's a property of *those* callers, not something
    * `reflowBlock` should assume generally.
    */
   readonly firstLineReserve?: number;
 }
 
 /**
- * Translate `WrapConfig.balancedWrapping` into `ReflowOptions.mode` — every
+ * Translate `WrapConfig.balancedWrapping` into `ReflowOptions.mode` -- every
  * adapter's own `wrapString`/`wrapDocstring`/`wrapProse` pipeline needs
  * exactly this one-line translation and nothing more (`firstLineReserve`,
  * where needed, is still set by the caller after this returns), so it's
@@ -73,25 +73,25 @@ export function reflowOptionsFrom(cfg: WrapConfig): ReflowOptions {
  * matching how `splitBlocks` already treats them ("`verbatim` is the escape
  * hatch that makes 'preserve formatting' tractable"):
  *
- * - `blank` — a single empty line.
- * - `verbatim` — its `lines`, content untouched (reflowing a fenced code
+ * - `blank` -- a single empty line.
+ * - `verbatim` -- its `lines`, content untouched (reflowing a fenced code
  *   block, a doctest, or an ASCII table would corrupt it; that's the
  *   entire reason `splitBlocks` routed this content to `verbatim` instead
  *   of `paragraph` in the first place), though every line after the
- *   first still gets `hangingIndent` spaces prepended — a no-op for
+ *   first still gets `hangingIndent` spaces prepended -- a no-op for
  *   every top-level caller (`hangingIndent` is always `0` for a
  *   top-level `verbatim` block; see the `case 'verbatim'` branch's own
  *   comment for why this still matters for `fieldEntry`).
- * - `sectionHeader` — its `text` as one line. Headers ("Args:", a NumPy
+ * - `sectionHeader` -- its `text` as one line. Headers ("Args:", a NumPy
  *   underline) are structural markers, not prose to fill; reflowing one
  *   would break whatever fixed relationship it has to its section (see
  *   the NumPy dialect's own handling: "underline length re-synced to header
  *   length if the header is untouched").
  *
  * For `paragraph`/`listItem`, this deliberately reflows only the atom
- * stream — it does **not** prepend a list marker or field label. Those
+ * stream -- it does **not** prepend a list marker or field label. Those
  * belong to the region's own dissolve/emit step (per-language and, for
- * doc dialects, per-dialect — see `DocDialect.emit`), which is the only
+ * doc dialects, per-dialect -- see `DocDialect.emit`), which is the only
  * code that knows the marker's *display* form (bullet character,
  * renumbered ordinal, dialect-specific field syntax like `:param x:`).
  * Keeping that concern out of this function is what keeps it shared and
@@ -101,32 +101,32 @@ export function reflowOptionsFrom(cfg: WrapConfig): ReflowOptions {
  * below): a nested `listItem`'s own bullet has no other caller left to
  * restore it (unlike a top-level block, nothing outside this function
  * ever sees a `fieldEntry`'s inner `blocks`), so `reflowFieldEntry` calls
- * `decorateFirstLine` on each one directly — that's still just replaying
+ * `decorateFirstLine` on each one directly -- that's still just replaying
  * a marker already baked into the block's own `marker`/`label` field,
  * the same dialect-agnostic operation every other caller performs, not
  * new dialect knowledge living in this module. The *outer* `fieldEntry`
  * block's own label is left to the caller exactly as before.
  *
  * `hangingIndent` is spent from the *same* `availableWidth` budget that
- * the first line uses in full by default — continuation lines get
+ * the first line uses in full by default -- continuation lines get
  * `availableWidth - hangingIndent` columns for content, plus
  * `hangingIndent` literal leading spaces, for the same total column
  * budget the caller resolved (`columnLimit - indentColumn`, in the
  * pipeline's terms). A block's own `hangingIndent` field (`listItem`,
- * `fieldEntry`) is *not* read directly here — the caller decides what
+ * `fieldEntry`) is *not* read directly here -- the caller decides what
  * value to pass, since a doc dialect may want alignment that differs
  * from the raw marker width (e.g. aligning under a parameter name rather
  * than under the bullet).
  *
  * The first line's own budget is `availableWidth -
  * options.firstLineReserve` (default reserve `0`, so full
- * `availableWidth` unless a caller opts in) — see `ReflowOptions.firstLineReserve`'s
+ * `availableWidth` unless a caller opts in) -- see `ReflowOptions.firstLineReserve`'s
  * own doc comment for why this is a separate knob from `hangingIndent`
  * rather than folded into it.
  *
  * **Overflow rule**: an atom wider than its
  * line's available width is placed alone on that line and allowed to
- * exceed the limit — never force-split mid-atom. This is what makes a
+ * exceed the limit -- never force-split mid-atom. This is what makes a
  * lone 90-column URL survive intact instead of being mangled. Holds
  * under both `mode`s.
  */
@@ -142,7 +142,7 @@ export function reflowBlock(
       return [''];
     case 'verbatim':
       // `hangingIndent` spaces on every line *after* the first, mirroring
-      // `greedyFill`/`balancedFill`'s own continuation-line convention —
+      // `greedyFill`/`balancedFill`'s own continuation-line convention --
       // a no-op (`hangingIndent` is always `0`) for every existing
       // top-level caller (`reflowBlockSequence` and
       // `../comments/emit-line-comments.ts`/`emit-block-comments.ts`
@@ -151,21 +151,21 @@ export function reflowBlock(
       // *under*), but load-bearing for `reflowFieldEntry`, below: a
       // multi-line `verbatim` block sitting in `blocks[0]` (a description
       // opening directly with a fenced sample) shares only its *first*
-      // line with the entry's label — lines after that are ordinary
+      // line with the entry's label -- lines after that are ordinary
       // continuation and need the same re-basing every other multi-line
       // `blocks[0]` shape already gets from `greedyFill`/`balancedFill`
       // reading this same parameter. Without this, `blocks[0]`-as-
       // `verbatim` printed its second-and-later lines flush left,
       // ignoring both the entry's own continuation column and the
-      // region's base indent — confirmed directly during development,
+      // region's base indent -- confirmed directly during development,
       // not hypothetical (see
       // `docs/planning/nested-field-entry-structure-plan.md`, section 5).
       //
       // A genuinely blank *line* inside `block.lines` (a fenced sample
-      // with a blank line separating two statements, say — `matchFencedCode`,
+      // with a blank line separating two statements, say -- `matchFencedCode`,
       // `../segmentation/verbatim.ts`, collects everything between the
       // fences unconditionally, blanks included) stays empty rather than
-      // getting `hangingIndent` spaces too — the same "genuinely blank
+      // getting `hangingIndent` spaces too -- the same "genuinely blank
       // means genuinely empty, never trailing whitespace" rule
       // `reflowFieldEntry`'s own `rest`-loop already applies to a `blank`
       // *block*, below, just needed again here at the *line* level: a
@@ -189,28 +189,28 @@ export function reflowBlock(
 /**
  * Reflow a `fieldEntry`'s nested `blocks` (its description, possibly
  * containing a nested list or a fenced sample rather than just flat
- * prose — see `../types/document.ts`'s own doc comment on `fieldEntry`)
+ * prose -- see `../types/document.ts`'s own doc comment on `fieldEntry`)
  * into the entry's flat line output.
  *
  * `blocks[0]` shares its first physical line with the entry's own label
  * (restored by the caller via `../reflow/decorate-block.ts`'s
- * `decorateFirstLine`, applied to this function's *return value* — not
+ * `decorateFirstLine`, applied to this function's *return value* -- not
  * here, since only the caller knows the label's display form), so it's
- * reflowed at the *entry's* `firstLineReserve`/`hangingIndent` — except
+ * reflowed at the *entry's* `firstLineReserve`/`hangingIndent` -- except
  * when `blocks[0]` itself carries its own marker (a `listItem` opening
  * the description directly, no leading prose), in which case *both*
  * reservations apply to that one shared line: the entry's own label
  * *and* `blocks[0]`'s own marker (glued on right after it, by
- * `decorateFirstLine` here — necessary since nothing else ever sees a
+ * `decorateFirstLine` here -- necessary since nothing else ever sees a
  * `fieldEntry`'s inner `blocks` to do it). Reserving only the entry's
  * own width and letting `blocks[0]`'s marker land afterward,
  * unaccounted, silently let a line run past `availableWidth` by exactly
- * the marker's width — confirmed directly against this function during
+ * the marker's width -- confirmed directly against this function during
  * development, not a hypothetical (see
  * `docs/planning/nested-field-entry-structure-plan.md`'s section 5 for
- * the repro this fixes). For the common case — `blocks[0]` is a bare
+ * the repro this fixes). For the common case -- `blocks[0]` is a bare
  * `paragraph`, still the *only* shape `groupFieldEntries` produces
- * before its `splitBlocks` wiring existed — `firstOwnIndent` is `0` and
+ * before its `splitBlocks` wiring existed -- `firstOwnIndent` is `0` and
  * this reduces to exactly the pre-nested-blocks call, so that case
  * stays byte-identical.
  *
@@ -247,7 +247,7 @@ function reflowFieldEntry(
     for (const nested of rest) {
       // A `blank` block stays a genuinely empty line, matching
       // `reflowBlockSequence`'s own top-level convention (a `blank`
-      // block's `hangingIndent` is always computed as `0` there too) —
+      // block's `hangingIndent` is always computed as `0` there too) --
       // *not* indented like every other block here would be. Handled as
       // its own case rather than folded into the uniform indent below:
       // that indent is applied per *line* of `reflowBlockSequence`'s
@@ -255,8 +255,8 @@ function reflowFieldEntry(
       // came from a `blank` block versus real content by the time it
       // returns a plain `string[]`. Confirmed as a real bug, not
       // hypothetical, by `test/wrap/nested-field-entry-idempotency.test.ts`
-      // (step 5): a blank line *inside* an entry's continuation — between
-      // its opening prose and a doctest/table further down — came out
+      // (step 5): a blank line *inside* an entry's continuation -- between
+      // its opening prose and a doctest/table further down -- came out
       // with `hangingIndent` columns of trailing whitespace, where the
       // source had none.
       if (nested.type === 'blank') {
@@ -264,12 +264,12 @@ function reflowFieldEntry(
         continue;
       }
       // Same rule, one level down: a `verbatim` block's own `.lines` can
-      // contain a genuinely blank *line* (not a `blank` *block* — a fenced
+      // contain a genuinely blank *line* (not a `blank` *block* -- a fenced
       // sample with a blank line inside it), and `reflowBlockSequence`
       // reflows a nested `verbatim` block at `hangingIndent: 0` (it isn't
       // `listItem`/`fieldEntry`), so `reflowBlock`'s own blank-line
       // handling for `verbatim` (see its `case 'verbatim'`, above) is a
-      // no-op here — this loop is the one actually adding the literal
+      // no-op here -- this loop is the one actually adding the literal
       // indent, so it's the one that has to skip it for an empty line too.
       for (const line of reflowBlockSequence([nested], availableWidth - hangingIndent, options)) {
         lines.push(line === '' ? '' : indent + line);
@@ -281,18 +281,18 @@ function reflowFieldEntry(
 
 /**
  * Reflow a flat sequence of blocks to plain content lines, restoring each
- * block's own marker/label (`decorateFirstLine`) as it goes — one block,
+ * block's own marker/label (`decorateFirstLine`) as it goes -- one block,
  * its own hanging indent, its own decoration, repeated. Shared by
  * `../docs/dialect.ts`'s `reflowDocBlocks` (a `LogicalDocument`'s
  * top-level block sequence) and `reflowFieldEntry` above (a field
  * entry's nested description blocks *after* the one sharing the label's
- * own line) — both are exactly this operation and differ only in what
+ * own line) -- both are exactly this operation and differ only in what
  * `availableWidth` that sequence sits at, which the caller already
  * accounts for. Living here rather than in `dialect.ts` keeps the
  * dependency direction one-way: this module (generic, `Block`-level
  * reflow) has no reason to import anything from `../docs/`, but a
  * `fieldEntry`'s own reflow case, right above, needs precisely this
- * logic for its nested blocks — so it's defined once, here, and
+ * logic for its nested blocks -- so it's defined once, here, and
  * `dialect.ts` calls into it rather than the reverse.
  */
 export function reflowBlockSequence(
@@ -315,7 +315,7 @@ export function reflowBlockSequence(
 
 /**
  * Group an atom stream into clusters: a cluster is one atom plus every
- * atom immediately after it tagged `glue: 'none'` — i.e. a maximal run
+ * atom immediately after it tagged `glue: 'none'` -- i.e. a maximal run
  * joined with no space in between. Both fill algorithms below break
  * lines only *between* clusters, never inside one, so a `glue: 'none'`
  * atom can never be stranded alone at the start of a continuation line.
@@ -324,8 +324,8 @@ export function reflowBlockSequence(
  * separated this from what came before it" (`../segmentation/atomize-words.ts`'s
  * own doc comment: a placeholder or inline-code span glued directly to
  * trailing punctuation, e.g. `` `code`. ``). Line-breaking atom-by-atom
- * treated that glue purely as a same-line rendering hint — it decided
- * whether to print a space, not whether a break could fall there — so
+ * treated that glue purely as a same-line rendering hint -- it decided
+ * whether to print a space, not whether a break could fall there -- so
  * the greedy/balanced fitters could still split a cluster across two
  * lines the moment it didn't quite fit, leaving the glued half (often a
  * single trailing character) orphaned alone on its own continuation
@@ -345,14 +345,14 @@ function groupIntoClusters(atoms: readonly Atom[]): Atom[][] {
   return clusters;
 }
 
-/** Sum of a cluster's atom widths — internal joins are all `glue: 'none'`, so no gap columns. */
+/** Sum of a cluster's atom widths -- internal joins are all `glue: 'none'`, so no gap columns. */
 function clusterWidth(cluster: readonly Atom[]): number {
   return cluster.reduce((sum, atom) => sum + atom.width, 0);
 }
 
 /**
  * Columns a join contributes to a line's width: 0 for `'none'` (glued),
- * 2 for `'double'` (a preserved double space after a sentence — see
+ * 2 for `'double'` (a preserved double space after a sentence -- see
  * `../segmentation/atomize-words.ts`), 1 otherwise (the ordinary case).
  */
 function glueWidth(glue: Atom['glue']): number {
@@ -401,7 +401,7 @@ function greedyFill(
     const width = clusterWidth(cluster);
 
     if (current.length === 0) {
-      // A line always takes at least one cluster, however wide — the
+      // A line always takes at least one cluster, however wide -- the
       // overflow rule. `breakBefore` is moot here: there's nothing on
       // this line yet to break away from.
       current.push(...cluster);
@@ -432,17 +432,17 @@ function greedyFill(
 }
 
 /**
- * Balanced (minimum-raggedness) line breaking: a Knuth–Plass-lite
+ * Balanced (minimum-raggedness) line breaking: a Knuth-Plass-lite
  * dynamic program that chooses break points minimizing the sum, over
  * every line but the last, of the squared slack (unused width) that
- * line leaves — the standard formulation for "spread the raggedness out
+ * line leaves -- the standard formulation for "spread the raggedness out
  * evenly" rather than greedy's "cram every line except the last."
  *
  * `dp[i]` is the minimum achievable cost for laying out `atoms[i..n)`
  * as a run of lines starting fresh at `i`; `choice[i]` records the `j`
  * (exclusive end) of the best first line from `i`. Only line `0` (the
  * one starting at atom index `0`) is special-cased to the
- * `availableWidth - firstLineReserve` budget — *every* other line,
+ * `availableWidth - firstLineReserve` budget -- *every* other line,
  * wherever it starts, is a continuation line at `availableWidth -
  * hangingIndent`, since only the block's very first line is ever not a
  * continuation. That collapses what would otherwise be a
@@ -452,24 +452,24 @@ function greedyFill(
  * Constraints mirrored from `greedyFill`, so both modes obey the same
  * invariants:
  * - a line that overflows its budget is only ever valid if it's a
- *   single atom (the overflow rule) — an unavoidable, unpenalized cost
+ *   single atom (the overflow rule) -- an unavoidable, unpenalized cost
  *   of `0`; a multi-atom line that overflows is simply not considered,
  *   enforced by breaking out of the inner loop the moment accumulated
  *   width exceeds budget, since width only grows as the candidate line
  *   extends;
  * - a single atom that *does* fit within budget is not automatically
- *   free — it competes on its actual squared-slack cost against being
+ *   free -- it competes on its actual squared-slack cost against being
  *   merged with a neighbor, the same as any other line;
  * - an atom with `breakBefore` set may never appear as a non-first atom
- *   of a candidate line — mirroring greedy's forced line break — which
+ *   of a candidate line -- mirroring greedy's forced line break -- which
  *   also bounds the inner loop's extension.
  *
- * `O(n²)` in the number of clusters, which is fine at the scale this
+ * `O(n^2)` in the number of clusters, which is fine at the scale this
  * operates on (one comment/docstring/string region's atoms, not a
- * whole file) — this is not the place for a segment-tree speedup.
+ * whole file) -- this is not the place for a segment-tree speedup.
  *
  * Operates over clusters (`groupIntoClusters`), not raw atoms, for the
- * same reason `greedyFill` does — a `glue: 'none'` run must never be
+ * same reason `greedyFill` does -- a `glue: 'none'` run must never be
  * split across a line break, so `j` (a candidate line's exclusive end)
  * only ever lands on a cluster boundary.
  */
@@ -515,8 +515,8 @@ function balancedFill(
       // A line costs 0 if it's the last line (a ragged final line is
       // normal, not penalized) or if it's a single cluster that simply
       // can't fit no matter what (the overflow rule: unavoidable, so
-      // not penalized either). Otherwise — including a single cluster
-      // that *does* fit — it's a real packing choice and costs its
+      // not penalized either). Otherwise -- including a single cluster
+      // that *does* fit -- it's a real packing choice and costs its
       // squared slack, exactly like a multi-cluster line. Treating a
       // fitting single cluster as automatically free was the bug this
       // comment replaces: it made the DP prefer one-cluster-per-line
@@ -526,7 +526,7 @@ function balancedFill(
       const total = cost + dp[j]!;
       // `<=`, not `<`: prefer the *largest* valid `j` among ties (fewer,
       // fuller lines) rather than the first one found. Ties are common
-      // — every candidate ending at the final cluster costs 0 regardless
+      // -- every candidate ending at the final cluster costs 0 regardless
       // of its raggedness ("a ragged last line is normal"), so without
       // this the DP would arbitrarily prefer the shortest last line it
       // happened to consider first.
@@ -553,8 +553,8 @@ function balancedFill(
 /**
  * Join a line's atoms back into text, respecting `glue`: `'none'` means
  * flush against the previous atom (no space), `'double'` means two
- * spaces (a preserved sentence-spacing gap — see `glueWidth` above),
- * anything else — including the ordinary `undefined` case — means one
+ * spaces (a preserved sentence-spacing gap -- see `glueWidth` above),
+ * anything else -- including the ordinary `undefined` case -- means one
  * space.
  */
 function renderAtoms(atoms: readonly Atom[]): string {

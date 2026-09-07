@@ -33,7 +33,7 @@ describe('rewrapPlus.wrapAtCursor', () => {
 
     const editor = await openFixture(fixturePath('long-comment.py'));
     const originalText = editor.document.getText();
-    // Line 1 is `x = 1` — no wrappable region there.
+    // Line 1 is `x = 1` -- no wrappable region there.
     editor.selection = new vscode.Selection(new vscode.Position(1, 0), new vscode.Position(1, 0));
 
     await vscode.commands.executeCommand('rewrapPlus.wrapAtCursor');
@@ -62,7 +62,7 @@ describe('rewrapPlus.wrapAtCursor', () => {
     editor.selection = new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0));
 
     // Regression test: this used to throw ParserManager's "no adapter
-    // registered for language 'plaintext'" as an unhandled rejection —
+    // registered for language 'plaintext'" as an unhandled rejection --
     // see commands/apply-wrap.ts's computeWrapResult for the fix.
     await vscode.commands.executeCommand('rewrapPlus.wrapAtCursor');
   });

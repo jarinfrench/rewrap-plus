@@ -24,34 +24,34 @@ import codeUntouchedIn from '../fixtures/latex/comments/008-code-untouched-comme
 import codeUntouchedOut from '../fixtures/latex/comments/008-code-untouched-comment-wrapped.out.tex?raw';
 
 /**
- * The LaTeX adapter's first gold fixtures — Phase D commit 14, `%`
+ * The LaTeX adapter's first gold fixtures -- Phase D commit 14, `%`
  * comment paragraphs through the *existing*
  * `'lineComment'` machinery, no LaTeX-specific dissolve/emit code at all
  * (`../../src/languages/latex/adapter.ts`'s own doc comment). Each
  * `.out.tex` was produced by actually running this adapter's own
  * `wrapRegions` pipeline against the paired `.in.tex` (not hand-computed),
- * then verified — idempotent, no unexpectedly-skipped region — before
+ * then verified -- idempotent, no unexpectedly-skipped region -- before
  * being committed as the gold file; this suite re-asserts all of that on
  * every run.
  *
  * `004`/`006` are deliberately *not* under the column limit in their
- * `.out.tex` — that's the fixture's whole point (a `neverReflow` magic
+ * `.out.tex` -- that's the fixture's whole point (a `neverReflow` magic
  * comment, and a commented-out-code run `looksLikeCommentedOutCode`
  * routes to `verbatim`), so the usual "no line over the limit" assertion
  * below is scoped to exclude them by name rather than silently weakened
  * for every fixture, the same targeted-scoping fix
  * `markdown-directive-fixtures.test.ts` already established for the
- * identical shape of problem (§Errors and fixes, Phase C commit 11).
+ * identical shape of problem (Sec. Errors and fixes, Phase C commit 11).
  *
  * `008` originally also carried an ordinary-text paragraph, back when
  * `discoverProse` didn't exist yet and the fixture's point was "text
  * outside a comment stays untouched, since nothing here could wrap it."
  * Once `discoverProse`/`wrapProse` landed (commits 15/16), that paragraph
- * became real, wrappable prose — a fixture whose gold file asserted it
+ * became real, wrappable prose -- a fixture whose gold file asserted it
  * stayed untouched would have been asserting the adapter's own
  * (correct, intended) new capability *doesn't* work. Simplified back to
  * a comment-only fixture (`\section{...}` untouched, `%` comment wrapped)
- * to keep this suite's own scope honest — the richer "section header
+ * to keep this suite's own scope honest -- the richer "section header
  * plus real body prose plus a comment, all three interacting" scenario
  * moved to `latex-prose-wrap-fixtures.test.ts` instead, where it belongs
  * now that it's genuinely exercising prose wrapping, not just proving an
@@ -105,7 +105,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(latexAdapter);
 });
 
-describe('LaTeX % comments — end-to-end gold fixtures', () => {
+describe('LaTeX % comments -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'latex', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -128,7 +128,7 @@ describe('LaTeX % comments — end-to-end gold fixtures', () => {
     }
   });
 
-  it('is idempotent — wrapping already-wrapped output produces zero further edits', async () => {
+  it('is idempotent -- wrapping already-wrapped output produces zero further edits', async () => {
     for (const fixture of fixtures) {
       const result = await wrapRegions(fixture.expected, 'latex', 'all', config(), parserManager);
       const reapplied = applyTextEdits(fixture.expected, result.edits);

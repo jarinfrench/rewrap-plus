@@ -4,7 +4,7 @@ import type { ResolvedColumnLimit as GenericResolvedColumnLimit } from '@rewrap-
  * Column limit resolution: the precedence chain a wrap command actually
  * needs (commit 2), as a pure function over already-extracted values.
  *
- * Deliberately vscode-free — not because of the engine's hard rule (that
+ * Deliberately vscode-free -- not because of the engine's hard rule (that
  * only binds `packages/engine`), but so this, the single most
  * "why did it wrap at N?" -prone piece of logic in the extension, can be
  * unit tested directly with plain fixture objects instead of needing a
@@ -35,15 +35,15 @@ export type ResolvedColumnLimit = GenericResolvedColumnLimit<ColumnLimitSourceNa
 /**
  * `@rewrap-plus/engine`'s own `DEFAULT_COLUMN_LIMIT`
  * (`packages/engine/src/types/column-limit-resolution.ts`) has the
- * identical value and exists for exactly this reuse — but as a runtime
+ * identical value and exists for exactly this reuse -- but as a runtime
  * *value*, not a type, it can't be statically imported here the way
  * `ResolvedColumnLimit` above is: `@rewrap-plus/engine` is ESM-only and
  * this package compiles to CommonJS, and `tsc` refuses to emit a
- * `require()` for a static value import across that boundary (TS1479 —
+ * `require()` for a static value import across that boundary (TS1479 --
  * see `../engine-host.ts`'s own doc comment, "Why `getEngine()` uses a
  * dynamic `import()`, not a static one," for the full explanation). Every
  * other runtime value this package needs from the engine goes through
- * that file's cached `getEngine()` promise instead — not a fit here,
+ * that file's cached `getEngine()` promise instead -- not a fit here,
  * since forcing this function's own column-limit resolution onto an
  * async engine load would break the exact "unit-testable with plain
  * fixture objects, no editor host" property this file's own doc comment
@@ -56,7 +56,7 @@ export interface ColumnLimitInputs {
   /**
    * `rewrapPlus.columnLimit`, read with the document's language scope so
    * a `"[python]": { "rewrapPlus.columnLimit": ... }` override is already
-   * folded in — VSCode's own configuration resolution does that
+   * folded in -- VSCode's own configuration resolution does that
    * transparently given a language-aware scope, so there's nothing
    * further to do here for tier 1. `null` (the setting's own default)
    * means "fall through to tier 2".
@@ -65,7 +65,7 @@ export interface ColumnLimitInputs {
 
   /**
    * `editor.rulers`, but *only* the language-specific override layer
-   * (`WorkspaceConfiguration#inspect`'s `*LanguageValue` fields) —
+   * (`WorkspaceConfiguration#inspect`'s `*LanguageValue` fields) --
    * `undefined` when no `"[<language>]": { "editor.rulers": [...] }`
    * override exists at any settings scope. This is deliberately not the
    * same query as `globalRulers` below: VSCode's ordinary `get()` would
@@ -77,10 +77,10 @@ export interface ColumnLimitInputs {
   /** `.editorconfig` `max_line_length` for this file, already resolved (tier 3). `undefined` if none applies, or editorconfig support is disabled. */
   readonly editorConfigMaxLineLength: number | undefined;
 
-  /** `editor.rulers`, but only the non-language-specific layer (tier 4) — the counterpart split to `languageRulers` above. */
+  /** `editor.rulers`, but only the non-language-specific layer (tier 4) -- the counterpart split to `languageRulers` above. */
   readonly globalRulers: readonly RulerSetting[] | undefined;
 
-  /** `rewrapPlus.rulerIndex` — which ruler entry to use when a tier's rulers array has more than one. */
+  /** `rewrapPlus.rulerIndex` -- which ruler entry to use when a tier's rulers array has more than one. */
   readonly rulerIndex: number;
 }
 
@@ -109,7 +109,7 @@ export function resolveColumnLimit(inputs: ColumnLimitInputs): ResolvedColumnLim
 /**
  * Pick the `rulerIndex`-th ruler's column, normalizing the `number |
  * { column, color }` shape. An out-of-range index falls back to the
- * first entry rather than treating the whole tier as absent — a
+ * first entry rather than treating the whole tier as absent -- a
  * misconfigured `rewrapPlus.rulerIndex` shouldn't silently disable
  * ruler-based resolution the user can plainly see rulers configured for.
  */

@@ -21,13 +21,13 @@ interface LineIndex {
   /**
    * Byte/UTF-16 offsets (both relative to this line's own start) recorded
    * every `CHECKPOINT_INTERVAL` UTF-16 units into `text`, always starting
-   * with `{ byte: 0, utf16: 0 }` — see `nearestCheckpoint`'s own doc
+   * with `{ byte: 0, utf16: 0 }` -- see `nearestCheckpoint`'s own doc
    * comment for why these exist.
    */
   readonly checkpoints: readonly Checkpoint[];
 }
 
-/** One entry of a `LineIndex.checkpoints` table — see that field's doc comment. */
+/** One entry of a `LineIndex.checkpoints` table -- see that field's doc comment. */
 interface Checkpoint {
   readonly utf16: number;
   readonly byte: number;
@@ -54,7 +54,7 @@ function utf8ByteLength(codePoint: number): number {
  * Build `lineText`'s checkpoint table: `{ utf16: 0, byte: 0 }` followed by
  * one entry every `CHECKPOINT_INTERVAL` UTF-16 units, in ascending order of
  * both fields (the two axes advance together, one direction is never ahead
- * of the other) — see `nearestCheckpoint`'s doc comment for why.
+ * of the other) -- see `nearestCheckpoint`'s doc comment for why.
  */
 function buildCheckpoints(lineText: string): Checkpoint[] {
   const checkpoints: Checkpoint[] = [{ utf16: 0, byte: 0 }];
@@ -77,7 +77,7 @@ function buildCheckpoints(lineText: string): Checkpoint[] {
 
 /**
  * Greatest checkpoint whose `field` value is `<= target`, via binary
- * search — `checkpoints` is always non-empty (`buildCheckpoints` always
+ * search -- `checkpoints` is always non-empty (`buildCheckpoints` always
  * emits the `{0, 0}` entry), so this always finds one.
  *
  * The one table built per line serves both lookup directions
@@ -108,7 +108,7 @@ function nearestCheckpoint(
 /**
  * The single place that converts between tree-sitter's UTF-8 byte offsets
  * and VSCode's UTF-16 `Position`s, for one fixed source text (see
- * `./span.ts` for why this split exists — the two schemes agree for ASCII
+ * `./span.ts` for why this split exists -- the two schemes agree for ASCII
  * and diverge for everything else).
  *
  * Built once per parse. Every later phase that needs to turn a tree-sitter
@@ -117,7 +117,7 @@ function nearestCheckpoint(
  * the conversion.
  *
  * Line endings: a line's `text` includes every character up to (but not
- * including) its terminating `\n` — so for a CRLF file, a trailing `\r` is
+ * including) its terminating `\n` -- so for a CRLF file, a trailing `\r` is
  * currently counted as an ordinary character of the line, which overstates
  * `character` by one relative to VSCode's own CRLF column semantics.
  * Detecting and specially handling CRLF (line ending and trailing
@@ -141,7 +141,7 @@ export class PositionMapper {
 
     for (const ch of source) {
       // Iterating a string with for-of yields whole code points, one per
-      // step — a surrogate pair (astral character, e.g. an emoji) is never
+      // step -- a surrogate pair (astral character, e.g. an emoji) is never
       // split across iterations, so codePointAt(0) below is always the
       // full code point.
       const codePoint = ch.codePointAt(0)!;
@@ -206,13 +206,13 @@ export class PositionMapper {
    * position.
    *
    * Scans forward from the nearest checkpoint at or before `byteIntoLine`,
-   * not from the line's own start — a plain start-of-line scan made this
+   * not from the line's own start -- a plain start-of-line scan made this
    * method (and its counterpart below) cost `O(line length)` *per call*,
    * which every node-span computation in `discoverRegions` pays at least
    * once. For a single pathologically long line (a long `+`-chained
    * concatenation, or one huge string literal, is exactly this named
    * risk shape), that turned "discover every region in the file"
-   * quadratic in that line's length — confirmed by direct timing (a
+   * quadratic in that line's length -- confirmed by direct timing (a
    * 20,000-operand concatenation on one line took over two minutes) before
    * this fix. `CHECKPOINT_INTERVAL`-bounded scans make each call's cost
    * independent of line length again.

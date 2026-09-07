@@ -5,12 +5,12 @@ import type { LanguageAdapter } from '../types/adapter.js';
 export interface ParserManagerOptions {
   /**
    * Base directory (or base URL, in a browser host) that
-   * `LanguageDescriptor.grammarWasm` paths are resolved against — e.g. if
+   * `LanguageDescriptor.grammarWasm` paths are resolved against -- e.g. if
    * `wasmDir` is the engine package root and a descriptor declares
    * `grammarWasm: 'grammars/tree-sitter-python.wasm'`, the file loaded is
    * `<wasmDir>/grammars/tree-sitter-python.wasm`.
    *
-   * Joined with a plain string concatenation, not Node's `path` module —
+   * Joined with a plain string concatenation, not Node's `path` module --
    * this package stays free of Node built-ins so the same code can run
    * wherever `web-tree-sitter` itself can (`Language.load` accepts a
    * path string in Node and works the same way in a browser given a
@@ -22,9 +22,9 @@ export interface ParserManagerOptions {
   readonly wasmDir: string;
 
   /**
-   * Where `languageId` → `LanguageDescriptor` lookups come from. Grammar
+   * Where `languageId` -> `LanguageDescriptor` lookups come from. Grammar
    * WASM is loaded lazily on first `parserFor` call for a given
-   * descriptor, never eagerly at registration — registering an adapter
+   * descriptor, never eagerly at registration -- registering an adapter
    * stays cheap and filesystem-free (see `AdapterRegistry`'s own doc
    * comment), and grammar loading only happens for languages someone
    * actually asks to parse.
@@ -36,14 +36,14 @@ export interface ParserManagerOptions {
  * Loads and caches tree-sitter `Language`s and hands out `Parser`
  * instances configured with them.
  *
- * `web-tree-sitter` requires `await Parser.init()` — a one-time async
- * WASM bootstrap — before any `Parser` or `Language` can be constructed.
+ * `web-tree-sitter` requires `await Parser.init()` -- a one-time async
+ * WASM bootstrap -- before any `Parser` or `Language` can be constructed.
  * That's the async step this class exists to hide: `ParserManager.create`
  * does it once, so nothing downstream has to think about init ordering.
  *
  * A `Language` is cached per `LanguageDescriptor.id` (not per requested
  * `languageId`), so resolving the same descriptor through one of its
- * aliases — `typescriptreact` alongside `typescript`, say — reuses the
+ * aliases -- `typescriptreact` alongside `typescript`, say -- reuses the
  * already-loaded grammar rather than loading it twice. Concurrent
  * first-time requests for the same language share one in-flight load
  * rather than racing two loads of the same WASM.
@@ -66,7 +66,7 @@ export class ParserManager {
 
   /**
    * Resolve `languageId` to its registered `LanguageAdapter`, without
-   * touching the grammar cache at all — the counterpart to `parserFor`
+   * touching the grammar cache at all -- the counterpart to `parserFor`
    * for callers that need the adapter itself (its descriptor, its
    * `classify`/`groupRegions`/`isSafeToWrap` hooks) rather than a ready
    * `Parser`. Added alongside the generalized, engine-level `wrapRegions`
@@ -94,7 +94,7 @@ export class ParserManager {
 
   /**
    * Resolve `languageId` to its registered adapter, load (or reuse) its
-   * grammar, and return a `Parser` already configured with it — ready to
+   * grammar, and return a `Parser` already configured with it -- ready to
    * call `.parse(source)` immediately.
    *
    * Throws if no adapter is registered for `languageId`. This mirrors

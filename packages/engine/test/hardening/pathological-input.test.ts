@@ -15,20 +15,20 @@ import { wrapRegions } from '../../src/wrap.js';
  * Hardening parse error and unsafe region handling: a named
  * pathological-input list ("single 100k-char string, deeply nested
  * concat, file with no trailing newline, CRLF line endings, mixed
- * tabs/spaces") plus the "region overlapping an error span → skip with
+ * tabs/spaces") plus the "region overlapping an error span -> skip with
  * reason, never partial-edit" invariant. CRLF line endings get their own
  * dedicated coverage in `./line-ending-preservation.test.ts` rather than
  * here.
  *
  * Four of the five named cases below are parameterized across every
- * registered adapter — the same Python-only gap `../wrap/idempotency-all-
+ * registered adapter -- the same Python-only gap `../wrap/idempotency-all-
  * fixtures.test.ts` and `./line-ending-preservation.test.ts` had before
  * being generalized. The fifth (the parse-error-overlap test) stays
  * Python-only; see its own doc comment for why that's a deliberate scope
  * line, not an oversight.
  *
  * Two real bugs surfaced while writing the original Python-only version of
- * this suite — not hypothetical risks merely anticipated in advance:
+ * this suite -- not hypothetical risks merely anticipated in advance:
  *
  * - `parseWithErrors`' `collectErrorSpans` and `discoverRegions`'
  *   `collectOperatorChainLeaves` were both recursive, one call frame per
@@ -36,14 +36,14 @@ import { wrapRegions } from '../../src/wrap.js';
  *   (real Python, `tree-sitter-python` parses it without complaint) builds
  *   a `binary_operator` tree whose depth scales with operand count, and a
  *   several-thousand-operand chain blew the actual JS call stack
- *   (`RangeError: Maximum call stack size exceeded`) in both functions —
+ *   (`RangeError: Maximum call stack size exceeded`) in both functions --
  *   confirmed by direct probing before any fix existed. Both are now
  *   iterative (explicit stack), removing the depth limit entirely; see
  *   each function's own doc comment (`../../src/parser/parse-result.ts`,
  *   `../../src/discovery/discover-regions.ts`).
  * - `PositionMapper#byteOffsetToPosition`/`#positionToByteOffset` scanned
  *   every query from the start of the line, making each call cost
- *   `O(line length)` — paid at least once per discovered node. A single
+ *   `O(line length)` -- paid at least once per discovered node. A single
  *   very long line (exactly what a long `+`-chain or one huge string
  *   literal produces) turned "discover every region in the file"
  *   quadratic in that line's length: a 20,000-operand chain on one line
@@ -55,7 +55,7 @@ import { wrapRegions } from '../../src/wrap.js';
  * both bugs above fixed, the remaining cost of discovering a many-
  * -thousand-operand concatenation chain is dominated by `web-tree-sitter`'s
  * own `Query#captures` matching a recursive `@concat.operator` pattern
- * against a deeply left-associative tree — confirmed by direct timing to
+ * against a deeply left-associative tree -- confirmed by direct timing to
  * be the actual bottleneck (not this package's own code) once the two
  * fixes above landed, and a third-party/grammar-level characteristic, not
  * something to patch inside this engine. It degrades gracefully (slow,
@@ -68,13 +68,13 @@ import { wrapRegions } from '../../src/wrap.js';
  * concatenation (Python's `+` form, and JS/TS/Java's only form): a 2,000-
  * part chain built a `binary_operator`/`binary_expression` tree ~2,000
  * nodes deep for all three. C++'s `'implicit'`-only concatenation (bare
- * adjacency, no operator) is structurally immune — the identical 2,000-
+ * adjacency, no operator) is structurally immune -- the identical 2,000-
  * part chain produced a tree only 8 nodes deep, because
  * `tree-sitter-cpp`'s `concatenated_string` node holds every adjacent
  * literal as a flat list of children, not a recursive binary tree. The
  * C++ variant of that test below is kept anyway as a permanent regression
  * guard (if that flat representation ever changed, or this engine's own
- * discovery logic grew a recursive step over it, this would catch it) —
+ * discovery logic grew a recursive step over it, this would catch it) --
  * it's just not exercising the same pathology the other four languages
  * share.
  */
@@ -130,7 +130,7 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
     languageId: 'cpp',
     adapter: cppAdapter,
     commentMarker: '//',
-    // Bare adjacency, not `+` — C++'s only concatenation form (see module
+    // Bare adjacency, not `+` -- C++'s only concatenation form (see module
     // doc comment on why this doesn't reproduce the same tree-depth
     // pathology the other four languages do).
     buildLongChainSource: (parts) => `void f() {\n  const char* x = ${parts.join(' ')};\n}\n`,
@@ -154,10 +154,10 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(LANGUAGE_SETS.map(({ adapter }) => adapter));
 });
 
-describe('pathological input hardening (python only — see module doc comment)', () => {
+describe('pathological input hardening (python only -- see module doc comment)', () => {
   it('skips only the region(s) overlapping a parse error, never a partial edit, and still wraps everything else', async () => {
     // The trailing `+` with nothing after it makes the parser produce one
-    // wide ERROR node recovering across several following lines — wide
+    // wide ERROR node recovering across several following lines -- wide
     // enough to genuinely overlap both the string literal on the broken
     // line and the comment on the line after it, while the comment
     // *before* the error sits entirely outside it. This is deliberately
@@ -170,9 +170,9 @@ describe('pathological input hardening (python only — see module doc comment)'
     // operator is a genuine per-grammar characteristic (this project's own
     // "assume every grammar has its own version of this waiting to be
     // found" rule), not something safe to assume generalizes from one
-    // probed construction. The underlying invariant this test protects —
+    // probed construction. The underlying invariant this test protects --
     // "a region overlapping any parse error is skipped, never partially
-    // edited" — is still exercised for every adapter by
+    // edited" -- is still exercised for every adapter by
     // `run-adapter-conformance.ts`'s "wrapped output re-parses with zero
     // error nodes" check and by this file's own now-generalized pathological
     // cases below; what's Python-only here is specifically this one
@@ -220,7 +220,7 @@ describe.each(LANGUAGE_SETS)(
       expect(result.edits.length + result.skipped.length).toBeGreaterThan(0);
 
       // Idempotent, same as every other fixture (this suite's own headline
-      // property) — proves the pathological-sized input isn't just "doesn't
+      // property) -- proves the pathological-sized input isn't just "doesn't
       // crash" but actually produces a stable, well-formed result.
       const wrapped = applyTextEdits(source, result.edits);
       const second = await wrapRegions(wrapped, languageId, 'all', cfg, parserManager);

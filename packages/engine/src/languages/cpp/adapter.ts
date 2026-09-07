@@ -10,7 +10,7 @@ import { wrapCppString } from './wrap-string.js';
 /**
  * C++'s `classify` override.
  *
- * `string_literal` nodes are always `'stringLiteral'` — C++ has no
+ * `string_literal` nodes are always `'stringLiteral'` -- C++ has no
  * docstring concept (`raw_string_literal`/`char_literal` are separate
  * node types `cppDescriptor.queries.strings` never captures in the first
  * place, per `./descriptor.ts`'s own doc comment, so this never needs to
@@ -18,12 +18,12 @@ import { wrapCppString } from './wrap-string.js';
  *
  * `comment` nodes need telling apart by text, the same shape every
  * ECMAScript-family adapter's `classifyEcmaScriptNode` already handles
- * (`../ecmascript/adapter-support.ts`) — one grammar node type covers
+ * (`../ecmascript/adapter-support.ts`) -- one grammar node type covers
  * `//`, `///`, plain `/* * /`, and `/** * /` alike:
  *
  * - `/**` and `///` are both `'docComment'` (`cppDescriptor.comments.doc.markers`
  *   lists both), eligible for dialect-aware wrapping via the `doxygen`
- *   dialect (`../../docs/doxygen.ts`) — checked against *every* configured
+ *   dialect (`../../docs/doxygen.ts`) -- checked against *every* configured
  *   marker, not just the first, and before the plain `//` check below,
  *   since `///` also starts with `//`. `wrapDocComment`
  *   (`../../comments/wrap-doc-comment.ts`) tells the two delimiter
@@ -64,7 +64,7 @@ function classify(node: SyntaxNode): RegionKind | null {
 /**
  * C++'s `groupRegions` override: merges consecutive `///` (Doxygen
  * repeated-marker) `'docComment'` regions at the same indent column into
- * a single multi-part region — the identical adjacency merge Python's
+ * a single multi-part region -- the identical adjacency merge Python's
  * own `'lineComment'` grouping uses
  * (`../../comments/group-adjacent-regions.ts`'s `groupAdjacentRegions`),
  * applied to a different `RegionKind`/predicate pair. Deliberately
@@ -73,7 +73,7 @@ function classify(node: SyntaxNode): RegionKind | null {
  * node needing no merge, and merging two genuinely separate adjacent
  * block doc comments would corrupt the span
  * `dissolveBlockCommentText`/`emitBlockComments` expect (one open
- * delimiter, one close delimiter — not two of each inside one region).
+ * delimiter, one close delimiter -- not two of each inside one region).
  * Ordinary `//` line comments are still never merged for C++, the same
  * open question left for JavaScript/TypeScript's own `//` comments too
  * (`docs/adapters.md`).
@@ -94,19 +94,19 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
  * this hook's) always returns `true`.
  *
  * A line-continuation escape or irregular (tab/multi-space) whitespace in
- * any part is refused too, but not by this function — `../../wrap.ts`
+ * any part is refused too, but not by this function -- `../../wrap.ts`
  * applies that check unconditionally, for every `'stringLiteral'` region,
  * before ever reaching this hook (see
- * `../../strings/is-string-safe-to-wrap-baseline.ts`) — an engine-level
+ * `../../strings/is-string-safe-to-wrap-baseline.ts`) -- an engine-level
  * baseline, not a C++-specific rule. What's left here is genuinely
  * C++-specific:
  *
  * - **Any part's prefix doesn't parse** (`extractPrefix` returning
- *   `null`) — reachable in principle for a hand-built `WrappableRegion`
+ *   `null`) -- reachable in principle for a hand-built `WrappableRegion`
  *   that doesn't correspond to real discovered output; "assume unsafe" is
  *   the failure mode that can't corrupt a file, the same posture Python's
  *   own `isSafeToWrap` takes for the identical case.
- * - **The concatenation run mixes more than one distinct prefix** —
+ * - **The concatenation run mixes more than one distinct prefix** --
  *   including an empty prefix alongside a real one (`"abc" L"def"`,
  *   perfectly valid, standards-legal C++: an unprefixed literal adjacent
  *   to a prefixed one takes on that prefix). Refusing this anyway,
@@ -117,7 +117,7 @@ function groupRegions(regions: readonly WrappableRegion[]): WrappableRegion[] {
  *   `./dissolve-string.ts`'s shared `dissolveString` always reuses the
  *   *first* part's own prefix as the sole representative for every
  *   emitted line (`../../strings/dissolve-string.ts`'s own doc comment,
- *   "Representative prefix/quote choice") — merging `"abc" L"def"` would
+ *   "Representative prefix/quote choice") -- merging `"abc" L"def"` would
  *   silently drop the `L` the moment the first (unprefixed) part's own
  *   prefix was chosen to represent the whole run, a real value change on
  *   some compilers/platforms (a narrow vs. wide string), not merely
@@ -137,7 +137,7 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
     return false;
   }
   if (new Set(prefixes).size > 1) {
-    return false; // mixed prefixes within one concatenation run — see doc comment above
+    return false; // mixed prefixes within one concatenation run -- see doc comment above
   }
 
   return true;
@@ -147,7 +147,7 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
  * C++'s `LanguageAdapter`.
  *
  * `classify` tells `'lineComment'`/`'blockComment'`/`'docComment'`/
- * `'stringLiteral'` apart by node type and text — both `/**` and `///`
+ * `'stringLiteral'` apart by node type and text -- both `/**` and `///`
  * doc-comment forms are wrapped, via the `doxygen` dialect, as is a plain
  * `/* * /` block comment (see `classify`'s own doc comment). `groupRegions`
  * merges consecutive `///` lines at the same indent into one logical
@@ -156,7 +156,7 @@ function isSafeToWrap(region: WrappableRegion, source: string): boolean {
  * unparseable prefixes as unsafe to wrap, on top of the line-continuation/
  * irregular-whitespace baseline `../../wrap.ts` already applies to every
  * `'stringLiteral'` region regardless of adapter (see `isSafeToWrap`'s own
- * doc comment). `wrapString` is C++'s whole `'stringLiteral'` pipeline — see
+ * doc comment). `wrapString` is C++'s whole `'stringLiteral'` pipeline -- see
  * `./wrap-string.ts` for why it needs no `emitContext`-shaped resolution
  * the way Python's own does.
  */

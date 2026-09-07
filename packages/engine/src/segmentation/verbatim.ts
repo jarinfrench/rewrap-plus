@@ -2,7 +2,7 @@
  * A verbatim run recognized starting at some line index.
  */
 export interface VerbatimMatch {
-  /** The raw lines making up the block, verbatim — unindented copies are
+  /** The raw lines making up the block, verbatim -- unindented copies are
    * never taken here; whatever leading whitespace the source line had is
    * preserved, since a verbatim block passes through untouched. */
   readonly lines: string[];
@@ -19,7 +19,7 @@ function leadingWhitespaceLength(line: string): number {
  * same character, optionally followed by an info string (` ```python`).
  *
  * The close fence must use the same character and be at least as long as
- * the open fence (CommonMark's rule) — but per this project's "bias
+ * the open fence (CommonMark's rule) -- but per this project's "bias
  * toward verbatim when uncertain," a fence that's never closed still
  * consumes the rest of the text as verbatim rather than falling back to
  * treating an unterminated fence as ordinary prose.
@@ -51,7 +51,7 @@ export function matchFencedCode(lines: readonly string[], i: number): VerbatimMa
 
 /**
  * Doctest blocks: a `>>>` prompt line, any `...` continuation lines, and
- * any expected-output lines that follow — all the way to the next blank
+ * any expected-output lines that follow -- all the way to the next blank
  * line. Reflowing any of this would change what the doctest asserts, so
  * the whole run is taken verbatim rather than trying to distinguish
  * prompt/continuation/output lines from each other.
@@ -106,14 +106,14 @@ export function matchTableBlock(lines: readonly string[], i: number): VerbatimMa
 
 /**
  * A contiguous run of indented and/or blank lines starting at `i`. Returns
- * `null` if `lines[i]` itself isn't already non-blank and indented — the
+ * `null` if `lines[i]` itself isn't already non-blank and indented -- the
  * run's first line anchors what counts as "indented" for the rest of it,
  * so it must qualify on its own rather than being pulled in as this
  * function's own leading blank/dedent case.
  *
  * Once started, the run consumes blank lines *within* it (they might be
  * meaningful whitespace inside a code sample) but trims any blank lines
- * off the *end* of the run — those belong to whatever separates this
+ * off the *end* of the run -- those belong to whatever separates this
  * block from what follows, not to the block itself, and leaving them
  * attached would make them vanish as far as `splitBlocks`'s 1:1
  * blank-block accounting is concerned (see `./split-blocks.ts`).
@@ -121,7 +121,7 @@ export function matchTableBlock(lines: readonly string[], i: number): VerbatimMa
  * Shared by two callers with the same underlying shape but different
  * triggers:
  * - the reST `::` literal-block convention (a paragraph line ending in
- *   `::`, a blank line, then an indented block) — always active,
+ *   `::`, a blank line, then an indented block) -- always active,
  *   regardless of `preserveIndentedBlocks`, since it's an explicit
  *   syntactic marker rather than a heuristic;
  * - `WrapConfig.preserveIndentedBlocks`: *any* indented, non-list-marker

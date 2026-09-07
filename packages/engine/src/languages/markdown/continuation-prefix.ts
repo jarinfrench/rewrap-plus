@@ -4,14 +4,14 @@
  *
  * `firstLinePrefix` is the literal source text on line 1 *before* the
  * paragraph's content starts (everything `discover-prose.ts` excluded
- * from `parts[0]`'s span) — a block-quote marker chain, a list marker
+ * from `parts[0]`'s span) -- a block-quote marker chain, a list marker
  * plus its hanging indent, or any combination the two nest in. Every
  * character in it that is not `>` or a tab is replaced with a space;
  * `>` and tab survive unchanged. This is the CommonMark-correct
  * continuation for every container combination the block grammar
  * produces, computed without walking container ancestry, and is what
  * makes a wrap idempotent regardless of how the source's own
- * continuation lines happened to be prefixed (§3.3 item 1: "continuation
+ * continuation lines happened to be prefixed (Sec. 3.3 item 1: "continuation
  * prefix is canonical, not observed").
  *
  * Examples (from the plan's own table, each one a distinct container
@@ -27,7 +27,7 @@
  * | `- > text`   | `'  > '`             |
  * | `> - text`   | `'>   '`             |
  *
- * Tabs are kept as literal tab characters, not expanded — the same
+ * Tabs are kept as literal tab characters, not expanded -- the same
  * approximation `../../prose/emit-prose.ts` already documents for the
  * rare case a container prefix contains one: `displayWidth` (used to
  * budget continuation lines, indirectly, through `WrappableRegion.indentColumn`)

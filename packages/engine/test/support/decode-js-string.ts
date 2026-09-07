@@ -1,6 +1,6 @@
 /**
  * Test-only eval-equivalence oracle for JavaScript/TypeScript string
- * literals — the JS/TS counterpart to `./decode-python-string.ts`. See that
+ * literals -- the JS/TS counterpart to `./decode-python-string.ts`. See that
  * module's own doc comment for the full rationale ("eval the string
  * expression before and after and assert equality," why this must never
  * ship in engine runtime code, why an independent oracle rather than
@@ -8,10 +8,10 @@
  *
  * Unlike Python, no hand-written escape decoder is needed here: the string
  * literal syntax this project's JS/TS fixtures use (`'...'`/`"..."`, never
- * a template literal — see below) is already valid JavaScript, and this
+ * a template literal -- see below) is already valid JavaScript, and this
  * test suite already runs inside a real JS engine. So the oracle scans the
  * source for every single/double-quoted token, joins them with `+`, and
- * literally `eval`s the result — genuinely "eval the string expression,"
+ * literally `eval`s the result -- genuinely "eval the string expression,"
  * not a reimplementation of what eval would do.
  *
  * A backtick template literal is scanned over and skipped, never extracted
@@ -19,7 +19,7 @@
  * all yet (`docs/planning/implementation-plan.md`, Phase 12b: "Consider
  * deferring templates the way triple-quoted code strings were deferred in
  * Python"), so no fixture should contain one inside the wrappable construct
- * under test — but a stray backtick elsewhere in a fixture (unlikely today,
+ * under test -- but a stray backtick elsewhere in a fixture (unlikely today,
  * still worth guarding) must not have its own internal quote characters
  * mis-parsed as string-token boundaries.
  */

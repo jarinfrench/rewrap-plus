@@ -5,8 +5,8 @@ import type { ResolvedCliConfig } from './types.js';
  * `./resolve-config.ts`'s precedence chain. Values match
  * `packages/vscode-extension/src/config/settings.ts`'s own defaults
  * exactly (`columnLimit` aside, which that file resolves through a
- * separate ruler-aware chain this module doesn't have — see
- * `./column-limit.ts`) — the same wrap behavior should be the default
+ * separate ruler-aware chain this module doesn't have -- see
+ * `./column-limit.ts`) -- the same wrap behavior should be the default
  * whether Rewrap+ runs inside VSCode or from this CLI.
  */
 export const DEFAULT_CLI_CONFIG: ResolvedCliConfig = {

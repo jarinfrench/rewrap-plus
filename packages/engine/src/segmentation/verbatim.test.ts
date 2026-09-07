@@ -45,7 +45,7 @@ describe('matchFencedCode', () => {
   it('requires the close fence to use the same character', () => {
     const lines = toLines('```\nnot closed by tildes\n~~~\n```\nafter');
     const match = matchFencedCode(lines, 0);
-    // ~~~ does not close a ``` fence — consumes through the real close.
+    // ~~~ does not close a ``` fence -- consumes through the real close.
     expect(match?.lines).toEqual(['```', 'not closed by tildes', '~~~', '```']);
     expect(match?.nextIndex).toBe(4);
   });

@@ -1,34 +1,34 @@
 /**
  * Shared glob matching used by `.editorconfig` section headers
  * (`./editorconfig.ts`) and `rewrapPlus.stringWrapInclude`
- * (`./string-wrap-include.ts`) — both match a workspace-supplied glob
+ * (`./string-wrap-include.ts`) -- both match a workspace-supplied glob
  * pattern against a path relative to some anchor directory, and both
  * need the same "no separator means any depth" convention (equivalent to
  * an implicit `**\/` prefix) since that's the single most common case
  * for either feature (`*.py`, or the default `**`).
  *
  * Pulled out from `./editorconfig.ts` rather than duplicated when
- * `stringWrapInclude` needed the same engine — the two callers differ
+ * `stringWrapInclude` needed the same engine -- the two callers differ
  * only in how they compute the relative path handed to `matchesGlob`
  * (an EditorConfig section's own directory vs. the workspace folder),
  * not in the glob dialect itself.
  */
 
-/** Translate one glob into a `RegExp` source fragment (unanchored — `matchesGlob` wraps it in `^...$`). Supports `*`, `**`, `?`, `[seq]`/`[!seq]`, and single-level `{a,b,c}` alternation.
+/** Translate one glob into a `RegExp` source fragment (unanchored -- `matchesGlob` wraps it in `^...$`). Supports `*`, `**`, `?`, `[seq]`/`[!seq]`, and single-level `{a,b,c}` alternation.
  *
  * ## Every maximal run of `*` collapses to exactly one quantifier
  *
- * A pattern is workspace-supplied — a `.editorconfig` from a cloned repo,
+ * A pattern is workspace-supplied -- a `.editorconfig` from a cloned repo,
  * or a `rewrapPlus.stringWrapInclude` entry in workspace settings, is
  * exactly as untrusted as any other file content this project parses
  * (`SECURITY.md`'s "workspace-trust bypass" category). An earlier version
- * only special-cased a *pair* of stars (`**` → `.*`, anything else one
- * `*` at a time → `[^/]*`), so three or more consecutive stars compiled
- * to several adjacent `[^/]*`/`.*` quantifiers back to back — e.g. `****`
+ * only special-cased a *pair* of stars (`**` -> `.*`, anything else one
+ * `*` at a time -> `[^/]*`), so three or more consecutive stars compiled
+ * to several adjacent `[^/]*`/`.*` quantifiers back to back -- e.g. `****`
  * became `[^/]*[^/]*` (after one `**` pair and two lone `*`s). Multiple
  * adjacent quantifiers over overlapping character classes is the
  * textbook catastrophic-backtracking shape: confirmed directly (not just
- * suspected) by timing the compiled regex against a non-matching path —
+ * suspected) by timing the compiled regex against a non-matching path --
  * a `[glob]` header with ~25 consecutive `*` characters took over two
  * minutes to fail one match, and the growth curve was exponential in
  * star count. Since a run of two-or-more stars already means "any depth,
@@ -107,17 +107,17 @@ function escapeRegExpLiteral(text: string): string {
 
 /**
  * Test `pattern` against `path` (already relative to whatever anchor the
- * caller's glob dialect uses — an EditorConfig section's directory, or a
- * workspace folder — and already `/`-separated).
+ * caller's glob dialect uses -- an EditorConfig section's directory, or a
+ * workspace folder -- and already `/`-separated).
  *
  * A pattern containing a path separator is matched against the full
  * relative path; a pattern with no path separator matches at *any* depth
- * (equivalent to prefixing it with `**\/`) — including depth 0, which is
+ * (equivalent to prefixing it with `**\/`) -- including depth 0, which is
  * why this prepends an *optional* `(?:.*\/)?`, not a mandatory literal
  * `/`: a mandatory separator would make e.g. `*.py` fail to match `a.py`
  * sitting directly at the anchor, which is the single most common case
  * there is. A leading `/` on the pattern is an explicit anchor and is
- * stripped before matching either way — it selects the "has a separator"
+ * stripped before matching either way -- it selects the "has a separator"
  * branch without itself being part of the matched text.
  */
 export function matchesGlob(pattern: string, path: string): boolean {
@@ -131,7 +131,7 @@ export function matchesGlob(pattern: string, path: string): boolean {
 
 // Known limitations (shared by every caller of matchesGlob):
 //
-// - Numeric brace ranges (`{1..3}`) are not expanded — the naive
+// - Numeric brace ranges (`{1..3}`) are not expanded -- the naive
 //   comma-split sees no comma, so `{1..3}` is matched as the single
 //   literal string `"1..3"`, never as a range.
 // - Nested `{a,{b,c}}` brace groups are not supported; only one flat

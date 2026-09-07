@@ -1,5 +1,5 @@
 /**
- * A minimal TOML reader — just enough to read one dotted table's
+ * A minimal TOML reader -- just enough to read one dotted table's
  * `key = value` pairs out of a `pyproject.toml`, the same "implement the
  * parts of the spec this feature actually needs, not a general-purpose
  * reader" call `../config/editorconfig.ts` already makes for
@@ -24,7 +24,7 @@
  * tables, and `[[array of tables]]` headers. None of these are used by
  * `[tool.rewrap-plus]`'s own key set (`./pyproject.ts`), so a real
  * `pyproject.toml` with an unrelated `[tool.black]` array-valued key
- * elsewhere in the file parses fine — the unsupported value is simply
+ * elsewhere in the file parses fine -- the unsupported value is simply
  * never a key this module is asked to read.
  */
 export type TomlValue = string | number | boolean;
@@ -56,7 +56,7 @@ export function parseTomlSubset(content: string): TomlTables {
     // `[[array.of.tables]]` and anything else structurally unlike a
     // plain `[table]` header or `key = value` line (including a stray
     // line before any header, which has no table to attach to) is
-    // skipped outright rather than throwing — same "don't block on
+    // skipped outright rather than throwing -- same "don't block on
     // input this feature doesn't need to understand" posture as
     // `editorconfig.ts`'s own unrecognized-line handling.
     if (!current || line.startsWith('[')) {
@@ -79,7 +79,7 @@ export function parseTomlSubset(content: string): TomlTables {
 }
 
 /**
- * Strips a `#` trailing comment — but only one that starts outside a
+ * Strips a `#` trailing comment -- but only one that starts outside a
  * double-quoted string, so `key = "a # not a comment"` isn't truncated.
  * A bare `#` as the first non-whitespace character (a full-line comment)
  * is caught by this the same way, since it starts outside any string by
@@ -119,7 +119,7 @@ function parseValue(raw: string): TomlValue | undefined {
   }
 
   // Bare integer, with TOML's optional leading sign and `_` digit
-  // separators (e.g. `1_000`) — anything else (floats, dates, arrays,
+  // separators (e.g. `1_000`) -- anything else (floats, dates, arrays,
   // inline tables, single-quoted strings) falls through to `undefined`
   // and the key is simply omitted, per this module's own "unsupported ->
   // skip" contract.
@@ -150,7 +150,7 @@ function unescapeString(text: string): string {
         result += '\\';
         i++;
       } else {
-        result += ch; // unrecognized escape — keep the backslash literally rather than guessing
+        result += ch; // unrecognized escape -- keep the backslash literally rather than guessing
       }
     } else {
       result += ch;

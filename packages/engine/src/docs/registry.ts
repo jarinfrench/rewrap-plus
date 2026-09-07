@@ -16,7 +16,7 @@ import { commentBasedHelpDialect } from './comment-based-help.js';
  * `./dialect.ts`.
  *
  * Dialects are stateless, so a single shared instance (built once by
- * whichever caller needs one — Python's `../languages/python/wrap-docstring.ts`
+ * whichever caller needs one -- Python's `../languages/python/wrap-docstring.ts`
  * for `'docstring'` regions, `../comments/wrap-doc-comment.ts` for
  * `'docComment'` regions) is always safe to reuse.
  * There's no story yet for a caller registering its *own* dialect, so

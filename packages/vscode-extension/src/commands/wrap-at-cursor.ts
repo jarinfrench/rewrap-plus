@@ -1,8 +1,8 @@
 /**
- * `rewrapPlus.wrapAtCursor` — expands to the region containing the
+ * `rewrapPlus.wrapAtCursor` -- expands to the region containing the
  * cursor and wraps it. Multi-cursor: one target span per cursor, using
  * each selection's `.active` position and ignoring any selection
- * extent — `rewrapPlus.wrapSelection` (commit 6) is the command that
+ * extent -- `rewrapPlus.wrapSelection` (commit 6) is the command that
  * cares about selection extent instead.
  */
 import * as vscode from 'vscode';

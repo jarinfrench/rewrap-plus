@@ -5,7 +5,7 @@ import { wrapStringDefault } from '../../strings/wrap-string-default.js';
 /**
  * Java's `LanguageAdapter.wrapString`: the shared `strings/wrap-string-default.ts`
  * pipeline (dissolve, normalize quote collisions, emit) with `needsParens`
- * always `false` and `style` always `'operator'` — the identical `opts`
+ * always `false` and `style` always `'operator'` -- the identical `opts`
  * ECMAScript-family adapters pass (`../ecmascript/adapter-support.ts`), for
  * the identical reason: `"a" + "b"` is valid wherever an expression
  * already is, with no enclosing-grouping requirement the way Python's

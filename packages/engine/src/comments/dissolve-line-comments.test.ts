@@ -33,7 +33,7 @@ function words(block: Block): string[] {
   return block.atoms.map((a) => a.text);
 }
 
-describe('dissolveLineComments — reflowable content', () => {
+describe('dissolveLineComments -- reflowable content', () => {
   it('strips the marker and a single following space', () => {
     const { region, source } = discoverLineComment('# hello world\n');
     const dissolved = dissolveLineComments(region, source, pythonDescriptor);
@@ -93,7 +93,7 @@ describe('dissolveLineComments — reflowable content', () => {
   });
 });
 
-describe('dissolveLineComments — directive lines', () => {
+describe('dissolveLineComments -- directive lines', () => {
   it('keeps a shebang line verbatim, unstripped', () => {
     const { region, source } = discoverLineComment('#!/usr/bin/env python\n');
     const dissolved = dissolveLineComments(region, source, pythonDescriptor);
@@ -130,7 +130,7 @@ describe('dissolveLineComments — directive lines', () => {
   });
 });
 
-describe('dissolveLineComments — commented-out code', () => {
+describe('dissolveLineComments -- commented-out code', () => {
   it('routes a run that reads as code to one verbatim block, unstripped', () => {
     const { region, source } = discoverLineComment(
       '# def old_function(argument_one, argument_two):\n' +

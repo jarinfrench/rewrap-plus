@@ -1,10 +1,10 @@
-// Throwaway spike script (Write-tool-authored, not a bash heredoc — see
+// Throwaway spike script (Write-tool-authored, not a bash heredoc -- see
 // the commit message this feeds for why that distinction matters here:
 // the Bash tool's own command-string escaping was found to silently
 // mangle literal backslashes in heredoc-authored probe scripts, corrupting
 // LaTeX source strings before they ever reached the parser). Continues
 // docs/spikes/tree-sitter-latex-probe.mjs's own investigation for Phase D
-// (LaTeX adapter) commits 14-17 — masks, structural anchors, magic
+// (LaTeX adapter) commits 14-17 -- masks, structural anchors, magic
 // comments, sectioning header extents.
 //
 // Run from the repo root after `npm ci`:
@@ -67,7 +67,7 @@ for (const name of [
   const src = `\\begin{${name}}\nbody content\n\\end{${name}}\n`;
   const tree = parser.parse(src);
   const top = tree.rootNode.children.find((c) => c && c.type.endsWith('environment'));
-  console.log(`${name}: top-level = ${top?.type ?? '(none — see dump below)'}`);
+  console.log(`${name}: top-level = ${top?.type ?? '(none -- see dump below)'}`);
   if (!top) dump(tree.rootNode, src);
 }
 

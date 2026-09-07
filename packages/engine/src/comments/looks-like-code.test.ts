@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { looksLikeCommentedOutCode } from './looks-like-code.js';
 
-// Same pattern `pythonDescriptor.comments.codeLikeKeywords` declares —
+// Same pattern `pythonDescriptor.comments.codeLikeKeywords` declares --
 // duplicated here (rather than imported) so this test suite exercises
 // the generic function against a realistic keyword pattern without
 // depending on the Python adapter, matching this module's own
@@ -26,7 +26,7 @@ describe('looksLikeCommentedOutCode', () => {
 
   it('falls back to the punctuation-density signal alone when no keyword pattern is supplied', () => {
     // A Python-shaped definition has low punctuation density on its own
-    // (mostly letters) — without a keyword pattern to catch it, this is
+    // (mostly letters) -- without a keyword pattern to catch it, this is
     // expected to read as prose rather than code.
     expect(looksLikeCommentedOutCode(['def old_function(argument_one, argument_two):'])).toBe(
       false,

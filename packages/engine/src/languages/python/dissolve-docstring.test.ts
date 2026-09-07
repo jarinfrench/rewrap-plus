@@ -3,7 +3,7 @@ import type { WrappableRegion } from '../../types/region.js';
 import { dissolveDocstring } from './dissolve-docstring.js';
 
 /**
- * Builds a `WrappableRegion` whose span covers the *entire* `source` —
+ * Builds a `WrappableRegion` whose span covers the *entire* `source` --
  * every test in this file uses a `source` that's nothing but the
  * docstring itself, so `sliceSpanText` always returns `source` back
  * unchanged. Mirrors `../../comments/dissolve-block-comments.test.ts`'s
@@ -57,7 +57,7 @@ describe('dissolveDocstring', () => {
     });
 
     it('falls back to region.indentColumn for commonIndent with no continuation lines', () => {
-      // `region.span` — and so `sliceSpanText` — never includes the
+      // `region.span` -- and so `sliceSpanText` -- never includes the
       // docstring's own leading indentation in real usage (it always
       // starts at the quote itself); `indentColumn` is a separate field
       // the caller (`discoverRegions`) derives independently. Simulated
@@ -74,7 +74,7 @@ describe('dissolveDocstring', () => {
       const source = ['"""Summary.', '', 'More text.', '"""'].join('\n');
       const result = dissolveDocstring(regionForWholeSource(source), source);
       // A non-blank first dissolved line means the summary shared the
-      // opening quote's physical line — see `./emit-docstring.ts`.
+      // opening quote's physical line -- see `./emit-docstring.ts`.
       expect(result.text.split('\n')[0]).toBe('Summary.');
     });
 
@@ -126,7 +126,7 @@ describe('dissolveDocstring', () => {
     it('computes commonIndent independently of region.indentColumn when the source is inconsistently indented', () => {
       const source = ['"""Summary.', '  Body indented only two spaces.', '  """'].join('\n');
       // region.indentColumn (8) intentionally does not match the body's
-      // own actual indentation (2) — dissolve should trust what it
+      // own actual indentation (2) -- dissolve should trust what it
       // observes in the text, not the region's own start column.
       const result = dissolveDocstring(regionForWholeSource(source, 8), source);
       expect(result.commonIndent).toBe(2);

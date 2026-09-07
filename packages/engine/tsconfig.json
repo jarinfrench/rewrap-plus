@@ -7,11 +7,11 @@
   "include": ["src", "test/**/*.ts", "test/**/*.json"],
   // Phase 12b's TypeScript/TSX gold-fixture *source* files under
   // test/fixtures/ are test data loaded via Vite's `?raw` suffix (see
-  // test/raw-import.d.ts) — never imported as real modules, and
+  // test/raw-import.d.ts) -- never imported as real modules, and
   // deliberately not written to satisfy this project's own strict
   // compiler options. `test/**/*.ts` above would otherwise pull them into
   // this build (unlike the `.json` fixtures every other suite already
-  // uses, which must stay included — hence the narrow `.ts`/`.tsx` scope
+  // uses, which must stay included -- hence the narrow `.ts`/`.tsx` scope
   // here rather than excluding all of `test/fixtures/**`).
   "exclude": ["test/fixtures/**/*.ts", "test/fixtures/**/*.tsx"]
 }

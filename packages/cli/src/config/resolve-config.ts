@@ -1,12 +1,12 @@
 /**
- * Assembles the engine's `WrapConfig` for one file — the CLI's
+ * Assembles the engine's `WrapConfig` for one file -- the CLI's
  * counterpart to
  * `packages/vscode-extension/src/config/resolve-wrap-config.ts`: the
  * point where `--flags`, `.rewraprc`, `pyproject.toml`, and
  * `.editorconfig` all come together.
  *
  * Every field except `columnLimit` follows the same flat, four-tier
- * chain (flag > `.rewraprc` > `pyproject.toml` > built-in default) —
+ * chain (flag > `.rewraprc` > `pyproject.toml` > built-in default) --
  * `??` on each source in turn. `columnLimit` alone gets a fifth tier
  * (`.editorconfig`, between `pyproject.toml` and the default) via
  * `./column-limit.ts`, since it's the one field `.editorconfig` also has
@@ -23,9 +23,9 @@ import type { PartialCliConfig } from './types.js';
 export interface ResolvedFileConfig {
   readonly wrapConfig: WrapConfig;
   readonly columnLimit: ResolvedColumnLimit;
-  /** Path of the `.rewraprc`/`.rewraprc.json` actually used, if any — surfaced for `--show-config`-style diagnostics. */
+  /** Path of the `.rewraprc`/`.rewraprc.json` actually used, if any -- surfaced for `--show-config`-style diagnostics. */
   readonly rewraprcPath: string | undefined;
-  /** Set when a `.rewraprc` was found but failed to parse — the caller warns rather than treating this as fatal (`./rewraprc.ts`'s own "skip, warn, never block" framing). */
+  /** Set when a `.rewraprc` was found but failed to parse -- the caller warns rather than treating this as fatal (`./rewraprc.ts`'s own "skip, warn, never block" framing). */
   readonly rewraprcParseError: string | undefined;
 }
 
@@ -68,7 +68,7 @@ export function resolveConfigForFile(filePath: string, flags: PartialCliConfig):
   return { wrapConfig, columnLimit, rewraprcPath, rewraprcParseError };
 }
 
-/** `flags[field] ?? rewraprc[field] ?? pyproject[field] ?? DEFAULT_CLI_CONFIG[field]` — spelled as a function so each call site above stays a one-liner naming just the field. */
+/** `flags[field] ?? rewraprc[field] ?? pyproject[field] ?? DEFAULT_CLI_CONFIG[field]` -- spelled as a function so each call site above stays a one-liner naming just the field. */
 function pick<K extends keyof PartialCliConfig>(
   field: K,
   flags: PartialCliConfig,

@@ -35,7 +35,7 @@ describe('cppDescriptor', () => {
 
   it('declares only bare-adjacency concatenation, no + operator pattern', () => {
     // Unlike Python/JavaScript/TypeScript, `+` between two string
-    // literals is not valid C++ concatenation syntax — see
+    // literals is not valid C++ concatenation syntax -- see
     // `./descriptor.ts`'s own doc comment.
     expect(cppDescriptor.queries.concatenations).not.toMatch(/concat\.operator/);
   });

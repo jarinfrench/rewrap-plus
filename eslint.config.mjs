@@ -9,7 +9,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/out/**',
       // Compiled output of packages/vscode-extension's
-      // @vscode/test-electron integration suite (tsconfig.test.json) —
+      // @vscode/test-electron integration suite (tsconfig.test.json) --
       // plain CommonJS `require`/`exports` and Mocha's `describe`/`it`
       // globals, neither of which this config's TypeScript/no-Node-
       // globals rules are meant to apply to; the *source* under
@@ -21,12 +21,12 @@ export default tseslint.config(
       '**/*.vsix',
       '**/coverage/**',
       '**/node_modules/**',
-      // Throwaway spike scripts (see docs/parsing.md) — not part of the
+      // Throwaway spike scripts (see docs/parsing.md) -- not part of the
       // build, not shipped, and not written against this repo's
       // TypeScript/no-Node-globals conventions.
       'docs/spikes/**',
       // Gold-fixture source files (Phase 12b's first ones written in a
-      // language ESLint actually parses — Python fixtures never
+      // language ESLint actually parses -- Python fixtures never
       // triggered this, being a different extension entirely). These are
       // test *data*: deliberately unused variables, and deliberately
       // whatever shape the fixture needs to exercise, not code meant to
@@ -49,7 +49,7 @@ export default tseslint.config(
   },
   {
     // Plain Node build scripts (not part of any package's TypeScript
-    // `src`) — need Node's CommonJS-ish globals that `js.configs.recommended`
+    // `src`) -- need Node's CommonJS-ish globals that `js.configs.recommended`
     // doesn't assume, unlike every other file in this config.
     files: ['**/scripts/**/*.mjs'],
     languageOptions: {
@@ -62,11 +62,11 @@ export default tseslint.config(
   {
     // Hard rule (decision of record): packages/engine must never import
     // `vscode`. This mechanically enforces it rather than relying on
-    // discipline — see README.md and CONTRIBUTING.md.
+    // discipline -- see README.md and CONTRIBUTING.md.
     //
     // Two rules, not one: `no-restricted-imports`'s `paths` option only
     // inspects static `import`/`export ... from` declarations (including
-    // type-only ones) — verified directly by probing it with an
+    // type-only ones) -- verified directly by probing it with an
     // `await import('vscode')` dynamic import, which it let through with
     // zero errors. `no-restricted-syntax` closes that gap by matching the
     // `ImportExpression` AST node itself, which covers a dynamic import

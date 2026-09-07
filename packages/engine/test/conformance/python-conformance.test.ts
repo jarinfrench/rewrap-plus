@@ -4,13 +4,13 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
 /**
  * The kit's own first real workout: run it against the Python adapter,
  * ahead of the JavaScript canary adapter that exists to prove
- * genericity too. If this suite fails, the kit itself has a bug —
+ * genericity too. If this suite fails, the kit itself has a bug --
  * Python's line-comment wrapping already has its own dedicated gold
  * fixtures (`../wrap/python-comment-wrap-fixtures.test.ts`) passing
  * independently of this file.
  *
- * Two sources, identical content, differing only in line ending — CRLF
- * and LF — so the kit's own line-ending-preservation check
+ * Two sources, identical content, differing only in line ending -- CRLF
+ * and LF -- so the kit's own line-ending-preservation check
  * (`run-adapter-conformance.ts`) is exercised both ways, not just
  * against whichever convention this repository happens to use for its
  * own files.
@@ -26,7 +26,7 @@ const LF_SOURCE = CRLF_SOURCE.replace(/\r\n/g, '\n');
 
 /**
  * A second source pair, this time exercising the `'docstring'`
- * region kind — `wrapDocstring` (`../../src/languages/python/wrap-docstring.ts`)
+ * region kind -- `wrapDocstring` (`../../src/languages/python/wrap-docstring.ts`)
  * had no conformance coverage at all until this addition, since neither
  * source above contains a docstring.
  */

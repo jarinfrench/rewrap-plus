@@ -7,10 +7,10 @@ import { markdownAdapter } from '../../src/languages/markdown/adapter.js';
 import { wrapRegions } from '../../src/wrap.js';
 
 /**
- * Markdown's own named worst cases — genuinely different pathologies
+ * Markdown's own named worst cases -- genuinely different pathologies
  * from `./pathological-input.test.ts`'s comment/string-language ones
  * (a long concatenation chain, a huge string
- * literal, mixed tab/space indentation — none of which Markdown has a
+ * literal, mixed tab/space indentation -- none of which Markdown has a
  * concept of), so kept as their own suite rather than shoehorned into
  * that file's `LANGUAGE_SETS` parameterization.
  *
@@ -38,7 +38,7 @@ beforeAll(async () => {
 
 describe('Markdown pathological input hardening', () => {
   it('handles 200-deep nested block quotes without crashing or hanging, wrapping with the full marker chain', async () => {
-    // Measured ~28ms — recorded in docs/benchmarks.md.
+    // Measured ~28ms -- recorded in docs/benchmarks.md.
     const marker = '> '.repeat(200);
     const source =
       marker +
@@ -50,7 +50,7 @@ describe('Markdown pathological input hardening', () => {
 
     expect(result.edits).toHaveLength(1);
     const wrapped = applyTextEdits(source, result.edits);
-    // Every continuation line still carries all 200 ">" markers — the
+    // Every continuation line still carries all 200 ">" markers -- the
     // canonical-prefix derivation (`../../src/languages/markdown/continuation-prefix.ts`)
     // doesn't lose any of them at this depth.
     const continuationLines = wrapped.split('\n').slice(1);
@@ -64,9 +64,9 @@ describe('Markdown pathological input hardening', () => {
   }, 10_000);
 
   it('handles a 10,000-line single paragraph (no blank lines at all) without crashing or hanging', async () => {
-    // Measured ~120ms — recorded in docs/benchmarks.md. One giant
-    // 'prose' region, not 10,000 tiny ones — the more extreme of the two
-    // shapes §8.4 names (the other, "a 50,000-line file that is entirely
+    // Measured ~120ms -- recorded in docs/benchmarks.md. One giant
+    // 'prose' region, not 10,000 tiny ones -- the more extreme of the two
+    // shapes Sec. 8.4 names (the other, "a 50,000-line file that is entirely
     // paragraphs," is `../hardening/large-file-performance.test.ts`'s own
     // `markdownBody`, many *separate* paragraphs).
     const lines: string[] = [];
@@ -92,7 +92,7 @@ describe('Markdown pathological input hardening', () => {
   it('handles an unterminated fenced code block without crashing, treating everything after it as fence content', async () => {
     // Confirmed directly (not assumed): the grammar recovers with zero
     // parse errors, extending the fenced_code_block to end of file rather
-    // than producing an ERROR node — so this is really a §5.6 "never a
+    // than producing an ERROR node -- so this is really a Sec. 5.6 "never a
     // region" check under an edge-case input, not error-recovery
     // behavior this adapter has to handle specially.
     const source = '```python\ndef f():\n    pass\n\nSome text after that never closes the fence.\n';

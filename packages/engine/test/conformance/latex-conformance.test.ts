@@ -2,15 +2,15 @@ import { latexAdapter } from '../../src/languages/latex/adapter.js';
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * Real sources, exercising the adapter's full pipeline — Phase D
+ * Real sources, exercising the adapter's full pipeline -- Phase D
  * commit 18, once every
  * other real piece of the adapter (comments, discovery, wrapping,
  * trailing-comment safety, `\verb` unbreakability) already exists and has
  * its own gold fixtures. Three source shapes, each with a CRLF and LF
  * variant: a `%` comment paragraph (the `'lineComment'` path, unchanged
  * since commit 14), an ordinary prose paragraph following a section
- * header (the `'prose'` path, §6.2/§6.3), and an itemized list (`\item`
- * indentation, §6.3) — between them exercising both region kinds this
+ * header (the `'prose'` path, Sec. 6.2/Sec. 6.3), and an itemized list (`\item`
+ * indentation, Sec. 6.3) -- between them exercising both region kinds this
  * adapter ever discovers.
  *
  * Deliberately no trailing-`%`-comment or `\\`/`\newline` hard break in

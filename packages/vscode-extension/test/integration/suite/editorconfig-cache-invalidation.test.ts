@@ -11,8 +11,8 @@
  * `extractReturnedStringValue`, makes the same "this layer proves wiring,
  * not arithmetic" point about reflow placement).
  *
- * A real save must never land on a file tracked by this repo, so — same
- * as `./format-on-save.test.ts` — both the Python fixture and the
+ * A real save must never land on a file tracked by this repo, so -- same
+ * as `./format-on-save.test.ts` -- both the Python fixture and the
  * `.editorconfig` live in a fresh OS temp directory per test, cleaned up
  * after.
  *
@@ -23,7 +23,7 @@
  * something a test can set directly. That trigger's dispatch logic is
  * covered by the same unit-test file instead, against the plain
  * `{focused: boolean}` shape `editorconfig-cache-invalidation.ts` passes
- * it — a known, deliberate gap, not an oversight.
+ * it -- a known, deliberate gap, not an oversight.
  */
 import * as assert from 'node:assert';
 import * as fs from 'node:fs';
@@ -46,7 +46,7 @@ describe('editorconfig cache invalidation (on save)', () => {
     pythonFile = path.join(tempDir, 'target.py');
     editorConfigFile = path.join(tempDir, '.editorconfig');
 
-    // 30 short words — comfortably under 200 columns on one line, but
+    // 30 short words -- comfortably under 200 columns on one line, but
     // guaranteed to need several lines once the limit drops to 40.
     const longComment = `# ${Array.from({ length: 30 }, () => 'word').join(' ')}`;
     fs.writeFileSync(pythonFile, `${longComment}\n`);
@@ -61,7 +61,7 @@ describe('editorconfig cache invalidation (on save)', () => {
 
   it("picks up a saved .editorconfig's new max_line_length on the very next wrap, without restarting", async () => {
     // `rewrapPlus.columnLimit` deliberately left unset (`resetRewrapPlusSettings`'s
-    // default) — the effective limit must come from tier 3
+    // default) -- the effective limit must come from tier 3
     // (`.editorconfig`), not tier 1, for this test to actually exercise
     // the path under test.
     const pythonDocument = await vscode.workspace.openTextDocument(pythonFile);
@@ -72,10 +72,10 @@ describe('editorconfig cache invalidation (on save)', () => {
     assert.strictEqual(
       commentLines(pythonEditor.document.getText()).length,
       1,
-      'the 200-column .editorconfig limit should leave the comment on one line — this also warms the directory cache',
+      'the 200-column .editorconfig limit should leave the comment on one line -- this also warms the directory cache',
     );
 
-    // Edit and save the .editorconfig in the editor — this is the real
+    // Edit and save the .editorconfig in the editor -- this is the real
     // `onDidSaveTextDocument` event `editorconfig-cache-invalidation.ts`
     // is wired to, not a raw `fs.writeFileSync`.
     const editorConfigDocument = await vscode.workspace.openTextDocument(editorConfigFile);

@@ -61,7 +61,7 @@ describe('javascriptAdapter', () => {
   });
 
   it('does not merge adjacent line comments the way the Python adapter does', () => {
-    // No groupRegions override — each `//` line is its own region.
+    // No groupRegions override -- each `//` line is its own region.
     const source = '// first\n// second\nconst x = 1;\n';
     const tree = parser.parse(source)!;
 
@@ -91,7 +91,7 @@ describe('javascriptAdapter', () => {
     expect(regions.every((r) => r.parts.length === 1)).toBe(true);
   });
 
-  // javascriptAdapter no longer declares its own isSafeToWrap at all —
+  // javascriptAdapter no longer declares its own isSafeToWrap at all --
   // JavaScript has no string-shape hazard beyond
   // `isStringSafeToWrapBaseline`'s own line-continuation/irregular-
   // whitespace refusals (`../../strings/is-string-safe-to-wrap-baseline.test.ts`),

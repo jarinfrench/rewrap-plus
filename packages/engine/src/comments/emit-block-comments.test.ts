@@ -80,7 +80,7 @@ describe('emitBlockComments', () => {
     );
     const lines = result.split('\n');
     // Every continuation/close line (everything after the open line,
-    // which never spells out its own indent — see emitLineComments'
+    // which never spells out its own indent -- see emitLineComments'
     // analogous convention) starts with indentColumn + 1 spaces.
     for (const line of lines.slice(1)) {
       expect(line.startsWith(' '.repeat(5))).toBe(true);
@@ -115,7 +115,7 @@ describe('emitBlockComments', () => {
     }
   });
 
-  it('restores a listItem block’s bullet marker rather than dropping it', () => {
+  it("restores a listItem block's bullet marker rather than dropping it", () => {
     const doc: LogicalDocument = {
       blocks: [
         {

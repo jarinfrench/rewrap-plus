@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Adding a language to Rewrap+ is meant to touch no engine code —
+        Adding a language to Rewrap+ is meant to touch no engine code --
         it's a self-contained descriptor. See
         [`docs/adding-a-language.md`](../../docs/adding-a-language.md) if
         you're interested in contributing the adapter yourself; this
@@ -23,7 +23,7 @@ body:
     id: grammar
     attributes:
       label: tree-sitter grammar
-      description: Link to the grammar's repo, and note whether it ships a prebuilt WASM binary (vs. requiring a from-scratch build — see `docs/parsing.md` for why that distinction matters here).
+      description: Link to the grammar's repo, and note whether it ships a prebuilt WASM binary (vs. requiring a from-scratch build -- see `docs/parsing.md` for why that distinction matters here).
     validations:
       required: true
 
@@ -45,7 +45,7 @@ body:
       label: Are you willing to contribute the adapter?
       options:
         - "Yes"
-        - "No — requesting only"
+        - "No -- requesting only"
         - "Maybe, with some guidance"
     validations:
       required: true

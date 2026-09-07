@@ -23,10 +23,10 @@ import preserveIndentedBlocksExpected from '../fixtures/blocks/008-preserve-inde
 /**
  * The stated acceptance criterion: "Blocks round-trip: a document
  * with no over-limit lines produces identical output through
- * segment → reflow → emit." Reflow and emit didn't exist yet when this
+ * segment -> reflow -> emit." Reflow and emit didn't exist yet when this
  * was written, so the executable half of that acceptance criterion
  * available at the time is the segment step alone: every fixture's
- * `Block[]` matches a checked-in gold file exactly, byte for byte —
+ * `Block[]` matches a checked-in gold file exactly, byte for byte --
  * meaning every word from the source landed in exactly one atom, every
  * verbatim region kept its original lines untouched, and nothing was
  * silently dropped or duplicated. That's what a future reflow/emit pass
@@ -79,7 +79,7 @@ describe('splitBlocks fixtures', () => {
   });
 
   it('covers the block kinds splitBlocks is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of the block kinds handled here (plain
     // paragraphs, list items with hanging indent, fenced code, doctests,
     // Markdown tables, `::`-triggered reST literal blocks, a mixed
@@ -101,7 +101,7 @@ describe('splitBlocks fixtures', () => {
   it('re-splitting a fixture is idempotent', () => {
     // A weak preview of the round-trip property test's blocking
     // idempotency check: splitBlocks has no reason to behave differently
-    // given its own output's *shape* fed back through — verbatim `lines`
+    // given its own output's *shape* fed back through -- verbatim `lines`
     // and paragraph/listItem `atoms` re-tokenize identically to
     // themselves. Real idempotency (through reflow/emit) is that
     // property test's job.

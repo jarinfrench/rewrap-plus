@@ -22,24 +22,24 @@ describe('LATEX_TRAILING_COMMENT_HARD_BREAK', () => {
     expect(match('aaa bbb ccc')).toBeNull();
   });
 
-  it('does not match an escaped \\% (1 backslash — odd, escaped)', () => {
+  it('does not match an escaped \\% (1 backslash -- odd, escaped)', () => {
     expect(match('100\\% of the time')).toBeNull();
   });
 
-  it('matches after \\\\ (2 backslashes — even, real comment)', () => {
+  it('matches after \\\\ (2 backslashes -- even, real comment)', () => {
     // \\ is LaTeX's own line-break command, a complete two-character
     // token; the % right after it is genuinely unescaped. Confirmed
-    // directly against the grammar, not assumed — docs/spikes/tree-sitter-latex-probe6.mjs.
+    // directly against the grammar, not assumed -- docs/spikes/tree-sitter-latex-probe6.mjs.
     const result = match('text \\\\ % real comment');
     expect(result).not.toBeNull();
     expect(result![0]).toBe(' % real comment');
   });
 
-  it('does not match after 3 backslashes (odd — \\\\ plus escaped \\%)', () => {
+  it('does not match after 3 backslashes (odd -- \\\\ plus escaped \\%)', () => {
     expect(match('text \\\\\\% not a comment')).toBeNull();
   });
 
-  it('matches after 4 backslashes (even — two complete \\\\ tokens)', () => {
+  it('matches after 4 backslashes (even -- two complete \\\\ tokens)', () => {
     const result = match('text \\\\\\\\% real comment');
     expect(result).not.toBeNull();
     expect(result![0]).toBe(' % real comment');

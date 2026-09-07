@@ -1,4 +1,4 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its only job was answering Phase 2 commit 1's question: "does
 // tree-sitter-python ship a usable prebuilt .wasm, and does web-tree-sitter
 // actually parse with it?" Findings are written up properly in
@@ -10,7 +10,7 @@
 //
 // It parses hand-written snippets directly (not via ParserManager) and
 // dumps raw node fields, specifically to inspect whether `startIndex` /
-// `startPosition` are byte- or UTF-16-based — see finding 3 in
+// `startPosition` are byte- or UTF-16-based -- see finding 3 in
 // ../parsing.md. `ParserManager` (src/parser/parser-manager.ts) is the
 // real, tested, non-throwaway product of this phase.
 
@@ -54,7 +54,7 @@ console.log(cleanTree.rootNode.toString().slice(0, 200));
 // offset (as native tree-sitter bindings report, and as Phase 1's
 // SourceSpan doc comment assumed), the string content below would span 13
 // bytes (4 for the astral emoji + 3 each for the three CJK characters). It
-// doesn't — see the printed values and ../parsing.md finding 3.
+// doesn't -- see the printed values and ../parsing.md finding 3.
 const nonAscii = 'x = "\u{1F600}\u65e5\u672c\u8a9e"\n';
 const nonAsciiTree = parser.parse(nonAscii);
 console.log('\n--- non-ASCII offsets ---');

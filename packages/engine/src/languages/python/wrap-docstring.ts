@@ -10,7 +10,7 @@ import { emitDocstring } from './emit-docstring.js';
 /**
  * Dialects are stateless; one shared registry for every call is safe and
  * avoids rebuilding it per docstring. Wired here as Python's
- * `LanguageAdapter.wrapDocstring` implementation — see that hook's own
+ * `LanguageAdapter.wrapDocstring` implementation -- see that hook's own
  * doc comment on `../../types/adapter.ts` for why this can't be
  * dispatched generically from `../../wrap.ts`.
  */
@@ -18,10 +18,10 @@ const dialectRegistry = createDialectRegistry();
 
 /**
  * Resolve which dialect governs one docstring: `cfg.docDialect`'s named
- * dialects force that dialect outright; `'auto'` detects per docstring —
+ * dialects force that dialect outright; `'auto'` detects per docstring --
  * mixed conventions in one codebase are common, and a file-level guess
- * would be wrong somewhere — among whichever dialects `pythonDescriptor`
- * declares support for (`comments.doc.dialects` — every dialect this
+ * would be wrong somewhere -- among whichever dialects `pythonDescriptor`
+ * declares support for (`comments.doc.dialects` -- every dialect this
  * package ships, today).
  */
 function resolveDialectId(cfg: WrapConfig, text: string) {
@@ -44,7 +44,7 @@ export function wrapDocstring(region: WrappableRegion, source: string, cfg: Wrap
   // `pythonDescriptor` always declares every dialect this package ships
   // (see its own `comments.doc.dialects`), so `resolve` only ever
   // returns `undefined` here for a forced `cfg.docDialect` naming a
-  // dialect nothing registered — a configuration error upstream (the
+  // dialect nothing registered -- a configuration error upstream (the
   // extension's own settings schema constrains this enum), not a data
   // condition worth a silent fallback for.
   const dialect = dialectRegistry.resolve(dialectId);

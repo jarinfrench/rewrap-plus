@@ -11,12 +11,12 @@ import type { DiscoveredFile } from './file-discovery.js';
 
 /**
  * Stripped off `source` before it ever reaches `wrapRegions`, and
- * re-prepended on write — matching how the VSCode extension side never
+ * re-prepended on write -- matching how the VSCode extension side never
  * sees a BOM at all (`vscode.TextDocument.getText()` already excludes
  * it, tracked and restored by the editor itself on save). Without this,
  * `readFileSync(path, 'utf8')` hands the engine a source string whose
  * first character is U+FEFF, shifting every discovered region's column
- * by one — confirmed by direct probe to silently corrupt output: a
+ * by one -- confirmed by direct probe to silently corrupt output: a
  * wrapped comment's continuation lines came back indented one space
  * further than the marker they continue (`" # default ..."` instead of
  * `"# default ..."`), a real formatting bug, not just a theoretical risk.
@@ -26,12 +26,12 @@ const BOM = '\uFEFF';
 export interface FileOutcome {
   readonly path: string;
   readonly languageId: string;
-  /** `true` when the file's content differs from what wrapping produces — regardless of `mode`, so `--check` can report it without having written anything. */
+  /** `true` when the file's content differs from what wrapping produces -- regardless of `mode`, so `--check` can report it without having written anything. */
   readonly changed: boolean;
   readonly skippedCount: number;
   readonly columnLimit: number;
   readonly rewraprcParseError: string | undefined;
-  /** Set when reading, parsing, or wrapping this file threw — one bad file never aborts the rest of the batch (`./run.ts`). */
+  /** Set when reading, parsing, or wrapping this file threw -- one bad file never aborts the rest of the batch (`./run.ts`). */
   readonly error: string | undefined;
 }
 

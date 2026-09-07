@@ -10,18 +10,18 @@ const TEXT_BLOCK_DELIMITER = '"""';
  * Java's `classify` override.
  *
  * `string_literal` nodes are `'stringLiteral'` **unless** the node's own
- * text starts with `"""` — a text block, sharing this node type with an
- * ordinary string (see `./descriptor.ts`'s own doc comment for why) —
+ * text starts with `"""` -- a text block, sharing this node type with an
+ * ordinary string (see `./descriptor.ts`'s own doc comment for why) --
  * which is excluded from discovery entirely (`null`), the same "bias
  * toward verbatim/skip when uncertain" default `classifyEcmaScriptNode`
  * already uses for a plain block comment with no `plainBlock` declared.
  * Deliberate scope limit, not an oversight: a text block's own
  * common-indentation-stripping and trailing-newline rules have no
- * representation in this project's existing dissolve model — see
+ * representation in this project's existing dissolve model -- see
  * `./descriptor.ts`'s own doc comment for the full reasoning.
  *
  * `line_comment`/`block_comment` nodes need telling apart by *type*
- * first, then a `block_comment`'s own text by its delimiter — the
+ * first, then a `block_comment`'s own text by its delimiter -- the
  * reverse order `classifyEcmaScriptNode`/`cppAdapter`'s own `classify`
  * use, since those grammars only ever produce one comment node type to
  * begin with:
@@ -68,19 +68,19 @@ function classify(node: SyntaxNode): RegionKind | null {
  * override: Java's `//` comments aren't merged across adjacent lines the
  * way Python's are, the same open question left for JavaScript/
  * TypeScript's and C++'s own ordinary `//` comments too
- * (`docs/adapters.md`) — and Java has no `///`-repeated doc-comment form
+ * (`docs/adapters.md`) -- and Java has no `///`-repeated doc-comment form
  * needing the merge C++'s own `groupRegions` exists for. No `isSafeToWrap`
  * override: Java string literals have no prefix concept at all
  * (`javaDescriptor.strings.prefixes` is empty) and no other Java-specific
  * hazard beyond what `../../wrap.ts`'s own unconditional baseline already
  * refuses for every `'stringLiteral'` region regardless of adapter (line-
- * continuation escapes, irregular whitespace — see
+ * continuation escapes, irregular whitespace -- see
  * `../../strings/is-string-safe-to-wrap-baseline.ts`), so there is nothing
  * left for a Java-specific hook to add; omitting it entirely (rather than
  * declaring a hook that always returns `true`) is exactly what
  * `LanguageAdapter.isSafeToWrap`'s own doc comment describes as "no
  * further refusals beyond the baseline." `wrapString` is Java's whole
- * `'stringLiteral'` pipeline — see `./wrap-string.ts` for why it needs no
+ * `'stringLiteral'` pipeline -- see `./wrap-string.ts` for why it needs no
  * `emitContext`-shaped resolution the way Python's own does. No
  * `wrapDocstring`: Java has no string-literal-as-documentation
  * convention.

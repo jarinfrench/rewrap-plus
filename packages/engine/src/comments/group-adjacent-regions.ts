@@ -2,18 +2,18 @@ import type { WrappableRegion } from '../types/region.js';
 
 /**
  * Merge consecutive same-indent regions matching `isGroupable` into single
- * multi-part regions — "consecutive marker-per-line comments at the same
+ * multi-part regions -- "consecutive marker-per-line comments at the same
  * indent = one logical block," originally Python's own `'lineComment'`
  * grouping (`# `-comment blocks), generalized here once a second real
  * consumer needed the identical algorithm for a different `RegionKind`:
  * C++'s `///` Doxygen comments, which need the same adjacency merge but
  * for `'docComment'` regions specifically matching the repeated-marker
  * form (not every `'docComment'`, since a `/** ... * /`-form one is
- * already a single complete node needing no merge — see the caller).
+ * already a single complete node needing no merge -- see the caller).
  *
  * Two regions merge only if they're on strictly consecutive source rows
  * (`b.span.startRow === a.span.endRow + 1`) *and* share the same
- * `indentColumn` — a comment one line below but at a different
+ * `indentColumn` -- a comment one line below but at a different
  * indentation (e.g. entering or leaving a nested block) starts a new
  * logical block instead of extending this one. This also means a
  * trailing comment (`x = 1  # note`) essentially never merges with an
@@ -24,7 +24,7 @@ import type { WrappableRegion } from '../types/region.js';
  * guarantee the order regions arrive in when handed to a `groupRegions`
  * hook (the driver builds concatenation regions, then comments, then
  * leftover strings, each batch in tree-sitter capture order, which is
- * source order but not merged/sorted across kinds) — so groupable
+ * source order but not merged/sorted across kinds) -- so groupable
  * entries are pulled out and sorted by position before the adjacency
  * scan runs, rather than trusting incoming order. Every other region
  * passes through untouched and in whatever relative order it arrived
@@ -70,17 +70,17 @@ export function groupAdjacentRegions(
 
 /**
  * Combine a run of single-part regions (adjacent source lines, same
- * indent, same `kind` — guaranteed by `groupAdjacentRegions`'s caller)
+ * indent, same `kind` -- guaranteed by `groupAdjacentRegions`'s caller)
  * into one multi-part region spanning all of them.
  *
  * `rawText` approximates the true source slice by joining each part's
- * own text with `'\n' + ' '.repeat(indentColumn)` — reconstructing the
+ * own text with `'\n' + ' '.repeat(indentColumn)` -- reconstructing the
  * newline and re-indentation that sit *between* parts in real source,
  * which individual `WrappableRegion.rawText` values (each just their own
- * node's text, no surrounding whitespace — see `discoverRegions`'s
+ * node's text, no surrounding whitespace -- see `discoverRegions`'s
  * `buildRegion`) don't carry. This is exact for the overwhelmingly
  * common case of space-only indentation; a merged region indented with
- * tabs would see its `rawText` (display/debugging use only — see that
+ * tabs would see its `rawText` (display/debugging use only -- see that
  * field's own doc comment) diverge slightly from the true byte sequence,
  * since `indentColumn` is tab-*expanded*. Nothing downstream treats
  * `rawText` as authoritative for a multi-part region: `wrapRegions`

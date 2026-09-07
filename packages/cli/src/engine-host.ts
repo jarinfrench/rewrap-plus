@@ -1,6 +1,6 @@
 /**
  * Wires the engine's `ParserManager`/`AdapterRegistry` up for the CLI
- * process — the CLI's counterpart to
+ * process -- the CLI's counterpart to
  * `packages/vscode-extension/src/engine-host.ts`. Structurally the same
  * job (which adapters are registered, where their grammar WASM loads
  * from), but the mechanics are far simpler here, which is itself the
@@ -15,11 +15,11 @@
  * `with { 'resolution-mode': 'import' }` type-import attribute just to
  * consume the engine at all (see that file's own doc comment for the
  * full TS1479/TS1541 story). `packages/cli` has `"type": "module"` in
- * its own `package.json` — nothing forces it into CommonJS — so it
+ * its own `package.json` -- nothing forces it into CommonJS -- so it
  * imports `@rewrap-plus/engine` with a perfectly ordinary static
  * `import` statement, exactly like any other ESM package depending on
  * another. The acceptance criterion that matters here is concrete: "if
- * the CLI needs engine changes, the seam leaked" — it turns out the
+ * the CLI needs engine changes, the seam leaked" -- it turns out the
  * *engine* needed zero changes, and even the glue-layer friction the
  * extension had to solve turns out to have been a VSCode-hosting
  * artifact, not an engine one.
@@ -29,10 +29,10 @@
  * `engine-host.ts` (extension) explicitly moved *away* from
  * `require.resolve('@rewrap-plus/engine/package.json')` for locating
  * `wasmDir`, because a packaged `.vsix` bundles the engine's compiled
- * output directly into `dist/extension.js` — no
+ * output directly into `dist/extension.js` -- no
  * `node_modules/@rewrap-plus/engine` exists at runtime for that lookup
  * to find. The CLI has no equivalent bundling step (`package.json`'s
- * `build` script is a plain `tsc -b`, deliberately — see that file's own
+ * `build` script is a plain `tsc -b`, deliberately -- see that file's own
  * comment), so `@rewrap-plus/engine` is always a real, resolvable
  * package relative to wherever this file runs from, whether that's this
  * monorepo's own hoisted `node_modules` in dev/test or a real installed
@@ -71,7 +71,7 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  * Registers every adapter `packages/vscode-extension/src/engine-host.ts`
- * does — the CLI supports exactly the same language set as the
+ * does -- the CLI supports exactly the same language set as the
  * extension, deliberately, rather than the two glue layers drifting
  * apart on which languages are "really" supported.
  */

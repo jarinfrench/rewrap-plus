@@ -3,7 +3,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
 
 /**
  * The C++ adapter through the identical conformance suite Python,
- * JavaScript, TypeScript, and TSX already pass — see
+ * JavaScript, TypeScript, and TSX already pass -- see
  * `./javascript-conformance.test.ts` for the same rationale. Sources
  * below exercise `//`, Doxygen-shaped `/**`, and a bare-adjacency string
  * concatenation, each long enough to need wrapping at the configured

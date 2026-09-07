@@ -6,7 +6,7 @@ import { markdownDescriptor } from './descriptor.js';
 
 /**
  * Real node-name/geometry assertions against the vendored
- * `tree-sitter-markdown` grammar — not a placeholder suite. Every
+ * `tree-sitter-markdown` grammar -- not a placeholder suite. Every
  * assertion here traces back to a finding `docs/spikes/tree-sitter-markdown-probe.mjs`
  * made directly against the grammar and `docs/parsing.md` Finding 7
  * recorded, per this project's "probe before coding, always" rule: this
@@ -62,7 +62,7 @@ describe('markdownDescriptor', () => {
   });
 });
 
-describe('paragraph geometry — confirmed against the real grammar', () => {
+describe('paragraph geometry -- confirmed against the real grammar', () => {
   it('starts a plain paragraph at column 0, no container marker', () => {
     const tree = parser.parse('hello world\n')!;
     const [paragraph] = findAll(tree.rootNode, 'paragraph');
@@ -101,7 +101,7 @@ describe('paragraph geometry — confirmed against the real grammar', () => {
 
   it('places block_continuation as a child of inline, not a direct child of paragraph', () => {
     // The one real discrepancy from a naive node-types.json reading,
-    // confirmed by the Phase A probe (docs/parsing.md Finding 7) — parts
+    // confirmed by the Phase A probe (docs/parsing.md Finding 7) -- parts
     // geometry must be built from source lines/row range, never from
     // walking this structure, precisely because of this.
     const tree = parser.parse('> line one\n> line two\n')!;

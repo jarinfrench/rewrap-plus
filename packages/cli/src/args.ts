@@ -1,7 +1,7 @@
 /**
- * Command-line argument parsing, via `node:util`'s `parseArgs` — stable
+ * Command-line argument parsing, via `node:util`'s `parseArgs` -- stable
  * since Node 20 (this repo's own floor, `package.json`'s `engines.node`)
- * — rather than a third-party arg-parsing dependency. Self-contained by
+ * -- rather than a third-party arg-parsing dependency. Self-contained by
  * design, the same call `./config/editorconfig.ts` already made for
  * `.editorconfig` and `./config/toml-subset.ts` made for
  * `pyproject.toml`: this repo reaches for "write the narrow thing
@@ -20,7 +20,7 @@ export interface CliArgs {
   readonly config: PartialCliConfig;
 }
 
-/** Thrown for a malformed invocation — `./run.ts` catches this and prints just the message plus usage, not a stack trace. */
+/** Thrown for a malformed invocation -- `./run.ts` catches this and prints just the message plus usage, not a stack trace. */
 export class CliArgsError extends Error {}
 
 const STRING_POLICIES = ['prose', 'all', 'off'];
@@ -67,7 +67,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     config.tabSize = parsePositiveInt('--tab-size', values['tab-size']);
   }
   // `exactOptionalPropertyTypes` (tsconfig.base.json) means an optional
-  // field must be omitted, not assigned `undefined` — `setIfDefined`
+  // field must be omitted, not assigned `undefined` -- `setIfDefined`
   // enforces that once here rather than at each of these five call
   // sites.
   setIfDefined(config, 'wrapComments', negatableFlag('wrap-comments', values));
@@ -109,7 +109,7 @@ function setIfDefined<T extends object, K extends keyof T>(target: T, key: K, va
   }
 }
 
-/** `--foo`/`--no-foo` pairs: `--no-foo` wins if both are somehow passed (last-one-should-win is ambiguous with `parseArgs`'s own "last flag wins" only applying per-flag-name, not across a negated pair — `--no-foo` taking priority is the safer read of "did the user mean to turn this off"). `undefined` when neither was passed, so `./config/resolve-config.ts`'s precedence chain falls through to the next source. */
+/** `--foo`/`--no-foo` pairs: `--no-foo` wins if both are somehow passed (last-one-should-win is ambiguous with `parseArgs`'s own "last flag wins" only applying per-flag-name, not across a negated pair -- `--no-foo` taking priority is the safer read of "did the user mean to turn this off"). `undefined` when neither was passed, so `./config/resolve-config.ts`'s precedence chain falls through to the next source. */
 function negatableFlag(name: string, values: Record<string, unknown>): boolean | undefined {
   const negated = values[`no-${name}`];
   if (negated === true) {

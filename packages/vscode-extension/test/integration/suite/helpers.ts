@@ -30,7 +30,7 @@ export async function openFixture(absolutePath: string): Promise<vscode.TextEdit
 }
 
 /**
- * An in-memory (`untitled`) document with `content` already in it — no
+ * An in-memory (`untitled`) document with `content` already in it -- no
  * checked-in fixture file needed. `resolveWrapConfigForDocument` already
  * skips `.editorconfig` lookup for any non-`file` URI scheme, so this is
  * safe to use anywhere a test only needs to control `rewrapPlus.*`
@@ -52,7 +52,7 @@ export function settle(): Promise<void> {
  * Extract the logical value of a `return "..." "..." ...;`-shaped
  * string-concatenation statement from `text`, by finding every quoted
  * literal between `return` and the statement's closing `;` and joining
- * their bodies with no separator — the "no separator" semantics both
+ * their bodies with no separator -- the "no separator" semantics both
  * C++'s bare adjacency and Java's `+` concatenation share (dissolving a
  * concatenation run never inserts a character of its own; see
  * `packages/engine/src/strings/dissolve-string.ts`'s own doc comment).
@@ -62,11 +62,11 @@ export function settle(): Promise<void> {
  * right before where the line breaks) without hardcoding *where* the
  * wrap engine chooses to put that break. An earlier version of both
  * `cpp.test.ts` and `java.test.ts` asserted `text.includes('"Hello, "')`
- * directly — a specific claim about the exact reflow split point that
+ * directly -- a specific claim about the exact reflow split point that
  * was never actually true even at the commit that introduced it (the
  * greedy reflow algorithm fits "there! Welcome to the application, we "
  * onto the same physical line as "Hello, ", so the two never appear as
- * separate quoted literals at all) — caught only once this suite was
+ * separate quoted literals at all) -- caught only once this suite was
  * actually run end-to-end against real engine output rather than a
  * hand-guessed expectation. Exact wrap-point placement already has
  * dedicated engine-level gold-fixture coverage (e.g.

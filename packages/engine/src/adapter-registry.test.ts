@@ -87,7 +87,7 @@ describe('validateDescriptor', () => {
   });
 
   it('accepts a prose-shaped descriptor with no comments/strings queries and no strings block', () => {
-    // The Markdown shape — built as a full literal, not through
+    // The Markdown shape -- built as a full literal, not through
     // `makeDescriptor`'s override merge, since `exactOptionalPropertyTypes`
     // distinguishes an omitted
     // `strings` key from one explicitly set to `undefined`.
@@ -115,7 +115,7 @@ describe('validateDescriptor', () => {
   it('accepts a descriptor with no queries at all when hasDiscoverProse is true', () => {
     // The LaTeX shape: prose discovery is a masked line scan, not a
     // query, so `queries.prose`
-    // itself can be absent too — only the `discoverProse` hook's
+    // itself can be absent too -- only the `discoverProse` hook's
     // *presence*, passed by the caller (normally `AdapterRegistry.register`,
     // which has the adapter in hand), satisfies the "discovers something"
     // requirement.
@@ -182,7 +182,7 @@ describe('AdapterRegistry', () => {
 
   it('lists every registered id, sorted, primary ids and aliases alike', () => {
     // `apply-wrap.ts`/`format-on-save.ts` both gate on this list
-    // including a real, resolvable alias — see `./adapter-registry.ts`'s
+    // including a real, resolvable alias -- see `./adapter-registry.ts`'s
     // own doc comment on `supportedLanguages` for the bug this test would
     // otherwise have kept pinned.
     const registry = new AdapterRegistry();

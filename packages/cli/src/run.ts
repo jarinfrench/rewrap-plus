@@ -1,15 +1,15 @@
 /**
  * The CLI's testable core: parse args, discover files, wrap each one,
- * print results, and return an exit code — everything `./cli.ts`'s thin
+ * print results, and return an exit code -- everything `./cli.ts`'s thin
  * entry point needs, minus actually touching `process.argv`/
  * `process.exit` so this can be called directly from a test with a
  * fake argv and captured output.
  *
  * Exit codes (matching Black's own `--check` convention, not invented
- * fresh — a CI/pre-commit hook author already knows this shape):
- * - `0` — nothing needed changing (or everything was rewritten cleanly).
- * - `1` — `--check` found at least one file that would change.
- * - `2` — a hard error: bad arguments, a missing path, an explicit file
+ * fresh -- a CI/pre-commit hook author already knows this shape):
+ * - `0` -- nothing needed changing (or everything was rewritten cleanly).
+ * - `1` -- `--check` found at least one file that would change.
+ * - `2` -- a hard error: bad arguments, a missing path, an explicit file
  *   with an unrecognized extension and no `--language`, or a per-file
  *   processing error (parse failure, unsupported language, ...).
  */
@@ -28,7 +28,7 @@ export interface RunIo {
 // `createRequire` (not a hardcoded string) so this can never drift from
 // `package.json`'s own `version` field. Relative resolution from this
 // module's own location works whether it's running as `src/run.ts`
-// (vitest, transpiled in place) or the built `dist/run.js` — both sit
+// (vitest, transpiled in place) or the built `dist/run.js` -- both sit
 // exactly one directory below `packages/cli/`, so `'../package.json'`
 // reaches the same file either way.
 const require = createRequire(import.meta.url);
@@ -87,7 +87,7 @@ export async function run(argv: readonly string[], io: RunIo): Promise<number> {
   for (const file of discovery.files) {
     if (!supportedLanguages.includes(file.languageId)) {
       // Reachable when --language names a real languageId that just
-      // isn't one this build registers an adapter for — every
+      // isn't one this build registers an adapter for -- every
       // extension-detected languageId (./language-detection.ts) is
       // already drawn from the registered set, so this path is
       // exercised by --language, not ordinary directory walks.

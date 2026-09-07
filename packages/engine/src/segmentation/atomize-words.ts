@@ -8,11 +8,11 @@ export interface AtomizeWordsOptions {
   /**
    * Extra never-split patterns for this call only, merged ahead of the
    * shared built-in set (`./unbreakable-spans.ts`'s `UNBREAKABLE_PATTERN`)
-   * — see `findUnbreakableSpans`'s own doc comment for the merge order
+   * -- see `findUnbreakableSpans`'s own doc comment for the merge order
    * and the constraints a pattern here must satisfy (self-contained,
    * non-global, no adjacent unbounded quantifiers). Used by
    * `../prose/dissolve-prose.ts` for a prose language's own true
-   * never-split forms, e.g. LaTeX's `\verb`/`\lstinline` — content the
+   * never-split forms, e.g. LaTeX's `\verb`/`\lstinline` -- content the
    * grammar itself doesn't protect from being torn at internal whitespace.
    */
   readonly extraUnbreakable?: readonly RegExp[];
@@ -36,10 +36,10 @@ export interface AtomizeWordsOptions {
  * keeps one whole.
  *
  * A word run that starts with, but isn't wholly consumed by, an
- * unbreakable span (e.g. `{x}.` — the placeholder followed immediately
+ * unbreakable span (e.g. `{x}.` -- the placeholder followed immediately
  * by a period, no space between) is split into two atoms at the span's
  * boundary, and the later atom is tagged `glue: 'none'` rather than left
- * `undefined` ("join with a space") — reflow and re-emission must
+ * `undefined` ("join with a space") -- reflow and re-emission must
  * reproduce the original absence of whitespace there, not insert one.
  *
  * Getting the "never split inside" rule wrong produces *invalid strings*
@@ -47,25 +47,25 @@ export interface AtomizeWordsOptions {
  * ugly wrap.
  *
  * `width` is real display width (`./display-width.ts`): East Asian
- * Wide/Fullwidth characters count as 2 columns, combining marks as 0 —
+ * Wide/Fullwidth characters count as 2 columns, combining marks as 0 --
  * not `text.length`, which over- or under-counts for exactly that text.
  *
  * **Sentence spacing is preserved, not imposed.** If the source already
  * has *exactly* two spaces immediately after a `.`/`!`/`?` that ends the
  * previous atom, the next atom is tagged `glue: 'double'`
  * (`../reflow/reflow-block.ts` renders that as two spaces and budgets it
- * as two columns) instead of the ordinary single-space join — so a
+ * as two columns) instead of the ordinary single-space join -- so a
  * paragraph the author already double-spaces keeps reading that way
  * through a rewrap, the same as it would if nothing had touched it.
  * Deliberately narrow, in two ways: the *count* of an ordinary run isn't
- * kept in general (any whitespace run that isn't exactly this shape —
- * one space, or three-or-more, anywhere — still collapses to one join,
+ * kept in general (any whitespace run that isn't exactly this shape --
+ * one space, or three-or-more, anywhere -- still collapses to one join,
  * same as always; that collapsing is the intended cosmetic
  * normalization for prose), and the *position* is scoped to right after
  * sentence-ending punctuation specifically, not "any run of 2 spaces."
  * A wider rule (preserving any multi-space run verbatim, or treating
  * "2 or more" as double) would also preserve or half-preserve incidental
- * noise — a stray extra space from a copy-paste, misaligned padding —
+ * noise -- a stray extra space from a copy-paste, misaligned padding --
  * that prose reflow exists to clean up everywhere else. Requiring an
  * exact match on the one shape that's an unambiguous, well-known
  * typographic convention (a deliberate sentence-spacing double-space)
@@ -104,7 +104,7 @@ export function atomizeWords(line: string, options: AtomizeWordsOptions = {}): A
       unbreakableIndex++;
     } else {
       // Ordinary run: consume non-whitespace characters up to the next
-      // whitespace, but stop early if an unbreakable span begins first —
+      // whitespace, but stop early if an unbreakable span begins first --
       // that span becomes its own atom on the next iteration, glued to
       // this one (no whitespace separated them in the source).
       const stopAt = nextSpan ? nextSpan.start : n;

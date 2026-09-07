@@ -19,25 +19,25 @@ import { extractConcatenatedStringValue as extractJavaValue } from '../support/d
 
 /**
  * Round-trip property tests with generated input: fast-check generators
- * for comments/docstrings/strings, asserting four named properties —
+ * for comments/docstrings/strings, asserting four named properties --
  * idempotent, no line over limit except a lone atom, output still parses,
- * string values unchanged — against generated rather than hand-written
+ * string values unchanged -- against generated rather than hand-written
  * source.
  *
  * The "line comments" and "string literals" categories are parameterized
- * across every registered adapter — the same Python-only gap
+ * across every registered adapter -- the same Python-only gap
  * `../wrap/idempotency-all-fixtures.test.ts` and this directory's other
  * suites had before being generalized. "Docstrings" stays Python-only
- * below, deliberately: it isn't a gap the way the other two were — Python
+ * below, deliberately: it isn't a gap the way the other two were -- Python
  * is the only registered adapter with a real docstring construct at all
- * (JS/TS/C++/Java have doc *comments* — JSDoc/Doxygen/Javadoc-style,
- * dissolved/emitted through a different pipeline — not docstrings), so there's no
+ * (JS/TS/C++/Java have doc *comments* -- JSDoc/Doxygen/Javadoc-style,
+ * dissolved/emitted through a different pipeline -- not docstrings), so there's no
  * "JS docstring" case this suite is missing.
  *
  * Deliberately word-bank-based rather than raw fuzzed Unicode: a
  * generator that could produce quotes, backslashes, or newlines *inside*
  * the generated content would mostly be exercising dissolve/escape edge
- * cases — real, but already covered by the existing hand-written,
+ * cases -- real, but already covered by the existing hand-written,
  * eval-equivalence-checked gold fixtures (`../wrap/python-string-wrap-
  * fixtures.test.ts` and its JS/TS/C++/Java counterparts), which can name
  * and check an *exact* expected decoded value in a way a property test
@@ -85,7 +85,7 @@ const sentenceArb = fc
  * string-literal property only (not line comments/docstrings, where an
  * empty body isn't the failure mode this guards). A sibling
  * implementation once rewrapped an empty string literal (`x = ""`) into a
- * bare, delimiter-less `x =` — invalid syntax. `stringPolicy: 'all'`
+ * bare, delimiter-less `x =` -- invalid syntax. `stringPolicy: 'all'`
  * (this suite's config, below) already bypasses the prose gate that would
  * otherwise keep an empty string from ever reaching `wrapString` at all,
  * so this generator just needs to actually produce `''` sometimes; the
@@ -112,7 +112,7 @@ function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
   };
 }
 
-/** Wrap `line` in `depth` levels of nested `def f():` — 4 spaces per level. */
+/** Wrap `line` in `depth` levels of nested `def f():` -- 4 spaces per level. */
 function nestDef(depth: number, line: string): string {
   let body = line;
   for (let i = 0; i < depth; i++) {
@@ -131,7 +131,7 @@ function nestDef(depth: number, line: string): string {
  * `function f{i}() { ... }` declarations, 4 spaces per level. Nested
  * function *declarations* (unlike nested function *definitions* in C++,
  * or nested method definitions in Java) are valid JS/TS at any depth,
- * including depth 0 (no wrapper at all — a bare top-level comment is
+ * including depth 0 (no wrapper at all -- a bare top-level comment is
  * already valid JS/TS, same as it is for Python).
  */
 function nestJsFunction(depth: number, line: string): string {
@@ -155,7 +155,7 @@ function nestJsFunction(depth: number, line: string): string {
  * neither allows a bare statement or block at file/class scope at all. So
  * `depth` levels of nesting here means `depth` nested blocks (always
  * legal *inside* a function/method body, at any depth) inside one single,
- * always-present enclosing function/method — `outerHeader` supplies that
+ * always-present enclosing function/method -- `outerHeader` supplies that
  * one line (`void f() {\n... \n}` for C++, `class C {\n  void f() {\n
  * ...\n  }\n}` for Java). Unlike `nestDef`/`nestJsFunction`, depth 0 still
  * carries that one unavoidable wrapper.
@@ -164,12 +164,12 @@ function nestJsFunction(depth: number, line: string): string {
  * bare block). Found necessary for C++ specifically, by direct probing
  * (`docs/spikes/probe-concat-depth.mjs`'s sibling investigation, same
  * session): a function body consisting of *nothing but* a bare nested
- * `{ }` block — no other statement anywhere in the body — is genuinely
+ * `{ }` block -- no other statement anywhere in the body -- is genuinely
  * ambiguous C++ grammar, and `tree-sitter-cpp` resolves it as a variable
  * declaration with a braced initializer (`void f() { ... };`) rather than
  * a function definition, producing a real parse error. Any actual
  * statement before the block, or a block introduced by a keyword like
- * `if`, disambiguates it correctly — confirmed by direct probing to
+ * `if`, disambiguates it correctly -- confirmed by direct probing to
  * produce zero errors either way. Java's grammar has no such ambiguity (a
  * bare nested block parses cleanly there), so it passes `''`.
  */
@@ -250,12 +250,12 @@ const LANGUAGE_SETS: readonly LanguageSet[] = [
 /**
  * The overflow rule allows a single unbreakable atom (one word here,
  * since the word bank never contains spaces) to exceed the column limit
- * — mirrors the same allowance every gold-fixture suite's own "no line
+ * -- mirrors the same allowance every gold-fixture suite's own "no line
  * over the limit" check makes (e.g. `../wrap/python-comment-wrap-
  * fixtures.test.ts`).
  *
- * Scoped to `edits[*].newText` — exactly the text `wrapRegions` produced
- * — never the whole reassembled file: an untouched code line (`def
+ * Scoped to `edits[*].newText` -- exactly the text `wrapRegions` produced
+ * -- never the whole reassembled file: an untouched code line (`def
  * f0():`, `function f0() {`, `void f() {`) is neither reflowed content
  * nor this property's concern, the same reasoning `run-adapter-
  * conformance.ts`'s own over-limit check documents.
@@ -281,14 +281,14 @@ function assertNoLineOverLimitExceptLoneAtom(
         // JS/TS/Java's `'operator'`-style concatenation (trailing `+`,
         // `../src/languages/java/descriptor.ts`'s own
         // `operatorPlacement: 'trailing'`) leaves every continuation line
-        // but the last ending in `" +` rather than bare `"` — strip the
+        // but the last ending in `" +` rather than bare `"` -- strip the
         // operator before the quote-stripping below so it doesn't read as
         // a second token sharing the line.
         .replace(/ \+$/, '')
         .replace(/^"|"$/g, '')
         // A single *trailing* space is the deliberate "preserve the
         // trailing space at split points" glue the string-emit fixtures
-        // cover (`"foo " "bar"`, not `"foo" "bar"`) — not a
+        // cover (`"foo " "bar"`, not `"foo" "bar"`) -- not a
         // second atom sharing this line, so it doesn't disqualify an
         // otherwise-lone-atom line the way an *interior* space would.
         .replace(/ +$/, '');
@@ -357,9 +357,9 @@ describe.each(LANGUAGE_SETS)(
   },
 );
 
-describe('round-trip properties over generated input (python docstrings — see module doc comment)', () => {
+describe('round-trip properties over generated input (python docstrings -- see module doc comment)', () => {
   // Reuses the shared `parserManager` from `beforeAll` above (registered
-  // with every adapter, Python included) and the module-level `nestDef` —
+  // with every adapter, Python included) and the module-level `nestDef` --
   // no adapter- or nesting-logic duplication needed for this one
   // Python-only category.
   it('docstrings: idempotent, within-limit, and always re-parse cleanly', async () => {

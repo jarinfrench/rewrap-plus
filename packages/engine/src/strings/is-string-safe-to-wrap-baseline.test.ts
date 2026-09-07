@@ -18,7 +18,7 @@ function region(parts: readonly ReturnType<typeof part>[]): WrappableRegion {
 }
 
 /**
- * Exercises the shared baseline in isolation, independent of any adapter —
+ * Exercises the shared baseline in isolation, independent of any adapter --
  * this is the one function every adapter's own `isSafeToWrap` (Python,
  * C++) or lack thereof (Java, ECMAScript-family, whose adapter-level
  * assertions of this exact behavior moved here) relies on `../wrap.ts` to
@@ -55,7 +55,7 @@ describe('isStringSafeToWrapBaseline', () => {
   it('is safe for a multi-row part whose continuation lines carry ordinary paragraph indentation', () => {
     // A single-part triple-quoted Python string is the one shape that
     // legitimately spans multiple physical lines outside a line-
-    // continuation escape — its own paragraph indentation (2+ spaces per
+    // continuation escape -- its own paragraph indentation (2+ spaces per
     // continuation line) must not trip the single-line-only irregular-
     // whitespace check. Whether this specific region is actually safe to
     // wrap at all is Python's own `isSafeToWrap`'s job (its `looksLikeProse`

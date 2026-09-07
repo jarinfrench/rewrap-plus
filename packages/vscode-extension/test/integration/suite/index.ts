@@ -2,7 +2,7 @@
  * Inner script: runs *inside* the VSCode extension host (loaded via
  * `extensionTestsPath` by `../runTest.ts`), sets up Mocha with the BDD
  * interface, and runs every compiled `*.test.js` sitting alongside it in
- * `out-test/suite/`. `fs.readdirSync` rather than the `glob` package —
+ * `out-test/suite/`. `fs.readdirSync` rather than the `glob` package --
  * every test file lives flat in this one directory, so a suffix filter
  * is all discovery needs.
  */

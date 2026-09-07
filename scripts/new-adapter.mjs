@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `npm run new-adapter -- <languageId>` — scaffolds the files a new
+ * `npm run new-adapter -- <languageId>` -- scaffolds the files a new
  * language adapter needs under `packages/engine`: a descriptor stub, an
  * adapter stub, a probe-driven descriptor test stub, a conformance test
  * pre-wired to `runAdapterConformance`, and a fixtures directory
@@ -12,7 +12,7 @@
  * quirks can only be discovered by probing that language's own vendored
  * grammar directly (`docs/parsing.md`'s "probe before coding" finding,
  * which `docs/adapters.md`'s CRLF-handling and JavaScript-canary
- * sections both independently reconfirmed) — nothing here can safely
+ * sections both independently reconfirmed) -- nothing here can safely
  * guess at that. What this script *can* do safely is remove the
  * boilerplate: correct import paths, a descriptor shape that passes
  * `validateDescriptor` on day one (structurally valid placeholder data,
@@ -38,7 +38,7 @@ function main() {
   if (!/^[a-z][a-z0-9-]*$/.test(languageId)) {
     console.error(
       `new-adapter: '${languageId}' doesn't look like a VSCode languageId ` +
-        '(lowercase letters, digits, hyphens — e.g. "ruby", "typescriptreact").',
+        '(lowercase letters, digits, hyphens -- e.g. "ruby", "typescriptreact").',
     );
     process.exitCode = 1;
     return;
@@ -77,7 +77,7 @@ function main() {
   console.log('');
   console.log('Next steps (see docs/adding-a-language.md for the full walkthrough):');
   console.log(`  1. Obtain a tree-sitter grammar WASM for '${languageId}'. Before trusting it,`);
-  console.log(`     load it with this project's pinned web-tree-sitter and parse a real snippet —`);
+  console.log(`     load it with this project's pinned web-tree-sitter and parse a real snippet --`);
   console.log(`     a file existing at the expected path is not proof it loads (see`);
   console.log(`     docs/adding-a-language.md's vendoring step). Only then vendor it into`);
   console.log(`     packages/engine/grammars/, recording provenance in that dir's PROVENANCE.md.`);
@@ -87,8 +87,8 @@ function main() {
   console.log(`     are needed (most languages should override nothing).`);
   console.log(`  4. Fill in the conformance test's TODO sources and run:`);
   console.log(`       npm test --workspace=@rewrap-plus/engine`);
-  console.log(`     — a passing run with no changes needed under packages/engine/src/core`);
-  console.log(`     is the adapter interface holding — the hard gate a new adapter needs to pass.`);
+  console.log(`     -- a passing run with no changes needed under packages/engine/src/core`);
+  console.log(`     is the adapter interface holding -- the hard gate a new adapter needs to pass.`);
 }
 
 function descriptorStub(languageId, pascalName) {
@@ -96,25 +96,25 @@ function descriptorStub(languageId, pascalName) {
 
 /**
  * TODO: replace this file's header comment with a real one once the
- * descriptor below is filled in — see docs/adding-a-language.md.
+ * descriptor below is filled in -- see docs/adding-a-language.md.
  *
  * Placeholder descriptor for '${languageId}', scaffolded by
  * \`npm run new-adapter\`. Every value below is a structurally valid
  * stand-in (so this compiles and passes \`validateDescriptor\` as-is),
- * not a real ${pascalName} descriptor — nothing here should be trusted
+ * not a real ${pascalName} descriptor -- nothing here should be trusted
  * until it's been checked against the vendored grammar directly.
  */
 export const ${languageId.replace(/-/g, '_')}Descriptor: LanguageDescriptor = {
   id: '${languageId}',
   // TODO: point at the real vendored grammar once it's added to
-  // packages/engine/grammars/ — see that directory's PROVENANCE.md for
+  // packages/engine/grammars/ -- see that directory's PROVENANCE.md for
   // the vendoring steps.
   grammarWasm: 'grammars/tree-sitter-${languageId}.wasm',
 
   queries: {
     // TODO: replace with the real tree-sitter query source for this
     // grammar's comment/string node types, verified by probing the
-    // grammar directly (docs/parsing.md) — don't trust these names.
+    // grammar directly (docs/parsing.md) -- don't trust these names.
     comments: '(comment) @comment',
     strings: '(string) @string',
   },
@@ -129,7 +129,7 @@ export const ${languageId.replace(/-/g, '_')}Descriptor: LanguageDescriptor = {
   strings: {
     // TODO: real quote/prefix/escape/placeholder/concatenation shapes.
     // \`validateDescriptor\` requires at least one entry in \`quotes\`
-    // even for a comments-only adapter — see
+    // even for a comments-only adapter -- see
     // packages/engine/src/languages/javascript/descriptor.ts's own doc
     // comment for why that adapter keeps this block real rather than
     // absent.
@@ -151,8 +151,8 @@ import { ${languageId.replace(/-/g, '_')}Descriptor } from './descriptor.js';
 
 /**
  * TODO: this is a scaffold, not a real test suite yet. Probe the
- * vendored grammar directly before writing real assertions — see
- * docs/parsing.md and docs/adapters.md's "JavaScript canary — grammar
+ * vendored grammar directly before writing real assertions -- see
+ * docs/parsing.md and docs/adapters.md's "JavaScript canary -- grammar
  * findings" section for the shape this investigation should take (node
  * names, CRLF handling, anything the grammar does that surprises you).
  */
@@ -167,7 +167,7 @@ describe('${pascalName} descriptor', () => {
     expect(() => new Query(language, ${languageId.replace(/-/g, '_')}Descriptor.queries.strings)).not.toThrow();
   });
 
-  // TODO: real node-name/shape assertions, probed directly — don't
+  // TODO: real node-name/shape assertions, probed directly -- don't
   // trust the placeholder query source in ./descriptor.ts until this
   // test proves it against the real grammar.
 });
@@ -182,7 +182,7 @@ import { ${constName}Descriptor } from './descriptor.js';
 /**
  * TODO: ${pascalName}'s \`LanguageAdapter\`, scaffolded by
  * \`npm run new-adapter\`. Every hook (\`classify\`, \`groupRegions\`,
- * \`isSafeToWrap\`, \`proseText\`) is optional — the engine's default,
+ * \`isSafeToWrap\`, \`proseText\`) is optional -- the engine's default,
  * descriptor-driven behavior applies to any hook left unset. Most
  * languages should override nothing; only add a hook once a specific,
  * probed grammar behavior actually needs one (see
@@ -203,7 +203,7 @@ import { runAdapterConformance } from '../../src/conformance/run-adapter-conform
 /**
  * TODO: replace CRLF_SOURCE below with a real ${pascalName} snippet
  * containing at least one line-comment block long enough to overflow
- * COLUMN_LIMIT — see
+ * COLUMN_LIMIT -- see
  * packages/engine/test/conformance/javascript-conformance.test.ts for a
  * worked example, including why both a CRLF and an LF variant of the
  * same source matter (the line-ending-preservation invariant needs
@@ -230,7 +230,7 @@ function fixturesReadmeStub(languageId) {
 Placeholder, scaffolded by \`npm run new-adapter\`. Populate this
 directory with gold-file fixtures (\`.in\`/\`.out\` pairs, or whatever
 directory-walking shape this project's existing fixture-driven tests
-use — see \`packages/engine/test/fixtures/python/\` for the established
+use -- see \`packages/engine/test/fixtures/python/\` for the established
 convention) once this adapter grows past what
 \`test/conformance/${languageId}-conformance.test.ts\`'s inline
 \`sources\` alone can cover. Not required for the conformance suite

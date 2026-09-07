@@ -3,7 +3,7 @@ import type { SourceSpan } from './span.js';
 /**
  * The kinds of source regions the engine can discover and wrap.
  *
- * This list is intentionally closed rather than left open-ended — adding
+ * This list is intentionally closed rather than left open-ended -- adding
  * a kind is a deliberate, cross-cutting change (dissolve/emit support in
  * every relevant adapter), not something that should happen accidentally
  * via a typo'd string.
@@ -13,8 +13,8 @@ import type { SourceSpan } from './span.js';
  * from container ancestry rather
  * than a fixed marker, discovered via `LanguageAdapter.discoverProse` and
  * wrapped via `LanguageAdapter.wrapProse` (`../types/adapter.ts`) instead
- * of the query-driven comment/string discovery every other kind uses —
- * see that plan's §1 for why prose is a genuinely different shape, not a
+ * of the query-driven comment/string discovery every other kind uses --
+ * see that plan's Sec. 1 for why prose is a genuinely different shape, not a
  * variant of `'lineComment'`.
  */
 export type RegionKind =
@@ -35,7 +35,7 @@ export interface WrappableRegion {
 
   /**
    * The individual parts making up this region. Length 1 for an ordinary
-   * region; length > 1 only for a concatenation run — adjacent string
+   * region; length > 1 only for a concatenation run -- adjacent string
    * literals grouped into one logical unit. Grouping a run into a single
    * region with multiple `parts`, rather than one region per literal, is
    * what makes wrapping a concatenation idempotent, which reflow logic
@@ -44,12 +44,12 @@ export interface WrappableRegion {
   readonly parts: readonly SourceSpan[];
 
   /**
-   * The region's source text — still carrying its original syntax
+   * The region's source text -- still carrying its original syntax
    * (quotes, comment markers, escapes, concatenation operators), except
    * for one normalization: every line ending is collapsed to a bare
    * `\n`, regardless of what the source file actually uses (see
    * `../discovery/normalize-raw-text.ts` for why a CRLF source needs
-   * this at all). Display/debugging use only — nothing treats this as
+   * this at all). Display/debugging use only -- nothing treats this as
    * an editing source; `wrapRegions` always re-slices fresh text from
    * `source` for anything that becomes an actual `TextEdit`, precisely
    * so this field's own normalization never has to be undone.

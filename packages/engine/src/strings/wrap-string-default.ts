@@ -12,7 +12,7 @@ import { emitString, type ConcatenationStyle } from './emit-string.js';
  * shared: whether a split run needs its own inserted grouping parentheses,
  * and which concatenation syntax to emit with. Both are always constant
  * per language for C++/Java/ECMAScript (see `wrapStringDefault`'s own doc
- * comment) — only Python's own `wrapString` (`../languages/python/wrap-string.ts`)
+ * comment) -- only Python's own `wrapString` (`../languages/python/wrap-string.ts`)
  * ever needs to *resolve* these per-region, from real syntax-tree context
  * (`../languages/python/emit-context.ts`), which is exactly why Python
  * doesn't use this helper.
@@ -29,18 +29,18 @@ export interface WrapStringDefaultOptions {
  * (`./dissolve-string.ts`), normalize quote collisions
  * (`./escape-quote-collisions.ts`), and emit (`./emit-string.ts`).
  *
- * Extracted once three real adapters — C++, Java, and every ECMAScript-
- * family language — turned out to share this exact pipeline byte-for-byte,
+ * Extracted once three real adapters -- C++, Java, and every ECMAScript-
+ * family language -- turned out to share this exact pipeline byte-for-byte,
  * differing only in the two `opts` literals each passes in (C++:
  * `{ needsParens: false, concatenationStyle: 'implicit' }`; Java and
- * ECMAScript: `{ needsParens: false, concatenationStyle: 'operator' }`) —
+ * ECMAScript: `{ needsParens: false, concatenationStyle: 'operator' }`) --
  * the same "promote once more than one real consumer needs it" call this
  * project has made repeatedly (`docs/adapters.md`). None of these three
  * ever had a real reason to call through an `emitContext`-shaped hook in
  * the first place: each already knows its own answer to both questions
  * before ever looking at `region`/`tree`, which is exactly why the
  * `LanguageAdapter.emitContext` hook these three used to nominally
- * implement was never actually invoked by anything — see the git history
+ * implement was never actually invoked by anything -- see the git history
  * on that interface member's removal for the full investigation.
  *
  * Python's own `wrapString` (`../languages/python/wrap-string.ts`) is

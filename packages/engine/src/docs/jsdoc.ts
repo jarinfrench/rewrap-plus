@@ -7,7 +7,7 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 /**
  * JSDoc's flush-left tag marker: `@param`, `@returns`, `@throws {Error}`,
- * ... — shaped like Sphinx's `:field:` marker (`./sphinx.ts`) in every way
+ * ... -- shaped like Sphinx's `:field:` marker (`./sphinx.ts`) in every way
  * that matters to `groupFieldEntries`: a fixed marker at the start of a
  * flush-left line, everything after it on the same line is that entry's
  * first line of content.
@@ -20,7 +20,7 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
  * `@throws` take only an optional `{Type}`; `@example`/`@deprecated` take
  * neither. Hardcoding a per-tag argument grammar to keep `{Type}`/`name`
  * out of the reflowable description would be real, separate parsing work
- * this phase doesn't need to take on — unlike Python's string-wrapping
+ * this phase doesn't need to take on -- unlike Python's string-wrapping
  * risk, getting this wrong only ever produces a cosmetically different
  * wrap inside a comment, never a corrupted value, so "bias toward the
  * simpler, always-safe choice" (this project's own recurring principle)
@@ -47,11 +47,11 @@ function matchJsdocEntry(line: string): EntryStartMatch | null {
 
 /**
  * JSDoc-style doc comments: a summary/description, then a flat run of
- * `@param`/`@returns`/`@throws`/... tags — structurally the same shape as
+ * `@param`/`@returns`/`@throws`/... tags -- structurally the same shape as
  * Sphinx's field list (`./sphinx.ts`), which this module deliberately
  * mirrors rather than reinventing. Governs `'docComment'` regions (a
  * `/** ... * /` block comment, per `../comments/wrap-doc-comment.ts`), not
- * `'docstring'` regions the way every other dialect here does — JSDoc is a
+ * `'docstring'` regions the way every other dialect here does -- JSDoc is a
  * *comment* convention (JavaScript/TypeScript have no string-literal-as-
  * documentation concept), not a string one.
  */
@@ -60,7 +60,7 @@ export const jsdocDialect: DocDialect = {
 
   /**
    * Confidence rises with the number of recognized `@tag` lines found,
-   * saturating quickly — mirrors `sphinxDialect.detect`'s own curve and
+   * saturating quickly -- mirrors `sphinxDialect.detect`'s own curve and
    * rationale: a single `@returns` is already strong, distinctive evidence
    * (an `@`-prefixed flush-left marker has essentially no ordinary-prose
    * false-positive risk).

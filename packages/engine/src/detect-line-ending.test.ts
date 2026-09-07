@@ -12,7 +12,7 @@ describe('detectLineEnding', () => {
 
   it('goes by the first line break even if later ones differ', () => {
     // Genuinely mixed line endings are out of scope for this function
-    // (that's `detectLineEndingNear`'s job) — it's a per-file,
+    // (that's `detectLineEndingNear`'s job) -- it's a per-file,
     // first-line-break detector.
     expect(detectLineEnding('a\r\nb\nc\n')).toBe('\r\n');
     expect(detectLineEnding('a\nb\r\nc\r\n')).toBe('\n');
@@ -30,13 +30,13 @@ describe('detectLineEnding', () => {
 
 describe('detectLineEndingNear', () => {
   // Takes the caller's own `source.split('\n')`, not the raw source
-  // string — see the function's own doc comment for why (re-splitting
+  // string -- see the function's own doc comment for why (re-splitting
   // per call made wrapping every region in a large file quadratic).
   it('detects the convention of a row inside a genuinely mixed-line-ending file, independent of every other row', () => {
     // Row 0 ('a') is CRLF-terminated; row 1 ('b') is LF-terminated. Each
     // row's own detection should reflect only its own terminator, not
     // whichever convention the file happens to lead with (unlike
-    // `detectLineEnding`, which is a whole-file, first-break heuristic —
+    // `detectLineEnding`, which is a whole-file, first-break heuristic --
     // see that function's own "goes by the first line break" test).
     const lines = 'a\r\nb\nc\r\n'.split('\n');
     expect(detectLineEndingNear(lines, 0)).toBe('\r\n');

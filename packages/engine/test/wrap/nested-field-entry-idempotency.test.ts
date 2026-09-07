@@ -11,12 +11,12 @@ import { wrapRegions } from '../../src/wrap.js';
  * "Suggested execution order": an idempotency pass across content the
  * existing gold fixtures (`012`/`013`/`014-pathological-*`) don't
  * exercise. Those three cover one nested list plus one fenced sample
- * each, at one column limit, deliberately narrow per their own scope —
+ * each, at one column limit, deliberately narrow per their own scope --
  * this file probes the *other* structured content `splitBlocks`
  * recognizes (a doctest block, a Markdown table) once nested inside a
  * field entry, plus a Markdown-indented sub-bullet (a deeper-nested
  * `listItem`, not itself given `fieldEntry`'s own nested-`blocks`
- * treatment — see `../../src/docs/field-entries.test.ts`'s own
+ * treatment -- see `../../src/docs/field-entries.test.ts`'s own
  * "Markdown-indented sub-bullet" case for why that's fine, not a gap),
  * across several column limits and both reflow modes.
  *
@@ -26,7 +26,7 @@ import { wrapRegions } from '../../src/wrap.js';
  * update `012`-`014`): this file only asserts the idempotency
  * *property* (`wrap(wrap(x)) === wrap(x)`), not any particular exact
  * output, mirroring how `idempotency-all-fixtures.test.ts` itself never
- * asserts exact text either — only that a *second* wrap changes nothing
+ * asserts exact text either -- only that a *second* wrap changes nothing
  * further.
  */
 const SOURCE = `def deploy(target, mode):
@@ -81,7 +81,7 @@ describe('idempotency for nested field-entry content beyond the 012-014 fixtures
   ] as const)('%s mode', (_mode, balancedWrapping) => {
     // A range wide enough to force very different wrap points (30: nearly
     // everything wraps hard) through comfortably wide (100: almost
-    // nothing needs to), plus the fixture suite's own conventional 50 —
+    // nothing needs to), plus the fixture suite's own conventional 50 --
     // the plan's own "at more than one column limit" callout.
     it.each([30, 40, 50, 60, 80, 100])('wrap(wrap(x)) === wrap(x) at columnLimit %i', async (columnLimit) => {
       const cfg = config({ columnLimit, balancedWrapping });
@@ -94,7 +94,7 @@ describe('idempotency for nested field-entry content beyond the 012-014 fixtures
     });
   });
 
-  it('preserves the nested list, doctest, and table structurally through a wrap — not just producing zero further edits by accident', async () => {
+  it('preserves the nested list, doctest, and table structurally through a wrap -- not just producing zero further edits by accident', async () => {
     // A wrap that happened to produce a stable-but-wrong result (say,
     // every structural marker flattened to prose on the *first* wrap,
     // which would then trivially be "idempotent" against itself) would
@@ -111,7 +111,7 @@ describe('idempotency for nested field-entry content beyond the 012-014 fixtures
     expect(wrapped).toContain('|---------|---------|');
 
     // The deeper sub-bullet must still visually sit to the right of its
-    // parent — the depth delta `dedentBody` preserves through
+    // parent -- the depth delta `dedentBody` preserves through
     // segmentation (`../../src/docs/field-entries.test.ts`) and
     // `reflowFieldEntry` preserves through reflow
     // (`../../src/reflow/reflow-block.test.ts`) must survive the *whole*

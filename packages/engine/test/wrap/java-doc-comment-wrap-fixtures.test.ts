@@ -12,7 +12,7 @@ import plainIn from '../fixtures/java/doc-comments/002-plain-narrative.in.java?r
 import plainOut from '../fixtures/java/doc-comments/002-plain-narrative.out.java?raw';
 
 /**
- * Gold fixtures for `'docComment'` regions — the Javadoc dialect
+ * Gold fixtures for `'docComment'` regions -- the Javadoc dialect
  * (`../../src/docs/javadoc.ts`) applied through `wrapDocComment`
  * (`../../src/comments/wrap-doc-comment.ts`), end to end via
  * `wrapRegions`. Mirrors this package's established fixture-driven
@@ -51,7 +51,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(javaAdapter);
 });
 
-describe('Java docComment (Javadoc) wrapping — end-to-end gold fixtures', () => {
+describe('Java docComment (Javadoc) wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'java', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);

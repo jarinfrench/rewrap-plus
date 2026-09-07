@@ -2,7 +2,7 @@ import { typescriptReactAdapter } from '../../src/languages/typescript/adapter.j
 import { runAdapterConformance } from '../../src/conformance/run-adapter-conformance.js';
 
 /**
- * TSX's own pass through the conformance suite — a genuinely separate
+ * TSX's own pass through the conformance suite -- a genuinely separate
  * grammar from plain TypeScript (`../../src/languages/typescript/descriptor.ts`'s
  * own doc comment on why), so it gets its own conformance run rather than
  * relying on `./typescript-conformance.test.ts` to stand in for it.

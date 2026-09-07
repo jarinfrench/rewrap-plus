@@ -1,7 +1,7 @@
 // Throwaway spike script (Write-tool-authored). Investigates why an
 // unterminated \begin{verbatim} produces a real parse ERROR in this
 // grammar, unlike tree-sitter-markdown's own graceful "extend the fence
-// to end of file" recovery for an unterminated code fence — found while
+// to end of file" recovery for an unterminated code fence -- found while
 // writing commit 18's hardening test for exactly this shape of input.
 //
 // Run from the repo root after `npm ci`:

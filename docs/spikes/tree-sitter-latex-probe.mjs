@@ -1,7 +1,7 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: verify the LaTeX grammar's node names/shapes (built from
-// @pfoerster/tree-sitter-latex@0.6.0 per §3.1 of
-// docs/planning/markdown-latex-plan.md) and the §6.1/§6.2 assumptions
+// @pfoerster/tree-sitter-latex@0.6.0 per Sec. 3.1 of
+// docs/planning/markdown-latex-plan.md) and the Sec. 6.1/Sec. 6.2 assumptions
 // before writing the LaTeX adapter, per this project's "probe before
 // coding, always" rule. Findings are written up in docs/parsing.md
 // (Finding 8); this file is kept only so the experiment is reproducible.
@@ -69,7 +69,7 @@ console.log('\n=== 1. first-parse latency ===');
   console.log('second parse, same content (33 bytes): %dms', (performance.now() - t1).toFixed(1));
 }
 
-// --- 2. `\\` — generic_command with command '\\', or a dedicated node? ---
+// --- 2. `\\` -- generic_command with command '\\', or a dedicated node? ---
 console.log('\n=== 2. \\\\ (line break command) node shape ===');
 {
   const src = 'first line \\\\\nsecond line\n';
@@ -93,7 +93,7 @@ for (const envName of ['align', 'equation', 'gather', 'multline', 'displaymath',
   const src = `\\begin{${envName}}\nbody\n\\end{${envName}}\n`;
   const tree = parser.parse(src);
   const top = tree.rootNode.children.find((c) => c && c.type.endsWith('environment'));
-  console.log(`${envName}: top-level node type = ${top?.type ?? '(none found — dumping)'}`);
+  console.log(`${envName}: top-level node type = ${top?.type ?? '(none found -- dumping)'}`);
   if (!top) dump(tree.rootNode, src);
 }
 

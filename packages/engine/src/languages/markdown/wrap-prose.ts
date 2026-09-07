@@ -10,9 +10,9 @@ import { markdownContinuationPrefix } from './continuation-prefix.js';
 import { MARKDOWN_HARD_BREAK } from './hard-break.js';
 
 /**
- * §5.4's hard-break forms — trailing backslash (parity-aware, see
+ * Sec. 5.4's hard-break forms -- trailing backslash (parity-aware, see
  * `./hard-break.ts`), two-or-more spaces, `<br>`/`<br/>`/`<br />`. No
- * `extraUnbreakable` — Markdown v1 has nothing beyond `atomizeWords`'
+ * `extraUnbreakable` -- Markdown v1 has nothing beyond `atomizeWords`'
  * shared built-in set (unlike LaTeX's `\verb`/`\lstinline`).
  */
 const markdownProseSpec: ProseSpec = {
@@ -21,16 +21,16 @@ const markdownProseSpec: ProseSpec = {
 
 /**
  * Markdown's `LanguageAdapter.wrapProse` implementation
- * (`./adapter.ts`) — dissolve, reflow, and emit one `'prose'` region.
+ * (`./adapter.ts`) -- dissolve, reflow, and emit one `'prose'` region.
  *
  * The continuation prefix is derived once per region, from the first
  * physical line's own source text before the region's content starts
- * (`region.parts[0]`) — see `./continuation-prefix.ts` for the exact
- * derivation (§5.3). `preserveIndentedBlocks` and `docDialect` are
- * ignored (§5.5): the grammar already decided block structure, and there
+ * (`region.parts[0]`) -- see `./continuation-prefix.ts` for the exact
+ * derivation (Sec. 5.3). `preserveIndentedBlocks` and `docDialect` are
+ * ignored (Sec. 5.5): the grammar already decided block structure, and there
  * is no documentation dialect for ordinary prose.
  *
- * Reads that prefix via `sliceSpanText`, not a fresh `source.split('\n')` —
+ * Reads that prefix via `sliceSpanText`, not a fresh `source.split('\n')` --
  * this function runs once per region, and `wrapRegions` calls it in a
  * loop over every region in the file, so a fresh full-file split here
  * would cost `O(file size)` *per region*, the identical quadratic-cost
@@ -39,7 +39,7 @@ const markdownProseSpec: ProseSpec = {
  * direct timing while writing this commit's own performance suite: a
  * 50,000-line all-paragraphs file (16,667 regions) took ~19s with the
  * naive split, ~1.6s once fixed to reuse `sliceSpanText`'s shared
- * per-source cache — see `../../../test/hardening/large-file-performance.test.ts`
+ * per-source cache -- see `../../../test/hardening/large-file-performance.test.ts`
  * and `docs/benchmarks.md` for the measured numbers this fix produced.
  */
 export function wrapMarkdownProse(

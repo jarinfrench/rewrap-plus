@@ -1,7 +1,7 @@
 /**
  * A line's list marker, once matched. `indent` and `hangingIndent` are
  * plain character-column counts into the (already-dissolved, un-expanded)
- * line — not the tab-expanded visual columns `visualIndentColumn` produces
+ * line -- not the tab-expanded visual columns `visualIndentColumn` produces
  * for a region's own base indent (`../discovery/visual-indent-column.ts`).
  * Dissolved comment/docstring text is overwhelmingly space-indented in
  * practice, and treating this internally-consistent character count as a
@@ -31,7 +31,7 @@ export interface ListMarkerMatch {
  * digits, a single letter, or a short (1-4 character) run of roman-
  * numeral letters. The roman alternative is tried before the bare
  * single-letter one so a multi-letter roman numeral like `iv.` or `xii.`
- * matches in full rather than being truncated to its first letter —
+ * matches in full rather than being truncated to its first letter --
  * `[a-zA-Z]` alone would still accept the single-letter case (`i.`, `a.`)
  * either way, so nothing is lost by trying roman first.
  */
@@ -43,7 +43,7 @@ const LIST_MARKER = /^([ \t]*)(\d+[.)]|[ivxlcdmIVXLCDM]{1,4}[.)]|[a-zA-Z][.)]|[-
  * end of line, e.g. a blank list item); the marker and its separating
  * whitespace still both count toward `hangingIndent` when present.
  *
- * Returns `null` for a line that isn't a list marker at all — including
+ * Returns `null` for a line that isn't a list marker at all -- including
  * plain paragraph text, so callers can use this both to *start* a list
  * item and (via a second call) to recognize where the *next* item begins,
  * ending the previous one's continuation lines.
@@ -67,11 +67,11 @@ export function matchListMarker(line: string): ListMarkerMatch | null {
  * than starting a new block.
  *
  * A continuation line must be non-blank, must not itself be a list marker
- * (a marker line always starts a fresh `listItem` — including a *nested*
+ * (a marker line always starts a fresh `listItem` -- including a *nested*
  * one, which this module represents simply as another top-level
  * `listItem` block with a deeper `hangingIndent`: `Block` is
  * a flat sequence, so nesting is encoded positionally rather than as a
- * tree), and must be indented further than the marker itself — i.e. it
+ * tree), and must be indented further than the marker itself -- i.e. it
  * sits visually "under" the item, not back out at the marker's own
  * indent or shallower.
  */

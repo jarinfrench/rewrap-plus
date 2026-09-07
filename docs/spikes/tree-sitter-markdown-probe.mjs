@@ -1,8 +1,8 @@
-// Throwaway spike script — not part of the build, not linted, not run in
+// Throwaway spike script -- not part of the build, not linted, not run in
 // CI. Its job: verify tree-sitter-markdown (block grammar) node
-// names/shapes and the §5.2 geometry assumptions in
+// names/shapes and the Sec. 5.2 geometry assumptions in
 // docs/planning/markdown-latex-plan.md before writing the Markdown
-// adapter, per this project's "probe before coding, always" rule — don't
+// adapter, per this project's "probe before coding, always" rule -- don't
 // trust memory or type declarations. Findings are written up in
 // docs/parsing.md (Finding 7); this file is kept only so the experiment is
 // reproducible.
@@ -190,7 +190,7 @@ console.log('\n=== 17. TOML front matter (EXTENSION_PLUS_METADATA) ===');
   console.log('has plus_metadata node:', findAll(tree.rootNode, 'plus_metadata').length > 0);
 }
 
-// --- 6. Setext heading: paragraph as a child, per §3.3 item 3 exclusion ---
+// --- 6. Setext heading: paragraph as a child, per Sec. 3.3 item 3 exclusion ---
 console.log('\n=== 18. setext heading: is heading_content a paragraph child of setext_heading? ===');
 {
   const src = 'Heading Text\n============\n';

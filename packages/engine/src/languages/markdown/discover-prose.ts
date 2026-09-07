@@ -10,47 +10,47 @@ import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 import { markdownDescriptor } from './descriptor.js';
 
 /**
- * A footnote definition's opening line (`[^note]: body text`) — not a
+ * A footnote definition's opening line (`[^note]: body text`) -- not a
  * grammar concept in `tree-sitter-markdown` (confirmed directly: it
  * parses as an ordinary `paragraph`, no dedicated node), so this is a
  * text-shape exclusion rather than a node-type one. Rewrap treats a
  * footnote's continuation as 4-space-indented, which this adapter's
  * canonical block-quote/list-derived continuation prefix
- * (`./continuation-prefix.ts`, commit 10) would get wrong — excluded
+ * (`./continuation-prefix.ts`, commit 10) would get wrong -- excluded
  * from discovery entirely rather than wrapped incorrectly.
  */
 const FOOTNOTE_DEFINITION = /^\s*\[\^[^\]\s]+\]:/;
 
 /**
- * Find every `'prose'` region in a Markdown `tree` — `LanguageAdapter.discoverProse`'s
+ * Find every `'prose'` region in a Markdown `tree` -- `LanguageAdapter.discoverProse`'s
  * implementation for this language (`./adapter.ts`).
  *
  * Runs `markdownDescriptor.queries.prose` (`(paragraph) @prose`) and
  * builds one region per captured `paragraph` node, excluding:
  *
- * - a paragraph whose parent is `setext_heading` — its text is the
- *   heading, never wrapped in v1 (§3.3 item 3). Confirmed directly
+ * - a paragraph whose parent is `setext_heading` -- its text is the
+ *   heading, never wrapped in v1 (Sec. 3.3 item 3). Confirmed directly
  *   (`docs/parsing.md` Finding 7): a `setext_heading`'s children are
  *   exactly `[paragraph, setext_h1_underline]` (or `_h2_`), so this is a
  *   one-line parent-type check.
  * - a paragraph whose first physical line looks like a footnote
  *   definition (`FOOTNOTE_DEFINITION` above).
  * - a paragraph containing any physical line that is exactly `$$` or
- *   begins with it — display math (Markdown-with-MathJax/KaTeX); the
+ *   begins with it -- display math (Markdown-with-MathJax/KaTeX); the
  *   block grammar has no math node at all, so a `$$...$$` block that
  *   isn't separated from surrounding prose by blank lines parses as part
  *   of one ordinary paragraph (confirmed directly), and reflowing the
- *   equation lines inside it would corrupt them. Conservative by design —
+ *   equation lines inside it would corrupt them. Conservative by design --
  *   excludes the *whole* paragraph, not just the `$$` lines within it.
  *
  * A paragraph overlapping a parse `ERROR` node needs no exclusion here:
  * `wrap.ts`'s `wrapRegions` already skips any region overlapping one,
- * for every region kind uniformly — "already handled generically."
+ * for every region kind uniformly -- "already handled generically."
  *
  * ## Region geometry
  *
  * Built entirely from `source`'s own physical lines and each paragraph
- * node's row range — never from walking `inline`'s children — forced by
+ * node's row range -- never from walking `inline`'s children -- forced by
  * a real finding: `block_continuation` turned out to be a
  * child of the paragraph's `inline` node, not of `paragraph` directly
  * (`docs/parsing.md` Finding 7), so relying on tree structure for
@@ -60,7 +60,7 @@ const FOOTNOTE_DEFINITION = /^\s*\[\^[^\]\s]+\]:/;
  * *past* the last content row (column 0 of the line after) whenever a
  * trailing newline follows the paragraph in the source, but points at the
  * real end column of the actual last line when the file ends without one
- * (probed both shapes directly — this function does not merely assume
+ * (probed both shapes directly -- this function does not merely assume
  * the "one row past" case is universal).
  */
 export function discoverMarkdownProse(
@@ -136,12 +136,12 @@ function isExcluded(paragraph: SyntaxNode, sourceLines: readonly string[]): bool
 }
 
 /**
- * The row a paragraph node's content genuinely ends on — see this file's
+ * The row a paragraph node's content genuinely ends on -- see this file's
  * own doc comment for the two confirmed shapes `paragraph.endPosition`
  * takes. `column === 0` on a row strictly after `startPosition.row` is
  * the reliable signal for "this is one row past the real end" (a
- * Markdown paragraph line is never genuinely empty — a blank line always
- * terminates the paragraph before it — so this shape never legitimately
+ * Markdown paragraph line is never genuinely empty -- a blank line always
+ * terminates the paragraph before it -- so this shape never legitimately
  * means "the last real line was empty").
  */
 function lastContentRow(paragraph: SyntaxNode): number {
@@ -151,7 +151,7 @@ function lastContentRow(paragraph: SyntaxNode): number {
 
 /**
  * Every `block_continuation` node under `paragraph`, indexed by the row
- * it starts on — one per continuation line that has a container prefix
+ * it starts on -- one per continuation line that has a container prefix
  * to record (a lazy continuation line has none, confirmed directly, and
  * simply has no entry here).
  */
@@ -179,7 +179,7 @@ function firstNonWhitespaceColumn(line: string): number {
  * Every later line's start column is the end of that row's own
  * `block_continuation` node when one exists, else the row's first
  * non-whitespace column (a lazy continuation line). Every line's end
- * column is that row's own content length, `\r` excluded — not
+ * column is that row's own content length, `\r` excluded -- not
  * `paragraph.endColumn`, which (per
  * `lastContentRow`'s own doc comment) only ever describes the *last* row
  * correctly and says nothing about the rows before it.

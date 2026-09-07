@@ -59,7 +59,7 @@ import negTripleCodeLikeOut from '../fixtures/python/strings/neg-012-triple-quot
  * rationale for this project's established fixture-driven convention.
  *
  * `stringPolicy: 'prose'` (not `'all'`) is the config every fixture below
- * runs under — the conservative, recommended default — precisely so the
+ * runs under -- the conservative, recommended default -- precisely so the
  * negative fixtures exercise the real gate a user would actually hit,
  * not a hypothetical one only reachable by deliberately disabling it.
  */
@@ -73,14 +73,14 @@ interface Fixture {
   readonly positive: boolean;
   /**
    * `false` only for the two triple-quoted-prose fixtures (008,
-   * 009) — every other positive fixture goes through the concatenation-
+   * 009) -- every other positive fixture goes through the concatenation-
    * based `wrapString` pipeline, which is value-preserving by construction
    * (`../../src/strings/dissolve-string.ts`'s own doc comment), so the
    * eval-equivalence check below is a meaningful test for it. A
    * triple-quoted non-docstring string instead goes through
    * `wrapCodeString`'s docstring-style pipeline
-   * (`../../src/languages/python/wrap-code-string.ts`), which — like
-   * `wrapDocstring` itself — applies real PEP-257 whitespace/indent
+   * (`../../src/languages/python/wrap-code-string.ts`), which -- like
+   * `wrapDocstring` itself -- applies real PEP-257 whitespace/indent
    * normalization, so "wrapped value equals original value" is not a
    * property this pipeline has, or claims to have; asserting it here would
    * be testing for the wrong invariant, not a stronger one. Defaults to
@@ -191,7 +191,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(pythonAdapter);
 });
 
-describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
+describe('Python string-literal wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
@@ -236,19 +236,19 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     // the string expression before and after and assert equality." No
     // Python interpreter is available in this project's toolchain (nor
     // should one need to be, for a TypeScript engine with zero runtime
-    // dependencies) — `extractConcatenatedStringValue` reimplements just
+    // dependencies) -- `extractConcatenatedStringValue` reimplements just
     // enough of Python's own escape decoding, as a test-only oracle
     // independent of the engine's own (deliberately non-decoding)
     // dissolve/emit code, to make this comparison meaningful. See that
     // module's own doc comment for the full rationale.
     //
     // Filtered to `valuePreserving` fixtures only (every one except
-    // 008/009 — see the `Fixture` interface's own doc comment
+    // 008/009 -- see the `Fixture` interface's own doc comment
     // on that field): `extractConcatenatedStringValue` doesn't even
     // attempt to decode triple-quoted content (documented as out of scope
     // in `../support/decode-python-string.ts`), and more fundamentally,
     // 008/009's wrapped value is *not* equal to its original value by
-    // design — asserting equality for them would be asserting the wrong
+    // design -- asserting equality for them would be asserting the wrong
     // thing, not a stricter version of the right thing.
     for (const fixture of fixtures.filter((f) => f.positive && f.valuePreserving !== false)) {
       const before = extractConcatenatedStringValue(fixture.input);
@@ -270,7 +270,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
     // this file runs under, an empty string never even reaches
     // `wrapString`: `looksLikeProse('')` is false (`../../src/prose-
     // heuristic.ts`), so it's skipped at the gate. That's real protection,
-    // but it isn't what protects against the actual bug — a sibling
+    // but it isn't what protects against the actual bug -- a sibling
     // implementation once rewrapped `x = ""` into the invalid `x =`,
     // silently deleting the string entirely. Forcing `stringPolicy: 'all'`
     // here bypasses the prose gate so this exercises the real guard:
@@ -292,7 +292,7 @@ describe('Python string-literal wrapping — end-to-end gold fixtures', () => {
   });
 
   it('covers the cases string wrapping is meant to handle', () => {
-    // Not a behavioral assertion — a guard against silently losing
+    // Not a behavioral assertion -- a guard against silently losing
     // coverage of one of these named cases if a fixture were ever
     // renamed or removed without a replacement.
     expect(fixtures.map((f) => f.name)).toEqual([

@@ -77,7 +77,7 @@ describe('looksLikeProse', () => {
       // delimiter characters. A weight of -3 here once let this exact
       // query flip from correctly-rejected to incorrectly-accepted purely
       // because the leading `"` defeated the dictionary-word-shape check
-      // on the first token — see the categorical negative signals' own
+      // on the first token -- see the categorical negative signals' own
       // comment in prose-heuristic.ts for the full story.
       const query = `"SELECT id, name FROM users WHERE active = 1 AND created_at > '2020-01-01'"`;
       expect(looksLikeProse(query)).toBe(false);
@@ -92,7 +92,7 @@ describe('looksLikeProse', () => {
     // Found while building the triple-quoted-string gold fixtures:
     // `FROM`/`WHERE`/`JOIN`/`VALUES` are common English words in their own
     // right, and the
-    // original flat `SQL_KEYWORDS` regex matched any one of them alone —
+    // original flat `SQL_KEYWORDS` regex matched any one of them alone --
     // enough by itself to flip an otherwise clearly-prose paragraph to
     // ineligible. See prose-heuristic.ts's own `SQL_STRONG_KEYWORDS`/
     // `SQL_WEAK_KEYWORDS` doc comment for the fix (a lone weak keyword no
@@ -130,13 +130,13 @@ describe('looksLikeProse', () => {
   describe('quadratic-backtracking regressions (a crafted string must never hang)', () => {
     // Both confirmed directly while auditing this module: an unclosed
     // `{`-plus-digits run and an unclosed `%`-plus-flag-characters run
-    // each drove their respective regex to quadratic-time backtracking —
+    // each drove their respective regex to quadratic-time backtracking --
     // seconds at 80,000 characters, extrapolating to minutes-or-more on a
     // multi-MB single-line string literal, which is exactly the "one
     // crafted file" shape this heuristic runs on for every string/
     // docstring under the default `stringPolicy: 'prose'`. These don't
-    // assert a particular true/false verdict — a heuristic's exact
-    // boundary on adversarial input isn't the point — only that the call
+    // assert a particular true/false verdict -- a heuristic's exact
+    // boundary on adversarial input isn't the point -- only that the call
     // returns promptly.
     it('stays fast on an unclosed {-digit run with no closing brace', () => {
       const input = '{' + '1'.repeat(200_000);

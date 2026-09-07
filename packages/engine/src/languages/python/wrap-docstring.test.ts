@@ -62,7 +62,7 @@ describe('wrapDocstring', () => {
     // Under 'plain', "Args:" and its entry merge into one ordinary
     // paragraph (no section/field structure recognized at all); under
     // 'google', "Args:" stays on its own line as a section header and
-    // "x:" is recognized as a field-entry label — a real, observable
+    // "x:" is recognized as a field-entry label -- a real, observable
     // difference in output shape driven purely by which dialect was
     // forced.
     expect(forcedPlain).toContain('Args: x: description of x.');

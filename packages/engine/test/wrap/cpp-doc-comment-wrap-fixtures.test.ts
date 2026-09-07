@@ -16,13 +16,13 @@ import markdownListIn from '../fixtures/cpp/doc-comments/004-doxygen-markdown-li
 import markdownListOut from '../fixtures/cpp/doc-comments/004-doxygen-markdown-list.out.cpp?raw';
 
 /**
- * Gold fixtures for `'docComment'` regions — the Doxygen dialect
+ * Gold fixtures for `'docComment'` regions -- the Doxygen dialect
  * (`../../src/docs/doxygen.ts`) applied through `wrapDocComment`
  * (`../../src/comments/wrap-doc-comment.ts`), end to end via
  * `wrapRegions`. Mirrors this package's established fixture-driven
  * convention (`./javascript-doc-comment-wrap-fixtures.test.ts`).
  *
- * 003 covers Doxygen's `///` repeated-marker form specifically —
+ * 003 covers Doxygen's `///` repeated-marker form specifically --
  * `wrapDocComment` dissolves/emits it through the same per-line
  * machinery a `'lineComment'` region uses (`comments.doc.repeatedMarker`),
  * not `emitBlockComments`'s open/close pair the way 001/002 do, so it's
@@ -33,7 +33,7 @@ import markdownListOut from '../fixtures/cpp/doc-comments/004-doxygen-markdown-l
  * regex-based Doxygen wrapper (dnut/rewrap-revived#52): a `-`-bulleted
  * markdown-style list immediately following prose, inside a `///`
  * comment, got collapsed into one run-on paragraph instead of staying
- * one list item per line. Confirmed non-reproducible here — the shared
+ * one list item per line. Confirmed non-reproducible here -- the shared
  * block splitter (`../../src/segmentation/split-blocks.ts`, list markers
  * via `./list-item.ts`) detects `-` list markers independently of
  * dialect, so Doxygen gets list-aware reflow for free rather than
@@ -74,7 +74,7 @@ beforeAll(async () => {
   parserManager = await createTestParserManager(cppAdapter);
 });
 
-describe('C++ docComment (Doxygen) wrapping — end-to-end gold fixtures', () => {
+describe('C++ docComment (Doxygen) wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
     const result = await wrapRegions(fixture.input, 'cpp', 'all', config(), parserManager);
     const actual = applyTextEdits(fixture.input, result.edits);
