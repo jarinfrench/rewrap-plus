@@ -21,5 +21,26 @@
  * A `LanguageDescriptor` only *lists* which dialect ids it supports via
  * `comments.doc.dialects`; it never owns dialect detection or reflow logic
  * itself.
+ *
+ * `'commentBasedHelp'` is the fourth `'docComment'` dialect (after
+ * `'jsdoc'`/`'doxygen'`/`'javadoc'`) — PowerShell's own convention
+ * (`.SYNOPSIS`/`.DESCRIPTION`/`.PARAMETER` flush-left dot-tags inside a
+ * `<# ... #>` block, per Microsoft's `about_Comment_Based_Help`). Unlike
+ * every earlier `'docComment'` dialect's marker, a `.TAG` isn't a fixed
+ * literal prefix `LanguageDescriptor.comments.doc.markers` can express by
+ * itself the way `/**`/`\tag`/`@tag` are — see
+ * `../languages/powershell/adapter.ts`'s own doc comment for how
+ * `classify` tells a comment-based-help block apart from a plain
+ * `<# ... #>` comment (both share the identical grammar node type; text
+ * content is the only signal, the same mechanism `'jsdoc'`/`'doxygen'`/
+ * `'javadoc'` already rely on).
  */
-export type DocDialectId = 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'javadoc' | 'plain';
+export type DocDialectId =
+  | 'google'
+  | 'numpy'
+  | 'sphinx'
+  | 'jsdoc'
+  | 'doxygen'
+  | 'javadoc'
+  | 'commentBasedHelp'
+  | 'plain';

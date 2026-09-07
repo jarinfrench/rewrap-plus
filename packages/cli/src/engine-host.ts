@@ -46,11 +46,16 @@ import {
   AdapterRegistry,
   ParserManager,
   cppAdapter,
+  cssAdapter,
   javaAdapter,
   javascriptAdapter,
   latexAdapter,
   markdownAdapter,
+  powershellAdapter,
   pythonAdapter,
+  scssAdapter,
+  shellscriptAdapter,
+  tomlAdapter,
   typescriptAdapter,
   typescriptReactAdapter,
 } from '@rewrap-plus/engine';
@@ -84,6 +89,11 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(javaAdapter);
   registry.register(markdownAdapter);
   registry.register(latexAdapter);
+  registry.register(tomlAdapter);
+  registry.register(shellscriptAdapter);
+  registry.register(cssAdapter);
+  registry.register(scssAdapter);
+  registry.register(powershellAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }
