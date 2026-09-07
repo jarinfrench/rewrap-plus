@@ -51,6 +51,7 @@ import {
   javascriptAdapter,
   latexAdapter,
   markdownAdapter,
+  powershellAdapter,
   pythonAdapter,
   scssAdapter,
   shellscriptAdapter,
@@ -92,6 +93,7 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(shellscriptAdapter);
   registry.register(cssAdapter);
   registry.register(scssAdapter);
+  registry.register(powershellAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

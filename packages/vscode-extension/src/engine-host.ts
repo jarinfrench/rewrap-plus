@@ -110,10 +110,11 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
 /**
  * Lazily create (once) and return the process-wide `AdapterRegistry`.
  *
- * `createRegistry()` (below) registers eight adapters — `pythonAdapter`,
+ * `createRegistry()` (below) registers thirteen adapters — `pythonAdapter`,
  * `javascriptAdapter`, `typescriptAdapter`, `typescriptReactAdapter`,
- * `cppAdapter`, `javaAdapter`, `markdownAdapter`, and `latexAdapter` — and
- * this list is the one deliberate place deciding what's actually user-facing, since
+ * `cppAdapter`, `javaAdapter`, `markdownAdapter`, `latexAdapter`,
+ * `tomlAdapter`, `shellscriptAdapter`, `cssAdapter`, `scssAdapter`, and
+ * `powershellAdapter` — and this list is the one deliberate place deciding what's actually user-facing, since
  * `getSupportedLanguages()` (below) drives
  * which documents the extension's commands and formatters activate for.
  * The engine's `javascriptAdapter` didn't start out registered here: it
@@ -143,7 +144,14 @@ let registryPromise: Promise<AdapterRegistry> | undefined;
  * `../../engine/src/languages/latex/discover-prose.ts`'s own doc comment)
  * — a real, measured, file-size-proportional cost for a single-region
  * "wrap at cursor" request that every other adapter here doesn't pay
- * (`docs/benchmarks.md`'s "LaTeX" section).
+ * (`docs/benchmarks.md`'s "LaTeX" section). `tomlAdapter`, `shellscriptAdapter`,
+ * `cssAdapter`, `scssAdapter`, and `powershellAdapter` are the five
+ * comment-only-batch adapters (`docs/language-candidates.md`'s Pass 4
+ * "High" priority row) — each declares no `strings`/`queries.strings` at
+ * all, matching Markdown/LaTeX's own precedent for a language with
+ * nothing safe to wrap outside comments, but (unlike Markdown/LaTeX) each
+ * discovers ordinary `queries.comments`-driven regions rather than
+ * `'prose'` ones.
  *
  * Split out from `getParserManager()` (which used to build this
  * directly) so `getSupportedLanguages()` below doesn't have to go
@@ -176,6 +184,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.shellscriptAdapter);
   registry.register(engine.cssAdapter);
   registry.register(engine.scssAdapter);
+  registry.register(engine.powershellAdapter);
   return registry;
 }
 

@@ -507,3 +507,35 @@ supported (`15`) but still inside the supported range.
 6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
    typecheck && npm run build`.
 
+## `tree-sitter-powershell.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-powershell`](https://www.npmjs.com/package/tree-sitter-powershell) |
+| Package version | `0.26.4` |
+| Upstream repo | https://github.com/airbus-cert/tree-sitter-powershell |
+| Upstream commit | `4ffe56d66aa926c28442befbb5b89d1437d7199c` |
+| npm tarball shasum | `f7484a0b8fa266b03b19ff56479cb8cd6ddc22b7` |
+| npm tarball integrity | `sha512-5RwNW/qN/cKArZY0znvTOG+OWSau7Agel5K0A8KQ5Nubw/4SyZ5KC02RKCaYcA2ur5UQ8esyxe9+6yXup2MXkw==` |
+| Vendored file sha256 | `796124137f0500e59713fd9dccda6812ff73d25f22e33430b1c5af6e132efa5e` |
+| Grammar ABI version | `15` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `powershell` language adapter
+(`../src/languages/powershell/`), one of the five comment-only-batch
+languages — the one candidate directly Windows-relevant given this
+project's own dev context. `0.26.4` publishes a prebuilt
+`tree-sitter-powershell.wasm` at its package root — confirmed loadable
+with this project's pinned `web-tree-sitter@0.26.13` and parses a `#`
+line comment, a `<# ... #>` comment-based-help block (`.SYNOPSIS`/
+`.DESCRIPTION`/`.PARAMETER` tags), and a plain `<# ... #>` block comment
+cleanly (`hasError: false`) — all three produce the *same* `comment` node
+type, told apart only by text (see `../src/languages/powershell/adapter.ts`'s
+own doc comment), per
+`docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+— this grammar's own `abiVersion` is `15`, the newest supported.
+
+Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
+above documents, substituting `tree-sitter-powershell` throughout.

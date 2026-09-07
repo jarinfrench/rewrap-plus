@@ -105,6 +105,8 @@ export { cssAdapter } from './languages/css/adapter.js';
 export { cssDescriptor } from './languages/css/descriptor.js';
 export { scssAdapter } from './languages/scss/adapter.js';
 export { scssDescriptor } from './languages/scss/descriptor.js';
+export { powershellAdapter } from './languages/powershell/adapter.js';
+export { powershellDescriptor } from './languages/powershell/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';
