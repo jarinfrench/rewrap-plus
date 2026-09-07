@@ -186,6 +186,74 @@ describe('run — --help and --version', () => {
   });
 });
 
+describe('run — BOM handling', () => {
+  // Adversarial-audit finding #3: `readFileSync(path, 'utf8')` doesn't
+  // strip a leading UTF-8 BOM the way `vscode.TextDocument.getText()`
+  // already does on the extension side — confirmed by direct probe
+  // (before `apply.ts`'s fix) to be a real, silent corruption, not just
+  // a theoretical risk: the BOM shifted every discovered region's
+  // column by one, so a wrapped comment's continuation lines came back
+  // indented one space further than the marker they continue
+  // (`" # default ..."` instead of `"# default ..."`).
+  const BOM = '\uFEFF';
+
+  it('wraps a BOM-prefixed file identically to its BOM-free equivalent, and keeps the BOM', async () => {
+    const root = makeTempDir();
+
+    const plainFile = join(root, 'plain.py');
+    const plainOriginal = `${OVERLONG_COMMENT}\ndef f():\n    pass\n`;
+    writeFileSync(plainFile, plainOriginal, 'utf8');
+
+    const bomFile = join(root, 'bom.py');
+    const bomOriginal = `${BOM}${OVERLONG_COMMENT}\ndef f():\n    pass\n`;
+    writeFileSync(bomFile, bomOriginal, 'utf8');
+
+    const exitCode = await run([plainFile, bomFile], captureIo());
+    expect(exitCode).toBe(0);
+
+    const plainRewritten = readFileSync(plainFile, 'utf8');
+    const bomRewritten = readFileSync(bomFile, 'utf8');
+
+    expect(bomRewritten.startsWith(BOM)).toBe(true);
+    // The BOM-prefixed file's wrapped content, once the BOM is stripped
+    // back off, must be byte-for-byte identical to the BOM-free file's —
+    // proof the BOM no longer shifts region columns and corrupts
+    // continuation-line indentation.
+    expect(bomRewritten.slice(BOM.length)).toBe(plainRewritten);
+    for (const line of bomRewritten.split('\n')) {
+      expect(line.startsWith(' #')).toBe(false);
+    }
+  });
+
+  it('--check detects a BOM-prefixed file needs wrapping without writing, and preserves the BOM if later written', async () => {
+    const root = makeTempDir();
+    const file = join(root, 'a.py');
+    const original = `${BOM}${OVERLONG_COMMENT}\n`;
+    writeFileSync(file, original, 'utf8');
+
+    const checkExitCode = await run(['--check', file], captureIo());
+    expect(checkExitCode).toBe(1);
+    expect(readFileSync(file, 'utf8')).toBe(original); // untouched
+
+    const writeExitCode = await run([file], captureIo());
+    expect(writeExitCode).toBe(0);
+    const rewritten = readFileSync(file, 'utf8');
+    expect(rewritten.startsWith(BOM)).toBe(true);
+    expect(rewritten).not.toBe(original);
+  });
+
+  it('leaves an already-wrapped BOM-prefixed file untouched, BOM included', async () => {
+    const root = makeTempDir();
+    const file = join(root, 'a.py');
+    const original = `${BOM}# short comment\ndef f():\n    pass\n`;
+    writeFileSync(file, original, 'utf8');
+
+    const exitCode = await run([file], captureIo());
+    expect(exitCode).toBe(0);
+    expect(readFileSync(file, 'utf8')).toBe(original);
+  });
+});
+
 describe('run — config file precedence end to end', () => {
   it('a pyproject.toml column-limit changes what gets wrapped', async () => {
     const root = makeTempDir();

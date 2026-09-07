@@ -9,6 +9,20 @@ import { resolveConfigForFile } from './config/resolve-config.js';
 import type { PartialCliConfig } from './config/types.js';
 import type { DiscoveredFile } from './file-discovery.js';
 
+/**
+ * Stripped off `source` before it ever reaches `wrapRegions`, and
+ * re-prepended on write — matching how the VSCode extension side never
+ * sees a BOM at all (`vscode.TextDocument.getText()` already excludes
+ * it, tracked and restored by the editor itself on save). Without this,
+ * `readFileSync(path, 'utf8')` hands the engine a source string whose
+ * first character is U+FEFF, shifting every discovered region's column
+ * by one — confirmed by direct probe to silently corrupt output: a
+ * wrapped comment's continuation lines came back indented one space
+ * further than the marker they continue (`" # default ..."` instead of
+ * `"# default ..."`), a real formatting bug, not just a theoretical risk.
+ */
+const BOM = '\uFEFF';
+
 export interface FileOutcome {
   readonly path: string;
   readonly languageId: string;
@@ -46,13 +60,15 @@ export async function processFile(
   const { wrapConfig, columnLimit, rewraprcParseError } = resolved;
 
   try {
-    const source = readFileSync(file.path, 'utf8');
+    const rawSource = readFileSync(file.path, 'utf8');
+    const hasBom = rawSource.startsWith(BOM);
+    const source = hasBom ? rawSource.slice(BOM.length) : rawSource;
     const result = await wrapRegions(source, file.languageId, 'all', wrapConfig, parserManager);
     const changed = result.edits.length > 0;
 
     if (changed && mode === 'write') {
       const newSource = applyTextEdits(source, result.edits);
-      writeFileSync(file.path, newSource, 'utf8');
+      writeFileSync(file.path, hasBom ? BOM + newSource : newSource, 'utf8');
     }
 
     return {
