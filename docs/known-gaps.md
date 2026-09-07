@@ -47,25 +47,6 @@ a Marketplace/Open VSX listing, add install badges/links to the site's
 "Getting it" section in the same commit that flips the CLI/extension's
 own README claims.
 
-## GitHub Pages must be enabled once, manually
-
-**What's missing.** The `pages` job added to `.github/workflows/ci.yml`
-builds and deploys `site/` to GitHub Pages on every push to `main`, but
-GitHub Pages itself has to be switched on for this repository once,
-by hand, before that job's `actions/deploy-pages` step can succeed --
-Settings > Pages > Source: GitHub Actions. No commit or workflow run can
-do this on its own; it's a repository-dashboard setting, not something
-version-controlled.
-
-**Why deferred.** Not really a deferrable gap so much as a one-time
-manual step that simply hasn't happened yet as of this entry, recorded
-here so it isn't mistaken for something the CI wiring itself forgot.
-
-**Next step.** In the repo's GitHub Settings, open the Pages section and
-set Source to "GitHub Actions" (not "Deploy from a branch"). After that,
-the next push to `main` that clears `ci` will deploy automatically via
-the `pages` job; no further manual step is needed afterward.
-
 ## No internationalization (`vscode.l10n`)
 
 **What's missing.** Every user-facing string -- command titles, setting
