@@ -49,6 +49,27 @@ export function settle(): Promise<void> {
 }
 
 /**
+ * Open a notebook fixture and focus one of its cells as a plain text
+ * editor -- a `vscode.NotebookCell`'s `.document` is a genuine
+ * `vscode.TextDocument` (URI scheme `vscode-notebook-cell`, not `file`),
+ * so `vscode.window.showTextDocument(cell.document)` is enough to make it
+ * `vscode.window.activeTextEditor`, exactly what every `rewrapPlus.*`
+ * command reads. Exists to answer `docs/known-gaps.md`'s "notebook cell
+ * support is unverified" entry: whether that's actually true was never
+ * checked against a real notebook editor before this helper's test file.
+ */
+export async function openNotebookCell(
+  absolutePath: string,
+  cellIndex = 0,
+): Promise<{ notebook: vscode.NotebookDocument; editor: vscode.TextEditor }> {
+  const notebook = await vscode.workspace.openNotebookDocument(vscode.Uri.file(absolutePath));
+  await vscode.window.showNotebookDocument(notebook);
+  const cell = notebook.cellAt(cellIndex);
+  const editor = await vscode.window.showTextDocument(cell.document);
+  return { notebook, editor };
+}
+
+/**
  * Extract the logical value of a `return "..." "..." ...;`-shaped
  * string-concatenation statement from `text`, by finding every quoted
  * literal between `return` and the statement's closing `;` and joining

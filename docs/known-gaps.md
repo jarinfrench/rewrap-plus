@@ -8,39 +8,6 @@ fix recorded alongside the leak). This document is the opposite of a design
 proposal: each entry is what the gap is, why it's deferred, and the
 concrete next step that would close it -- nothing more.
 
-## Notebook cell support is unverified
-
-**What's missing.** Whether Rewrap+'s commands and formatting providers
-actually work correctly against a Jupyter notebook (`.ipynb`) code cell --
-a very plausible place for a Python-focused wrapping extension to get
-used -- has never been tested or documented. `packages/vscode-extension/src`
-has no reference to notebooks anywhere: the document/range-formatting
-providers register with a plain `{language}` `DocumentSelector`
-(`../packages/vscode-extension/src/extension.ts`), and every command's
-`when` clause gates on `editorLangId in rewrapPlusSupportedLanguages`
-(`package.json`), neither of which is written with cell documents in mind
-one way or the other.
-
-**Why deferred.** VS Code very likely routes a focused Python cell's
-"Format Cell"/`rewrapPlus.wrapAtCursor` through the same APIs as an
-ordinary file, since a notebook cell is itself a `TextDocument` with a
-`languageId` -- but "very likely" is exactly the kind of unverified
-assumption this project's own `CLAUDE.md` says not to trust for anything
-parser- or host-API-adjacent. There is no evidence either way yet, only an
-untested plausibility, and no known bug report driving this -- nothing
-justifies spending implementation effort here before finding out whether
-there's actually a problem to solve.
-
-**Next step.** Add an `@vscode/test-electron` integration test that opens
-a `.ipynb` fixture, selects a Python code cell, and runs
-`rewrapPlus.wrapAtCursor` / `rewrapPlus.wrapDocument` against it -- the same
-shape `packages/vscode-extension/test/integration/suite/wrap-at-cursor.test.ts`
-already uses for ordinary files, adapted to the notebook API surface
-(`vscode.workspace.openNotebookDocument`, `vscode.window.showNotebookDocument`).
-If it works, document that explicitly in the README's feature list. If it
-doesn't, that test becomes the reproduction case for whatever fix is
-needed.
-
 ## GitHub Pages project site has no demo screenshot/GIF, and no Marketplace links yet
 
 **What's missing.**

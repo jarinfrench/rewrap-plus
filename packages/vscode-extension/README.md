@@ -119,6 +119,11 @@ languages are on the roadmap.
   block environment, `\iffalse ... \fi`, and every math environment --
   `equation`, `align`, `gather`, `multline`, `displaymath`, `$$...$$`,
   `\[...\]`) are preserved byte-for-byte, never treated as prose at all.
+- **Jupyter notebook code cells** (`.ipynb`) work the same as an ordinary
+  file -- a notebook cell is itself a `TextDocument` with its own
+  `languageId`, so every command above routes through it unchanged.
+  Confirmed against a real notebook editor, not just assumed: see
+  `test/integration/suite/notebook.test.ts`.
 
 ## Commands and keybindings
 
