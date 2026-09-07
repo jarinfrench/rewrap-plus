@@ -421,3 +421,31 @@ Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
 Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
 above documents, substituting `tree-sitter-bash` throughout.
 
+## `tree-sitter-css.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-css`](https://www.npmjs.com/package/tree-sitter-css) |
+| Package version | `0.25.0` |
+| Upstream repo | https://github.com/tree-sitter/tree-sitter-css |
+| Upstream commit | `dda5cfc5722c429eaba1c910ca32c2c0c5bb1a3f` |
+| npm tarball shasum | `800eac29333b36cbfdf80cd3c4d8aa3db3ddf0c3` |
+| npm tarball integrity | `sha512-FRc9R8ePrwJiUhZsuZ/wcFQ3K8Z+9yCgDrrUjuYswGWlN89UvcB9vslTUGZElQWGwhS8sUw3/r2n4lpb2sxT4Q==` |
+| Vendored file sha256 | `8a23977fe271357cce6f254ef88c9bebf3854602d8046605aef6a45c02135c59` |
+| Grammar ABI version | `15` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `css` language adapter (`../src/languages/css/`), one of
+the five comment-only-batch languages. `0.25.0` publishes a prebuilt
+`tree-sitter-css.wasm` at its package root — confirmed loadable with this
+project's pinned `web-tree-sitter@0.26.13` and parses a `/* ... */`
+comment (including a trailing one inside a rule block) cleanly
+(`hasError: false`), per
+`docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+— this grammar's own `abiVersion` is `15`, the newest supported.
+
+Regenerating/updating follows the identical steps `tree-sitter-python.wasm`
+above documents, substituting `tree-sitter-css` throughout.
+

@@ -174,6 +174,7 @@ async function createRegistry(): Promise<AdapterRegistry> {
   registry.register(engine.latexAdapter);
   registry.register(engine.tomlAdapter);
   registry.register(engine.shellscriptAdapter);
+  registry.register(engine.cssAdapter);
   return registry;
 }
 

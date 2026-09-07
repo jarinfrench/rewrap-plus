@@ -46,6 +46,7 @@ import {
   AdapterRegistry,
   ParserManager,
   cppAdapter,
+  cssAdapter,
   javaAdapter,
   javascriptAdapter,
   latexAdapter,
@@ -88,6 +89,7 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(latexAdapter);
   registry.register(tomlAdapter);
   registry.register(shellscriptAdapter);
+  registry.register(cssAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

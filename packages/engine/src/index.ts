@@ -101,6 +101,8 @@ export { tomlAdapter } from './languages/toml/adapter.js';
 export { tomlDescriptor } from './languages/toml/descriptor.js';
 export { shellscriptAdapter } from './languages/shellscript/adapter.js';
 export { shellscriptDescriptor } from './languages/shellscript/descriptor.js';
+export { cssAdapter } from './languages/css/adapter.js';
+export { cssDescriptor } from './languages/css/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';
