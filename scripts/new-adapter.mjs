@@ -76,7 +76,10 @@ function main() {
 
   console.log('');
   console.log('Next steps (see docs/adding-a-language.md for the full walkthrough):');
-  console.log(`  1. Obtain a tree-sitter grammar WASM for '${languageId}' and vendor it into`);
+  console.log(`  1. Obtain a tree-sitter grammar WASM for '${languageId}'. Before trusting it,`);
+  console.log(`     load it with this project's pinned web-tree-sitter and parse a real snippet —`);
+  console.log(`     a file existing at the expected path is not proof it loads (see`);
+  console.log(`     docs/adding-a-language.md's vendoring step). Only then vendor it into`);
   console.log(`     packages/engine/grammars/, recording provenance in that dir's PROVENANCE.md.`);
   console.log(`  2. Probe the grammar directly (docs/parsing.md's approach) to find real node`);
   console.log(`     names/shapes before touching ${path.relative(repoRoot, targets[0][0])}.`);
