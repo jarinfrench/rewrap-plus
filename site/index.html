@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rewrap+</title>
+<meta name="description" content="A VSCode extension and companion CLI that rewraps comments, docstrings, string literals, and (for Markdown and LaTeX) ordinary prose to a configured column limit -- preserving formatted structure and emitting language-valid concatenation syntax on split." />
+<meta property="og:title" content="Rewrap+" />
+<meta property="og:description" content="A VSCode extension and companion CLI that rewraps comments, docstrings, string literals, and (for Markdown and LaTeX) ordinary prose -- with language-valid concatenation on split, a feature no comparable extension attempts." />
+<meta property="og:url" content="https://jarinfrench.github.io/rewrap-plus/" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232d6a4f'/%3E%3Ctext x='32' y='42' font-family='Verdana,Geneva,sans-serif' font-size='28' font-weight='bold' fill='white' text-anchor='middle'%3ER+%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f8f7;
+    --fg: #1b1f1d;
+    --fg-muted: #55605a;
+    --border: #dde3e0;
+    --accent: #2d6a4f;
+    --accent-fg: #ffffff;
+    --code-bg: #eef2f0;
+    --good: #2d6a4f;
+    --table-header-bg: #eef2f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --bg-alt: #1b1f22;
+      --fg: #e7ebe9;
+      --fg-muted: #a3aca7;
+      --border: #2c3236;
+      --accent: #5fb98d;
+      --accent-fg: #0c1210;
+      --code-bg: #20262a;
+      --good: #5fb98d;
+      --table-header-bg: #1e2427;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  a { color: var(--accent); }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    background: var(--code-bg);
+    border-radius: 4px;
+  }
+  code { padding: 0.1em 0.35em; font-size: 0.92em; }
+  pre { padding: 0.9rem 1rem; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 1.25rem; }
+
+  header.hero {
+    padding: 3rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .wordmark .badge {
+    display: inline-block;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    text-align: center;
+    line-height: 1.6rem;
+    font-size: 0.85rem;
+  }
+  h1 { font-size: 2.2rem; margin: 0 0 0.6rem; letter-spacing: -0.01em; }
+  .tagline { font-size: 1.15rem; color: var(--fg-muted); margin: 0 0 1rem; max-width: 65ch; }
+  .status-line { font-size: 0.95rem; color: var(--fg-muted); max-width: 70ch; }
+  .status-line strong { color: var(--fg); }
+
+  .ci-badge { margin: 1rem 0 0; }
+  .ci-badge img { display: block; height: 20px; }
+
+  .differentiator {
+    margin: 1.75rem 0 0;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    background: var(--bg-alt);
+  }
+  .differentiator p { margin: 0; }
+  .differentiator strong { color: var(--good); }
+
+  section { padding: 2.25rem 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: none; }
+  h2 { font-size: 1.5rem; margin: 0 0 1rem; }
+  h3 { font-size: 1.1rem; margin: 1.4rem 0 0.5rem; }
+
+  ul.feature-list { padding-left: 1.2rem; margin: 0; }
+  ul.feature-list > li { margin-bottom: 0.85rem; }
+  ul.feature-list ul { margin-top: 0.35rem; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  .table-scroll { overflow-x: auto; }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.65rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--table-header-bg); font-weight: 600; }
+  td.center, th.center { text-align: center; }
+  .yes { color: var(--good); font-weight: 700; }
+  .dash { color: var(--fg-muted); }
+  .loading-note, .error-note { color: var(--fg-muted); font-style: italic; }
+  .error-note { color: #c0392b; }
+
+  .links-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.2rem;
+  }
+  .links-grid a { text-decoration: none; }
+  .links-grid a:hover { text-decoration: underline; }
+
+  footer {
+    padding: 2rem 0 3rem;
+    color: var(--fg-muted);
+    font-size: 0.85rem;
+  }
+
+  .install-list { padding-left: 1.2rem; }
+  .install-list li { margin-bottom: 0.6rem; }
+</style>
+</head>
+
+<div class="wrap">
+  <header class="hero">
+    <a class="wordmark" href="https://github.com/jarinfrench/rewrap-plus">
+      <span class="badge" aria-hidden="true">R+</span>
+      Rewrap+
+    </a>
+    <h1>Rewrap+</h1>
+    <p class="tagline">
+      A VSCode extension &mdash; and companion CLI &mdash; that rewraps comments,
+      docstrings, string literals, and (for Markdown and LaTeX) ordinary
+      prose to a configured column limit, preserving formatted structure
+      and emitting language-valid concatenation syntax on split.
+    </p>
+    <p class="status-line">
+      Status: <strong>alpha.</strong> Python, JavaScript, TypeScript, TSX,
+      C++, Java, Markdown, and LaTeX support (comments, docstrings, and
+      string literals), plus comment-only support for TOML, Shell script
+      (Bash), CSS, SCSS, and PowerShell, plus a CLI for scripting/pre-commit
+      use &mdash; installable as a <code>.vsix</code>/<code>npm install</code>,
+      not yet published to a marketplace or registry. See the
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/CHANGELOG.md">changelog</a>
+      for what's shipped and what's known-missing.
+    </p>
+    <p class="ci-badge">
+      <a href="https://github.com/jarinfrench/rewrap-plus/actions/workflows/ci.yml">
+        <img src="https://github.com/jarinfrench/rewrap-plus/actions/workflows/ci.yml/badge.svg" alt="CI status" />
+      </a>
+    </p>
+
+    <div class="differentiator">
+      <p>
+        <strong>The differentiator:</strong> Rewrap+ wraps string literals,
+        not just comments &mdash; and when a literal has to split across
+        lines, it emits whatever concatenation syntax the language actually
+        needs (implicit adjacency, or a <code>+</code> operator, inserting
+        grouping parentheses only where the surrounding syntax requires
+        it). No other general-purpose VSCode comment wrapper attempts
+        string-literal wrapping at all.
+      </p>
+    </div>
+  </header>
+
+  <!-- TODO: before/after demo screenshot or GIF, see follow-up -->
+
+  <section id="features">
+    <h2>Features</h2>
+    <ul class="feature-list">
+      <li>
+        <strong>Comments.</strong> Python line comments (<code>#</code>),
+        grouped by contiguous same-indent blocks; JavaScript/TypeScript/TSX/C++/Java
+        <code>//</code> line comments and both block-comment forms &mdash; a
+        plain <code>/* ... */</code> comment and the JSDoc/Doxygen/Javadoc-marked
+        <code>/** ... */</code> one. C++ additionally wraps Doxygen's
+        <code>///</code> repeated-marker doc comments. Directive comments
+        (<code># noqa</code>, <code>// eslint-disable</code>,
+        <code>// NOLINT</code>, shebangs, and more) and anything that looks
+        like commented-out code are left untouched rather than reflowed.
+      </li>
+      <li>
+        <strong>Docstrings and doc comments</strong>, with structure-preserving
+        reflow across six documentation dialects plus plain paragraph reflow:
+        <strong>Google</strong> and <strong>NumPy</strong> and
+        <strong>Sphinx/reST</strong> (Python), <strong>JSDoc</strong>
+        (JavaScript/TypeScript/TSX), <strong>Doxygen</strong> (C++),
+        <strong>Javadoc</strong> (Java), plus <strong>Plain</strong> paragraph
+        reflow. Dialect is detected per docstring/comment, not per file.
+        Lists, fenced code blocks, doctest (<code>&gt;&gt;&gt;</code>)
+        blocks, and already-indented examples are preserved verbatim.
+      </li>
+      <li>
+        <strong>String literals</strong> &mdash; the differentiating
+        feature. Long string literals split across multiple lines using
+        whatever concatenation form the language actually needs, gated by
+        a conservative prose heuristic (default: on) so paths, URLs,
+        regexes, dict/object keys, SQL, and format-call arguments are left
+        alone by default.
+      </li>
+      <li>
+        <strong>Directive comments</strong> for per-region opt-in/opt-out
+        (<code># rewrap: off/on/ignore/force</code>), honored alongside
+        comment wrapping and string wrapping alike; Black's own
+        <code># fmt: off/on</code> is honored too.
+      </li>
+      <li>
+        <strong>Markdown</strong> wraps the document's own paragraphs &mdash;
+        for Markdown, the prose <em>is</em> the document. Continuation
+        lines always get a freshly-computed block-quote/list prefix; hard
+        line breaks (trailing backslash, two-or-more trailing spaces,
+        <code>&lt;br&gt;</code>) are preserved exactly.
+      </li>
+      <li>
+        <strong>LaTeX</strong> wraps ordinary prose the same way &mdash;
+        <code>%</code> comment paragraphs wrap through the same path as
+        Python's <code>#</code> comments. Sectioning commands,
+        <code>\item</code>, hard breaks, and every verbatim/math
+        environment (<code>verbatim</code>, <code>tabular</code>,
+        <code>equation</code>, <code>align</code>, ...) are recognized and
+        left untouched.
+      </li>
+    </ul>
+  </section>
+
+  <section id="languages">
+    <h2>Language coverage</h2>
+    <p>
+      Generated automatically at build time from
+      <code>packages/engine</code>'s own adapter registry &mdash; this table
+      can't drift from what's actually shipped, because it's never
+      hand-edited.
+    </p>
+    <div class="table-scroll">
+      <table id="language-table">
+        <thead>
+          <tr>
+            <th>Language</th>
+            <th class="center">Comments</th>
+            <th>Doc dialect(s)</th>
+            <th class="center">String wrapping</th>
+            <th>Concatenation style</th>
+            <th class="center">Prose wrapping</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="loading-note">Loading language data&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="comparison">
+    <h2>Rewrap+ vs. other wrappers</h2>
+    <p>
+      Compared against the other actively-installable general-purpose
+      comment/text wrappers on the Marketplace, as of this writing. Not
+      all wins for Rewrap+ &mdash; the honest gaps (no Visual Studio build,
+      narrower language coverage than "many") are exactly what should
+      steer a user who needs one of those specifically toward one of the
+      others instead.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th><a href="https://marketplace.visualstudio.com/items?itemName=stkb.rewrap">Rewrap</a> (stkb)</th>
+            <th><a href="https://marketplace.visualstudio.com/items?itemName=dnut.rewrap-revived">Rewrap Revived</a> (dnut)</th>
+            <th><a href="https://marketplace.visualstudio.com/items?itemName=marvhen.reflow-markdown">Reflow Markdown</a></th>
+            <th><strong>Rewrap+</strong></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Wrap line/block comments</td><td>Yes</td><td>Yes</td><td>No</td><td>Yes</td></tr>
+          <tr><td>Wrap doc comments (dialect-aware sections)</td><td>Yes</td><td>Yes</td><td>No</td><td>Yes (Python: Google/NumPy/Sphinx; JS/TS/TSX: JSDoc; C++: Doxygen; Java: Javadoc)</td></tr>
+          <tr><td><strong>Wrap string literals</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>Yes</strong></td></tr>
+          <tr><td><strong>Language-valid concatenation on split</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>Yes</strong></td></tr>
+          <tr><td><strong>Prose-vs-code string heuristic</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>No</strong></td><td><strong>Yes</strong></td></tr>
+          <tr><td>Parser</td><td>Line/regex-based</td><td>Line/regex-based</td><td>Markdown-aware</td><td><strong>tree-sitter AST</strong></td></tr>
+          <tr><td>Language coverage</td><td>Many</td><td>Many</td><td>Markdown only</td><td>Python, JavaScript, TypeScript, TSX, C++, Java, Markdown, LaTeX</td></tr>
+          <tr><td>Markdown / LaTeX / plain-text files</td><td>Yes</td><td>Yes</td><td>Markdown only</td><td><strong>Markdown, LaTeX</strong></td></tr>
+          <tr><td>Visual Studio (not just VS Code) support</td><td>Yes</td><td>Yes</td><td>No</td><td><strong>No</strong></td></tr>
+          <tr><td><code>.editorconfig</code> support (in VS Code)</td><td>No<sup>1</sup></td><td>No<sup>1</sup></td><td>&mdash;</td><td>Direct, self-parsed</td></tr>
+          <tr><td>Format-on-save</td><td>No</td><td>Yes (<code>Run rewrap on save</code>, added v17.7)</td><td>&mdash;</td><td>Yes</td></tr>
+          <tr><td>Runs in VS Code for the Web (vscode.dev/github.dev)</td><td>Unconfirmed</td><td>&ldquo;Attempted&rdquo; per its own changelog (v17.7) &mdash; not independently verified here</td><td>Unconfirmed</td><td><strong>No</strong><sup>2</sup></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--fg-muted);">
+      <sup>1</sup> Neither reads <code>.editorconfig</code> directly in VS
+      Code; both fall back to <code>editor.rulers</code>/<code>editor.wordWrapColumn</code>,
+      which a user (or a separate editorconfig-syncing extension) has to
+      populate themselves.<br />
+      <sup>2</sup> Rewrap+ doesn't run in a browser-hosted VS Code today
+      &mdash; the extension and engine load grammar WASM and other
+      resources via Node built-ins throughout, none of which a web
+      extension host provides. See the
+      <a href="https://github.com/jarinfrench/rewrap-plus#readme">repo README</a>
+      for the full explanation.
+    </p>
+  </section>
+
+  <section id="wont-touch">
+    <h2>What this won't touch</h2>
+    <p>Left byte-identical, deliberately, rather than risk mangling behavior:</p>
+    <ul class="feature-list">
+      <li><strong>Raw strings</strong> &mdash; Python's <code>r"..."</code>/byte strings <code>b"..."</code>, and C++'s <code>R"(...)"</code>.</li>
+      <li><strong>Paths, URLs, regexes, SQL, dict/object/i18n keys, and format-call arguments</strong> (<code>logging.info("%s failed", x)</code>) &mdash; the prose heuristic scores these low and leaves them alone under the default policy.</li>
+      <li><strong>Doctest blocks</strong> (<code>&gt;&gt;&gt;</code> / <code>...</code>) inside docstrings.</li>
+      <li><strong>Commented-out code</strong> &mdash; detected via punctuation density and keyword shapes, left verbatim.</li>
+      <li><strong>Template literals</strong> (<code>`...`</code>) in JavaScript/TypeScript/TSX &mdash; deferred, given <code>${}</code> interpolation and significant internal whitespace.</li>
+      <li><strong>Text blocks</strong> (<code>"""..."""</code>, Java 15+) &mdash; the same grammar node as an ordinary string, but never wrapped.</li>
+      <li><strong>Anything inside a C++ <code>#define</code> macro body</strong> &mdash; the parser treats a macro's body as opaque, unparsed text.</li>
+      <li><strong>Any region overlapping a parse error</strong> &mdash; skipped with a reason, never partially edited.</li>
+      <li><strong>File-final newline, trailing whitespace, and line endings</strong> (LF vs CRLF, detected per region) &mdash; preserved exactly as found.</li>
+      <li><strong>In Markdown</strong>: headings, fenced/indented code blocks, tables, front matter, thematic breaks, HTML blocks (including HTML comments), link reference and footnote definitions, and <code>$$</code> display-math paragraphs.</li>
+      <li><strong>In LaTeX</strong>: every verbatim-like and math environment, every sectioning/structural command line, and a trailing <code>%</code> comment's own text.</li>
+    </ul>
+    <p>
+      See the
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/packages/vscode-extension/README.md#what-this-wont-touch">extension README's full list</a>
+      for the complete, unabridged version.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>Getting it</h2>
+    <ul class="install-list">
+      <li>
+        <strong>VSCode extension:</strong> not yet published to the
+        Marketplace or Open VSX &mdash; download the latest
+        <code>.vsix</code> from
+        <a href="https://github.com/jarinfrench/rewrap-plus/releases">GitHub Releases</a>
+        and install it via <code>Extensions: Install from VSIX...</code>.
+      </li>
+      <li>
+        <strong>CLI:</strong> not yet published to npm &mdash; clone the
+        repo, run <code>npm ci &amp;&amp; npm run build</code>, then see the
+        <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/packages/cli/README.md"><code>@rewrap-plus/cli</code> README</a>
+        for usage, flags, and configuration precedence.
+      </li>
+    </ul>
+  </section>
+
+  <section id="links">
+    <h2>Links</h2>
+    <div class="links-grid">
+      <a href="https://github.com/jarinfrench/rewrap-plus">Repository</a>
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/docs/adding-a-language.md">Adding a language</a>
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/LICENSE">License (MIT)</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Built in collaboration with Claude (Anthropic). MIT licensed. No
+      analytics, no trackers, no network calls from the extension itself
+      &mdash; see
+      <a href="https://github.com/jarinfrench/rewrap-plus/blob/main/packages/vscode-extension/README.md#privacy">Privacy</a>.
+    </p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var DISPLAY_NAMES = {
+    python: 'Python',
+    javascript: 'JavaScript',
+    typescript: 'TypeScript',
+    typescriptreact: 'TSX',
+    cpp: 'C++',
+    java: 'Java',
+    markdown: 'Markdown',
+    latex: 'LaTeX',
+    toml: 'TOML',
+    shellscript: 'Shell script (Bash)',
+    css: 'CSS',
+    scss: 'SCSS',
+    powershell: 'PowerShell'
+  };
+
+  var DIALECT_LABELS = {
+    google: 'Google',
+    numpy: 'NumPy',
+    sphinx: 'Sphinx/reST',
+    jsdoc: 'JSDoc',
+    doxygen: 'Doxygen',
+    javadoc: 'Javadoc',
+    commentBasedHelp: 'Comment-based help',
+    plain: 'Plain'
+  };
+
+  var CONCAT_LABELS = {
+    implicit: 'Implicit adjacency',
+    operator: 'Operator (+)'
+  };
+
+  function displayName(lang) {
+    var base = DISPLAY_NAMES[lang.id] || lang.id;
+    if (lang.aliases && lang.aliases.length > 0) {
+      var aliasNames = lang.aliases.map(function (a) { return DISPLAY_NAMES[a] || a; });
+      return base + ' (' + aliasNames.join(', ') + ')';
+    }
+    return base;
+  }
+
+  function dialectList(dialects) {
+    if (!dialects || dialects.length === 0) {
+      return '<span class="dash">&mdash;</span>';
+    }
+    return dialects.map(function (d) { return DIALECT_LABELS[d] || d; }).join(', ');
+  }
+
+  function yes() {
+    return '<span class="yes">&#10003;</span>';
+  }
+  function dash() {
+    return '<span class="dash">&mdash;</span>';
+  }
+
+  function renderRow(lang) {
+    var comments, docDialects, strings, concat, prose;
+
+    if (lang.capability === 'strings') {
+      comments = yes();
+      docDialects = dialectList(lang.docDialects);
+      strings = yes();
+      concat = CONCAT_LABELS[lang.concatenationStyle] || lang.concatenationStyle || dash();
+      prose = dash();
+    } else if (lang.capability === 'comments-only') {
+      comments = yes();
+      docDialects = dialectList(lang.docDialects);
+      strings = dash();
+      concat = dash();
+      prose = dash();
+    } else {
+      comments = dash();
+      docDialects = dash();
+      strings = dash();
+      concat = dash();
+      prose = yes();
+    }
+
+    return (
+      '<tr>' +
+      '<td>' + displayName(lang) + '</td>' +
+      '<td class="center">' + comments + '</td>' +
+      '<td>' + docDialects + '</td>' +
+      '<td class="center">' + strings + '</td>' +
+      '<td>' + concat + '</td>' +
+      '<td class="center">' + prose + '</td>' +
+      '</tr>'
+    );
+  }
+
+  fetch('./data/languages.json')
+    .then(function (res) {
+      if (!res.ok) {
+        throw new Error('HTTP ' + res.status);
+      }
+      return res.json();
+    })
+    .then(function (languages) {
+      var tbody = document.querySelector('#language-table tbody');
+      tbody.innerHTML = languages.map(renderRow).join('');
+    })
+    .catch(function (err) {
+      var tbody = document.querySelector('#language-table tbody');
+      tbody.innerHTML =
+        '<tr><td colspan="6" class="error-note">Could not load language data (' +
+        (err && err.message ? err.message : 'unknown error') +
+        '). This table is generated at deploy time -- it may not be available when viewing this file locally.</td></tr>';
+    });
+})();
+</script>
+</html>

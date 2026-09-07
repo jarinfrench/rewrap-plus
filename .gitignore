@@ -45,3 +45,9 @@ Thumbs.db
 # Local planning/handoff docs -- private roadmap and design notes, not
 # published. See docs/planning/ for what lives here.
 docs/planning/
+
+# Generated at deploy time by scripts/generate-site-data.mjs (the `pages`
+# job in .github/workflows/ci.yml) from packages/engine's own adapter
+# registry -- never hand-edited, and never committed, so it can't become
+# a second stale source of truth for language coverage.
+site/data/languages.json

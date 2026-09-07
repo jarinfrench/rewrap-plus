@@ -43,6 +43,67 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Dry run only (output discarded) -- confirms the generator still
+      # runs cleanly against whatever `packages/engine` looks like on this
+      # PR/commit, so a change that breaks it (a descriptor missing an
+      # expected field, an import that no longer resolves) fails PR CI
+      # instead of only surfacing later when the `pages` job's own build
+      # tries to deploy it.
+      - name: Dry-run site data generator
+        run: node scripts/generate-site-data.mjs
+
+  pages:
+    name: Build and deploy GitHub Pages site
+    # Same "only deploy what already passed CI" pattern the tag-triggered
+    # `package` job above already uses, adapted to `main`: only after
+    # every `ci` matrix leg passes on this exact pushed commit, and only
+    # on a real push to `main` (never a `pull_request` run, which would
+    # otherwise let an untrusted PR branch deploy to the live site).
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Populates site/data/languages.json from packages/engine's own
+      # adapter registry -- see scripts/generate-site-data.mjs's own doc
+      # comment. Not committed (site/data/ is .gitignore'd), so this step
+      # is the only place the deployed table's data ever comes from.
+      - name: Generate site data
+        run: node scripts/generate-site-data.mjs
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      - name: Upload site/ as the Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
   package:
     name: Package .vsix and attach to GitHub Release
     # Only on a version tag push (v*), and only once every `ci` matrix
