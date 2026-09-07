@@ -343,6 +343,7 @@ the others instead of filing a bug here.
 | Visual Studio (not just VS Code) support | Yes | Yes | No | **No** |
 | `.editorconfig` support (in VS Code) | No¹ | No¹ | — | Direct, self-parsed |
 | Format-on-save | No | Yes (`Run rewrap on save`, added v17.7) | — | Yes |
+| Runs in VS Code for the Web (vscode.dev/github.dev) | Unconfirmed | "Attempted" per its own changelog (v17.7) — not independently verified here | Unconfirmed | **No**² |
 
 ¹ Neither reads `.editorconfig` directly in VS Code; both fall back to
 `editor.rulers`/`editor.wordWrapColumn`, which a user (or a separate
@@ -351,6 +352,16 @@ Visual Studio build (not its VS Code build) can pick up rulers generated
 from `.editorconfig` by a third extension, Editor Guidelines — a
 narrower, VS-only, third-extension-dependent path worth naming precisely
 rather than folding into a blanket "indirect support" claim.
+
+² Rewrap+ doesn't run in a browser-hosted VS Code today — the extension
+and engine load grammar WASM and other resources via Node built-ins
+(`node:fs`, a runtime `require()` for `web-tree-sitter`'s Node build)
+throughout, none of which a web extension host provides. This isn't a
+fundamental blocker: `web-tree-sitter` already being WASM-based means a
+port is plausible future work (see the implementation plan's 12f
+stretch section), but it would need a real web-extension build target,
+not just a manifest change — "plausible" here means "not yet attempted,"
+not "nearly done."
 
 Rewrap+ is also the newest and least battle-tested of the four by a wide
 margin — Rewrap and its Rewrap Revived fork both have a long track
