@@ -6,9 +6,10 @@ configured column limit, preserving formatted structure and emitting
 language-valid concatenation on split.
 
 Status: **alpha.** Python, JavaScript, TypeScript, TSX, C++, Java,
-Markdown, and LaTeX support, plus a CLI for scripting/pre-commit use -
-installable as a `.vsix`/`npm install`, not yet published to a
-marketplace or registry.
+Markdown, and LaTeX support (comments, docstrings, and string literals),
+plus comment-only support for TOML, Shell script (Bash), CSS, SCSS, and
+PowerShell, plus a CLI for scripting/pre-commit use - installable as a
+`.vsix`/`npm install`, not yet published to a marketplace or registry.
 See [CHANGELOG.md](./CHANGELOG.md) for what's shipped and what's
 known-missing.
 

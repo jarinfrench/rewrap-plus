@@ -227,6 +227,23 @@ eventually ships this.
   comment-style workaround. `.tex`/`.latex` recognized by the CLI,
   subject to the same "blast radius" note as Markdown.
 
+- **Comment-only support for TOML, Shell script (Bash), CSS, SCSS, and
+  PowerShell** — five adapters shipped as a batch, none needing an engine
+  change (`docs/language-candidates.md`'s Pass 4 "High" priority row).
+  TOML and Bash each have a single `#` line-comment form, no block/doc
+  convention. CSS has a single `/* */` block form and no line-comment
+  syntax at all — the first descriptor in this package with nothing for
+  `comments.line` to describe. SCSS has two distinct comment node types
+  (`//` and `/* */`), the same shape Java's `line_comment`/`block_comment`
+  split already proved out. PowerShell has `#` line comments, `<# ... #>`
+  block comments, and comment-based help (`.SYNOPSIS`/`.DESCRIPTION`/
+  `.PARAMETER` tags inside a `<# ... #>` block, per Microsoft's
+  `about_Comment_Based_Help`) — a new `commentBasedHelp` documentation
+  dialect, told apart from a plain block comment by tag vocabulary rather
+  than a distinct grammar node or literal marker prefix, since PowerShell
+  gives both forms the identical delimiter and node type. None of the
+  five declares string-literal support — see "Known limitations" below.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped — deferred the same way
@@ -245,6 +262,13 @@ eventually ships this.
   recursive walk.
 - Plain-text prose support, and a plain-C adapter, are not yet
   implemented.
+- TOML, Bash, CSS, SCSS, and PowerShell wrap comments only — no
+  string-literal support. TOML/Bash/PowerShell string interpolation and
+  Bash/PowerShell here-docs/here-strings have no fixed open/close
+  delimiter pair the way `QuoteSpec`/`RawFormSpec` both assume; CSS/SCSS
+  string *values* were scoped out as a "should this even be reflowed"
+  question rather than an engine gap
+  (`docs/language-candidates.md`'s Pass 3).
 - Markdown setext headings' own text is never wrapped (v1 canonicalizes
   everything else about a paragraph's continuation but leaves this one
   form alone — "bias toward verbatim when uncertain"); link reference and
