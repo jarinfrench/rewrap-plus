@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
 import { fixturePath } from './fixtures.js';
-import { closeAllEditors, openFixture, resetRewrapPlusSettings, settle } from './helpers.js';
+import { closeAllEditors, openFixture, openScratchDocument, resetRewrapPlusSettings, settle } from './helpers.js';
 
 describe('rewrapPlus.wrapDocument', () => {
   afterEach(async () => {
@@ -72,5 +72,74 @@ describe('rewrapPlus.wrapDocument', () => {
       editor.document.lineCount > originalLineCount,
       'wrapping the docstring should have split it across more lines than the original',
     );
+  });
+
+  it('reports a failure — not a false "N wrapped" success — when applyEdit returns false', async () => {
+    // Adversarial-audit finding #1: `computeAndApplyWrap` used to discard
+    // `vscode.workspace.applyEdit`'s return value, so any document VSCode
+    // declines to edit — `applyEdit`'s own documented contract is a
+    // `Thenable<boolean>` precisely because it *can* fail — left the user
+    // with only `reportWrapOutcome`'s already-emitted "N wrapped" message:
+    // true of the *computed* result, false of what actually happened.
+    //
+    // Getting a *real* document into a state where VSCode's own
+    // `applyEdit` naturally returns `false` turned out to be its own
+    // finding: neither a `FileSystemProvider` registered with `isReadonly:
+    // true` (per microsoft/vscode#57032's description of this exact
+    // shape) plus explicit `FilePermission.Readonly` on its `stat()`, nor
+    // `workbench.action.files.setActiveEditorReadonlyInSession`, nor
+    // closing every editor on a document mid-wrap (`document.isClosed ===
+    // true`) actually made `applyEdit` refuse the edit in this project's
+    // pinned `@vscode/test-electron` version (1.134-1.136) — confirmed by
+    // direct probe in each case, the edit went through regardless. Whatever
+    // VSCode's own real refusal conditions are in this version, none of
+    // this project's own document-state levers reach them, so this test
+    // exercises the code under audit directly instead: `applyEdit` is
+    // stubbed to return `false` (its own documented, real possible
+    // outcome, whatever triggers it in practice), isolating exactly the
+    // "what does `computeAndApplyWrap` do when told the edit failed"
+    // question finding #1 is actually about, rather than depending on
+    // VSCode-version-specific internals this project doesn't control.
+    const config = vscode.workspace.getConfiguration('rewrapPlus');
+    await config.update('columnLimit', 40, vscode.ConfigurationTarget.Global);
+
+    const warnings: string[] = [];
+    const originalShowWarningMessage = vscode.window.showWarningMessage;
+    const originalApplyEdit = vscode.workspace.applyEdit;
+    // Standard extension-test spying/stubbing technique: `vscode.window`/
+    // `vscode.workspace`'s exported functions are plain, writable object
+    // properties in the real extension host, not locked-down accessors —
+    // both swapped back in `finally` below regardless of assertion outcome.
+    (vscode.window as { showWarningMessage: typeof vscode.window.showWarningMessage }).showWarningMessage = ((
+      message: string,
+    ) => {
+      warnings.push(message);
+      return Promise.resolve(undefined);
+    }) as typeof vscode.window.showWarningMessage;
+    (vscode.workspace as { applyEdit: typeof vscode.workspace.applyEdit }).applyEdit = (() =>
+      Promise.resolve(false)) as typeof vscode.workspace.applyEdit;
+
+    try {
+      const longComment = `# ${Array.from({ length: 30 }, () => 'word').join(' ')}`;
+      const originalContent = `${longComment}\n`;
+      const editor = await openScratchDocument(originalContent, 'python');
+
+      await vscode.commands.executeCommand('rewrapPlus.wrapDocument');
+      await settle();
+
+      assert.strictEqual(
+        editor.document.getText(),
+        originalContent,
+        'the document must be left untouched when applyEdit reports failure',
+      );
+      assert.ok(
+        warnings.some((message) => /could not apply changes/i.test(message)),
+        `expected a warning toast about the failed apply, got: ${JSON.stringify(warnings)}`,
+      );
+    } finally {
+      (vscode.window as { showWarningMessage: typeof vscode.window.showWarningMessage }).showWarningMessage =
+        originalShowWarningMessage;
+      (vscode.workspace as { applyEdit: typeof vscode.workspace.applyEdit }).applyEdit = originalApplyEdit;
+    }
   });
 });

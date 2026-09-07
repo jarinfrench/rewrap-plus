@@ -64,3 +64,37 @@ export function reportWrapOutcome(document: vscode.TextDocument, outcome: WrapOu
     STATUS_BAR_MESSAGE_TIMEOUT_MS,
   );
 }
+
+/**
+ * Reported by `computeAndApplyWrap` (`./commands/apply-wrap.ts`) when
+ * `vscode.workspace.applyEdit` returns `false` for a non-empty edit —
+ * VSCode's own signal that the edit didn't land (most commonly a
+ * document that isn't editable at all: a `git show`/diff-view virtual
+ * document, one backed by a read-only `TextDocumentContentProvider`, or
+ * one that was closed mid-computation). `reportWrapOutcome` above has
+ * already logged a "N wrapped" line and flashed a success-shaped status
+ * bar message by the time this runs (it reports on the *computed*
+ * result, before the apply attempt — see `WrapOutcome`'s own doc
+ * comment on why apply happens after), so this exists to make sure the
+ * user's *last* signal is the true one: a status-bar message that
+ * overwrites the premature success flash, an output-channel line
+ * explaining why, and — unlike every other outcome here — a genuine
+ * warning toast, since "the wrap you just ran silently did nothing" is
+ * exactly the class of failure a transient status-bar message alone is
+ * too easy to miss.
+ */
+export function reportWrapApplyFailure(document: vscode.TextDocument, editCount: number): void {
+  const channel = getOutputChannel();
+  channel.appendLine(
+    `${document.uri.fsPath}: computed ${editCount} region${editCount === 1 ? '' : 's'} to wrap, but the edit ` +
+      'could not be applied — the document may be read-only or otherwise not editable. No changes were made.',
+  );
+  vscode.window.setStatusBarMessage(
+    'Rewrap+: could not apply changes — document is not editable',
+    STATUS_BAR_MESSAGE_TIMEOUT_MS,
+  );
+  void vscode.window.showWarningMessage(
+    `Rewrap+: could not apply changes to "${vscode.workspace.asRelativePath(document.uri, false)}" — ` +
+      'it may be read-only or otherwise not editable.',
+  );
+}

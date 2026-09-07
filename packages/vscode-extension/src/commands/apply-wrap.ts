@@ -18,7 +18,7 @@ import type {
 } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 import { getEngine, getParserManager, getSupportedLanguages } from '../engine-host.js';
 import { resolveWrapConfigForDocument, type ResolvedWrapConfig } from '../config/resolve-wrap-config.js';
-import { reportWrapOutcome } from '../report-wrap-outcome.js';
+import { reportWrapApplyFailure, reportWrapOutcome } from '../report-wrap-outcome.js';
 
 export interface WrapOutcome {
   readonly result: WrapResult;
@@ -249,6 +249,17 @@ export async function applyWrapEdits(
  * callers (`wrap-at-cursor.ts`, `wrap-selection.ts`) already build one to
  * turn their own cursor/selection into `targets` via `rangeTargetSpan`
  * before calling in here, so passing it through costs them nothing extra.
+ *
+ * `applyWrapEdits`'s own return value is checked here (unlike before this
+ * check existed): `computeWrapResult` already reported a "N wrapped"
+ * outcome based on the *computed* result, before this function ever
+ * attempts to apply it, so a `false` return — VSCode declining the edit
+ * outright, most commonly because `document` isn't editable at all (a
+ * `git show`/diff-view virtual document, one backed by a read-only
+ * `TextDocumentContentProvider`) — would otherwise leave that premature
+ * success message as the user's only signal, with no actual change made
+ * and no indication anything went wrong. `reportWrapApplyFailure`
+ * (`../report-wrap-outcome.ts`) exists specifically to correct that.
  */
 export async function computeAndApplyWrap(
   document: vscode.TextDocument,
@@ -263,7 +274,10 @@ export async function computeAndApplyWrap(
     return undefined;
   }
   if (!outcome.result.cancelled && !outcome.documentVersionChanged) {
-    await applyWrapEdits(document, outcome.result.edits);
+    const applied = await applyWrapEdits(document, outcome.result.edits);
+    if (!applied) {
+      reportWrapApplyFailure(document, outcome.result.edits.length);
+    }
   }
   return outcome;
 }
