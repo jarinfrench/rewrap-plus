@@ -51,6 +51,7 @@ import {
   latexAdapter,
   markdownAdapter,
   pythonAdapter,
+  tomlAdapter,
   typescriptAdapter,
   typescriptReactAdapter,
 } from '@rewrap-plus/engine';
@@ -84,6 +85,7 @@ function getRegistry(): Promise<AdapterRegistry> {
   registry.register(javaAdapter);
   registry.register(markdownAdapter);
   registry.register(latexAdapter);
+  registry.register(tomlAdapter);
   registryPromise = Promise.resolve(registry);
   return registryPromise;
 }

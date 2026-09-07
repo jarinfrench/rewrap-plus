@@ -97,6 +97,8 @@ export { markdownAdapter } from './languages/markdown/adapter.js';
 export { markdownDescriptor } from './languages/markdown/descriptor.js';
 export { latexAdapter } from './languages/latex/adapter.js';
 export { latexDescriptor } from './languages/latex/descriptor.js';
+export { tomlAdapter } from './languages/toml/adapter.js';
+export { tomlDescriptor } from './languages/toml/descriptor.js';
 export { dissolveLineComments } from './comments/dissolve-line-comments.js';
 export type { DissolvedLineComments } from './comments/dissolve-line-comments.js';
 export { emitLineComments } from './comments/emit-line-comments.js';

@@ -337,3 +337,55 @@ attempt actually hits that failure.
    `abiVersion`).
 6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
    typecheck && npm run build`.
+
+## `tree-sitter-toml.wasm`
+
+| | |
+|---|---|
+| Source package | [`tree-sitter-toml`](https://www.npmjs.com/package/tree-sitter-toml) |
+| Package version | `0.5.1` |
+| Upstream repo | https://github.com/ikatyang/tree-sitter-toml |
+| Upstream commit | `474fbbec27e27d76b45aeaf9191e8acb13a699e2` |
+| npm tarball shasum | `cb8674d166eaa3aa246b8f9e1a2f066b87e1a00b` |
+| npm tarball integrity | `sha512-ymaN/Lno2tqTPEuKOOdu4IoqISaL8MWRQGp1/+2yqVAcw9PSBh5diCkoOwumHYv00grzDmY5hUtuairQ68hVkQ==` |
+| Built with | `tree-sitter-cli@0.26.13` (`tree-sitter build --wasm`), pinned to match this project's `web-tree-sitter@0.26.13` |
+| wasi-sdk version used by the CLI | `29.0`, the identical cached toolchain `tree-sitter-latex.wasm` above was built with — no Emscripten/Docker step |
+| Build host OS | Windows 10 (the vendoring machine) |
+| Vendored file sha256 | `551f9a34972f32fb8fc3cc88f1acbb1f8fae426c0eb0416a7c9e270e236adb21` |
+| Grammar ABI version | `13` (`Language#abiVersion`) |
+| License | MIT (see upstream `LICENSE`) |
+
+Vendored for the `toml` language adapter (`../src/languages/toml/`), one
+of the five comment-only-batch languages — directly dogfoodable, given
+this project's own `pyproject.toml [tool.rewrap-plus]` config convention
+(`CLAUDE.md`). `ikatyang/tree-sitter-toml` is unmaintained upstream (no
+release since predating this project's other grammars) but is still the
+only real `tree-sitter-toml` package on npm and ships a plain-C
+`src/scanner.c` — no C++ external-scanner hazard. Ships no prebuilt
+`.wasm`, only a generated `src/parser.c`, so this file is a local build
+following the identical `tree-sitter-cli@0.26.13 tree-sitter build --wasm`
+path `tree-sitter-latex.wasm` above already established, no Emscripten/
+Docker step needed. Confirmed loadable with this project's pinned
+`web-tree-sitter@0.26.13` and parses a `#` comment (standalone and
+trailing a `key = "value"` pair alike, one `comment` node type for both)
+cleanly (`hasError: false`), per
+`docs/spikes/tree-sitter-comment-langs-batch-probe.mjs`.
+
+Confirmed compatible with this project's pinned `web-tree-sitter@0.26.13`
+(`MIN_COMPATIBLE_VERSION` 13, `LANGUAGE_VERSION` 15) — this grammar's own
+`abiVersion` is `13`, the oldest supported, still inside range.
+
+### Regenerating / updating
+
+1. `npm view tree-sitter-toml versions --json` for what's published
+   (unmaintained — likely still `0.5.1`); confirm the tarball still ships
+   a generated `src/parser.c` and a plain-`.c` scanner.
+2. `npm pack tree-sitter-toml@<version>` and extract the tarball.
+3. `npx --package tree-sitter-cli@0.26.13 tree-sitter build --wasm
+   <extracted dir> -o tree-sitter-toml.wasm`.
+4. Re-run `docs/spikes/tree-sitter-comment-langs-batch-probe.mjs` against
+   the new file before replacing the vendored one.
+5. Copy the file over this one; update the table above.
+6. Re-run the full suite — `npm ci && npm test && npm run lint && npm run
+   typecheck && npm run build`.
+
