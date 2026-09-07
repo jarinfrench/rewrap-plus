@@ -4,6 +4,25 @@ This directory holds tree-sitter grammar `.wasm` binaries used by
 `ParserManager` (see `../src/parser/`). They are checked into the repo
 rather than fetched at install time — see `docs/parsing.md` for why.
 
+## Before adding or updating any entry below: verify it loads
+
+A grammar's `.wasm` — prebuilt from an npm package, downloaded as a
+GitHub release asset, or built locally with `tree-sitter build --wasm`
+— must be loaded with this project's actual pinned `web-tree-sitter`
+version and used to parse a real snippet **before** it is trusted,
+copied into this directory, or given an entry here. The artifact
+existing at the expected path, or a build completing without error, is
+not sufficient evidence on its own: a file can be shaped identically to
+every other successfully-vendored grammar and still fail to load under
+this project's pinned runtime (a dynamic-linking format mismatch, an
+ABI outside `web-tree-sitter`'s supported range, a scanner that didn't
+link correctly for WASM) — see `docs/adding-a-language.md`'s vendoring
+step for the minimal load-and-parse check to run, and
+`docs/language-candidates.md` for a real case (Finding D) where a
+prebuilt `.wasm` that looked no different from any other passed every
+check except this one. Treat this as a standing rule for every future
+entry in this file, not a one-off response to that incident.
+
 ## `tree-sitter-python.wasm`
 
 | | |

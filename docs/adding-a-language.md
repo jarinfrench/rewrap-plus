@@ -48,21 +48,68 @@ npm pack tree-sitter-<language>@<version>
 # extract the tarball, confirm tree-sitter-<language>.wasm is at its root
 ```
 
-Copy that file into `packages/engine/grammars/`, and add an entry to
-that directory's `PROVENANCE.md` recording the source package, version,
-upstream commit, tarball checksum, vendored-file checksum, and grammar
-ABI version — follow the existing entries there exactly; they're the
-template.
-
 If no prebuilt WASM exists, you need `tree-sitter build --wasm` with
 Emscripten or Docker — `docs/parsing.md` covers why this repo avoided
 that so far and what to expect if a grammar forces the issue.
+
+**Before this file is trusted or vendored — mandatory, regardless of
+which path produced it:** load it with this project's actual pinned
+`web-tree-sitter` version and parse a representative snippet of the
+target language. A prebuilt `.wasm` existing at the expected package
+path, or a local build completing without error, is evidence the
+artifact *exists* — it is not evidence it *loads* with this project's
+runtime, and those turned out to be two separate facts in practice:
+`tree-sitter-dart`'s npm-published prebuilt `.wasm` throws a `dylink
+metadata` error under this project's pinned `web-tree-sitter`, despite
+being shaped identically to every grammar vendored successfully so far,
+while rebuilding from the same tarball's `src/` with this project's
+pinned `tree-sitter-cli` fixed it immediately (see
+`docs/language-candidates.md`, Finding D, for the full writeup). The
+minimal check:
+
+```js
+import { Parser, Language } from 'web-tree-sitter';
+await Parser.init();
+const language = await Language.load('<path-to-the-new-.wasm>');
+const parser = new Parser();
+parser.setLanguage(language); // throws here if the ABI is incompatible
+const tree = parser.parse('<a small real snippet of the target language>');
+console.log(tree.rootNode.toString()); // throws before this if the file won't load at all
+```
+
+`docs/spikes/tree-sitter-wasm-loading.mjs` is the original throwaway
+script this pattern comes from — copy its shape rather than writing
+this from scratch.
+
+Only once this succeeds should you copy the file into
+`packages/engine/grammars/` and add an entry to that directory's
+`PROVENANCE.md` recording the source package, version, upstream commit,
+tarball checksum, vendored-file checksum, and grammar ABI version —
+follow the existing entries there exactly; they're the template, and
+that file's own general vendoring guidance repeats this load-check as a
+standing requirement, not a one-off.
+
+Step 3 below goes further than this smoke test — it probes real node
+shapes, not just "does it load at all" — but don't skip straight there
+without this cheaper check first: it's the fast, unambiguous signal
+that something is wrong with the artifact itself, before spending time
+writing descriptor code against it.
 
 ### 2. Scaffold the boilerplate
 
 ```bash
 npm run new-adapter -- <languageId>
 ```
+
+This step assumes step 1's grammar WASM has already been vendored *and*
+load-verified — `new-adapter` is pure codegen over descriptor/adapter/
+test-stub files, it never touches the grammar `.wasm` itself and
+performs no loadability check of its own. (The generated
+`descriptor.test.ts` stub below does call `Language.load` against the
+vendored file, so a broken WASM will still fail loudly the first time
+`npm test` runs — but that's a regression check for *later*, not a
+substitute for verifying the file before you've written provenance for
+it and built on top of it.)
 
 `<languageId>` should match the real VSCode `languageId` (e.g. `ruby`,
 `rust`, `typescriptreact`). This creates, under `packages/engine`:
