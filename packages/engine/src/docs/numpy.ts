@@ -4,7 +4,7 @@ import type { SplitBlocksOptions } from '../segmentation/split-blocks.js';
 import { toLines } from '../segmentation/to-lines.js';
 import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
 import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } from './dialect.js';
-import { dedentBody, stripLeadingBlanks } from './field-entries.js';
+import { commonIndent, dedentBody, stripLeadingBlanks } from './field-entries.js';
 
 /**
  * Sections whose body is a list of `name : type` entries, each followed
@@ -224,10 +224,30 @@ export const numpyDialect: DocDialect = {
     for (const section of sections) {
       blocks.push({ type: 'sectionHeader', text: section.name });
       blocks.push({ type: 'sectionHeader', text: '-'.repeat(section.name.length) });
+      // `baselineIndent` on the prose branch for the same reason
+      // `./google.ts`'s parallel `PROSE_SECTIONS` branch needs it:
+      // `section.body` still carries whatever hanging indent separates
+      // it from its flush-left header/underline, but `segmentLines`/
+      // `splitBlocks`'s `preserveIndentedBlocks` rule ("any indented line
+      // becomes verbatim," `../segmentation/split-blocks.ts`) assumes
+      // column 0 is the caller's own baseline by default -- without
+      // telling it otherwise, every line of an indented prose section's
+      // body was misread as a nested indented block relative to the
+      // wrong baseline and never reflowed. Deliberately *not* dedenting
+      // the text first the way `segmentFieldSection`/`groupFieldEntries`
+      // do for a field entry's own description: those re-indent
+      // structurally at emit time via the entry's own `hangingIndent`,
+      // but this branch splices blocks flat into the top-level sequence
+      // with no such field to restore a stripped indent from, so
+      // dedenting first would truncate any nested `verbatim` block's own
+      // preserved absolute indentation instead (see `commonIndent`'s own
+      // doc comment, `./field-entries.ts`, for the confirmed regression
+      // against `test/fixtures/python/docstrings/006-doctest-preserved`
+      // that ruled that approach out).
       blocks.push(
         ...(FIELD_SECTIONS.has(section.name)
           ? segmentFieldSection(section.body, options)
-          : segmentLines(section.body, options)),
+          : segmentLines(section.body, { ...options, baselineIndent: commonIndent(section.body) })),
       );
     }
 

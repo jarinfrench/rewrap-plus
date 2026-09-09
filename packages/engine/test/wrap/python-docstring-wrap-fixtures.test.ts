@@ -42,6 +42,8 @@ import blankLineSeparatedGoogleIn from '../fixtures/python/docstrings/017-blank-
 import blankLineSeparatedGoogleOut from '../fixtures/python/docstrings/017-blank-line-separated-google.out.py?raw';
 import blankLineSeparatedNumpyIn from '../fixtures/python/docstrings/018-blank-line-separated-numpy.in.py?raw';
 import blankLineSeparatedNumpyOut from '../fixtures/python/docstrings/018-blank-line-separated-numpy.out.py?raw';
+import indentedProseSectionsIn from '../fixtures/python/docstrings/019-indented-prose-sections.in.py?raw';
+import indentedProseSectionsOut from '../fixtures/python/docstrings/019-indented-prose-sections.out.py?raw';
 
 /**
  * The stated acceptance criterion: "All docstring fixtures pass; no
@@ -92,6 +94,35 @@ import blankLineSeparatedNumpyOut from '../fixtures/python/docstrings/018-blank-
  * Javadoc all reuse it unchanged, already covered at the `segment()` unit
  * level in their own test files), NumPy exercises its own separate
  * `segmentFieldSection`.
+ *
+ * 019 (`indented-prose-sections`) is the one fixture in this file that
+ * overrides `preserveIndentedBlocks` to `true` (every other fixture here
+ * runs with it `false` -- see `config`, below) -- the default in both the
+ * CLI (`packages/cli/src/config/defaults.ts`) and the VSCode extension
+ * (`packages/vscode-extension/README.md`), unlike every fixture above.
+ * Regression coverage for a real bug: a Google section body sits at a
+ * hanging indent under its flush-left header by convention, uniformly
+ * indented from its very first line, which `preserveIndentedBlocks`'s
+ * "any indented line becomes verbatim" rule
+ * (`../../src/segmentation/split-blocks.ts`) misread as a nested indented
+ * block *at the wrong baseline* and never reflowed at all, for both a
+ * bare (nameless) `Returns:` body and any `PROSE_SECTIONS` body (`Note`,
+ * `Example`, etc.). Fixed by threading a `baselineIndent` option through
+ * `splitBlocks`/`matchIndentedRun` (`../../src/segmentation/verbatim.ts`)
+ * so the indented-block heuristic compares against the section's own
+ * established margin instead of column 0, computed non-destructively via
+ * `../../src/docs/field-entries.ts`'s `commonIndent` and passed alongside
+ * the untouched section body to `segmentLines`
+ * (`../../src/docs/google.ts`'s `segment`) -- physically dedenting the
+ * body first (mirroring `dedentBody`, the fix this replaced) reflows the
+ * prose correctly too, but was ruled out because it truncates a nested
+ * `verbatim` block's own preserved absolute indentation, confirmed as a
+ * real regression against `006-doctest-preserved`. Confirmed via the CLI
+ * before the fix: 0 lines rewrapped despite both section bodies being
+ * far over the column limit. See the equivalent, narrower-scoped
+ * unit-level regression cases in `../../src/docs/google.test.ts` and
+ * `../../src/docs/numpy.test.ts` for the same fix applied to NumPy's own
+ * `PROSE_SECTIONS` branch (`../../src/docs/numpy.ts`).
  */
 const COLUMN_LIMIT = 50;
 
@@ -99,6 +130,7 @@ interface Fixture {
   readonly name: string;
   readonly input: string;
   readonly expected: string;
+  readonly configOverrides?: Partial<WrapConfig>;
 }
 
 const fixtures: readonly Fixture[] = [
@@ -160,6 +192,12 @@ const fixtures: readonly Fixture[] = [
     input: blankLineSeparatedNumpyIn,
     expected: blankLineSeparatedNumpyOut,
   },
+  {
+    name: '019-indented-prose-sections',
+    input: indentedProseSectionsIn,
+    expected: indentedProseSectionsOut,
+    configOverrides: { preserveIndentedBlocks: true },
+  },
 ];
 
 function config(overrides: Partial<WrapConfig> = {}): WrapConfig {
@@ -184,7 +222,13 @@ beforeAll(async () => {
 
 describe('Python docstring wrapping -- end-to-end gold fixtures', () => {
   it.each(fixtures.map((f) => [f.name, f] as const))('%s', async (_name, fixture) => {
-    const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
+    const result = await wrapRegions(
+      fixture.input,
+      'python',
+      'all',
+      config(fixture.configOverrides),
+      parserManager,
+    );
     const actual = applyTextEdits(fixture.input, result.edits);
     expect(actual).toBe(fixture.expected);
   });
@@ -198,7 +242,13 @@ describe('Python docstring wrapping -- end-to-end gold fixtures', () => {
     // the docstring; the delimiter's own line counts as docstring content
     // either way (it carries the summary or the closing quote).
     for (const fixture of fixtures) {
-      const result = await wrapRegions(fixture.input, 'python', 'all', config(), parserManager);
+      const result = await wrapRegions(
+        fixture.input,
+        'python',
+        'all',
+        config(fixture.configOverrides),
+        parserManager,
+      );
       const actual = applyTextEdits(fixture.input, result.edits);
       let insideDocstring = false;
       let insideFence = false;
@@ -253,7 +303,13 @@ describe('Python docstring wrapping -- end-to-end gold fixtures', () => {
 
   it('is idempotent: re-wrapping the gold output produces no further edits', async () => {
     for (const fixture of fixtures) {
-      const result = await wrapRegions(fixture.expected, 'python', 'all', config(), parserManager);
+      const result = await wrapRegions(
+        fixture.expected,
+        'python',
+        'all',
+        config(fixture.configOverrides),
+        parserManager,
+      );
       expect(result.edits).toEqual([]);
     }
   });
@@ -298,6 +354,7 @@ describe('Python docstring wrapping -- end-to-end gold fixtures', () => {
       '016-already-wrapped-sphinx-byte-identical',
       '017-blank-line-separated-google',
       '018-blank-line-separated-numpy',
+      '019-indented-prose-sections',
     ]);
   });
 });

@@ -3,7 +3,7 @@ import type { SplitBlocksOptions } from '../segmentation/split-blocks.js';
 import { toLines } from '../segmentation/to-lines.js';
 import { leadingWhitespaceLength } from '../segmentation/verbatim.js';
 import { type DocDialect, type DocEmitContext, reflowDocBlocks, segmentLines } from './dialect.js';
-import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
+import { commonIndent, groupFieldEntries, type EntryStartMatch } from './field-entries.js';
 
 /**
  * Sections whose body is a list of named entries -- `param (type):
@@ -156,7 +156,23 @@ export const googleDialect: DocDialect = {
       blocks.push({ type: 'sectionHeader', text: `${section.name}:` });
 
       if (!FIELD_SECTIONS.has(section.name)) {
-        blocks.push(...segmentLines(section.body, options));
+        // `section.body` still carries the hanging indent that separates
+        // it from its flush-left header (the universal Google/napoleon
+        // convention), but `segmentLines`/`splitBlocks`'s
+        // `preserveIndentedBlocks` rule ("any indented line becomes
+        // verbatim," `../segmentation/split-blocks.ts`) assumes column 0
+        // is the caller's own baseline by default -- without telling it
+        // otherwise, every line of a prose section's body was misread as
+        // a nested indented block relative to the wrong baseline and
+        // never reflowed at all. `baselineIndent` fixes that without
+        // touching the text itself (unlike dedenting it first, which
+        // would truncate any nested `verbatim` block's own preserved
+        // indentation -- see `commonIndent`'s own doc comment,
+        // `./field-entries.ts`, for the confirmed regression that ruled
+        // that approach out).
+        blocks.push(
+          ...segmentLines(section.body, { ...options, baselineIndent: commonIndent(section.body) }),
+        );
         continue;
       }
 
@@ -169,9 +185,15 @@ export const googleDialect: DocDialect = {
       // description from merging into a single reflowable paragraph;
       // re-running the section body through the ordinary prose path
       // instead, whenever nothing in it matched as a real entry, avoids
-      // that.
+      // that. `baselineIndent` for the same reason as the prose-section
+      // branch above -- this bare body never went through
+      // `groupFieldEntries`'s own per-entry `dedentBody` call.
       const matchedAnyEntry = fieldBlocks.some((block) => block.type === 'fieldEntry');
-      blocks.push(...(matchedAnyEntry ? fieldBlocks : segmentLines(section.body, options)));
+      blocks.push(
+        ...(matchedAnyEntry
+          ? fieldBlocks
+          : segmentLines(section.body, { ...options, baselineIndent: commonIndent(section.body) })),
+      );
     }
 
     return blocks;

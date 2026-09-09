@@ -75,6 +75,36 @@ describe('googleDialect.segment', () => {
     expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'paragraph']);
   });
 
+  it('reflows a bare Returns section body as a paragraph, not a verbatim block, under preserveIndentedBlocks (regression)', () => {
+    // Every Google-style section body sits at a hanging indent under its
+    // flush-left header -- the universal convention -- so `section.body`
+    // here is uniformly indented from its very first line. Before
+    // `dedentBody` was applied ahead of `segmentLines` (see `./google.ts`'s
+    // `segment`), `preserveIndentedBlocks`'s "any indented line becomes
+    // verbatim" rule (`../segmentation/split-blocks.ts`) misread that
+    // hanging indent itself as a nested indented block and never reflowed
+    // this section at all -- confirmed via the CLI at a narrow column
+    // limit: 0 lines rewrapped despite the body being far over it.
+    // `preserveIndentedBlocks` defaults to `true` in both the CLI
+    // (`packages/cli/src/config/defaults.ts`) and the VSCode extension
+    // (`packages/vscode-extension/README.md`), unlike the `{}` every other
+    // test in this file uses, which is why this case survived undetected.
+    const text = ['Returns:', '    A bare description with no leading type or name.'].join('\n');
+    const blocks = googleDialect.segment(text, { preserveIndentedBlocks: true });
+    expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'paragraph']);
+  });
+
+  it('reflows a prose section (Note) body as a paragraph, not a verbatim block, under preserveIndentedBlocks (regression)', () => {
+    // Same bug as the bare-Returns case above, confirmed separately for
+    // every `PROSE_SECTIONS` name (`Note`/`Notes`/`Example`/`Examples`/
+    // `Warning`/`Warnings`/`See Also`/`Todo`/`References`), not just
+    // `Returns`/`Yields`'s bare-entry fallback -- both routes went through
+    // the same un-dedented `segmentLines(section.body, options)` call.
+    const text = ['Note:', '    This is just prose, not a field list.'].join('\n');
+    const blocks = googleDialect.segment(text, { preserveIndentedBlocks: true });
+    expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'paragraph']);
+  });
+
   it('preserves a genuine blank line inside a section body (not at the very end of the text)', () => {
     // A blank line at the *very end* of the whole `text` string is a
     // known, documented limitation (`../languages/python/dissolve-docstring.ts`'s

@@ -27,6 +27,20 @@ export interface SplitBlocksOptions {
    * for the more aggressive "any indented line is verbatim" behavior.
    */
   readonly preserveIndentedBlocks?: boolean;
+
+  /**
+   * The column `text`'s own ordinary (non-nested) content already sits
+   * at, default `0`. Threaded straight through to `./verbatim.ts`'s
+   * `matchIndentedRun` -- see that function's own doc comment for why
+   * this exists: a whole document's dissolved text is always baseline
+   * `0`, but a dialect-supplied section body
+   * (`../docs/google.ts`/`../docs/numpy.ts`'s own `PROSE_SECTIONS`
+   * handling) is conventionally hanging-indented under its own
+   * flush-left header, and without this, every line of such a body was
+   * misread as a nested indented/verbatim block relative to the wrong
+   * (zero) baseline and never reflowed at all.
+   */
+  readonly baselineIndent?: number;
 }
 
 /**
@@ -62,8 +76,10 @@ export interface SplitBlocksOptions {
  *    continuation lines (indented further than the marker) merge into
  *    that item's atom stream the same soft way a paragraph's lines do.
  * 5. **Indented block** under `preserveIndentedBlocks` -- any remaining
- *    indented line becomes a `verbatim` block for the whole contiguous
- *    indented/blank run, same mechanics as case 2.
+ *    line indented beyond `options.baselineIndent` (default `0`, i.e. any
+ *    indented line at all for ordinary top-level text) becomes a
+ *    `verbatim` block for the whole contiguous indented/blank run, same
+ *    mechanics as case 2.
  * 6. **Paragraph** (fallback) -- merged into the current paragraph's atom
  *    stream; consecutive non-blank paragraph lines share one `paragraph`
  *    block, since within a paragraph every line break is soft.
@@ -76,6 +92,7 @@ export interface SplitBlocksOptions {
  */
 export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Block[] {
   const lines = toLines(text);
+  const baselineIndent = options.baselineIndent ?? 0;
   const blocks: Block[] = [];
   let paragraphAtoms: Atom[] = [];
   let lastParagraphRawLine = '';
@@ -109,8 +126,8 @@ export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Blo
 
     if (literalBlockPending) {
       literalBlockPending = false; // this non-blank line resolves it either way
-      if (leadingWhitespaceLength(line) > 0) {
-        const run = matchIndentedRun(lines, i);
+      if (leadingWhitespaceLength(line) > baselineIndent) {
+        const run = matchIndentedRun(lines, i, baselineIndent);
         if (run) {
           blocks.push({ type: 'verbatim', lines: run.lines });
           i = run.nextIndex;
@@ -163,8 +180,8 @@ export function splitBlocks(text: string, options: SplitBlocksOptions = {}): Blo
       continue;
     }
 
-    if (options.preserveIndentedBlocks && leadingWhitespaceLength(line) > 0) {
-      const run = matchIndentedRun(lines, i);
+    if (options.preserveIndentedBlocks && leadingWhitespaceLength(line) > baselineIndent) {
+      const run = matchIndentedRun(lines, i, baselineIndent);
       if (run) {
         flushParagraph();
         blocks.push({ type: 'verbatim', lines: run.lines });

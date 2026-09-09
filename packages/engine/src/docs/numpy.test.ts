@@ -70,6 +70,29 @@ describe('numpyDialect.segment', () => {
     expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'sectionHeader', 'paragraph']);
   });
 
+  it('reflows an indented prose section (Notes) body as a paragraph, not a verbatim block, under preserveIndentedBlocks (regression)', () => {
+    // Same underlying bug as `./google.test.ts`'s parallel regression
+    // case, though narrower in practice: canonical numpydoc prose-section
+    // bodies are flush left, not hanging-indented under their
+    // header+underline the way Google's are (see the numpydoc format
+    // guide's own `Notes`/`Examples` examples), so most real-world NumPy
+    // docstrings never reach this code path with a nonzero first-line
+    // indent at all. A hand-indented (still entirely plausible, just
+    // non-canonical) body does reach it, and before `dedentBody` was
+    // applied ahead of `segmentLines` here (see `./numpy.ts`'s `segment`,
+    // `PROSE_SECTIONS` branch), `preserveIndentedBlocks`'s "any indented
+    // line becomes verbatim" rule (`../segmentation/split-blocks.ts`)
+    // misread that indent as a nested indented block and never reflowed
+    // it. NumPy's own `FIELD_SECTIONS` branch (`segmentFieldSection`) was
+    // never affected -- it establishes `baseIndent` positionally from the
+    // body's own first line rather than assuming column 0.
+    const text = ['Notes', '-----', '    Just some prose here, hand-indented under its header.'].join(
+      '\n',
+    );
+    const blocks = numpyDialect.segment(text, { preserveIndentedBlocks: true });
+    expect(blocks.map((b) => b.type)).toEqual(['sectionHeader', 'sectionHeader', 'paragraph']);
+  });
+
   it('includes a preamble before the first section as ordinary blocks', () => {
     const text = ['Summary.', '', 'Parameters', '----------', 'x : int', '    desc'].join('\n');
     const blocks = numpyDialect.segment(text, {});
