@@ -189,18 +189,48 @@ export function stripLeadingBlanks(lines: readonly string[]): readonly string[] 
  * indentation, strip it" logic just because its collection loop differs.
  */
 export function dedentBody(body: readonly string[]): readonly string[] {
-  let commonIndent: number | null = null;
-  for (const line of body) {
+  const indent = commonIndent(body);
+  if (!indent) {
+    return body;
+  }
+  return body.map((line) => (line.trim() === '' ? '' : line.slice(indent)));
+}
+
+/**
+ * The leading-whitespace width shared by every non-blank line in `lines`,
+ * or `0` if there are none -- the same "compute common indentation"
+ * computation `dedentBody` (above) performs before stripping it, factored
+ * out for a caller that needs just the number as a comparison baseline
+ * *without* mutating the text.
+ *
+ * That distinction matters: `../docs/google.ts`/`../docs/numpy.ts`'s own
+ * `PROSE_SECTIONS` section bodies need this rather than `dedentBody`
+ * itself, because unlike a `fieldEntry`'s description (dedented here,
+ * then re-indented structurally at emit time via the entry's own
+ * `hangingIndent`), a prose section's blocks are spliced flat into the
+ * document's top-level sequence with no such field to restore the
+ * stripped indent from. Physically dedenting that text would work for
+ * the `paragraph` blocks it produces (reflow never reads per-line source
+ * indentation back out for those) but silently truncates any nested
+ * `verbatim` block's *own* preserved absolute indentation instead (a
+ * doctest one level further indented than the rest of the section, say)
+ * -- confirmed as a real regression against
+ * `test/fixtures/python/docstrings/006-doctest-preserved` while fixing
+ * the section-body baseline bug this function exists for. Passed through
+ * as `../segmentation/split-blocks.ts`'s `SplitBlocksOptions.baselineIndent`
+ * instead, leaving the raw text -- and so any verbatim content's real
+ * indentation -- untouched.
+ */
+export function commonIndent(lines: readonly string[]): number {
+  let indent: number | null = null;
+  for (const line of lines) {
     if (line.trim() === '') {
       continue;
     }
-    const indent = leadingWhitespaceLength(line);
-    commonIndent = commonIndent === null ? indent : Math.min(commonIndent, indent);
+    const lineIndent = leadingWhitespaceLength(line);
+    indent = indent === null ? lineIndent : Math.min(indent, lineIndent);
   }
-  if (!commonIndent) {
-    return body;
-  }
-  return body.map((line) => (line.trim() === '' ? '' : line.slice(commonIndent)));
+  return indent ?? 0;
 }
 
 /**

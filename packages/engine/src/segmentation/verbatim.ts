@@ -126,10 +126,35 @@ export function matchTableBlock(lines: readonly string[], i: number): VerbatimMa
  *   syntactic marker rather than a heuristic;
  * - `WrapConfig.preserveIndentedBlocks`: *any* indented, non-list-marker
  *   line becomes verbatim when the option is on.
+ *
+ * `baselineIndent` (default `0`) is the column the caller's own ordinary
+ * (non-nested) content already sits at -- "indented" and the run's own
+ * end condition are both relative to it, not to column 0 unconditionally.
+ * A whole document's dissolved text is always baseline `0` (every caller
+ * except one omits this parameter for exactly that reason), but a
+ * dialect-supplied section body (`../docs/google.ts`/`../docs/numpy.ts`'s
+ * own `PROSE_SECTIONS` handling) is conventionally hanging-indented under
+ * its own flush-left header -- passing that section's own common indent
+ * here is what keeps its ordinary prose from being misread as an
+ * indented/verbatim block relative to the wrong (zero) baseline, while
+ * leaving genuinely deeper-nested content (an actual literal block, a
+ * doctest one level further in) still correctly recognized relative to
+ * *its* real margin. Deliberately a threshold passed in rather than the
+ * body's text being dedented first: dedenting first would work for
+ * `paragraph`/`fieldEntry` content (whose reflow never reads per-line
+ * source indentation back out) but silently truncates a verbatim block's
+ * *own* preserved absolute indentation (a nested doctest's real column,
+ * eventually re-added on top of the region's base indent at emit time) --
+ * confirmed as a real regression via `test/fixtures/python/docstrings/006-doctest-preserved`
+ * while fixing the section-body baseline bug this parameter closes.
  */
-export function matchIndentedRun(lines: readonly string[], i: number): VerbatimMatch | null {
+export function matchIndentedRun(
+  lines: readonly string[],
+  i: number,
+  baselineIndent = 0,
+): VerbatimMatch | null {
   const first = lines[i];
-  if (first === undefined || first.trim() === '' || leadingWhitespaceLength(first) === 0) {
+  if (first === undefined || first.trim() === '' || leadingWhitespaceLength(first) <= baselineIndent) {
     return null;
   }
   let j = i;
@@ -138,7 +163,7 @@ export function matchIndentedRun(lines: readonly string[], i: number): VerbatimM
     if (line.trim() === '') {
       continue;
     }
-    if (leadingWhitespaceLength(line) === 0) {
+    if (leadingWhitespaceLength(line) <= baselineIndent) {
       break;
     }
   }
