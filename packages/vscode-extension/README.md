@@ -288,8 +288,8 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
 - **Commented-out code** -- detected via punctuation density and
   Python's own keyword shapes, left verbatim rather than reflowed as prose.
 - **Template literals** (`` `...` ``) in JavaScript/TypeScript/TSX --
-  deferred the same way Python's own triple-quoted non-docstring strings
-  are, given `${}` interpolation and significant internal whitespace.
+  never wrapped, given `${}` interpolation and significant internal
+  whitespace.
 - **Text blocks** (`"""..."""`, Java 15+) -- the same node type as an
   ordinary string in Java's grammar, but never wrapped: a text block's
   own common-indentation-stripping and trailing-newline conventions have
@@ -312,6 +312,21 @@ Left byte-identical, deliberately, rather than risk mangling behavior:
   immediately followed by its own `\label{...}`), and a trailing `%`
   comment's own text (carried forward untouched with the prose line it
   trails) -- none of these are wrapped at all.
+
+Python's own triple-quoted non-docstring strings are *not* on the list
+above -- a single-part triple-quoted literal that looks like prose (for
+example, a plain `message = """..."""` assignment) **is** wrapped under
+the default `stringPolicy: 'prose'`, using the same structure-preserving
+reflow a docstring gets (fixtures `008-triple-quoted-single-line-prose`
+and `009-triple-quoted-multiline-prose`). This is the one string-wrap
+path in the whole package that isn't value-preserving the way every
+other case is: ordinary string-literal wrapping only ever splits via
+language-valid concatenation, which can't change a string's runtime
+value, but this path applies the same PEP-257 indent-stripping and
+paragraph-whitespace normalization a docstring already accepts -- which
+can change the string's actual contents. A multi-part triple-quoted
+concatenation run (`"""a""" """b"""`) is still left alone -- genuinely
+separate, unimplemented work.
 
 One thing worth naming as a **known, deliberate limitation** rather than
 a bug to report: continuation-line indentation for a split string

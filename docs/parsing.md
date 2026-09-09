@@ -164,8 +164,11 @@ convention `discoverRegions`'s concatenation-grouping algorithm already
 expected from Python's `binary_operator`; and template literals
 (`` ` ``-delimited) are a separate `template_string` node type, not
 matched by a plain `(string) @string` query -- consistent with the
-deliberate choice to defer template-literal wrapping the same way
-Python defers triple-quoted ordinary strings.
+deliberate choice to defer template-literal wrapping. (Python's own
+triple-quoted ordinary strings were deferred the same way at the time
+this finding was written; real support for the prose-shaped case shipped
+later -- see `docs/adapters.md`, "Triple-quoted non-docstring string
+literals".)
 
 ## Finding 6: `tree-sitter-cpp` -- one grammar, several genuinely new node shapes
 

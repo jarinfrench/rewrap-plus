@@ -246,8 +246,17 @@ eventually ships this.
 
 ### Known limitations
 
-- Template literals (`` `...` ``) are not wrapped -- deferred the same way
-  Python defers triple-quoted non-docstring strings.
+- Template literals (`` `...` ``) are not wrapped -- `${}` interpolation
+  and significant internal whitespace make them a different case from
+  Python's triple-quoted strings (see below), which *are* wrapped.
+- Python's non-docstring triple-quoted strings (a single-part literal
+  that looks like prose, e.g. `message = """..."""`) are wrapped under
+  the default `prose` string policy, reusing the same structure-preserving
+  reflow a docstring gets -- but the resulting wrap is not
+  value-preserving the way other string-literal wraps are: PEP-257
+  indent-stripping and paragraph-whitespace normalization can change the
+  string's actual contents. A multi-part triple-quoted concatenation run
+  is still left alone.
 - C++ raw string literals (`R"(...)"`) are never wrapped -- excluded from
   discovery entirely, since they parse as a separate grammar node the
   wrap engine never queries for.

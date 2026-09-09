@@ -215,10 +215,11 @@ identical shapes for everything this adapter work depends on:
   engine change at all to work for any of the three languages.
 - Template literals (`` `...` ``) are a separate `template_string` node
   type, never matched by a plain `(string) @string` query -- the
-  mechanism by which template-literal wrapping is deferred (the same way
-  Python's own triple-quoted non-docstring strings are deferred) is
-  simply *not adding that node type to the query*, not a special-case
-  refusal anywhere.
+  mechanism by which template-literal wrapping is deferred is simply *not
+  adding that node type to the query*, not a special-case refusal
+  anywhere. (Python's own triple-quoted non-docstring strings were once
+  deferred the same way, at the query level -- that's since changed; see
+  "Triple-quoted non-docstring string literals" below.)
 - TSX parses identically to plain TypeScript for every construct this
   work cares about (comments, strings, `+`-concatenation), whether
   they sit in an ordinary statement or inside a JSX attribute/expression
@@ -303,10 +304,12 @@ separately-tracked primary-only set.
   so this could be supported without conflating it with the JSDoc-marked
   form. Left here as the historical record of why it was excluded in the
   first place.
-- **Template literals are not wrapped** -- deferred the same way Python's
-  own triple-quoted non-docstring strings are, mechanically enforced by
+- **Template literals are not wrapped** -- mechanically enforced by
   `queries.strings` simply never capturing `template_string` nodes (see
-  the grammar findings above).
+  the grammar findings above). Python's own triple-quoted non-docstring
+  strings were deferred the same way at the time this canary was
+  written; that's since changed -- see "Triple-quoted non-docstring
+  string literals" below for the real support that shipped later.
 - **No `groupRegions` override for JavaScript/TypeScript** -- `//`
   comments still aren't merged across adjacent lines the way Python's
   are, the same open question the canary already deferred and this work
