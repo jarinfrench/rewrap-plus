@@ -74,6 +74,14 @@ cd packages/vscode-extension
 npm run test:integration
 ```
 
+This suite also runs in CI (`.github/workflows/ci.yml`'s `integration`
+job, under Xvfb on Linux), but as a non-blocking, informational job --
+`continue-on-error: true`, and not part of branch protection's required
+checks. That's a deliberate staged rollout, not an oversight: it's new
+CI automation without a track record on a runner yet, so it shouldn't be
+able to hold up a merge on day one. Graduating it to a required check is
+a future decision once it's proven stable; see `docs/known-gaps.md`.
+
 ## License
 
 MIT - see [LICENSE](./LICENSE). Third-party licenses for what the

@@ -52,6 +52,58 @@ jobs:
       - name: Dry-run site data generator
         run: node scripts/generate-site-data.mjs
 
+  integration:
+    name: VSCode integration tests (non-blocking)
+    # New CI automation, not yet proven stable on a runner -- continue-on-error
+    # keeps this from being able to hold up a merge on day one, while still
+    # showing a clearly visible warning (rather than a silently swallowed
+    # failure) on the PR checks list if it does fail. Not added to branch
+    # protection's required checks either, for the same reason -- see
+    # docs/known-gaps.md. Graduating both of those is a deliberate future
+    # decision once this has a track record on ubuntu-latest, not an
+    # oversight.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # packages/vscode-extension's own build (scripts/build.mjs) bundles
+      # @rewrap-plus/engine's *compiled* dist/ directly -- `npm run
+      # test:integration`'s own pretest step only rebuilds the extension
+      # itself, not the engine it depends on -- so the engine needs
+      # building here first, the same as the `ci` job's separate `npm run
+      # build` step above.
+      - name: Build
+        run: npm run build
+
+      # @vscode/test-electron downloads and launches a real VSCode build,
+      # which needs a display server on a headless Linux runner.
+      # GitHub's own ubuntu-latest image (Ubuntu 24.04) dropped Xvfb from
+      # its preinstalled packages in early 2025, so a bare `xvfb-run`
+      # would fail with "command not found" here rather than actually
+      # testing anything -- exactly the "works locally, hangs/fails in
+      # CI" trap this step is chosen to avoid. coactions/setup-xvfb
+      # installs Xvfb itself and wraps the given command with
+      # `xvfb-run`, the same pattern VS Code's own extension-testing docs
+      # recommend (https://code.visualstudio.com/api/working-with-extensions/continuous-integration).
+      - name: Run integration suite under Xvfb
+        uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
+        with:
+          working-directory: packages/vscode-extension
+          run: npm run test:integration
+
   pages:
     name: Build and deploy GitHub Pages site
     # Same "only deploy what already passed CI" pattern the tag-triggered

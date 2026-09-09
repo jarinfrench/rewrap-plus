@@ -47,6 +47,30 @@ a Marketplace/Open VSX listing, add install badges/links to the site's
 "Getting it" section in the same commit that flips the CLI/extension's
 own README claims.
 
+## VSCode integration suite runs in CI but isn't a merge gate yet
+
+**What's missing.** `.github/workflows/ci.yml`'s `integration` job now runs
+the real-VSCode-host suite (`packages/vscode-extension/test/integration/`,
+16 spec files covering command registration, activation, and edit
+application in an actual Extension Host) on every PR and push, under
+Xvfb (`coactions/setup-xvfb`) on `ubuntu-latest`. It is not, however, a
+required check in branch protection, and the job carries
+`continue-on-error: true` -- a failing run shows as a clearly visible
+warning on the PR checks list, but cannot block a merge.
+
+**Why deferred.** This is new CI automation with no track record yet on
+a hosted runner (display-server quirks, Extension Host download
+flakiness, and timing sensitivity are all plausible failure modes that
+only show up under real CI load, not locally). Making it a required
+check before it's demonstrated it can pass reliably would risk blocking
+merges on infrastructure flakiness rather than real regressions -- the
+opposite of what a release-readiness gate should do.
+
+**Next step.** Once this job has a run of green (or at least
+understood-and-triaged) results across enough PRs to trust it, promote
+it to a required status check in the repository's branch protection
+settings and drop `continue-on-error` from the job.
+
 ## No internationalization (`vscode.l10n`)
 
 **What's missing.** Every user-facing string -- command titles, setting
