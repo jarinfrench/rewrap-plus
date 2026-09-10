@@ -131,6 +131,7 @@ async function main() {
     throw new Error(
       `generate-site-data: failed to import '@rewrap-plus/engine' -- has it been built yet? ` +
         `Run 'npm run build' first. Underlying error: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 

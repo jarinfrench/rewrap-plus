@@ -80,7 +80,9 @@ async function stress(
         const first = await wrapRegions(source, languageId, 'all', cfg, parserManager);
         wrapped = applyTextEdits(source, first.edits);
       } catch (e) {
-        throw new Error(`[${label}] threw at columnLimit=${columnLimit} balanced=${balancedWrapping}: ${e}`);
+        throw new Error(`[${label}] threw at columnLimit=${columnLimit} balanced=${balancedWrapping}: ${e}`, {
+          cause: e,
+        });
       }
 
       // Triple-wrap idempotency chain, not just double.
