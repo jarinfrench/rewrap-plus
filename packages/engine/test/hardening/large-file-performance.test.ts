@@ -74,7 +74,7 @@ interface LanguageSet {
   readonly warmUpSource: string;
   /**
    * Bound for "wrap a single region near the cursor," below -- defaults
-   * to 200ms (every language before LaTeX). `discoverRegions`
+   * to 500ms (every language before LaTeX). `discoverRegions`
    * (`../../src/wrap.ts`) runs discovery on the *whole* tree regardless
    * of `targets`, filtering to the requested region only afterward -- so
    * "near-instant, independent of file size" was never literally true of
@@ -83,7 +83,7 @@ interface LanguageSet {
    * narrowed things down. That distinction stayed invisible for every
    * adapter before LaTeX because a single tree-sitter query pass is
    * cheap enough, even at 5,000 lines, that discovery's own cost never
-   * dominated the 200ms budget. LaTeX's `discoverLatexProse`
+   * dominated the 500ms budget. LaTeX's `discoverLatexProse`
    * (masked line scan, Sec. 6.2) is a genuinely more expensive discovery
    * mechanism -- a combined whole-tree `descendantsOfType` walk (once
    * sixteen separate single-type walks, until a real ~17x cost found and
@@ -294,7 +294,7 @@ beforeAll(async () => {
 
 describe.each(LANGUAGE_SETS)(
   'large-file performance ($languageId)',
-  ({ languageId, commentMarker, generateFile, warmUpSource, nearCursorBoundMs = 200 }) => {
+  ({ languageId, commentMarker, generateFile, warmUpSource, nearCursorBoundMs = 500 }) => {
     it('wraps a 1,000-line file in well under a second', async () => {
       const source = generateFile(1_000);
       const t0 = Date.now();
@@ -322,14 +322,20 @@ describe.each(LANGUAGE_SETS)(
 
     it('wraps a single region near the cursor in a large file near-instantly, independent of file size', async () => {
       // The stated budget: "wrap-at-cursor should feel instant (< 50 ms
-      // after warm grammar load)." A generous 200ms default bound (this
-      // machine's own measured number was ~30ms for Python) rather than
-      // literally 50 -- CI hardware varies, and the property under test is
-      // "independent of file size," not a tight latency SLA. LaTeX
-      // overrides this default (`nearCursorBoundMs` on its own
-      // `LANGUAGE_SETS` entry, and that field's own doc comment) since
-      // its discovery mechanism is genuinely, and measurably, more
-      // expensive per line than every other adapter's query-based one.
+      // after warm grammar load)." A generous 500ms default bound (this
+      // machine's own measured numbers ranged ~30ms for Python up to
+      // ~125ms for TypeScript/C++, per docs/benchmarks.md) rather than
+      // literally 50 -- CI hardware varies, and on a shared runner this
+      // suite's own other CPU-bound tests run alongside this one add real
+      // contention on top of that (observed on CI: every language before
+      // LaTeX occasionally exceeding a 200ms bound here, the same
+      // contention effect the LaTeX override's own doc comment describes
+      // measuring directly). The property under test is "independent of
+      // file size," not a tight latency SLA. LaTeX overrides this default
+      // (`nearCursorBoundMs` on its own `LANGUAGE_SETS` entry, and that
+      // field's own doc comment) since its discovery mechanism is
+      // genuinely, and measurably, more expensive per line than every
+      // other adapter's query-based one.
       const source = generateFile(5_000);
       await wrapRegions(warmUpSource, languageId, 'all', cfg, parserManager); // warm the grammar first
 

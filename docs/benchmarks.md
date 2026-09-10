@@ -77,11 +77,18 @@ future feature work, not a tight SLA -- see that file's own doc comment).
 (JavaScript), **~125 ms** (TypeScript), **~125 ms** (C++), **~75 ms**
 (Java) -- all, like Python's ~30 ms above, independent of the surrounding
 file's size. Higher than Python's own ~30 ms, but still comfortably under
-the ~50-200 ms range that suite's own `nearCursorBoundMs` treats as
+the ~50-500 ms range that suite's own `nearCursorBoundMs` treats as
 "near-instant" for every language before LaTeX; the gap against Python is
 consistent with these being a single one-time measurement run rather than
 Python's own more heavily profiled and re-verified number, not evidence
-of a real per-language difference.
+of a real per-language difference. The bound itself is wider than these
+isolated numbers alone would need (200 ms would already cover ~125 ms
+with margin) because the suite runs every language's near-cursor case,
+plus its 1k/10k/50k-line cases, back to back in one CI job -- real CPU
+contention pushed the 200 ms version of this bound past 260 ms on
+GitHub-hosted runners for languages well under that in isolation, the
+same effect the LaTeX override's own doc comment describes measuring
+directly for its much larger bound.
 
 ### Markdown
 
