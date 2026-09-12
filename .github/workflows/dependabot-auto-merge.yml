@@ -1,0 +1,86 @@
+name: Dependabot auto-merge
+
+# Auto-approves and queues auto-merge for the subset of Dependabot PRs judged
+# low-risk enough not to need a human look first, once `ci.yml`'s required
+# checks pass. Everything else (production npm dependencies, and any npm
+# update dependabot itself classifies above patch/minor) is left alone for
+# manual review -- this workflow only ever approves/merges, never blocks;
+# a PR it skips just sits exactly as it would have without this workflow.
+#
+# GitHub Actions bumps are treated as always-eligible regardless of semver
+# size: Actions version their release tags as bare majors (v5, v6, v7...),
+# so dependabot classifies nearly every Actions bump as "semver-major" even
+# for what upstream considers a routine release -- restricting by semver
+# size the way npm updates are below would, in practice, exclude nearly
+# every Actions PR dependabot opens (confirmed directly: all four Actions
+# bumps merged in PRs #2/#3/#10-#13 were classified semver-major). Actions
+# also only ever run at CI/build time, never ship in the packaged
+# extension, so the blast radius of a bad one is "this repo's CI breaks
+# and gets reverted," not "a user's editor breaks."
+#
+# npm updates instead gate on both `dependency-type: direct:development`
+# and semver patch/minor: a production dependency (`web-tree-sitter`,
+# `@rewrap-plus/engine`) ships inside the actual extension, so any bump --
+# even a patch -- stays manual. A devDependency major bump also stays
+# manual: that's exactly the class of change PR #8 (typescript 5->7) and
+# PR #7 (@eslint/js, before #6 landed eslint 10 first) hit real upstream
+# peer-dependency breakage in, the kind of thing worth a human looking at
+# the changelog for before merging.
+#
+# Known gap this doesn't close: `npm test` (this repo's CI-required gate)
+# never runs `npm run test:coverage`, so a `vitest`/`@vitest/coverage-v8`
+# version mismatch between the two isn't visible to CI at all -- verified
+# directly by checking out each PR in isolation (see PRs #15/#16): vitest
+# 5 alone kept working against the old coverage-v8 (marked as an optional
+# peer), but coverage-v8 5 alone crashed at runtable time against the old
+# vitest ("Cannot find package '@vitest/coverage-v8'"). Both are
+# devDependency patch/minor-eligible-looking bumps that this workflow's
+# own rule can't distinguish from any other safe devDependency update.
+# Closing this for good means teaching CI to actually run
+# `test:coverage`, not something this workflow can compensate for on its
+# own -- until then, a `vitest`/`@vitest/coverage-v8` pair landing in
+# either order is still worth a manual check before (or right after)
+# auto-merge picks it up.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Dependabot PRs get a read-only GITHUB_TOKEN regardless of the
+      # permissions block above (a GitHub-enforced restriction on
+      # dependabot-triggered runs, not something this file controls) --
+      # approving and merging both need real write access, which is why
+      # this step authenticates with a separate PAT instead. It also has
+      # to be a PAT belonging to a repo code owner specifically: branch
+      # protection requires a code-owner review, `.github/CODEOWNERS`
+      # lists only @jarinfrench, and an approval from the default
+      # `github-actions[bot]` identity wouldn't satisfy that requirement
+      # even with write access.
+      - name: Approve and enable auto-merge
+        if: |
+          steps.metadata.outputs.package-ecosystem == 'github_actions' ||
+          (steps.metadata.outputs.package-ecosystem == 'npm_and_yarn' &&
+           steps.metadata.outputs.dependency-type == 'direct:development' &&
+           (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+            steps.metadata.outputs.update-type == 'version-update:semver-minor'))
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --merge "$PR_URL"
