@@ -1,3 +1,10 @@
-# Single maintainer -- this exists to make "who do I ask" self-answering,
-# not to gate merges (no branch protection currently requires review).
+# Single maintainer. This originally existed only to make "who do I
+# ask" self-answering, not to gate merges -- that's no longer accurate:
+# main's branch protection now requires an approving review from a
+# code owner (required_approving_review_count: 1,
+# require_code_owner_reviews: true), so this file does gate merges.
+# .github/workflows/dependabot-auto-merge.yml's own PAT-based approval
+# step exists specifically because that requirement can only be
+# satisfied by a real code owner, never by the default
+# github-actions[bot] identity -- see that workflow's own doc comment.
 * @jarinfrench
