@@ -43,7 +43,20 @@ name: Dependabot auto-merge
 # auto-merge picks it up.
 
 on:
-  pull_request:
+  # Not `pull_request`: GitHub withholds repo-configured secrets from
+  # `pull_request`-triggered runs whose actor is `dependabot[bot]`, treating
+  # them the same as fork PRs even though Dependabot pushes branches to this
+  # same repo. That meant `secrets.DEPENDABOT_AUTOMERGE_PAT` below resolved
+  # to an empty string at runtime -- `gh` refused to run at all (exit 4,
+  # "set the GH_TOKEN environment variable") -- confirmed directly against
+  # PRs #18 and #20, both eligible npm devDependency patch/minor bumps that
+  # should have auto-merged. `pull_request_target` runs in the base repo's
+  # context instead, which does have secret access. It's safe here
+  # specifically because this job never checks out the PR's code -- it only
+  # calls `gh pr review`/`gh pr merge` against the GitHub API -- so none of
+  # the usual "don't run untrusted PR content with elevated permissions"
+  # risk that trigger normally carries applies.
+  pull_request_target:
     branches: [main]
 
 permissions:
