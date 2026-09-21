@@ -41,6 +41,14 @@ name: Dependabot auto-merge
 # own -- until then, a `vitest`/`@vitest/coverage-v8` pair landing in
 # either order is still worth a manual check before (or right after)
 # auto-merge picks it up.
+#
+# Same shape of gap, different pair: `@types/vscode` can auto-merge ahead
+# of `packages/vscode-extension/package.json`'s `engines.vscode` floor,
+# since only `vsce package` catches that mismatch and nothing in
+# `ci.yml` runs it. See `docs/known-gaps.md` ("`@types/vscode` can drift
+# ahead of `engines.vscode`") -- caught in practice by PR d3f804d, which
+# auto-merged clean and only surfaced when `vsce package` was run by hand
+# afterward.
 
 on:
   # Not `pull_request`: GitHub withholds repo-configured secrets from

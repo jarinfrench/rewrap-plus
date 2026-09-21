@@ -71,6 +71,45 @@ understood-and-triaged) results across enough PRs to trust it, promote
 it to a required status check in the repository's branch protection
 settings and drop `continue-on-error` from the job.
 
+## `@types/vscode` can drift ahead of `engines.vscode` without CI or auto-merge noticing
+
+**What's missing.** Nothing in `.github/workflows/ci.yml` or
+`.github/workflows/dependabot-auto-merge.yml` checks that
+`packages/vscode-extension/package.json`'s `devDependencies["@types/vscode"]`
+stays within `engines.vscode`. `vsce package` is the only thing in this
+repo that enforces that constraint (it refuses to package when the ambient
+types claim a newer minimum VS Code version than `engines.vscode`
+declares), and `vsce package` isn't run anywhere in CI -- only manually, by
+whoever runs `npm run package` to build a `.vsix`. A routine
+`@types/vscode` devDependency bump is exactly the shape of PR this repo's
+auto-merge workflow is designed to wave through unattended (`npm_and_yarn`,
+`direct:development`, semver patch/minor) -- and did: dependabot's
+1.134.0 -> 1.137.0 bump (`d3f804d`) auto-merged clean while
+`engines.vscode` stayed at `^1.122.0`, and the mismatch surfaced only when
+`vsce package --no-dependencies` was run by hand afterward, well after the
+PR had already merged.
+
+**Why deferred.** Fixing this properly means either running `vsce package`
+(at least a dry-run/`--no-dependencies` invocation) in `ci.yml` so the
+mismatch fails CI directly, or adding a dedicated version-comparison check
+-- both are a deliberate CI change, not something to bolt on silently while
+fixing one instance of the drift (see `dd386d5`, which just pins
+`@types/vscode` back down to `^1.122.0` for now). The vitest/
+`@vitest/coverage-v8` gap documented in `dependabot-auto-merge.yml`'s own
+top-of-file comment is the same shape of problem (a devDependency pair
+whose compatibility constraint isn't visible to any required check), and
+both point at the same underlying fix: CI's `test`/`build` jobs don't
+actually exercise everything `npm run test:coverage` and `npm run package`
+would.
+
+**Next step.** Add a step to `ci.yml` that runs
+`npm run package --workspace packages/vscode-extension` (discarding the
+`.vsix` output, the same dry-run pattern already used for
+`generate-site-data.mjs`) so an `@types/vscode`/`engines.vscode` mismatch
+fails CI on the PR that introduces it, before dependabot auto-merge (or a
+human) ever gets a chance to merge it. Once that's in place and proven
+stable, it's a natural candidate for a required check.
+
 ## No internationalization (`vscode.l10n`)
 
 **What's missing.** Every user-facing string -- command titles, setting
