@@ -104,6 +104,80 @@ jobs:
           working-directory: packages/vscode-extension
           run: npm run test:integration
 
+  polyscan:
+    name: Structural analysis report (non-blocking)
+    # Informational only -- polyscan (github.com/ludo-technologies/polyscan)
+    # surfaces complexity/dead-code/clone/coupling/dependency-cycle signal
+    # that eslint-plugin-security and the typecheck/test/lint/build gate
+    # above don't cover (see issue #26), but its findings need a human
+    # triage call the same way the ad hoc run that seeded #26 did -- a
+    # duplicated block found across two language adapters can be
+    # intentional per-language parallelism rather than a bug, for example.
+    # continue-on-error + not in `needs` for anything else keeps this from
+    # ever blocking a merge, matching the `integration` job's own
+    # non-blocking pattern above rather than inventing a second one.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      # polyscan is a pinned, `npm ci`-installed root devDependency (see
+      # root package.json), not resolved through a bare `npx polyscan` --
+      # this job's checkout + this install step give it full repo source
+      # and (implicitly, via the default GITHUB_TOKEN) some API access,
+      # so an unpinned `npx --yes polyscan` would mean every run silently
+      # trusts whatever the latest npm publish of a third-party package
+      # does with that. Pinning to an exact, reviewed version means a
+      # compromised or misbehaving future release can't affect this job
+      # until someone deliberately bumps the version.
+      - name: Install dependencies
+        run: npm ci
+
+      # Text report straight to the job log -- the fastest way to see a
+      # regression without leaving the PR's checks tab. `--no-open` isn't
+      # needed here since `--format text` already skips the HTML/browser
+      # path entirely; only the `-o` run below produces HTML.
+      - name: Run polyscan (text summary)
+        run: npx polyscan analyze . --format text
+
+      # `if: ${{ !cancelled() }}` on this step and the upload below: this
+      # job is explicitly non-blocking (`continue-on-error: true`), but
+      # that only stops a failure from failing the *job* -- without an
+      # `if:`, a nonzero exit from the text-summary step above would
+      # still make GitHub Actions skip every step after it, silently
+      # losing the HTML artifact on exactly the runs (a polyscan crash, a
+      # bad install, a future version that starts using its exit code for
+      # findings) where having it to inspect matters most. `!cancelled()`
+      # (rather than `always()`) still respects an operator-initiated
+      # workflow cancellation, unlike `always()`.
+      #
+      # Same analysis, HTML this time, uploaded the same way the
+      # `package` job's own .vsix output is -- so anyone who wants the
+      # interactive report (clone-group detail, per-function drilldown)
+      # can pull it from the workflow run instead of running polyscan
+      # locally. `--no-open` matters here: polyscan's HTML default is to
+      # launch a local browser, which would hang a headless runner.
+      - name: Run polyscan (HTML report)
+        if: ${{ !cancelled() }}
+        run: npx polyscan analyze . --no-open -o polyscan-report.html
+
+      - name: Upload polyscan HTML report as a workflow artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: polyscan-report
+          path: polyscan-report.html
+          if-no-files-found: error
+
   pages:
     name: Build and deploy GitHub Pages site
     # Same "only deploy what already passed CI" pattern the tag-triggered

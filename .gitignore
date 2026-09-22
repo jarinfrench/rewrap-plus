@@ -51,3 +51,8 @@ docs/planning/
 # registry -- never hand-edited, and never committed, so it can't become
 # a second stale source of truth for language coverage.
 site/data/languages.json
+
+# HTML report from `npx polyscan analyze` (the `polyscan` job in
+# .github/workflows/ci.yml uploads this as a workflow artifact instead of
+# committing it -- see that job for the rationale).
+polyscan-report.html
