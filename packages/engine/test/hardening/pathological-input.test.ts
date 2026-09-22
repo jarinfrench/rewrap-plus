@@ -260,6 +260,7 @@ describe.each(LANGUAGE_SETS)(
 
       const wrapped = applyTextEdits(source, result.edits);
       const markerEscaped = commentMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // eslint-disable-next-line security/detect-non-literal-regexp -- `commentMarker` comes from this test suite's own fixed, hardcoded per-language `describe.each` table (never document/fixture content) and is regex-escaped immediately above; test-only code, not a path that ever sees a wrapped document's own text.
       const mixedIndentPattern = new RegExp(`^\\t+ +${markerEscaped}`);
       for (const line of wrapped.split('\n')) {
         // Whatever indent a re-emitted line carries, it's consistently one

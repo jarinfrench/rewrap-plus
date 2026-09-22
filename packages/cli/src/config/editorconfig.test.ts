@@ -115,4 +115,14 @@ describe('matchesEditorConfigGlob', () => {
     expect(matchesEditorConfigGlob(manyStars, dir, 'C:/project/a/b/c.txt')).toBe(false);
     expect(Date.now() - start).toBeLessThan(1000);
   });
+
+  it('treats a malformed character class as a non-match instead of throwing', () => {
+    // `globToRegExpSource` passes a `[...]` body through uninterpreted
+    // (only `\` is escaped), so a workspace-supplied section header like
+    // `[z-a]` -- an out-of-order range, a plain typo a real .editorconfig
+    // could contain -- reaches `new RegExp` as invalid source and used to
+    // throw `SyntaxError` straight out of this function.
+    expect(() => matchesEditorConfigGlob('[z-a]', dir, 'C:/project/a.py')).not.toThrow();
+    expect(matchesEditorConfigGlob('[z-a]', dir, 'C:/project/a.py')).toBe(false);
+  });
 });

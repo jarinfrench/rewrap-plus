@@ -55,4 +55,14 @@ describe('matchesGlob', () => {
     expect(matchesGlob(manyStars, 'a/b/c.txt')).toBe(false);
     expect(Date.now() - start).toBeLessThan(1000);
   });
+
+  it('treats a malformed character class as a non-match instead of throwing', () => {
+    // Same fix as packages/cli/src/config/editorconfig.ts's
+    // matchesEditorConfigGlob: `globToRegExpSource` passes a `[...]` body
+    // through uninterpreted, so a workspace-supplied `rewrapPlus.stringWrapInclude`
+    // entry like `[z-a]` -- an out-of-order range -- used to reach
+    // `new RegExp` as invalid source and throw `SyntaxError`.
+    expect(() => matchesGlob('[z-a]', 'a.py')).not.toThrow();
+    expect(matchesGlob('[z-a]', 'a.py')).toBe(false);
+  });
 });
