@@ -57,6 +57,7 @@ async function showResolvedConfig(context: vscode.ExtensionContext): Promise<voi
   );
   channel.appendLine(`  stringPolicy: ${resolved.wrapConfig.stringPolicy}`);
   channel.appendLine(`  docDialect: ${resolved.wrapConfig.docDialect}`);
+  channel.appendLine(`  docstringHangingIndent: ${resolved.wrapConfig.hangingIndentStyle}`);
   channel.appendLine(`  preserveIndentedBlocks: ${resolved.wrapConfig.preserveIndentedBlocks}`);
   channel.appendLine(`  balancedWrapping: ${resolved.wrapConfig.balancedWrapping}`);
   channel.appendLine(`  tabSize: ${resolved.wrapConfig.tabSize}`);

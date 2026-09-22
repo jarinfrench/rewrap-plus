@@ -3,13 +3,13 @@ def fetch(url, timeout=30):
     return its decoded body as text.
 
     :param url: The fully qualified URL to fetch,
-                including its scheme.
+        including its scheme.
     :param timeout: Maximum number of seconds to
-                    wait before giving up.
+        wait before giving up.
     :returns: The decoded response body, ready for
-              the caller to parse.
+        the caller to parse.
     :rtype: str
     :raises TimeoutError: If the request does not
-                          complete within timeout.
+        complete within timeout.
     """
     return _do_fetch(url, timeout)

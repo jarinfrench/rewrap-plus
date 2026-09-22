@@ -52,7 +52,34 @@ export type Block =
   | {
       readonly type: 'fieldEntry';
       readonly label: string;
+      /**
+       * Columns every *continuation* line (the entry's own description
+       * past its first line, and any further nested blocks) is indented
+       * by. Independent of `labelIndent`, below -- see that field's own
+       * doc comment for why the two can differ.
+       */
       readonly hangingIndent: number;
+      /**
+       * Columns reserved on the entry's *first* line for its own leading
+       * indent plus `label` plus one separating space, before reflowed
+       * content begins -- what `../reflow/decorate-block.ts`'s
+       * `markerPrefix` positions `label` against, and what
+       * `../reflow/reflow-block.ts` reserves as `firstLineReserve` when
+       * filling that first line.
+       *
+       * Usually equal to `hangingIndent` (a longer label pushes the
+       * continuation column out to match, `WrapConfig.hangingIndentStyle
+       * === 'aligned'`), but not always: under `'fixed'` continuation
+       * indent, every field in a docstring shares one small, constant
+       * `hangingIndent` regardless of label length, while `labelIndent`
+       * still grows with the label so it renders correctly on line one
+       * -- `labelIndent` can legitimately exceed `hangingIndent` in that
+       * case (a label wider than the fixed continuation column). Kept as
+       * its own field, not derived from `label.length` at the two call
+       * sites that need it, so both stay agnostic to how a dialect chose
+       * to compute it.
+       */
+      readonly labelIndent: number;
       /**
        * The entry's description, as nested blocks rather than a flat atom
        * stream -- `blocks[0]` is conventionally the description's own

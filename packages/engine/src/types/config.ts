@@ -60,6 +60,31 @@ export interface WrapConfig {
   readonly balancedWrapping: boolean;
 
   /**
+   * How a field-entry's (`:param x:`, `x (int):`, `@param x`, ...)
+   * continuation lines are indented, in every dialect built on
+   * `../docs/field-entries.ts`'s shared `groupFieldEntries` (Google,
+   * Sphinx, Doxygen, Javadoc, JSDoc -- NumPy is exempt, its own entries
+   * never put a label and description on the same line to begin with):
+   * - `'fixed'` -- one consistent extra indent level
+   *   (`continuationIndentWidth`, 4 columns) past the entry's own indent,
+   *   regardless of the label's length. The default: every field in a
+   *   docstring lands at the same continuation column, so touching one
+   *   field's wrap never changes another untouched field's indentation.
+   * - `'aligned'` -- continuation lines align under the description text
+   *   that follows the label on its own first line, so the indent grows
+   *   with the label's length (`:param a_much_longer_name:` indents
+   *   deeper than `:param x:`). Visually tidy for a hand-written
+   *   docstring where every field already uses this convention
+   *   consistently, but a longer label in one field doesn't change any
+   *   other field's own alignment, so it's opt-in rather than the
+   *   default.
+   *
+   * Optional; a caller that omits it gets `'fixed'`, same as explicitly
+   * setting it -- see `../docs/field-entries.ts`'s own default parameter.
+   */
+  readonly hangingIndentStyle?: 'fixed' | 'aligned';
+
+  /**
    * Adapter-specific override, e.g. forcing a particular concatenation
    * style. Opaque to the engine core; interpreted by the active language
    * adapter, if it recognizes it.

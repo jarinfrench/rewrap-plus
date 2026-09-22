@@ -147,7 +147,14 @@ function segmentFieldSection(body: readonly string[], options: SplitBlocksOption
       blocks.push({
         type: 'fieldEntry',
         label: '',
+        // `hangingIndentStyle` doesn't apply here: NumPy's label is
+        // always empty (the description starts on its own line below the
+        // `name : type` header, never sharing a line with a label the
+        // way Google/Sphinx/Doxygen/Javadoc/JSDoc entries do), so there's
+        // no label length for `'aligned'`/`'fixed'` to differ over --
+        // `labelIndent` and `hangingIndent` coincide unconditionally.
         hangingIndent: descriptionIndent,
+        labelIndent: descriptionIndent,
         blocks: segmentLines(stripLeadingBlanks(dedentBody(descriptionLines)), options),
       });
     }

@@ -54,6 +54,7 @@ describe('Block', () => {
       type: 'fieldEntry',
       label: 'x',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [{ type: 'paragraph', atoms: [atom('The'), atom('x'), atom('coordinate.')] }],
     };
 
@@ -77,6 +78,7 @@ describe('LogicalDocument', () => {
           type: 'fieldEntry',
           label: 'name',
           hangingIndent: 4,
+          labelIndent: 4,
           blocks: [{ type: 'paragraph', atoms: [atom('The'), atom('name.')] }],
         },
       ],

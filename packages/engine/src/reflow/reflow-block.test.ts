@@ -189,6 +189,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [{ type: 'paragraph', atoms: words('The', 'x', 'coordinate,', 'in', 'pixels.') }],
     };
     expect(reflowBlock(block, 15, block.hangingIndent)).toEqual([
@@ -214,6 +215,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:', // length 9 -> hangingIndent 10
       hangingIndent: 10,
+      labelIndent: 10,
       blocks: [{ type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('aaaaa', 'bbb') }],
     };
     const availableWidth = 20;
@@ -247,6 +249,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [
         { type: 'paragraph', atoms: words('Opens', 'with', 'prose.') },
         { type: 'blank' },
@@ -288,6 +291,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 10,
+      labelIndent: 10,
       blocks: [{ type: 'verbatim', lines: ['```', 'code', '```'] }],
     };
     const reflowed = reflowBlock(block, 40, block.hangingIndent, {
@@ -306,6 +310,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [
         { type: 'paragraph', atoms: words('Example:') },
         { type: 'verbatim', lines: ['```', 'code', '```'] },
@@ -320,7 +325,13 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
   });
 
   it('reflows an empty fieldEntry (no nested blocks) to a single empty line', () => {
-    const block: Block = { type: 'fieldEntry', label: ':param x:', hangingIndent: 4, blocks: [] };
+    const block: Block = {
+      type: 'fieldEntry',
+      label: ':param x:',
+      hangingIndent: 4,
+      labelIndent: 4,
+      blocks: [],
+    };
     expect(reflowBlock(block, 40, block.hangingIndent)).toEqual(['']);
   });
 
@@ -337,6 +348,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 10,
+      labelIndent: 10,
       blocks: [{ type: 'verbatim', lines: ['```', 'print("a")', '', 'print("b")', '```'] }],
     };
     const reflowed = reflowBlock(block, 40, block.hangingIndent, {
@@ -356,6 +368,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [
         { type: 'paragraph', atoms: words('Example:') },
         { type: 'verbatim', lines: ['```', 'print("a")', '', 'print("b")', '```'] },
@@ -386,6 +399,7 @@ describe('reflowBlock -- greedy fill for listItem and fieldEntry', () => {
       type: 'fieldEntry',
       label: 'x:',
       hangingIndent: 4,
+      labelIndent: 4,
       blocks: [
         { type: 'listItem', marker: '-', hangingIndent: 2, atoms: words('outer', 'item') },
         { type: 'listItem', marker: '-', hangingIndent: 6, atoms: words('inner', 'item') },

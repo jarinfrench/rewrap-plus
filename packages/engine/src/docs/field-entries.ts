@@ -90,15 +90,27 @@ export function groupFieldEntries(
     }
 
     const entryIndent = leadingWhitespaceLength(line);
-    // At least wide enough for the label itself plus one separating
-    // space -- `../reflow/decorate-block.ts`'s `markerPrefix` needs
-    // `hangingIndent > label.length` to place that space at all, and a
-    // label longer than the conventional `continuationIndentWidth` (a
+    // `labelIndent` is at least wide enough for the label itself plus one
+    // separating space -- `../reflow/decorate-block.ts`'s `markerPrefix`
+    // needs `labelIndent > label.length` to place that space at all, and
+    // a label longer than the conventional `continuationIndentWidth` (a
     // longer parameter name, a Sphinx `:raises SomeLongException:`) is
     // entirely normal input, not an edge case worth falling back to
-    // `markerPrefix`'s own defensive "no room" branch for.
+    // `markerPrefix`'s own defensive "no room" branch for -- so this is
+    // computed the same way regardless of `hangingIndentStyle`.
+    //
+    // `hangingIndent` (the *continuation*-line indent) is where the two
+    // styles genuinely differ: `'aligned'` reuses `labelIndent` itself,
+    // so continuation lines line up under the label's own description
+    // text (deeper for a longer label); `'fixed'` (the default -- see
+    // `../types/config.ts`'s `WrapConfig.hangingIndentStyle`) always uses
+    // one flat `continuationIndentWidth` past the entry's own indent, so
+    // every field in a docstring shares the same continuation column no
+    // matter its label length -- touching one field never changes
+    // another untouched field's indentation.
+    const labelIndent = entryIndent + Math.max(continuationIndentWidth, entry.label.length + 1);
     const hangingIndent =
-      entryIndent + Math.max(continuationIndentWidth, entry.label.length + 1);
+      options.hangingIndentStyle === 'aligned' ? labelIndent : entryIndent + continuationIndentWidth;
     i++;
     const { body, nextIndex } = collectEntryBody(lines, i, entryIndent, matchEntryStart);
     i = nextIndex;
@@ -121,6 +133,7 @@ export function groupFieldEntries(
       type: 'fieldEntry',
       label: entry.label,
       hangingIndent,
+      labelIndent,
       blocks: segmentLines(bodyLines, options),
     });
   }

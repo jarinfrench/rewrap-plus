@@ -244,6 +244,17 @@ eventually ships this.
   gives both forms the identical delimiter and node type. None of the
   five declares string-literal support -- see "Known limitations" below.
 
+- **`rewrapPlus.docstringHangingIndent`**: how a field entry's (`:param
+  x:`, `x (int):`, `@param x`, ...) continuation lines are indented,
+  across every dialect built on `groupFieldEntries` (Google, Sphinx,
+  Doxygen, Javadoc, JSDoc; NumPy is unaffected, its entries never share a
+  line with their label to begin with). `fixed` (the new default) uses
+  one consistent extra indent level past a field's own indent regardless
+  of label length, so rewrapping one field never reformats an untouched
+  sibling field's indentation. `aligned` restores the previous behavior
+  -- continuation lines align under the description text following the
+  label, so the indent grows with the label's length.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped -- `${}` interpolation

@@ -34,6 +34,7 @@ describe('decorateFirstLine', () => {
       type: 'fieldEntry',
       label: ':param x:',
       hangingIndent: 10, // label.length (9) + 1 separating space, no leading indent
+      labelIndent: 10,
       blocks: [],
     };
     expect(decorateFirstLine(block, ['desc', 'more'])).toEqual([':param x: desc', 'more']);
@@ -75,7 +76,13 @@ describe('decorateFirstLine', () => {
     const listItem: Block = { type: 'listItem', marker: '-', hangingIndent: 2, atoms: [] };
     expect(decorateFirstLine(listItem, [''])).toEqual(['-']);
 
-    const fieldEntry: Block = { type: 'fieldEntry', label: 'x:', hangingIndent: 3, blocks: [] };
+    const fieldEntry: Block = {
+      type: 'fieldEntry',
+      label: 'x:',
+      hangingIndent: 3,
+      labelIndent: 3,
+      blocks: [],
+    };
     expect(decorateFirstLine(fieldEntry, [''])).toEqual(['x:']);
 
     // A later line, if any, is untouched -- only lines[0] is ever decorated.
@@ -83,9 +90,15 @@ describe('decorateFirstLine', () => {
 
     // An empty *label* (NumPy's own convention) degrades to a fully
     // empty line, not a dangling single space -- `markerPrefix('',
-    // hangingIndent)` is pure padding to begin with, so trimming it
+    // labelIndent)` is pure padding to begin with, so trimming it
     // clears it entirely.
-    const numpyEntry: Block = { type: 'fieldEntry', label: '', hangingIndent: 4, blocks: [] };
+    const numpyEntry: Block = {
+      type: 'fieldEntry',
+      label: '',
+      hangingIndent: 4,
+      labelIndent: 4,
+      blocks: [],
+    };
     expect(decorateFirstLine(numpyEntry, [''])).toEqual(['']);
   });
 });

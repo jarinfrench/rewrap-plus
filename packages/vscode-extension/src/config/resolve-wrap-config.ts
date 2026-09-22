@@ -71,6 +71,7 @@ export function resolveWrapConfigForDocument(document: vscode.TextDocument): Res
     wrapStrings: settings.wrapStrings && stringWrapIncludeMatched,
     stringPolicy: settings.stringPolicy,
     docDialect: settings.docDialect,
+    hangingIndentStyle: settings.docstringHangingIndent,
     preserveIndentedBlocks: settings.preserveIndentedBlocks,
     balancedWrapping: settings.balancedWrapping,
   };

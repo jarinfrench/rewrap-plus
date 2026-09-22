@@ -4,24 +4,20 @@ def deploy(really_long_deployment_target_identifier, dry_run=False):
 
     Args:
         really_long_deployment_target_identifier: A
-                                                  verbose
-                                                  identifier
-                                                  naming
-                                                  the
-                                                  deployment
-                                                  target.
+            verbose identifier naming the
+            deployment target.
         dry_run: Options include:
 
-                 - verbose: Whether to print each
-                   step as it executes.
-                 - strict: Whether to abort on the
-                   first warning encountered.
+            - verbose: Whether to print each step
+              as it executes.
+            - strict: Whether to abort on the
+              first warning encountered.
 
-                 Example usage:
+            Example usage:
 
-                 ```
-                 deploy("prod-eu-west", dry_run=True)
-                 ```
+            ```
+            deploy("prod-eu-west", dry_run=True)
+            ```
 
     Returns:
         None: Nothing is returned.

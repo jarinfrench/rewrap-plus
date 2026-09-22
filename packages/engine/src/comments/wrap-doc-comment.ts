@@ -74,7 +74,10 @@ export function wrapDocComment(
     throw new Error(`wrapDocComment: no dialect registered for '${dialectId}'`);
   }
 
-  const splitOptions: SplitBlocksOptions = { preserveIndentedBlocks: cfg.preserveIndentedBlocks };
+  const splitOptions: SplitBlocksOptions = {
+    preserveIndentedBlocks: cfg.preserveIndentedBlocks,
+    hangingIndentStyle: cfg.hangingIndentStyle ?? 'fixed',
+  };
   const blocks = dialect.segment(text, splitOptions);
 
   return emitBlockComments(
@@ -138,7 +141,10 @@ function wrapRepeatedMarkerDocComment(
     throw new Error(`wrapDocComment: no dialect registered for '${dialectId}'`);
   }
 
-  const splitOptions: SplitBlocksOptions = { preserveIndentedBlocks: cfg.preserveIndentedBlocks };
+  const splitOptions: SplitBlocksOptions = {
+    preserveIndentedBlocks: cfg.preserveIndentedBlocks,
+    hangingIndentStyle: cfg.hangingIndentStyle ?? 'fixed',
+  };
   const blocks = dialect.segment(text, splitOptions);
 
   return emitLineComments(

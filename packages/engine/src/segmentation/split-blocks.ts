@@ -41,6 +41,18 @@ export interface SplitBlocksOptions {
    * (zero) baseline and never reflowed at all.
    */
   readonly baselineIndent?: number;
+
+  /**
+   * Not read by `splitBlocks` itself -- carried through this same options
+   * bag (per `../docs/dialect.ts`'s `DocDialect.segment` signature) to
+   * `../docs/field-entries.ts`'s `groupFieldEntries`, the shared
+   * field-entry grouper every `groupFieldEntries`-based dialect (Google,
+   * Sphinx, Doxygen, Javadoc, JSDoc) calls with this same `options`
+   * object. See `../types/config.ts`'s `WrapConfig.hangingIndentStyle`
+   * for what the two values mean; `groupFieldEntries` defaults to
+   * `'fixed'` when this is left unset, same as `WrapConfig` itself.
+   */
+  readonly hangingIndentStyle?: 'fixed' | 'aligned';
 }
 
 /**

@@ -124,6 +124,17 @@
           "scope": "resource",
           "markdownDescription": "Documentation dialect for Python docstrings, JS/TS JSDoc comments, C++ Doxygen comments, and Java Javadoc comments. `auto` (the default) detects per docstring/comment rather than per file, since mixed conventions in one codebase are common; any other value forces that dialect regardless of its own shape."
         },
+        "rewrapPlus.docstringHangingIndent": {
+          "type": "string",
+          "enum": ["fixed", "aligned"],
+          "enumDescriptions": [
+            "One consistent extra indent level past a field's own indent, regardless of its label's length -- every field in a docstring shares the same continuation column, so rewrapping one field never changes another untouched field's indentation. The default.",
+            "Continuation lines align under the description text that follows the label on its own first line, so the indent grows with the label's length (a longer :param:/@param name indents its continuation deeper than a shorter one)."
+          ],
+          "default": "fixed",
+          "scope": "resource",
+          "markdownDescription": "How a field entry's (`:param x:`, `x (int):`, `@param x`, ...) continuation lines are indented, for every documentation dialect with field-style entries (Google, Sphinx, Doxygen, Javadoc, JSDoc -- NumPy is unaffected, its entries never share a line with their label to begin with)."
+        },
         "rewrapPlus.preserveIndentedBlocks": {
           "type": "boolean",
           "default": true,
