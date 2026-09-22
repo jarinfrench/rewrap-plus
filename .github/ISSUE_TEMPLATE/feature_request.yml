@@ -1,0 +1,34 @@
+name: Feature request
+description: Request a new command, setting, or capability that isn't about adding a language.
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Requesting support for a language Rewrap+ doesn't wrap yet? Use the
+        **Language / adapter request** template instead -- it collects the
+        grammar and syntax details that request actually needs.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that Rewrap+ doesn't support today? Include a concrete example if you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should happen instead? A new command, a new `rewrapPlus.*` setting, a change to existing behavior, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workarounds you've tried
+      description: Any existing setting, command, or manual step you're using in the meantime.
+    validations:
+      required: false
