@@ -255,6 +255,19 @@ eventually ships this.
   -- continuation lines align under the description text following the
   label, so the indent grows with the label's length.
 
+### Fixed
+
+- **`Alt+Q` (and the other default keybindings) going permanently dead
+  in a fresh window** until some Rewrap+ command was run once via the
+  Command Palette. Every keybinding's `when` clause gates on a
+  `rewrapPlusSupportedLanguages` context key that's only set inside
+  `activate()` -- with `activationEvents: []`, a keybinding whose `when`
+  clause reads false (the context key doesn't exist pre-activation)
+  never matches, and VSCode never activates the extension to set it,
+  since no command actually fired. Fixed by adding `onStartupFinished`
+  to `activationEvents`, so activation no longer depends on the very
+  keybinding it gates.
+
 ### Known limitations
 
 - Template literals (`` `...` ``) are not wrapped -- `${}` interpolation
