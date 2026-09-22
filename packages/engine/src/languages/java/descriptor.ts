@@ -178,7 +178,15 @@ export const javaDescriptor: LanguageDescriptor = {
 
     placeholders: [
       /\{[^{}]*\}/, // java.text.MessageFormat-style `{0}`, `{1}`
-      /%[-+ #0,(]*\d*(\.\d+)?[bBhHsScCdoxXeEfgGaAtTn%]/, // String.format-style %s / %d / %-10.2f / %n
+      // String.format-style %s / %d / %-10.2f / %n -- flags bounded to
+      // `{0,5}`, not `*`, for the same reason as `../cpp/descriptor.ts`'s
+      // identical placeholder: an unbounded flags class immediately
+      // followed by `\d*` lets a run of `0` characters (itself a valid
+      // flag *and* the start of a digit run) be split between the two
+      // quantifiers in exponentially many ways. See that file's comment
+      // for the confirmed timing.
+      // eslint-disable-next-line security/detect-unsafe-regex -- fixed, bounded form (see comment above and `../cpp/descriptor.ts`); safe-regex's heuristic can't evaluate that `{0,5}` caps the split at a small constant.
+      /%[-+ #0,(]{0,5}\d*(\.\d+)?[bBhHsScCdoxXeEfgGaAtTn%]/,
     ],
 
     concatenation: { style: 'operator', operator: '+', operatorPlacement: 'trailing' },

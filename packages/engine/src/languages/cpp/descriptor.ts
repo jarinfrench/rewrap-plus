@@ -164,7 +164,18 @@ export const cppDescriptor: LanguageDescriptor = {
 
     placeholders: [
       /\{[^{}]*\}/, // fmtlib/std::format-style `{}`, `{0}`, `{:.2f}` placeholders
-      /%[-+ #0]*\d*(\.\d+)?(hh|h|ll|l|j|z|t|L)?[diouxXeEfFgGaAcspn%]/, // printf-style %s / %d / %-10.2f
+      // printf-style %s / %d / %-10.2f -- flags bounded to `{0,5}`, not `*`:
+      // an unbounded `[-+ #0]*` directly followed by `\d*` shares the `0`
+      // character between both quantifiers, letting a backtracking engine
+      // split a long run of `0`s between them in exponentially many ways.
+      // Confirmed directly (`../../prose-heuristic.ts`'s own doc comment on
+      // `PLACEHOLDER_PATTERN` has the full mechanism and a from-scratch
+      // timing): a `%` followed by tens of thousands of `0` characters and
+      // no valid conversion character took several seconds on this pattern
+      // alone before this fix, and completes instantly after. Five flag
+      // characters is already far more than any real format string uses.
+      // eslint-disable-next-line security/detect-unsafe-regex -- this is the fixed, `{0,5}`-bounded form the comment above describes; safe-regex's heuristic still flags any bounded-then-unbounded quantifier pair structurally, without evaluating that a `{0,5}` bound caps the ambiguous split at a small constant instead of letting it scale with input length. Confirmed above and directly: a 200k-character adversarial `0` run completes in single-digit milliseconds.
+      /%[-+ #0]{0,5}\d*(\.\d+)?(hh|h|ll|l|j|z|t|L)?[diouxXeEfFgGaAcspn%]/,
     ],
 
     // Same reasoning as `queries.concatenations`'s own doc comment above:

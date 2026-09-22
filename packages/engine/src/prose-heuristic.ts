@@ -102,6 +102,7 @@ export function looksLikeProse(text: string): boolean {
   // removes the ambiguity -- there is now exactly one way to partition any
   // given input between the two quantifiers -- without changing which
   // `{n}`/`{n,}`/`{n,m}` shapes count as regex-looking.
+  // eslint-disable-next-line security/detect-unsafe-regex -- this is already the fixed, disambiguated form described above (`(?:,\d*)?` as one unit); safe-regex's heuristic still flags any optional group containing a `*`, without checking that the preceding literal `,` rules out the ambiguous split it's warning about. Confirmed with a 60k-digit adversarial `{...}` completing in ~0ms.
   if (/[[\]$^]|\{\d+(?:,\d*)?\}/.test(trimmed)) {
     score -= 4; // regex-shaped punctuation (character classes, anchors, {n,m})
   }
@@ -110,6 +111,7 @@ export function looksLikeProse(text: string): boolean {
   if (SQL_STRONG_KEYWORDS.test(trimmed) || distinctWeakSqlKeywords.size >= 2) {
     score -= 4;
   }
+  // eslint-disable-next-line security/detect-unsafe-regex -- the repeated `(\.[a-z0-9_]+)*` group is gated by a literal `.` at each iteration's start, which the surrounding `[a-z0-9_]+` character classes never contain, so there's exactly one way to partition any input between the two quantifiers. Confirmed with a 60k-char non-matching (trailing `!`) input completing in ~1ms.
   if (spaceCount === 0 && words.length <= 1 && /^[a-z0-9_]+(\.[a-z0-9_]+)*$/i.test(trimmed)) {
     score -= 4; // a single snake_case/dotted identifier-shaped token -- a key, not prose
   }
@@ -160,4 +162,5 @@ const SQL_WEAK_KEYWORDS = /\b(FROM|WHERE|JOIN|VALUES)\b/gi;
 // which is what actually removes the blowup (the digits afterward stay
 // an ordinary, unbounded `\d*` -- safe on its own, since nothing else
 // adjacent to it shares its character class).
+// eslint-disable-next-line security/detect-unsafe-regex -- this is already the fixed, bounded form described above (`{0,5}`, not `*`); safe-regex's heuristic still flags an unbounded `\d*` sharing an alternation with a bounded flags class, without checking that the bound removes the exponential split. Confirmed with a 60k-`0`-character adversarial input completing in ~1ms.
 const PLACEHOLDER_PATTERN = /\{[^{}]*\}|%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]{0,5}\d*(\.\d+)?[a-zA-Z%]|%[-+ #0]{0,5}\d*(\.\d+)?[a-zA-Z%]/g;

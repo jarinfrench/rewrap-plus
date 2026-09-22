@@ -153,4 +153,38 @@ describe('findUnbreakableSpans', () => {
     findUnbreakableSpans(input);
     expect(Date.now() - start).toBeLessThan(1000);
   });
+
+  it('stays fast on a long run of unterminated open braces (BRACE_PLACEHOLDER)', () => {
+    // Regression guard for a `security/detect-unsafe-regex` false positive
+    // on `BRACE_PLACEHOLDER`: safe-regex's heuristic flags the repeated
+    // `(?:[^{}]|\{[^{}]*\})*` group, but the two alternatives are
+    // distinguished by their first character (one explicitly excludes
+    // `{`, the other requires it), so there's no ambiguous partition for a
+    // backtracking engine to explore. Confirmed here rather than just
+    // argued.
+    const input = '{'.repeat(200_000);
+    const start = Date.now();
+    findUnbreakableSpans(input);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
+
+  it('stays fast on a long run of unterminated nested brace groups (BRACE_PLACEHOLDER)', () => {
+    const input = '{' + 'a{b'.repeat(60_000);
+    const start = Date.now();
+    findUnbreakableSpans(input);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
+
+  it('stays fast on a %-flag run with no conversion character (PERCENT_PLACEHOLDER)', () => {
+    // Regression guard for a `security/detect-unsafe-regex` false positive
+    // on `PERCENT_PLACEHOLDER`: its flags class is already a single
+    // optional character (`?`, not `*`), so it can't share an ambiguous
+    // split with the following `\d*` the way the unbounded-`*` version in
+    // `../languages/{cpp,java,python}/descriptor.ts` could before their
+    // own fix.
+    const input = '%' + '0'.repeat(200_000);
+    const start = Date.now();
+    findUnbreakableSpans(input);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });

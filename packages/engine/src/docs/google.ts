@@ -70,6 +70,7 @@ function matchSectionHeader(line: string): string | null {
  * `../reflow/decorate-block.ts`'s `markerPrefix` convention for list
  * markers.
  */
+// eslint-disable-next-line security/detect-unsafe-regex -- safe-regex's heuristic can't see that `(?:\s*\([^()]*\))?` is optional-once, not repeated, so it has no adjacent-star ambiguity to backtrack on; confirmed with a 60k-char adversarial line (no closing `:`) completing in ~1ms.
 const FIELD_ENTRY_LINE = /^[ \t]*(\*{0,2}[A-Za-z_][\w.]*(?:\s*\([^()]*\))?)\s*:\s?(.*)$/;
 
 /**

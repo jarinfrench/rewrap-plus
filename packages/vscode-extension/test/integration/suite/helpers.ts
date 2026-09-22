@@ -96,7 +96,18 @@ export async function openNotebookCell(
  * which exists to prove real-host wiring, not reflow arithmetic.
  */
 export function extractReturnedStringValue(text: string): string {
-  const match = /return\s+((?:"[^"]*"\s*\+?\s*)+);/.exec(text);
+  // `\s*(?:\+\s*)?`, not `\s*\+?\s*`: with the `+` optional, the original
+  // left two independent `\s*` runs directly adjacent whenever no `+` was
+  // present, so a run of whitespace after the last quoted literal (e.g. a
+  // malformed fixture missing its trailing `;`) could be split between
+  // them in quadratically many ways -- confirmed directly (a `return "a"`
+  // followed by tens of thousands of trailing spaces and no `;` took
+  // seconds to fail this `.exec()` call). Folding the trailing `\s*` into
+  // the same group as the `+` (so it only appears when `+` does) leaves
+  // exactly one `\s*` run per iteration when `+` is absent, removing the
+  // ambiguity without changing which strings match.
+  // eslint-disable-next-line security/detect-unsafe-regex -- fixed, disambiguated form described above; safe-regex's heuristic still flags the repeated group structurally without evaluating that folding the optional `\s*` into the `+`-gated subgroup removes the ambiguous partition. Confirmed: a 160k-character adversarial trailing-whitespace input (no `;`) completes in under 1ms. Test-only code exercised against fixture text, not arbitrary user documents, but fixed for the same due diligence as the production regexes above.
+  const match = /return\s+((?:"[^"]*"\s*(?:\+\s*)?)+);/.exec(text);
   if (!match) {
     throw new Error(`extractReturnedStringValue: no return string-concatenation statement found in: ${text}`);
   }

@@ -13,6 +13,7 @@ import { groupFieldEntries, type EntryStartMatch } from './field-entries.js';
  * list is conventionally just however many of these appear consecutively
  * (usually at the end of the docstring), not grouped under a header.
  */
+// eslint-disable-next-line security/detect-unsafe-regex -- safe-regex flags the lazy `[^:]*?` inside an optional group, but the group's own leading `[^\s:]` and the outer literal `:` boundaries leave no ambiguity in how it partitions; confirmed with a 60k-char adversarial line (no closing `:`) completing in ~1ms.
 const SPHINX_FIELD = /^:([\w-]+(?:\s+[^\s:][^:]*?)?):\s?(.*)$/;
 
 function matchSphinxEntry(line: string): EntryStartMatch | null {

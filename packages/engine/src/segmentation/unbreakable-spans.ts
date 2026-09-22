@@ -145,7 +145,9 @@ const URL = /[a-zA-Z][a-zA-Z0-9+.-]{0,31}:\/\/\S+/;
 // nested format spec like `{value:{width}}` -- is as far as a regex can
 // reasonably go without a real parser, and this is a heuristic
 // segmenter, not one).
+// eslint-disable-next-line security/detect-unsafe-regex -- safe-regex flags the repeated `(?:[^{}]|\{[^{}]*\})*` group, but the two alternatives are distinguished by their first character (`[^{}]` explicitly excludes `{`, the other branch requires it), so at any position at most one branch can match -- no ambiguity to backtrack on. Confirmed with 60k unterminated `{`s and a 60k-char run of unterminated nested groups, each completing in ~1ms.
 const BRACE_PLACEHOLDER = /\{(?:[^{}]|\{[^{}]*\})*\}/;
+// eslint-disable-next-line security/detect-unsafe-regex -- the flags class here is already a single optional char (`?`, not `*`), so it can't share an ambiguous split with the following `\d*` the way the unbounded-`*` version in `../languages/{cpp,java,python}/descriptor.ts` could before their fix; safe-regex's heuristic still flags any optional-then-star sequence regardless of the first quantifier's bound. Confirmed with a 60k-`0`-character adversarial input completing in ~0ms.
 const PERCENT_PLACEHOLDER = /%(?:\([^)\n]*\))?[#0\- +]?\d*(?:\.\d+)?[diouxXeEfFgGcrsa%]/;
 const ESCAPE_SEQUENCE =
   /\\(?:[\\'"abfnrtv?]|[0-7]{1,3}|x[0-9A-Fa-f]+|u\{[0-9A-Fa-f]+\}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|N\{[^}\n]*\})/;

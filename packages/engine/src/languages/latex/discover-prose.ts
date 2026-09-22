@@ -103,6 +103,7 @@ const SECTIONING_NODE_TYPES: ReadonlySet<string> = new Set([
  * instead; see that function's own doc comment for why tree lookup runs
  * *before* this regex is even tried, not just as a whole-line fallback.
  */
+// eslint-disable-next-line security/detect-unsafe-regex -- safe-regex flags the repeated `(\[...\]|\{...\})*` group, but the two alternatives are distinguished by their very first character (`[` vs `{`), so at any position at most one branch can even start matching -- no ambiguity for a backtracking engine to explore; confirmed with 60k unterminated `{`s and unterminated `[`s each completing in ~1ms.
 const SINGLE_STRUCTURAL_COMMAND = /^\\[A-Za-z@]+\*?(\[[^\]]*\]|\{[^}]*\})*/;
 
 /** `\[`, `\]`, or `$$` alone on a line -- display-math delimiters, structural even though they never match `STRUCTURAL_COMMAND_LINE` (they aren't `\command` shaped at all). Redundant with `displayed_equation` masking in the common case; kept as a textual safety net for the boundary lines themselves. */
