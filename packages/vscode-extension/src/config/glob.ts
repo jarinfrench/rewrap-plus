@@ -40,7 +40,7 @@
  * ambiguity that made the blowup possible: a run is now always exactly
  * one `RegExp` quantifier, never several in a row.
  */
-export function globToRegExpSource(pattern: string): string {
+function globToRegExpSource(pattern: string): string {
   let re = '';
   let i = 0;
 
