@@ -27,6 +27,7 @@
  * or the other) -- and so this stays correct without changes if
  * `tabular`'s own masking decision is ever revisited later.
  */
+// eslint-disable-next-line security/detect-unsafe-regex -- safe-regex flags the run of optional groups before the trailing `\s*$`, but each is gated by its own distinct literal delimiter (`[`/`{`) or is a bounded alternation, so there's no shared character class for a backtracking engine to split ambiguously; confirmed with a 60k-char trailing run of spaces (no match) completing in ~1ms.
 const LATEX_HARD_BREAK_COMMAND = /\\(\\\*?|newline|linebreak|break|hline)(\[[^\]]*\])?(\{[^}]*\})?\s*$/;
 
 /** LaTeX's `ProseSpec.hardBreak` -- `../../prose/dissolve-prose.ts`. */

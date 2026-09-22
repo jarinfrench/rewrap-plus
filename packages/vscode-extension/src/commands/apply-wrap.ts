@@ -14,33 +14,20 @@ import type {
   SourceSpan,
   TextEdit as EngineTextEdit,
   WrapConfig,
-  WrapResult,
 } from '@rewrap-plus/engine' with { 'resolution-mode': 'import' };
 import { getEngine, getParserManager, getSupportedLanguages } from '../engine-host.js';
 import { resolveWrapConfigForDocument, type ResolvedWrapConfig } from '../config/resolve-wrap-config.js';
 import { reportWrapApplyFailure, reportWrapOutcome } from '../report-wrap-outcome.js';
+import type { WrapOutcome } from '../wrap-outcome.js';
 
-export interface WrapOutcome {
-  readonly result: WrapResult;
-  readonly resolvedConfig: ResolvedWrapConfig;
-  /**
-   * `true` when `document.version` at the end of the `wrapRegions` call
-   * differs from what it was when `wrapRegions` started -- meaning the live
-   * document was edited while this wrap was still computing (now possible
-   * for a large document, since the engine yields to the event loop
-   * periodically once a cancellation signal is in play; see `wrap.ts`'s own
-   * `YIELD_INTERVAL_MS`). `result.edits` in that case is a snapshot of a
-   * document that no longer exists: its spans were computed against text
-   * that's since changed underneath it, and `vscode.workspace.applyEdit`
-   * has no document-version check of its own to catch that -- it would
-   * apply those (possibly now-misaligned) positions to whatever the
-   * document currently contains. Every consumer of `WrapOutcome` must treat
-   * this exactly like `result.cancelled`: nothing to apply or return,
-   * consistent with the project's "single atomic edit, never a partial or
-   * stale one" policy.
-   */
-  readonly documentVersionChanged: boolean;
-}
+// Re-exported so every existing importer of `WrapOutcome` from this module
+// (this file used to declare it directly) keeps working unchanged -- only
+// where the type lives moved, not its public path. See `../wrap-outcome.ts`
+// for why it moved: this file and `../report-wrap-outcome.ts` both need it,
+// and declaring it in either one made the other's import of it a back-edge
+// in a cycle with this file's own (real, value-level) import of
+// `reportWrapOutcome`/`reportWrapApplyFailure` from `report-wrap-outcome.ts`.
+export type { WrapOutcome } from '../wrap-outcome.js';
 
 /**
  * Run `wrapRegions` for `document` against `targets`. Returns `undefined`

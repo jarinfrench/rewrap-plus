@@ -41,4 +41,17 @@ describe('LATEX_HARD_BREAK', () => {
   it('does not match a line-break command that is not at the end of the line', () => {
     expect(matches('Some text.\\\\ more text follows')).toBe(false);
   });
+
+  it('stays fast on a long run of trailing whitespace after a real break command (no match found)', () => {
+    // Regression guard for a `security/detect-unsafe-regex` false positive
+    // on `LATEX_HARD_BREAK_COMMAND`: safe-regex flags the run of optional
+    // groups ahead of the trailing `\s*$`, but each is gated by its own
+    // distinct literal delimiter or bounded alternation, so there is no
+    // shared character class for a backtracking engine to split
+    // ambiguously -- confirmed here rather than just argued.
+    const line = 'Some text.\\newline' + ' '.repeat(100_000) + 'x';
+    const start = Date.now();
+    matches(line);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });

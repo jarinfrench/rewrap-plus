@@ -149,8 +149,18 @@ export const pythonDescriptor: LanguageDescriptor = {
       // above), but this regex form is still the mechanism for plain
       // `str.format()`-style placeholders in an ordinary or docstring
       // string, which never get an `interpolation` node.
-      /%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]*\d*(\.\d+)?[diouxXeEfFgGcrsa%]/, // %(key)d
-      /%[-+ #0]*\d*(\.\d+)?[diouxXeEfFgGcrsa%]/, // %s / %d
+      // Flags bounded to `{0,5}`, not `*`, in both of the below -- same
+      // exponential-backtracking hazard, and same fix, as
+      // `../cpp/descriptor.ts`'s and `../java/descriptor.ts`'s printf-style
+      // placeholders: an unbounded flags class directly followed by `\d*`
+      // lets a run of `0` characters be split between the two quantifiers
+      // in exponentially many ways, since `0` is both a valid flag and a
+      // digit. See `../cpp/descriptor.ts`'s comment for the confirmed
+      // timing.
+      // eslint-disable-next-line security/detect-unsafe-regex -- fixed, bounded form (see comment above and `../cpp/descriptor.ts`); safe-regex's heuristic can't evaluate that `{0,5}` caps the split at a small constant.
+      /%\([a-zA-Z_][a-zA-Z0-9_]*\)[-+ #0]{0,5}\d*(\.\d+)?[diouxXeEfFgGcrsa%]/, // %(key)d
+      // eslint-disable-next-line security/detect-unsafe-regex -- same fixed, bounded form as the placeholder immediately above.
+      /%[-+ #0]{0,5}\d*(\.\d+)?[diouxXeEfFgGcrsa%]/, // %s / %d
     ],
 
     concatenation: {

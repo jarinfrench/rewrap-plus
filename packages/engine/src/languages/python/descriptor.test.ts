@@ -100,6 +100,27 @@ describe('pythonDescriptor', () => {
     expect(matches('{}')).toBe(true);
     expect(matches('%s')).toBe(true);
     expect(matches('%(key)d')).toBe(true);
+    expect(matches('%-10.2f')).toBe(true);
+    expect(matches('%(key)-+#05.2f')).toBe(true); // every flag character, still within the {0,5} bound
+  });
+
+  it('matches the %-format placeholders in bounded time against a pathological run of flag/digit characters', () => {
+    // Regression guard for the fixed `security/detect-unsafe-regex` finding
+    // on both %-format placeholders -- same shape and same confirmed
+    // hazard as `../cpp/descriptor.ts`'s identical printf-style pattern
+    // (see that file's doc comment for the full mechanism and pre-fix
+    // timing).
+    const [, , keyedPlaceholder, plainPlaceholder] = pythonDescriptor.strings!.placeholders;
+    const adversarial = '%' + '0'.repeat(100_000);
+    const keyedAdversarial = '%(a)' + '0'.repeat(100_000);
+
+    let start = Date.now();
+    keyedPlaceholder!.test(keyedAdversarial);
+    expect(Date.now() - start).toBeLessThan(500);
+
+    start = Date.now();
+    plainPlaceholder!.test(adversarial);
+    expect(Date.now() - start).toBeLessThan(500);
   });
 
   it('defaults to implicit adjacency concatenation with trailing + as the alternative', () => {

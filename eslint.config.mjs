@@ -2,6 +2,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettierConfig from 'eslint-config-prettier';
+import pluginSecurity from 'eslint-plugin-security';
 
 export default tseslint.config(
   {
@@ -39,12 +40,25 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  pluginSecurity.configs.recommended,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      // Both rules below are noisy-by-design for a typed codebase:
+      // `detect-object-injection` flags any `obj[key]` access, including
+      // ones TypeScript already constrains to known keys, and
+      // `detect-non-literal-fs-filename` flags every `fs` call whose path
+      // isn't a string literal, which is nearly all of them in code that
+      // reads configured/discovered paths rather than hardcoded ones.
+      // Neither is exploitable here in the ways the rule exists to catch;
+      // the remaining `eslint-plugin-security` rules stay active because
+      // this engine runs regexes and (in a few places) dynamic requires
+      // against arbitrary user document content.
+      'security/detect-object-injection': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
     },
   },
   {

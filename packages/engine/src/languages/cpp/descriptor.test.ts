@@ -58,4 +58,33 @@ describe('cppDescriptor', () => {
     expect(language.abiVersion).toBeGreaterThanOrEqual(13);
     expect(language.abiVersion).toBeLessThanOrEqual(15);
   });
+
+  it('treats fmtlib/printf-style placeholders as atomic, flags and all', () => {
+    const placeholders = cppDescriptor.strings!.placeholders;
+    const matches = (text: string): boolean => placeholders.some((re) => re.test(text));
+
+    expect(matches('{}')).toBe(true);
+    expect(matches('{0}')).toBe(true);
+    expect(matches('{:.2f}')).toBe(true);
+    expect(matches('%s')).toBe(true);
+    expect(matches('%-10.2f')).toBe(true);
+    expect(matches('%+#0hhd')).toBe(true); // every flag character, still within the {0,5} bound
+    expect(matches('%lld')).toBe(true);
+    expect(matches('%llu')).toBe(true);
+  });
+
+  it('matches the printf placeholder in bounded time against a pathological run of flag/digit characters', () => {
+    // Regression guard for the fixed `security/detect-unsafe-regex` finding
+    // on this placeholder (see the regex's own doc comment): before
+    // bounding the flags class to `{0,5}`, a `%` followed by a long run of
+    // `0` characters and no valid conversion character took several
+    // seconds on this single `.test()` call, growing exponentially with
+    // input length. This adversarial input would have hung the test (and,
+    // for real user content, the extension) before the fix.
+    const placeholder = cppDescriptor.strings!.placeholders[1]!; // the printf-style pattern
+    const adversarial = '%' + '0'.repeat(100_000);
+    const start = Date.now();
+    placeholder.test(adversarial);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
 });

@@ -108,4 +108,28 @@ describe('javaDescriptor', () => {
     expect(language.abiVersion).toBeGreaterThanOrEqual(13);
     expect(language.abiVersion).toBeLessThanOrEqual(15);
   });
+
+  it('treats MessageFormat/String.format-style placeholders as atomic, flags and all', () => {
+    const placeholders = javaDescriptor.strings!.placeholders;
+    const matches = (text: string): boolean => placeholders.some((re) => re.test(text));
+
+    expect(matches('{0}')).toBe(true);
+    expect(matches('{1}')).toBe(true);
+    expect(matches('%s')).toBe(true);
+    expect(matches('%-10.2f')).toBe(true);
+    expect(matches('%n')).toBe(true);
+    expect(matches('%,(#05d')).toBe(true); // every flag character, still within the {0,5} bound
+  });
+
+  it('matches the String.format placeholder in bounded time against a pathological run of flag/digit characters', () => {
+    // Regression guard for the fixed `security/detect-unsafe-regex` finding
+    // on this placeholder -- same shape and same confirmed hazard as
+    // `../cpp/descriptor.ts`'s identical printf-style pattern (see that
+    // test's doc comment for the full mechanism and pre-fix timing).
+    const placeholder = javaDescriptor.strings!.placeholders[1]!; // the String.format-style pattern
+    const adversarial = '%' + '0'.repeat(100_000);
+    const start = Date.now();
+    placeholder.test(adversarial);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
 });

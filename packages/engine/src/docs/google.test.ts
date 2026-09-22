@@ -169,4 +169,19 @@ describe('googleDialect.segment', () => {
     if (verbatim?.type !== 'verbatim') throw new Error('expected a verbatim block');
     expect(verbatim.lines).toEqual(['```', 'deploy("x", dry_run=True)', '```']);
   });
+
+  it('stays fast on a field-entry-shaped line with a long run of trailing whitespace and no colon', () => {
+    // Regression guard for a `security/detect-unsafe-regex` false positive
+    // on `FIELD_ENTRY_LINE`: safe-regex flags the optional
+    // `(?:\s*\([^()]*\))?` group ahead of the mandatory `\s*:`, but since
+    // that group is optional-once rather than repeated, there is no
+    // adjacent-star ambiguity for a backtracking engine to explore. Every
+    // Args-section line is run through this pattern, so an unclosed/
+    // unterminated entry candidate is exactly the "one crafted docstring"
+    // shape this would matter for.
+    const text = ['Args:', '    x' + ' '.repeat(100_000)].join('\n');
+    const start = Date.now();
+    googleDialect.segment(text, {});
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });

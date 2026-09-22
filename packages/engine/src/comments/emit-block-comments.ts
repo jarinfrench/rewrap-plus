@@ -1,7 +1,6 @@
 import type { LanguageDescriptor } from '../types/adapter.js';
 import type { LogicalDocument } from '../types/document.js';
-import { decorateFirstLine } from '../reflow/decorate-block.js';
-import { reflowBlock, type ReflowOptions } from '../reflow/reflow-block.js';
+import { reflowBlockSequence, type ReflowOptions } from '../reflow/reflow-block.js';
 
 /**
  * Re-apply a language's block-comment delimiters (and, for multi-line
@@ -75,26 +74,13 @@ export function emitBlockComments(
   // positive width to reason about.
   const availableWidth = Math.max(1, columnLimit - continuationColumn - prefixOverhead);
 
-  const contentLines: string[] = [];
-  for (const docBlock of document.blocks) {
-    const hangingIndent =
-      docBlock.type === 'listItem' || docBlock.type === 'fieldEntry' ? docBlock.hangingIndent : 0;
-    // `firstLineReserve` matches whatever width `decorateFirstLine`
-    // actually prepends to line 1 -- `hangingIndent` for a `listItem`'s
-    // bullet, but a `fieldEntry`'s own `labelIndent` for its label (can
-    // exceed `hangingIndent` under `hangingIndentStyle: 'fixed'`; see
-    // that field's own doc comment on `../types/document.ts`) -- see
-    // `ReflowOptions.firstLineReserve`'s own doc comment for why
-    // `reflowBlock` needs this reserved separately from the continuation
-    // indent.
-    const firstLineReserve = docBlock.type === 'fieldEntry' ? docBlock.labelIndent : hangingIndent;
-    contentLines.push(
-      ...decorateFirstLine(
-        docBlock,
-        reflowBlock(docBlock, availableWidth, hangingIndent, { ...options, firstLineReserve }),
-      ),
-    );
-  }
+  // Identical per-block loop to `../docs/dialect.ts`'s `reflowDocBlocks`
+  // (hanging-indent/`firstLineReserve` computation, `reflowBlock` +
+  // `decorateFirstLine`) -- delegated to the same shared
+  // `reflowBlockSequence` rather than reimplemented here, since a
+  // `LogicalDocument`'s `blocks` is exactly the `readonly Block[]` shape
+  // that function already reflows for every doc-comment dialect.
+  const contentLines = reflowBlockSequence(document.blocks, availableWidth, options);
 
   const singleLine = tryEmitSingleLine(contentLines, block, indentColumn, columnLimit);
   if (singleLine !== null) {

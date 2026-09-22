@@ -107,4 +107,16 @@ describe('sphinxDialect.segment', () => {
     expect(item0.marker).toBe('-');
     expect(item0.atoms.map((a) => a.text)).toEqual(['verbose', 'mode']);
   });
+
+  it('stays fast on a field-marker-shaped line with a long unterminated body and no closing colon', () => {
+    // Regression guard for a `security/detect-unsafe-regex` false positive
+    // on `SPHINX_FIELD`: safe-regex flags the lazy `[^:]*?` inside an
+    // optional group, but the group's own leading `[^\s:]` and the
+    // required outer `:` boundary leave no ambiguity in how it partitions
+    // a candidate line -- confirmed here rather than just argued.
+    const text = ':a ' + 'b'.repeat(100_000);
+    const start = Date.now();
+    sphinxDialect.segment(text, {});
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
 });
