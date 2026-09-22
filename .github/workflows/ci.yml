@@ -130,6 +130,15 @@ jobs:
           node-version: 22.x
           cache: npm
 
+      # polyscan is a pinned, `npm ci`-installed root devDependency (see
+      # root package.json), not resolved through a bare `npx polyscan` --
+      # this job's checkout + this install step give it full repo source
+      # and (implicitly, via the default GITHUB_TOKEN) some API access,
+      # so an unpinned `npx --yes polyscan` would mean every run silently
+      # trusts whatever the latest npm publish of a third-party package
+      # does with that. Pinning to an exact, reviewed version means a
+      # compromised or misbehaving future release can't affect this job
+      # until someone deliberately bumps the version.
       - name: Install dependencies
         run: npm ci
 
@@ -138,8 +147,19 @@ jobs:
       # needed here since `--format text` already skips the HTML/browser
       # path entirely; only the `-o` run below produces HTML.
       - name: Run polyscan (text summary)
-        run: npx --yes polyscan analyze . --format text
+        run: npx polyscan analyze . --format text
 
+      # `if: ${{ !cancelled() }}` on this step and the upload below: this
+      # job is explicitly non-blocking (`continue-on-error: true`), but
+      # that only stops a failure from failing the *job* -- without an
+      # `if:`, a nonzero exit from the text-summary step above would
+      # still make GitHub Actions skip every step after it, silently
+      # losing the HTML artifact on exactly the runs (a polyscan crash, a
+      # bad install, a future version that starts using its exit code for
+      # findings) where having it to inspect matters most. `!cancelled()`
+      # (rather than `always()`) still respects an operator-initiated
+      # workflow cancellation, unlike `always()`.
+      #
       # Same analysis, HTML this time, uploaded the same way the
       # `package` job's own .vsix output is -- so anyone who wants the
       # interactive report (clone-group detail, per-function drilldown)
@@ -147,9 +167,11 @@ jobs:
       # locally. `--no-open` matters here: polyscan's HTML default is to
       # launch a local browser, which would hang a headless runner.
       - name: Run polyscan (HTML report)
-        run: npx --yes polyscan analyze . --no-open -o polyscan-report.html
+        if: ${{ !cancelled() }}
+        run: npx polyscan analyze . --no-open -o polyscan-report.html
 
       - name: Upload polyscan HTML report as a workflow artifact
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: polyscan-report
