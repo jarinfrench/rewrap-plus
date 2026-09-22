@@ -60,12 +60,17 @@ export function continuationIndentColumns(
   needsParens: boolean,
 ): number {
   const sourceLine = source.split('\n')[region.span.startRow] ?? '';
-  const statementIndentChars = /^[ \t]*/.exec(sourceLine)?.[0].length ?? 0;
 
-  if (!needsParens && statementIndentChars === region.span.startColumn) {
+  // `trim()` rather than the `[ \t]` test below: ECMAScript also accepts
+  // non-ASCII whitespace (U+00A0, U+FEFF, the Zs category) as indentation,
+  // and a string indented that way still starts its own line. Every
+  // continuation line is emitted with plain spaces regardless, so aligning
+  // to `region.indentColumn` stays visually correct either way.
+  if (!needsParens && sourceLine.slice(0, region.span.startColumn).trim() === '') {
     return region.indentColumn;
   }
 
+  const statementIndentChars = /^[ \t]*/.exec(sourceLine)?.[0].length ?? 0;
   const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
   return statementIndentColumns + 4;
 }
