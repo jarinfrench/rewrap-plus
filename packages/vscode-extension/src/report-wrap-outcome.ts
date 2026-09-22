@@ -10,7 +10,7 @@
  */
 import * as vscode from 'vscode';
 import { getOutputChannel } from './output-channel.js';
-import type { WrapOutcome } from './commands/apply-wrap.js';
+import type { WrapOutcome } from './wrap-outcome.js';
 
 const STATUS_BAR_MESSAGE_TIMEOUT_MS = 5000;
 
