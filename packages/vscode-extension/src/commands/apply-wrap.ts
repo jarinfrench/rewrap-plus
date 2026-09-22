@@ -198,7 +198,7 @@ export function toVSCodeTextEdits(edits: readonly EngineTextEdit[]): vscode.Text
  * `WorkspaceEdit.apply`'s own "vacuously successful" convention rather
  * than treating "no edits needed" as a failure.
  */
-export async function applyWrapEdits(
+async function applyWrapEdits(
   document: vscode.TextDocument,
   edits: readonly EngineTextEdit[],
 ): Promise<boolean> {
