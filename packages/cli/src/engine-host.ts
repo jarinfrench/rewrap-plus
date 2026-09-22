@@ -97,9 +97,3 @@ async function createParserManager(): Promise<ParserManager> {
   const registry = await getRegistry();
   return ParserManager.create({ wasmDir: resolveEngineRoot(), registry });
 }
-
-/** Test-only hook to force a fresh registry and `ParserManager` on the next call. */
-export function resetEngineHostForTests(): void {
-  registryPromise = undefined;
-  parserManagerPromise = undefined;
-}

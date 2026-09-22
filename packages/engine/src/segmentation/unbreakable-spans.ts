@@ -152,6 +152,7 @@ const PERCENT_PLACEHOLDER = /%(?:\([^)\n]*\))?[#0\- +]?\d*(?:\.\d+)?[diouxXeEfFg
 const ESCAPE_SEQUENCE =
   /\\(?:[\\'"abfnrtv?]|[0-7]{1,3}|x[0-9A-Fa-f]+|u\{[0-9A-Fa-f]+\}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|N\{[^}\n]*\})/;
 
+// eslint-disable-next-line security/detect-non-literal-regexp -- every fragment joined into `source` here is a `.source` of one of this module's own module-level `RegExp` literals above (each already vetted and, where the heuristic still flags it, individually `eslint-disable`d for `detect-unsafe-regex`), not user- or document-derived text; no wrapped document's content ever reaches this constructor argument.
 const UNBREAKABLE_PATTERN = new RegExp(
   [REST_ROLE, INLINE_CODE, URL, BRACE_PLACEHOLDER, PERCENT_PLACEHOLDER, ESCAPE_SEQUENCE]
     .map((re) => re.source)
@@ -218,7 +219,8 @@ export function findUnbreakableSpans(
 ): UnbreakableSpan[] {
   const pattern =
     extraPatterns && extraPatterns.length > 0
-      ? new RegExp(
+      ? // eslint-disable-next-line security/detect-non-literal-regexp -- `extraPatterns` is a language adapter's own hardcoded `RegExp[]` (e.g. LaTeX's `\verb`/`\lstinline` patterns in `../languages/latex/wrap-prose.ts`), authored at adapter-development time like `UNBREAKABLE_PATTERN`'s own constituents above, never built from a wrapped document's content; this function's doc comment already documents the capture-group/backreference hazard a caller must avoid, which is a correctness contract on adapter authors, not a sign the input is untrusted.
+        new RegExp(
           [...extraPatterns, UNBREAKABLE_PATTERN].map((re) => re.source).join('|'),
           'g',
         )

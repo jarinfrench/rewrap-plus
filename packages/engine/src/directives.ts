@@ -40,6 +40,7 @@ export interface DirectiveScan {
  */
 function buildDirectivePattern(marker: string): RegExp {
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // eslint-disable-next-line security/detect-non-literal-regexp -- `marker` is a `LanguageDescriptor.comments.line.marker` value (a short, hardcoded-per-adapter string like `#`, `//`, `--`, never derived from a wrapped document's own content) and is regex-escaped immediately above before being spliced in, so no unescaped metacharacter from it ever reaches the pattern. The rest of the pattern is a fixed literal; there's no adjacent-unbounded-quantifier shape for a ReDoS hazard to hide in either.
   return new RegExp(`${escaped}\\s*(rewrap|fmt)\\s*:\\s*(off|on|ignore|force)\\b`, 'i');
 }
 

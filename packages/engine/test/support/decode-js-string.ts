@@ -51,5 +51,6 @@ export function extractConcatenatedStringValue(source: string): string {
   if (tokens.length === 0) {
     return '';
   }
+  // eslint-disable-next-line security/detect-eval-with-expression -- this file's own doc comment explains why this must never ship in engine runtime code: it's a test-only eval-equivalence oracle (`packages/engine/test/support/`, excluded from every build output) invoked only from this package's `test/wrap/*-string-wrap-fixtures.test.ts` and `test/hardening/round-trip-property.test.ts`, always against this repo's own hardcoded fixture strings or property-test-generated word-bank content -- never a wrapped document's own text, let alone anything from an untrusted or external source.
   return eval(tokens.join(' + ')) as string;
 }
