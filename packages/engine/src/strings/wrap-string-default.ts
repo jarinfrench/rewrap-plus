@@ -1,10 +1,10 @@
 import type { WrapConfig } from '../types/config.js';
 import type { WrappableRegion } from '../types/region.js';
 import { reflowOptionsFrom } from '../reflow/reflow-block.js';
-import { visualIndentColumn } from '../discovery/visual-indent-column.js';
 import { dissolveString } from './dissolve-string.js';
 import { escapeQuoteCollisions } from './escape-quote-collisions.js';
 import { emitString, type ConcatenationStyle } from './emit-string.js';
+import { continuationIndentColumns } from './continuation-indent.js';
 
 /**
  * The two axes a `'stringLiteral'` `wrapString` implementation can differ
@@ -58,10 +58,7 @@ export function wrapStringDefault(
   const dissolved = dissolveString(region, source);
   const safeText = escapeQuoteCollisions(dissolved.text, dissolved.quoteDelimiter);
 
-  const sourceLine = source.split('\n')[region.span.startRow] ?? '';
-  const statementIndentChars = /^[ \t]*/.exec(sourceLine)?.[0].length ?? 0;
-  const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
-  const hangingIndentColumns = statementIndentColumns + 4;
+  const hangingIndentColumns = continuationIndentColumns(region, source, cfg, opts.needsParens);
 
   const reflowOptions = reflowOptionsFrom(cfg);
 
