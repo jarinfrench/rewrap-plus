@@ -97,6 +97,23 @@ against a fresh archive extraction, and handed off for manual application.
 **That constraint doesn't apply here.** Commit directly to this repo. No
 patch files, no archive round-trips.
 
+Land work through a feature branch and PR into `main`, not a direct commit
+to `main` -- even for solo work with no other reviewer, so CI runs against
+the diff before it merges rather than after. (Earlier work, including this
+project's own history through commit `3a38528`, went straight to `main`;
+that's no longer the convention going forward, not a precedent to match.)
+Branch names aren't prescribed by any existing convention here; a short
+`kind/what-changed` shape (e.g. `fix/docstring-hanging-indent`) is fine.
+
+Every PR has at least one associated issue -- open one first (even a
+short one) if the work wasn't already tracked by an existing issue,
+rather than filing a PR with nothing to link it to. Commit messages name
+the issue(s) they address with a closing or referencing keyword --
+`Closes #NN`/`Fixes #NN` when the commit resolves the issue outright,
+`Refs #NN` when it's related but doesn't fully close it (e.g. a
+follow-up, or one of several commits needed to close a multi-part
+issue).
+
 ## Where things actually stand -- verify, don't assume
 
 Phases 0 through 6b are complete, verified, and committed to this repo's
