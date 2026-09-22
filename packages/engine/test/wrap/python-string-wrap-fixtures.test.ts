@@ -25,6 +25,8 @@ import tripleSingleLineIn from '../fixtures/python/strings/008-triple-quoted-sin
 import tripleSingleLineOut from '../fixtures/python/strings/008-triple-quoted-single-line-prose.out.py?raw';
 import tripleMultiLineIn from '../fixtures/python/strings/009-triple-quoted-multiline-prose.in.py?raw';
 import tripleMultiLineOut from '../fixtures/python/strings/009-triple-quoted-multiline-prose.out.py?raw';
+import ownLineIn from '../fixtures/python/strings/010-own-line-call-arg-aligned.in.py?raw';
+import ownLineOut from '../fixtures/python/strings/010-own-line-call-arg-aligned.out.py?raw';
 
 import negSqlIn from '../fixtures/python/strings/neg-001-sql-query.in.py?raw';
 import negSqlOut from '../fixtures/python/strings/neg-001-sql-query.out.py?raw';
@@ -131,6 +133,16 @@ const fixtures: readonly Fixture[] = [
     expected: tripleMultiLineOut,
     positive: true,
     valuePreserving: false,
+  },
+  {
+    // Regression: a concatenation run already broken onto its own line
+    // inside a call's brackets keeps every part aligned to the first
+    // part's opening quote, rather than gaining a hanging indent measured
+    // from its own line (see `../../src/strings/continuation-indent.ts`).
+    name: '010-own-line-call-arg-aligned',
+    input: ownLineIn,
+    expected: ownLineOut,
+    positive: true,
   },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
   { name: 'neg-002-regex-pattern', input: negRegexIn, expected: negRegexOut, positive: false },
@@ -305,6 +317,7 @@ describe('Python string-literal wrapping -- end-to-end gold fixtures', () => {
       '007-already-correctly-wrapped-byte-identical',
       '008-triple-quoted-single-line-prose',
       '009-triple-quoted-multiline-prose',
+      '010-own-line-call-arg-aligned',
       'neg-001-sql-query',
       'neg-002-regex-pattern',
       'neg-003-url',

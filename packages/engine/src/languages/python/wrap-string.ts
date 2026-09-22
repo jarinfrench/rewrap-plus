@@ -2,11 +2,11 @@ import type { WrapConfig } from '../../types/config.js';
 import type { WrappableRegion } from '../../types/region.js';
 import type { Tree } from '../../types/tree-sitter-types.js';
 import { reflowOptionsFrom } from '../../reflow/reflow-block.js';
-import { visualIndentColumn } from '../../discovery/visual-indent-column.js';
 import { dissolveString } from '../../strings/dissolve-string.js';
 import { escapeQuoteCollisions } from '../../strings/escape-quote-collisions.js';
 import { emitContext } from './emit-context.js';
 import { emitString } from '../../strings/emit-string.js';
+import { continuationIndentColumns } from '../../strings/continuation-indent.js';
 import { isSingleTripleQuotedLiteral } from './triple-quote.js';
 import { wrapCodeString } from './wrap-code-string.js';
 
@@ -36,22 +36,12 @@ import { wrapCodeString } from './wrap-code-string.js';
  *
  * ## Choosing the hanging indent
  *
- * Continuation lines could in principle be indented to the opening
- * delimiter or to a fixed +4, selectable per setting, but `WrapConfig`
- * has no dedicated setting for this choice -- adding one now would be new
- * settings-schema surface `packages/vscode-extension` doesn't yet
- * expose, for a decision that's a style preference, not a correctness
- * requirement. This always uses the second option (`+4`, matching Black's
- * own hanging-indent convention): the *statement's own* line indentation
- * (the source line the region starts on, tab-expanded the same way
- * `discoverRegions` computes `indentColumn` itself) plus four columns --
- * deliberately not `region.indentColumn` itself, which is the *string's*
- * own column mid-line (`x = "..."`'s string starts well past the
- * statement's own indent) and would misplace every continuation line for
- * anything but a docstring-like region starting a line of its own. A known,
- * explicitly documented simplification, not an oversight -- see this
- * module's own commit message for the "or +4" wording this intentionally
- * settles on.
+ * Delegated to `continuationIndentColumns`
+ * (`../../strings/continuation-indent.ts`), shared with every other
+ * language's string pipeline: aligned to the string's own opening quote
+ * when it starts a line of its own, the statement's indent plus four
+ * otherwise. Python's only contribution is `ctx.needsParens`, which that
+ * function needs to keep an inserted `(` idempotent.
  */
 export function wrapString(region: WrappableRegion, source: string, cfg: WrapConfig, tree: Tree): string {
   if (isSingleTripleQuotedLiteral(region, source)) {
@@ -63,10 +53,7 @@ export function wrapString(region: WrappableRegion, source: string, cfg: WrapCon
 
   const safeText = escapeQuoteCollisions(dissolved.text, dissolved.quoteDelimiter);
 
-  const sourceLine = source.split('\n')[region.span.startRow] ?? '';
-  const statementIndentChars = /^[ \t]*/.exec(sourceLine)?.[0].length ?? 0;
-  const statementIndentColumns = visualIndentColumn(sourceLine, statementIndentChars, cfg.tabSize);
-  const hangingIndentColumns = statementIndentColumns + 4;
+  const hangingIndentColumns = continuationIndentColumns(region, source, cfg, ctx.needsParens);
 
   const reflowOptions = reflowOptionsFrom(cfg);
 

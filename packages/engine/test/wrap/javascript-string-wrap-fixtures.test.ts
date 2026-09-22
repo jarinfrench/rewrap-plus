@@ -15,6 +15,8 @@ import alreadyWrappedIn from '../fixtures/javascript/strings/003-already-correct
 import alreadyWrappedOut from '../fixtures/javascript/strings/003-already-correctly-wrapped-byte-identical.out.js?raw';
 import codepointEscapeIn from '../fixtures/javascript/strings/004-codepoint-escape.in.js?raw';
 import codepointEscapeOut from '../fixtures/javascript/strings/004-codepoint-escape.out.js?raw';
+import ownLineIn from '../fixtures/javascript/strings/005-own-line-call-arg-aligned.in.js?raw';
+import ownLineOut from '../fixtures/javascript/strings/005-own-line-call-arg-aligned.out.js?raw';
 import negSqlIn from '../fixtures/javascript/strings/neg-001-sql-query.in.js?raw';
 import negSqlOut from '../fixtures/javascript/strings/neg-001-sql-query.out.js?raw';
 import negUrlIn from '../fixtures/javascript/strings/neg-002-url.in.js?raw';
@@ -79,6 +81,16 @@ const fixtures: readonly Fixture[] = [
     name: '004-codepoint-escape',
     input: codepointEscapeIn,
     expected: codepointEscapeOut,
+    positive: true,
+  },
+  {
+    // Regression: a concatenation run already broken onto its own line
+    // inside a call's brackets keeps every part aligned to the first
+    // part's opening quote, rather than gaining a hanging indent measured
+    // from its own line (see `../../src/strings/continuation-indent.ts`).
+    name: '005-own-line-call-arg-aligned',
+    input: ownLineIn,
+    expected: ownLineOut,
     positive: true,
   },
   { name: 'neg-001-sql-query', input: negSqlIn, expected: negSqlOut, positive: false },
