@@ -5,6 +5,20 @@
  * register commands and the range-formatting provider, and set the
  * `rewrapPlusSupportedLanguages` context key every command/keybinding
  * `when` clause gates on.
+ *
+ * `package.json`'s `activationEvents` includes `onStartupFinished`
+ * specifically because of that last part: a keybinding's `when` clause
+ * is evaluated against whatever context keys already exist, and doesn't
+ * itself trigger activation the way invoking a command by ID does. Before
+ * this module has run once, `rewrapPlusSupportedLanguages` doesn't exist
+ * yet, so `editorLangId in rewrapPlusSupportedLanguages` reads as false
+ * and the keybinding never matches -- meaning VSCode never sees a reason
+ * to activate the extension, and the default `Alt+Q` binding goes
+ * permanently dead in a fresh window until *some* Rewrap+ command is run
+ * once via the Command Palette (which isn't gated the same way) to break
+ * the deadlock. `onStartupFinished` closes that gap by activating shortly
+ * after startup regardless, before a user has a chance to hit the
+ * keybinding first.
  */
 import * as vscode from 'vscode';
 import { getSupportedLanguages, initEngineHost } from './engine-host.js';
