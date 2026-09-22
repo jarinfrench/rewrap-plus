@@ -84,7 +84,7 @@ export function decorateFirstLine(block: Block, lines: readonly string[]): strin
     block.type === 'listItem'
       ? markerPrefix(block.marker, block.hangingIndent)
       : block.type === 'fieldEntry'
-        ? markerPrefix(block.label, block.hangingIndent)
+        ? markerPrefix(block.label, block.labelIndent)
         : null;
   if (prefix === null) {
     return [...lines];

@@ -4,6 +4,6 @@ def notify(user):
 
     Args:
         user: The recipient to notify about the
-              pending event.
+            pending event.
     """
     return _send(user)

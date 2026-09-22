@@ -3,6 +3,6 @@ def notify(user):
     user right away.
 
     :param user: The recipient to notify about the
-                 pending event.
+        pending event.
     """
     return _send(user)

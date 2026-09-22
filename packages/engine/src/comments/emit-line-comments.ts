@@ -71,13 +71,18 @@ export function emitLineComments(
   for (const block of document.blocks) {
     const hangingIndent =
       block.type === 'listItem' || block.type === 'fieldEntry' ? block.hangingIndent : 0;
-    // `firstLineReserve` matches `hangingIndent`: `decorateFirstLine`
-    // (below) prepends exactly `hangingIndent` columns of marker text to
-    // line 1, so `reflowBlock` needs to reserve that same width -- see
-    // `ReflowOptions.firstLineReserve`'s own doc comment.
+    // `firstLineReserve` matches whatever width `decorateFirstLine`
+    // (below) actually prepends to line 1 -- `hangingIndent` for a
+    // `listItem`'s bullet, but a `fieldEntry`'s own `labelIndent` for its
+    // label (can exceed `hangingIndent` under `hangingIndentStyle:
+    // 'fixed'`; see that field's own doc comment on
+    // `../types/document.ts`) -- see `ReflowOptions.firstLineReserve`'s
+    // own doc comment for why `reflowBlock` needs this reserved
+    // separately from the continuation indent.
+    const firstLineReserve = block.type === 'fieldEntry' ? block.labelIndent : hangingIndent;
     const reflowed = decorateFirstLine(
       block,
-      reflowBlock(block, availableWidth, hangingIndent, { ...options, firstLineReserve: hangingIndent }),
+      reflowBlock(block, availableWidth, hangingIndent, { ...options, firstLineReserve }),
     );
 
     for (const line of reflowed) {

@@ -29,6 +29,7 @@ export interface ExtensionSettings {
     | 'doxygen'
     | 'javadoc'
     | 'plain';
+  readonly docstringHangingIndent: 'fixed' | 'aligned';
   readonly preserveIndentedBlocks: boolean;
   readonly respectEditorConfig: boolean;
   readonly balancedWrapping: boolean;
@@ -63,6 +64,7 @@ export function readExtensionSettings(document: vscode.TextDocument): ExtensionS
     docDialect: config.get<
       'auto' | 'google' | 'numpy' | 'sphinx' | 'jsdoc' | 'doxygen' | 'javadoc' | 'plain'
     >('docDialect', 'auto'),
+    docstringHangingIndent: config.get<'fixed' | 'aligned'>('docstringHangingIndent', 'fixed'),
     // Default true: the guiding principle here is "bias toward
     // verbatim when uncertain" -- an indented block inside a
     // comment/docstring is exactly the kind of structure a wrong guess

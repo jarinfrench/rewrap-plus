@@ -28,6 +28,7 @@ describe('groupFieldEntries', () => {
         type: 'fieldEntry',
         label: 'x:',
         hangingIndent: 4, // entry's own indent (0) + the default continuation width (4)
+        labelIndent: 4, // entry's own indent (0) + max(continuationIndentWidth, label.length + 1)
         blocks: [
           { type: 'paragraph', atoms: [{ text: 'description', width: 11, breakBefore: false }] },
         ],
@@ -94,6 +95,52 @@ describe('groupFieldEntries', () => {
     if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
     // entry's own indent (4) + the default continuation width (4)
     expect(entry.hangingIndent).toBe(8);
+  });
+
+  describe('hangingIndentStyle', () => {
+    // A label past `continuationIndentWidth` (4) is what makes the two
+    // styles actually diverge -- for a short label both formulas agree
+    // (see the "groups a single entry" case above, `label: 'x:'`).
+    const LONG_LABEL_LINE = 'amuchlongername: description';
+
+    it("defaults to 'fixed': hangingIndent stays at the flat continuation width regardless of label length", () => {
+      const blocks = groupFieldEntries([LONG_LABEL_LINE], matchSimple);
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.hangingIndent).toBe(4);
+      // `labelIndent` still grows with the label -- it's what
+      // `markerPrefix` positions the label against on line one,
+      // independent of the (now much shallower) continuation column.
+      expect(entry.labelIndent).toBe('amuchlongername:'.length + 1);
+    });
+
+    it("'fixed' is also the explicit default: passing it outright matches omitting the option", () => {
+      const withDefault = groupFieldEntries([LONG_LABEL_LINE], matchSimple);
+      const withExplicitFixed = groupFieldEntries([LONG_LABEL_LINE], matchSimple, {
+        hangingIndentStyle: 'fixed',
+      });
+      expect(withExplicitFixed).toEqual(withDefault);
+    });
+
+    it("'aligned' makes hangingIndent grow with the label, matching labelIndent", () => {
+      const blocks = groupFieldEntries([LONG_LABEL_LINE], matchSimple, {
+        hangingIndentStyle: 'aligned',
+      });
+      const entry = blocks[0];
+      if (entry?.type !== 'fieldEntry') throw new Error('expected a fieldEntry');
+      expect(entry.hangingIndent).toBe('amuchlongername:'.length + 1);
+      expect(entry.hangingIndent).toBe(entry.labelIndent);
+    });
+
+    it("a short label under 'aligned' still falls back to the flat continuation width, matching 'fixed' (both formulas take the same max)", () => {
+      const aligned = groupFieldEntries(['x: description'], matchSimple, {
+        hangingIndentStyle: 'aligned',
+      });
+      const fixed = groupFieldEntries(['x: description'], matchSimple, {
+        hangingIndentStyle: 'fixed',
+      });
+      expect(aligned).toEqual(fixed);
+    });
   });
 
   describe('look-ahead body collection (blank lines inside continuation)', () => {

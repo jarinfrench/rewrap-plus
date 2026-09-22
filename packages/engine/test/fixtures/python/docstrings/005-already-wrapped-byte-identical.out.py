@@ -4,17 +4,17 @@ def fetch(url, timeout=30, retries=3):
 
     Args:
         url: The fully qualified URL to fetch,
-             including its scheme.
+            including its scheme.
         timeout: Maximum number of seconds to wait
-                 before giving up.
+            before giving up.
         retries: Number of times to retry the
-                 request on failure.
+            request on failure.
 
     Returns:
         str: The decoded response body.
 
     Raises:
         TimeoutError: If the request does not
-                      complete within timeout.
+            complete within timeout.
     """
     return _do_fetch(url, timeout, retries)

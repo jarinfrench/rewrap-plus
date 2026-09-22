@@ -52,7 +52,10 @@ export function wrapDocstring(region: WrappableRegion, source: string, cfg: Wrap
     throw new Error(`wrapDocstring: no dialect registered for '${dialectId}'`);
   }
 
-  const splitOptions: SplitBlocksOptions = { preserveIndentedBlocks: cfg.preserveIndentedBlocks };
+  const splitOptions: SplitBlocksOptions = {
+    preserveIndentedBlocks: cfg.preserveIndentedBlocks,
+    hangingIndentStyle: cfg.hangingIndentStyle ?? 'fixed',
+  };
   const blocks = dialect.segment(dissolved.text, splitOptions);
 
   const reflowOptions = reflowOptionsFrom(cfg);

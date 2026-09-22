@@ -304,9 +304,16 @@ export function reflowBlockSequence(
   for (const block of blocks) {
     const hangingIndent =
       block.type === 'listItem' || block.type === 'fieldEntry' ? block.hangingIndent : 0;
+    // A `fieldEntry`'s `labelIndent` can differ from its `hangingIndent`
+    // (see that field's own doc comment on `../types/document.ts`) --
+    // `firstLineReserve` has to reserve room for the *label*, not the
+    // continuation column, so it's `labelIndent` there. `listItem`'s
+    // bullet marker has no such split; its `hangingIndent` still serves
+    // both roles.
+    const firstLineReserve = block.type === 'fieldEntry' ? block.labelIndent : hangingIndent;
     const reflowed = reflowBlock(block, availableWidth, hangingIndent, {
       ...options,
-      firstLineReserve: hangingIndent,
+      firstLineReserve,
     });
     lines.push(...decorateFirstLine(block, reflowed));
   }
