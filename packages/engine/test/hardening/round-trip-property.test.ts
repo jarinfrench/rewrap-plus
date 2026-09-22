@@ -266,6 +266,7 @@ function assertNoLineOverLimitExceptLoneAtom(
   lineCommentMarker: string,
 ): void {
   const markerEscaped = lineCommentMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // eslint-disable-next-line security/detect-non-literal-regexp -- `lineCommentMarker` comes from this test suite's own fixed, hardcoded per-language table above (never document/fixture content, let alone attacker input) and is regex-escaped immediately above; test-only code.
   const markerPattern = new RegExp(`^${markerEscaped}\\s?`);
   for (const edit of edits) {
     for (const line of edit.newText.split(/\r?\n/)) {

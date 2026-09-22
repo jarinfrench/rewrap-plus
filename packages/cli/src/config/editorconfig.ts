@@ -193,6 +193,7 @@ export function matchesEditorConfigGlob(pattern: string, sectionDir: string, fil
     ? globToRegExpSource(anchored)
     : `(?:.*/)?${globToRegExpSource(anchored)}`;
 
+  // eslint-disable-next-line security/detect-non-literal-regexp -- `source` is built by `globToRegExpSource` above, which only ever emits its own fixed glob->regex translation: every literal character of `pattern` is escaped via `escapeRegExpLiteral` before being spliced in, and the only unescaped fragments are the hardcoded `.*`/`[^/]*`/`(?:...)` glob-syntax translations this function itself controls. A workspace-supplied pattern (see this function's own doc comment, "workspace-trust bypass") can shape *which* glob syntax gets used, never inject arbitrary regex metacharacters past the escaper, and the star-collapsing fix documented above already removes the one real ReDoS hazard this translation had.
   return new RegExp(`^${source}$`).test(relativePath);
 }
 

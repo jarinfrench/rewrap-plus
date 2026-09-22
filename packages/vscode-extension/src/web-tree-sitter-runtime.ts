@@ -47,7 +47,7 @@ import * as path from 'node:path';
 // of. That `.cjs` build locates its own WASM via `__dirname` too (a real
 // Node global, unlike the ESM build's `import.meta.url`), so this just
 // works once both files are in place.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-require-imports, security/detect-non-literal-require -- the joined path is built entirely from `__dirname` (a real Node global reflecting this file's own installed/bundled location, never request- or document-derived) and two hardcoded literal segments (`web-tree-sitter-runtime`, `web-tree-sitter.cjs`); there's no attacker-influenceable component. This is exactly the vendored-runtime-by-computed-but-trusted-path case the rest of this file's doc comment explains the need for.
 const webTreeSitter = require(path.join(__dirname, 'web-tree-sitter-runtime', 'web-tree-sitter.cjs')) as typeof import('web-tree-sitter');
 
 export const Parser = webTreeSitter.Parser;

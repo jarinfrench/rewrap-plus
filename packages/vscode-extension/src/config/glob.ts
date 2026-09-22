@@ -126,6 +126,7 @@ export function matchesGlob(pattern: string, path: string): boolean {
     ? globToRegExpSource(anchored)
     : `(?:.*/)?${globToRegExpSource(anchored)}`;
 
+  // eslint-disable-next-line security/detect-non-literal-regexp -- same reasoning as `packages/cli/src/config/editorconfig.ts`'s `matchesEditorConfigGlob` (this function's own copy of the same `globToRegExpSource` engine): every literal character of `pattern` is escaped by `escapeRegExpLiteral` before being spliced in, so a workspace-supplied glob (`.editorconfig`, or `rewrapPlus.stringWrapInclude`) can only select which glob-syntax translation applies, never inject raw regex metacharacters, and the star-collapsing fix above already removes the ReDoS hazard the earlier, buggy version of this function had.
   return new RegExp(`^${source}$`).test(path);
 }
 
